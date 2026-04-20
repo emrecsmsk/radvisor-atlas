@@ -1,8 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { Report } from "@/lib/report-types";
+import { useLocale, useT } from "@/i18n/I18nProvider";
+import { usePatient } from "@/state/PatientProvider";
+import type { PatientSession } from "@/state/patient-types";
+import { resolveLocalized, type Report } from "@/lib/report-types";
+import { PatientIntakeModal } from "./PatientIntakeModal";
 
 interface Props {
   reports: Report[];
@@ -17,17 +21,62 @@ function normalize(s: string): string {
 }
 
 export function ReportCatalog({ reports }: Props) {
+  const t = useT();
+  const { locale } = useLocale();
+  const { patient, setPatient, hydrated } = usePatient();
+  const router = useRouter();
+
   const [query, setQuery] = useState("");
+  const [pending, setPending] = useState<Report | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const resolved = useMemo(
+    () =>
+      reports.map((r) => ({
+        ...r,
+        _title: resolveLocalized(r.titles, locale),
+        _description: resolveLocalized(r.descriptions, locale),
+      })),
+    [reports, locale],
+  );
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
-    if (!q) return reports;
-    return reports.filter(
+    if (!q) return resolved;
+    return resolved.filter(
       (r) =>
-        normalize(r.title).includes(q) ||
-        normalize(r.description).includes(q),
+        normalize(r._title).includes(q) || normalize(r._description).includes(q),
     );
-  }, [reports, query]);
+  }, [resolved, query]);
+
+  const handleOpen = (report: Report) => {
+    if (!hydrated) return; // wait for session hydration
+    if (!report.requiresPatient) {
+      router.push(`/r/${report.slug}`);
+      return;
+    }
+    if (patient) {
+      router.push(`/r/${report.slug}`);
+      return;
+    }
+    setPending(report);
+    setModalOpen(true);
+  };
+
+  const handleSubmit = (p: PatientSession) => {
+    setPatient(p);
+    setModalOpen(false);
+    if (pending) {
+      const slug = pending.slug;
+      setPending(null);
+      router.push(`/r/${slug}`);
+    }
+  };
+
+  const handleCancel = () => {
+    setModalOpen(false);
+    setPending(null);
+  };
 
   return (
     <>
@@ -48,26 +97,26 @@ export function ReportCatalog({ reports }: Props) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rapor ara..."
+            placeholder={t.catalog.searchPlaceholder}
             className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-input)] py-2.5 pl-10 pr-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted-soft)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_oklab,var(--color-primary)_30%,transparent)]"
-            aria-label="Rapor ara"
+            aria-label={t.catalog.searchPlaceholder}
           />
         </div>
 
         <p className="text-xs tabular-nums text-[var(--color-muted)]">
           {filtered.length === reports.length
-            ? `${reports.length} rapor`
-            : `${filtered.length} / ${reports.length} rapor`}
+            ? t.catalog.totalReports(reports.length)
+            : t.catalog.filteredReports(filtered.length, reports.length)}
         </p>
       </div>
 
       {filtered.length === 0 ? (
         <div className="mt-16 rounded-[var(--radius-card)] border border-dashed border-[var(--color-line-strong)] px-6 py-16 text-center">
           <p className="text-lg font-medium text-[var(--color-ink)]">
-            Eşleşen rapor bulunamadı
+            {t.catalog.emptyTitle}
           </p>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Arama terimini değiştirmeyi deneyin.
+            {t.catalog.emptyHint}
           </p>
         </div>
       ) : (
@@ -77,29 +126,30 @@ export function ReportCatalog({ reports }: Props) {
         >
           {filtered.map((r) => (
             <li key={r.slug}>
-              <Link
-                href={`/r/${r.slug}`}
-                className="group relative flex h-full flex-col rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-surface-raised)] focus:outline-none focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              <button
+                type="button"
+                onClick={() => handleOpen(r)}
+                className="group relative flex h-full w-full flex-col rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-surface-raised)] focus:outline-none focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
               >
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-[var(--color-primary)]">
-                    Rapor
+                    {t.catalog.reportBadge}
                   </span>
                 </div>
 
                 <h3 className="mt-4 text-[1.08rem] font-medium leading-snug text-[var(--color-ink)] transition group-hover:text-[var(--color-primary)]">
-                  {r.title}
+                  {r._title}
                 </h3>
 
-                {r.description ? (
+                {r._description ? (
                   <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-muted)]">
-                    {r.description}
+                    {r._description}
                   </p>
                 ) : null}
 
                 <div className="mt-auto flex items-center justify-between pt-6 text-xs font-medium text-[var(--color-muted)]">
                   <span className="transition group-hover:text-[var(--color-primary)]">
-                    Raporu aç
+                    {t.catalog.openReport}
                   </span>
                   <svg
                     aria-hidden
@@ -116,11 +166,19 @@ export function ReportCatalog({ reports }: Props) {
                     />
                   </svg>
                 </div>
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
       )}
+
+      <PatientIntakeModal
+        open={modalOpen}
+        reportTitle={pending ? resolveLocalized(pending.titles, locale) : ""}
+        initial={null}
+        onCancel={handleCancel}
+        onSubmit={handleSubmit}
+      />
     </>
   );
 }
