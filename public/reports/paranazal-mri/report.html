@@ -117,28 +117,359 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 const {useState,useCallback,useMemo,useRef} = React;
 
 /* ═══════════════════════════════════════════════════════
-   DIAGNOSES REGISTRY
+   LOCALE SETUP
+═══════════════════════════════════════════════════════ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    dx: {
+      normal:            {name:'Normal Paranazal Sinüs',       catLabel:'Normal'},
+      akut_sinuzit:      {name:'Akut Rinosinüzit',            catLabel:'Enfeksiyon'},
+      kronik_sinuzit:    {name:'Kronik Rinosinüzit',          catLabel:'Enfeksiyon'},
+      fungal_invaziv:    {name:'İnvaziv Fungal Sinüzit',      catLabel:'⚠ Acil / Enfeksiyon'},
+      fungal_alerjik:    {name:'Alerjik Fungal Sinüzit',      catLabel:'Enfeksiyon'},
+      polipozis:         {name:'Polipozis Nasi',              catLabel:'Enflamatuar'},
+      mukozele:          {name:'Mukozele',                    catLabel:'Kist/Dilatasyon'},
+      piyosel:           {name:'Piyosel / Ampiyem',           catLabel:'Enfeksiyon'},
+      hemosinus:         {name:'Hemosinus',                   catLabel:'Travma'},
+      fraktur:           {name:'Sinüs Duvarı Fraktürü',       catLabel:'Travma'},
+      osteom:            {name:'Osteom',                      catLabel:'Benign Tümör'},
+      inverted_papillom: {name:'İnverted Papillom',           catLabel:'Benign Tümör'},
+      fibrozus_displazi: {name:'Fibröz Displazi',             catLabel:'Benign/Displazi'},
+      ossifiye_fibrom:   {name:'Ossifiye Fibrom',             catLabel:'Benign Tümör'},
+      skuamoz:           {name:'Skuamöz Hücreli Karsinom',   catLabel:'Malign Tümör'},
+      adenokarsinom:     {name:'Adenokarsinom',               catLabel:'Malign Tümör'},
+      lenfoma:           {name:'Lenfoma',                     catLabel:'Malign Tümör'},
+      metastaz:          {name:'Metastaz',                    catLabel:'Malign Tümör'},
+      kondrosarkom:      {name:'Kondrosarkom / Osteosarkom',  catLabel:'Malign Tümör'},
+    },
+    steps: [
+      {section:'Hasta & Klinik',       title:'Klinik Bağlam',          desc:'Yaş, semptom süresi, başvuru endikasyonu, immün durum'},
+      {section:'Görüntüleme',           title:'Sinüs Tutulumu',          desc:'Hangi sinüsler etkileniyor ve tutulum paterni'},
+      {section:'Görüntüleme',           title:'Mukozal Değerlendirme',   desc:'Mukoza kalınlığı, patern ve T2 sinyal özellikleri'},
+      {section:'Görüntüleme',           title:'Sinüs İçeriği',           desc:'Dolum durumu, T1 ve T2 sinyal özellikleri'},
+      {section:'Sekans Analizi',        title:'Diffüzyon (DWI/ADC)',      desc:'Difüzyon kısıtlaması ve ADC değerlendirmesi'},
+      {section:'Sekans Analizi',        title:'Kontrast Tutulumu',        desc:'Gadolinyum sonrası tutulum paterni'},
+      {section:'Yapısal Analiz',        title:'Kemik Yapı',               desc:'Sinüs duvarları, kemik değişiklikleri ve kitle yoğunluğu'},
+      {section:'Uzanım & Komplikasyon', title:'İleri Bulgular',           desc:'Orbital, intrakranial uzanım ve lenfadenopati'},
+    ],
+    opts: {
+      age:       [{v:'cocuk',l:'Çocuk / Adölesan (<18)'},{v:'genc',l:'Genç Yetişkin (18–40)'},{v:'orta',l:'Orta Yaş (40–60)'},{v:'ileri',l:'İleri Yaş (>60)'}],
+      duration:  [{v:'akut',l:'Akut (<4 hafta)'},{v:'subakut',l:'Subakut (4–12 hafta)'},{v:'kronik',l:'Kronik (>12 hafta)'},{v:'belirsiz',l:'Belirsiz / Rutin izleme'}],
+      indication:[{v:'sinuzit',l:'Sinüzit bulguları'},{v:'kitle',l:'Kitle / Şişlik'},{v:'epistaksis',l:'Epistaksis'},{v:'gorme',l:'Görme değişikliği / Proptozis'},{v:'travma',l:'Travma'},{v:'izleme',l:'Rutin izleme / İzlem'}],
+      immune:    [{v:'normal',l:'İmmün yetkin (normal)'},{v:'immuno',l:'İmmünosuprese / Diyabetik / Hematolojik malignite'}],
+      trauma:    [{v:'yok',l:'Travma yok'},{v:'var',l:'Travma öyküsü mevcut'}],
+      sinPat:    [{v:'normal',l:'Tüm sinüsler normal / havadar'},{v:'unilateral',l:'Tek taraflı tutulum'},{v:'bilateral',l:'İki taraflı tutulum'},{v:'yaygın',l:'Yaygın / Pansinüzit'}],
+      sinuses:   [{v:'sag_maks',l:'Sağ Maksiller'},{v:'sol_maks',l:'Sol Maksiller'},{v:'sag_front',l:'Sağ Frontal'},{v:'sol_front',l:'Sol Frontal'},{v:'etmoid',l:'Etmoid Sinüs'},{v:'sfenoid',l:'Sfenoid Sinüs'}],
+      thickness: [{v:'normal',l:'Normal (<3 mm)'},{v:'hafif',l:'Hafif kalınlaşma (3–5 mm)'},{v:'belirgin',l:'Belirgin kalınlaşma (>5 mm)'},{v:'kitle',l:'Kitle oluşturuyor'}],
+      muPat:     [{v:'normal',l:'Normal / düzgün'},{v:'difuz',l:'Diffüz kalınlaşma'},{v:'polipoid',l:'Polipoid kalınlaşma'},{v:'kitle',l:'Kitle lezyonu'}],
+      muT2:      [{v:'hiperintens',l:'Hiperintens (sıvı / enflamasyon)'},{v:'izointens',l:'İzointens (mukoid / solid)'},{v:'hipointens',l:'Hipointens (fungal / kalın / kuruma)'}],
+      filling:   [{v:'havadar',l:'Havadar (normal)'},{v:'air_fluid',l:'Hava-sıvı seviyesi'},{v:'tam_sivi',l:'Tam sıvı dolumu'},{v:'tam_solid',l:'Tam solid / kitle dolumu'},{v:'ekspansil',l:'Ekspansil kitle (sinüs genişlemiş)'}],
+      coT1:      [{v:'na',l:'Değerlendirilemiyor / havadar'},{v:'hipointens',l:'Hipointens (ince sıvı)'},{v:'izointens',l:'İzointens (mukoid / solid)'},{v:'hiperintens',l:'Hiperintens (kanlı / kalın sekresyon)'}],
+      coT2:      [{v:'na',l:'Değerlendirilemiyor / havadar'},{v:'hiperintens',l:'Hiperintens (ince sıvı / enflamasyon)'},{v:'izointens',l:'İzointens (mukoid / solid)'},{v:'hipointens',l:'Hipointens (fungal / fibrozis / kuruma)'}],
+      dwi:       [{v:'yapilmadi',l:'DWI yapılmadı / değerlendirilemedi'},{v:'normal',l:'Normal difüzyon (kısıtlama yok)'},{v:'restricted',l:'Gerçek kısıtlama (DWI ↑ / ADC ↓)'},{v:'t2shine',l:'T2 shine-through (yalancı kısıtlama)'}],
+      ctGiven:   [{v:'hayir',l:'Kontrast verilmedi'},{v:'evet',l:'Gadolinyum kontrast verildi'}],
+      ctPat:     [{v:'yok',l:'Tutulum yok / minimal'},{v:'ince',l:'İnce mukozal / periferal tutulum (benign)'},{v:'periferal_rim',l:'Kalın periferik rim tutulumu'},{v:'heterogen',l:'Heterojen / nodüler tutulum'},{v:'solid_yogun',l:'Solid kitle — yoğun tutulum'}],
+      boneStr:   [{v:'normal',l:'Normal'},{v:'remodelasyon',l:'İncelme / remodelasyon (ekspansif bası)'},{v:'erozyon',l:'Erozyon / destrüksiyon'},{v:'skleroz',l:'Skleroz / kalınlaşma'},{v:'kalsifiye_kitle',l:'Kalsifiye / ossifiye kitle (kemik yoğunluğunda)'},{v:'fraktur',l:'Fraktür hattı mevcut'}],
+      boneDens:  [{v:'na',l:'Uygulanamaz / kitle yok'},{v:'yumusak',l:'Yumuşak doku dansitesi'},{v:'kalsifiye',l:"Kalsifiye / ossifiye (MRI'da hipointens kütle)"},{v:'karma',l:'Karma (kalsifiye + yumuşak doku)'}],
+      orbital:   [{v:'yok',l:'Yok'},{v:'periorbital',l:'Periorbital ödem / inflamasyon'},{v:'erozyon',l:'Orbital duvar erozyonu'},{v:'orbital_ici',l:'Orbital içi yayılım (yağ / ekstraoküler kaslar)'}],
+      intracranial:[{v:'yok',l:'Yok'},{v:'kafa',l:'Kafa tabanı tutulumu / erozyon'},{v:'ic',l:'İntrakranial uzanım'}],
+      lymph:     [{v:'yok',l:'Boyun LAP yok'},{v:'var',l:'Servikal lenfadenopati mevcut'}],
+    },
+    labels: {
+      age:       {label:'Yaş Grubu'},
+      duration:  {label:'Semptom Süresi'},
+      indication:{label:'Başvuru Endikasyonu'},
+      immune:    {label:'İmmün Durum'},
+      trauma:    {label:'Travma Öyküsü'},
+      sinPat:    {label:'Sinüs Tutulum Paterni'},
+      sinuses:   {label:'Tutulan Sinüsler', note:'Birden fazla seçilebilir'},
+      thickness: {label:'Mukoza Kalınlığı'},
+      muPat:     {label:'Mukozal Patern'},
+      muT2:      {label:'Mukoza / İçerik T2 Sinyali'},
+      filling:   {label:'Sinüs Dolum Durumu'},
+      coT1:      {label:'İçerik / Kitle T1 Sinyali', note:"Havadar sinüslerde 'Değerlendirilemiyor' seçiniz"},
+      coT2:      {label:'İçerik / Kitle T2 Sinyali'},
+      dwi:       {label:'Diffüzyon Bulgusu (DWI / ADC)'},
+      ctGiven:   {label:'Kontrast Enjeksiyonu'},
+      ctPat:     {label:'Kontrast Tutulum Paterni'},
+      boneStr:   {label:'Kemik Yapı'},
+      boneDens:  {label:'Kitle / Lezyon Yoğunluğu', note:'Sinüs içi kitle veya dolum varsa seçiniz'},
+      orbital:   {label:'Orbital Uzanım'},
+      intracranial:{label:'İntrakranial / Kafa Tabanı'},
+      lymph:     {label:'Servikal Lenfadenopati'},
+    },
+    info: {
+      diffusion: '💡 Gerçek kısıtlama: DWI\'da yüksek sinyal + ADC haritasında düşük sinyal (ADC değeri <1.0×10⁻³ mm²/s)',
+      bone: '💡 Osteom: Frontal sinüste sık, kemik yoğunluğunda sert kalsifiye kitle. T1 ve T2\'de hipointens, kontrast tutmaz, erozyon yapmaz.',
+    },
+    ui: {
+      badge:         'MRI Karar Destek Sistemi',
+      h1:            'Paranazal Sinüs MRI',
+      subtitle:      'Kapsamlı bulgu değerlendirmesi · Diferansiyel tanı · Yüzdeli olasılık analizi',
+      stepOf:        (cur, total) => `Adım ${cur}/${total}`,
+      back:          '← Geri',
+      next:          'İleri →',
+      calc:          '🔍 Tanıyı Hesapla',
+      copyBtn:       '📋 Panoya Kopyala',
+      printBtn:      '🖨️ Yazdır / PDF',
+      downloadBtn:   '💾 HTML İndir',
+      resetBtn:      '↺ Yeniden Başla',
+      alertCopied:   'Rapor panoya kopyalandı.',
+      resultSection: 'SONUÇ · Diferansiyel Tanı',
+      resultTitle:   'MRI Değerlendirme Raporu',
+      resultDesc:    'Seçilen bulgulara göre hesaplanmış olasılık dağılımı',
+      diffDxHeader:  'Diferansiyel Tanı Değerlendirmesi',
+    },
+    report: {
+      h2:          'Paranazal Sinüs MRI — Bulgu Özeti',
+      h3Findings:  'Klinik & Görüntüleme Bulguları',
+      h3Dx:        'Tanı Değerlendirmesi',
+      yorumLabel:  'YORUM: ',
+      footer:      'Bu rapor MRI Karar Destek Sistemi (Gülhane EAH, Radyoloji) tarafından oluşturulmuştur. Klinik korelasyon ve uzman değerlendirmesi zorunludur.',
+    },
+    clip: {
+      header:    'PARANAZAL SİNÜS MRI RAPORU',
+      findings:  'BULGULAR:',
+      dx:        'OLASI TANILAR:',
+      yorum:     'YORUM:',
+    },
+    dl: {
+      h2:       'Paranazal Sinüs MRI — Bulgu Özeti',
+      h3Find:   'Bulgular',
+      h3Dx:     'Olasi Tanilar',
+      yorumPfx: 'YORUM: ',
+      footer:   'Bu rapor MRI Karar Destek Sistemi tarafından oluşturulmuştur. Klinik korelasyon zorunludur.',
+    },
+    labs: {
+      age:   {cocuk:'Çocuk/Adölesan',genc:'Genç yetişkin (18–40)',orta:'Orta yaş (40–60)',ileri:'İleri yaş (>60)'},
+      dur:   {akut:'Akut (<4 hafta)',subakut:'Subakut (4–12 hafta)',kronik:'Kronik (>12 hafta)',belirsiz:'Belirsiz'},
+      ind:   {sinuzit:'Sinüzit',kitle:'Kitle/Şişlik',epistaksis:'Epistaksis',gorme:'Görme değişikliği',travma:'Travma',izleme:'Rutin izleme'},
+      imm:   {normal:'İmmün yetkin',immuno:'İmmünosuprese/Diyabetik'},
+      tr:    {yok:'Yok',var:'Mevcut'},
+      pat:   {normal:'Normal (havadar)',unilateral:'Tek taraflı',bilateral:'İki taraflı',yaygın:'Yaygın/Pansinüzit'},
+      muth:  {normal:'Normal (<3 mm)',hafif:'Hafif kalınlaşma (3–5 mm)',belirgin:'Belirgin (>5 mm)',kitle:'Kitle oluşturuyor'},
+      mutp:  {normal:'Normal/düzgün',difuz:'Diffüz',polipoid:'Polipoid',kitle:'Kitle'},
+      t1:    {na:'—',hipointens:'Hipointens',izointens:'İzointens',hiperintens:'Hiperintens'},
+      t2:    {na:'—',hiperintens:'Hiperintens',izointens:'İzointens',hipointens:'Hipointens'},
+      fil:   {havadar:'Havadar',air_fluid:'Hava-sıvı seviyesi',tam_sivi:'Tam sıvı',tam_solid:'Tam solid/kitle',ekspansil:'Ekspansil kitle'},
+      dwi:   {yapilmadi:'Yapılmadı',normal:'Normal',restricted:'Kısıtlama mevcut (DWI↑/ADC↓)',t2shine:'T2 shine-through'},
+      ctg:   {hayir:'Verilmedi',evet:'Verildi'},
+      ctp:   {yok:'Tutulum yok',ince:'İnce mukozal',periferal_rim:'Periferik rim',heterogen:'Heterojen/nodüler',solid_yogun:'Solid yoğun'},
+      bone:  {normal:'Normal',remodelasyon:'İncelme/Remodelasyon',erozyon:'Erozyon/Destrüksiyon',skleroz:'Skleroz',kalsifiye_kitle:'Kalsifiye/Ossifiye Kitle',fraktur:'Fraktür'},
+      dens:  {na:'—',yumusak:'Yumuşak doku',kalsifiye:'Kalsifiye/Ossifiye',karma:'Karma'},
+      orb:   {yok:'Yok',periorbital:'Periorbital inflamasyon',erozyon:'Orbital duvar erozyonu',orbital_ici:'Orbital içi yayılım'},
+      ic:    {yok:'Yok',kafa:'Kafa tabanı tutulumu',ic:'İntrakranial uzanım'},
+    },
+    sinusLabels: {sag_maks:'Sağ Maksiller',sol_maks:'Sol Maksiller',sag_front:'Sağ Frontal',sol_front:'Sol Frontal',etmoid:'Etmoid Sinüs',sfenoid:'Sfenoid Sinüs'},
+    rowLabels: {
+      age:'Yaş Grubu', dur:'Semptom Süresi', ind:'Endikasyon', imm:'İmmün Durum', tr:'Travma',
+      sinPat:'Sinüs Tutulumu', sinuses:'Tutulan Sinüsler',
+      muth:'Mukoza Kalınlığı', mutp:'Mukozal Patern', muT2:'Mukoza T2',
+      fil:'Sinüs Dolumu', coT1:'İçerik T1', coT2:'İçerik T2',
+      dwi:'Diffüzyon (DWI)', ct:'Kontrast',
+      bone:'Kemik Yapı', dens:'Kitle Yoğunluğu',
+      orb:'Orbital Uzanım', ic:'Kafa Tabanı/IC', lymph:'Lenfadenopati',
+    },
+    rowVals: {
+      lymphYes:'Mevcut', lymphNo:'Yok',
+    },
+    yorum: {
+      normal:       () => 'Paranazal sinüs MRI incelemesi değerlendirilen sekanslar dahilinde normal görünümdedir. Patolojik bulgu saptanmamıştır.',
+      malign:       (name, pct) => `Bulgular en olası olarak ${name} (%${pct}) ile uyumludur. Malign patoloji açısından histopatolojik doğrulama zorunludur. Nazal endoskopi, biyopsi ve multidisipliner onkoloji değerlendirmesi planlanmalıdır.`,
+      fungalInvaziv:(pct)       => `Bulgular İnvaziv Fungal Sinüzit (%${pct}) ile uyumludur. İmmünosuprese hastada bu bulgu ACİL endoskopi, doku örneği alınması ve antifungal tedavi endikasyonu oluşturmaktadır. ENT konsültasyonu acilen istenmelidir.`,
+      travma:       (name, pct) => `Bulgular travma ilişkili patoloji (${name}, %${pct}) ile uyumludur. Klinik değerlendirme, gerekirse BT korelasyonu ve ilgili klinik konsültasyon önerilir.`,
+      benign:       (name, pct) => `Bulgular en olası olarak ${name} (%${pct}) ile uyumludur. Klinik ve endoskopik korelasyon önerilir. Benign tümörlerde cerrahi planlama için BT (kemik detayı) ek bilgi sağlayabilir.`,
+      other:        (name, pct) => `Bulgular en olası olarak ${name} (%${pct}) ile uyumludur. Klinik korelasyon ve gerekirse endoskopik değerlendirme önerilir.`,
+    },
+  },
+  en: {
+    dx: {
+      normal:            {name:'Normal Paranasal Sinus',                catLabel:'Normal'},
+      akut_sinuzit:      {name:'Acute Rhinosinusitis',                  catLabel:'Infection'},
+      kronik_sinuzit:    {name:'Chronic Rhinosinusitis',                catLabel:'Infection'},
+      fungal_invaziv:    {name:'Invasive Fungal Sinusitis',             catLabel:'⚠ Emergency / Infection'},
+      fungal_alerjik:    {name:'Allergic Fungal Sinusitis',             catLabel:'Infection'},
+      polipozis:         {name:'Polyposis Nasi',                        catLabel:'Inflammatory'},
+      mukozele:          {name:'Mucocele',                              catLabel:'Cyst/Dilatation'},
+      piyosel:           {name:'Pyocele / Empyema',                     catLabel:'Infection'},
+      hemosinus:         {name:'Hemosinus',                             catLabel:'Trauma'},
+      fraktur:           {name:'Sinus Wall Fracture',                   catLabel:'Trauma'},
+      osteom:            {name:'Osteoma',                               catLabel:'Benign Tumor'},
+      inverted_papillom: {name:'Inverted Papilloma',                    catLabel:'Benign Tumor'},
+      fibrozus_displazi: {name:'Fibrous Dysplasia',                     catLabel:'Benign/Dysplasia'},
+      ossifiye_fibrom:   {name:'Ossifying Fibroma',                     catLabel:'Benign Tumor'},
+      skuamoz:           {name:'Squamous Cell Carcinoma',               catLabel:'Malignant Tumor'},
+      adenokarsinom:     {name:'Adenocarcinoma',                        catLabel:'Malignant Tumor'},
+      lenfoma:           {name:'Lymphoma',                              catLabel:'Malignant Tumor'},
+      metastaz:          {name:'Metastasis',                            catLabel:'Malignant Tumor'},
+      kondrosarkom:      {name:'Chondrosarcoma / Osteosarcoma',         catLabel:'Malignant Tumor'},
+    },
+    steps: [
+      {section:'Patient & Clinical',    title:'Clinical Context',           desc:'Age, symptom duration, referral indication, immune status'},
+      {section:'Imaging',               title:'Sinus Involvement',          desc:'Which sinuses are affected and the involvement pattern'},
+      {section:'Imaging',               title:'Mucosal Assessment',         desc:'Mucosal thickness, pattern, and T2 signal characteristics'},
+      {section:'Imaging',               title:'Sinus Content',              desc:'Filling status, T1 and T2 signal characteristics'},
+      {section:'Sequence Analysis',     title:'Diffusion (DWI/ADC)',        desc:'Restricted diffusion and ADC assessment'},
+      {section:'Sequence Analysis',     title:'Contrast Enhancement',       desc:'Post-gadolinium enhancement pattern'},
+      {section:'Structural Analysis',   title:'Bone Structure',             desc:'Sinus walls, bone changes, and lesion density'},
+      {section:'Extension & Complication', title:'Advanced Findings',       desc:'Orbital, intracranial extension and lymphadenopathy'},
+    ],
+    opts: {
+      age:       [{v:'cocuk',l:'Child / Adolescent (<18)'},{v:'genc',l:'Young Adult (18–40)'},{v:'orta',l:'Middle Age (40–60)'},{v:'ileri',l:'Older Adult (>60)'}],
+      duration:  [{v:'akut',l:'Acute (<4 weeks)'},{v:'subakut',l:'Subacute (4–12 weeks)'},{v:'kronik',l:'Chronic (>12 weeks)'},{v:'belirsiz',l:'Unclear / Routine follow-up'}],
+      indication:[{v:'sinuzit',l:'Sinusitis symptoms'},{v:'kitle',l:'Mass / Swelling'},{v:'epistaksis',l:'Epistaxis'},{v:'gorme',l:'Visual change / Proptosis'},{v:'travma',l:'Trauma'},{v:'izleme',l:'Routine monitoring / Follow-up'}],
+      immune:    [{v:'normal',l:'Immunocompetent (normal)'},{v:'immuno',l:'Immunosuppressed / Diabetic / Hematologic malignancy'}],
+      trauma:    [{v:'yok',l:'No trauma'},{v:'var',l:'History of trauma present'}],
+      sinPat:    [{v:'normal',l:'All sinuses normal / aerated'},{v:'unilateral',l:'Unilateral involvement'},{v:'bilateral',l:'Bilateral involvement'},{v:'yaygın',l:'Diffuse / Pansinusitis'}],
+      sinuses:   [{v:'sag_maks',l:'Right Maxillary'},{v:'sol_maks',l:'Left Maxillary'},{v:'sag_front',l:'Right Frontal'},{v:'sol_front',l:'Left Frontal'},{v:'etmoid',l:'Ethmoid Sinus'},{v:'sfenoid',l:'Sphenoid Sinus'}],
+      thickness: [{v:'normal',l:'Normal (<3 mm)'},{v:'hafif',l:'Mild thickening (3–5 mm)'},{v:'belirgin',l:'Significant thickening (>5 mm)'},{v:'kitle',l:'Mass formation'}],
+      muPat:     [{v:'normal',l:'Normal / smooth'},{v:'difuz',l:'Diffuse thickening'},{v:'polipoid',l:'Polypoid thickening'},{v:'kitle',l:'Mass lesion'}],
+      muT2:      [{v:'hiperintens',l:'Hyperintense (fluid / inflammation)'},{v:'izointens',l:'Isointense (mucoid / solid)'},{v:'hipointens',l:'Hypointense (fungal / thick / desiccated)'}],
+      filling:   [{v:'havadar',l:'Aerated (normal)'},{v:'air_fluid',l:'Air-fluid level'},{v:'tam_sivi',l:'Complete fluid filling'},{v:'tam_solid',l:'Complete solid / mass filling'},{v:'ekspansil',l:'Expansile mass (sinus enlarged)'}],
+      coT1:      [{v:'na',l:'Not assessable / aerated'},{v:'hipointens',l:'Hypointense (thin fluid)'},{v:'izointens',l:'Isointense (mucoid / solid)'},{v:'hiperintens',l:'Hyperintense (hemorrhagic / thick secretion)'}],
+      coT2:      [{v:'na',l:'Not assessable / aerated'},{v:'hiperintens',l:'Hyperintense (thin fluid / inflammation)'},{v:'izointens',l:'Isointense (mucoid / solid)'},{v:'hipointens',l:'Hypointense (fungal / fibrosis / desiccated)'}],
+      dwi:       [{v:'yapilmadi',l:'DWI not performed / not assessable'},{v:'normal',l:'Normal diffusion (no restriction)'},{v:'restricted',l:'True restricted diffusion (DWI ↑ / ADC ↓)'},{v:'t2shine',l:'T2 shine-through (pseudo-restriction)'}],
+      ctGiven:   [{v:'hayir',l:'No contrast given'},{v:'evet',l:'Gadolinium contrast given'}],
+      ctPat:     [{v:'yok',l:'No enhancement / minimal'},{v:'ince',l:'Thin mucosal / peripheral enhancement (benign)'},{v:'periferal_rim',l:'Thick peripheral rim enhancement'},{v:'heterogen',l:'Heterogeneous / nodular enhancement'},{v:'solid_yogun',l:'Solid mass — intense enhancement'}],
+      boneStr:   [{v:'normal',l:'Normal'},{v:'remodelasyon',l:'Thinning / remodeling (expansile pressure)'},{v:'erozyon',l:'Erosion / destruction'},{v:'skleroz',l:'Sclerosis / thickening'},{v:'kalsifiye_kitle',l:'Calcified / ossified mass (bone density)'},{v:'fraktur',l:'Fracture line present'}],
+      boneDens:  [{v:'na',l:'Not applicable / no mass'},{v:'yumusak',l:'Soft tissue density'},{v:'kalsifiye',l:'Calcified / ossified (hypointense on MRI)'},{v:'karma',l:'Mixed (calcified + soft tissue)'}],
+      orbital:   [{v:'yok',l:'None'},{v:'periorbital',l:'Periorbital edema / inflammation'},{v:'erozyon',l:'Orbital wall erosion'},{v:'orbital_ici',l:'Intraorbital extension (fat / extraocular muscles)'}],
+      intracranial:[{v:'yok',l:'None'},{v:'kafa',l:'Skull base involvement / erosion'},{v:'ic',l:'Intracranial extension'}],
+      lymph:     [{v:'yok',l:'No cervical LAP'},{v:'var',l:'Cervical lymphadenopathy present'}],
+    },
+    labels: {
+      age:       {label:'Age Group'},
+      duration:  {label:'Symptom Duration'},
+      indication:{label:'Referral Indication'},
+      immune:    {label:'Immune Status'},
+      trauma:    {label:'Trauma History'},
+      sinPat:    {label:'Sinus Involvement Pattern'},
+      sinuses:   {label:'Involved Sinuses', note:'Multiple selections allowed'},
+      thickness: {label:'Mucosal Thickness'},
+      muPat:     {label:'Mucosal Pattern'},
+      muT2:      {label:'Mucosa / Content T2 Signal'},
+      filling:   {label:'Sinus Filling Status'},
+      coT1:      {label:'Content / Mass T1 Signal', note:"Select 'Not assessable' for aerated sinuses"},
+      coT2:      {label:'Content / Mass T2 Signal'},
+      dwi:       {label:'Diffusion Finding (DWI / ADC)'},
+      ctGiven:   {label:'Contrast Injection'},
+      ctPat:     {label:'Contrast Enhancement Pattern'},
+      boneStr:   {label:'Bone Structure'},
+      boneDens:  {label:'Mass / Lesion Density', note:'Select if sinus mass or filling is present'},
+      orbital:   {label:'Orbital Extension'},
+      intracranial:{label:'Intracranial / Skull Base'},
+      lymph:     {label:'Cervical Lymphadenopathy'},
+    },
+    info: {
+      diffusion: '💡 True restriction: high signal on DWI + low signal on ADC map (ADC value <1.0×10⁻³ mm²/s)',
+      bone: '💡 Osteoma: common in frontal sinus, dense calcified mass at bone density. Hypointense on T1 and T2, no enhancement, no erosion.',
+    },
+    ui: {
+      badge:         'MRI Decision Support System',
+      h1:            'Paranasal Sinus MRI',
+      subtitle:      'Comprehensive finding evaluation · Differential diagnosis · Probability analysis',
+      stepOf:        (cur, total) => `Step ${cur}/${total}`,
+      back:          '← Back',
+      next:          'Next →',
+      calc:          '🔍 Calculate Diagnosis',
+      copyBtn:       '📋 Copy to Clipboard',
+      printBtn:      '🖨️ Print / PDF',
+      downloadBtn:   '💾 Download HTML',
+      resetBtn:      '↺ Start Over',
+      alertCopied:   'Report copied to clipboard.',
+      resultSection: 'RESULT · Differential Diagnosis',
+      resultTitle:   'MRI Assessment Report',
+      resultDesc:    'Probability distribution calculated from selected findings',
+      diffDxHeader:  'Differential Diagnosis Assessment',
+    },
+    report: {
+      h2:          'Paranasal Sinus MRI — Findings Summary',
+      h3Findings:  'Clinical & Imaging Findings',
+      h3Dx:        'Diagnostic Assessment',
+      yorumLabel:  'IMPRESSION: ',
+      footer:      'This report was generated by the MRI Decision Support System (Gulhane EAH, Radiology). Clinical correlation and expert evaluation are mandatory.',
+    },
+    clip: {
+      header:    'PARANASAL SINUS MRI REPORT',
+      findings:  'FINDINGS:',
+      dx:        'PROBABLE DIAGNOSES:',
+      yorum:     'IMPRESSION:',
+    },
+    dl: {
+      h2:       'Paranasal Sinus MRI — Findings Summary',
+      h3Find:   'Findings',
+      h3Dx:     'Probable Diagnoses',
+      yorumPfx: 'IMPRESSION: ',
+      footer:   'This report was generated by the MRI Decision Support System. Clinical correlation is mandatory.',
+    },
+    labs: {
+      age:   {cocuk:'Child/Adolescent',genc:'Young adult (18–40)',orta:'Middle age (40–60)',ileri:'Older adult (>60)'},
+      dur:   {akut:'Acute (<4 weeks)',subakut:'Subacute (4–12 weeks)',kronik:'Chronic (>12 weeks)',belirsiz:'Unclear'},
+      ind:   {sinuzit:'Sinusitis',kitle:'Mass/Swelling',epistaksis:'Epistaxis',gorme:'Visual change',travma:'Trauma',izleme:'Routine follow-up'},
+      imm:   {normal:'Immunocompetent',immuno:'Immunosuppressed/Diabetic'},
+      tr:    {yok:'None',var:'Present'},
+      pat:   {normal:'Normal (aerated)',unilateral:'Unilateral',bilateral:'Bilateral',yaygın:'Diffuse/Pansinusitis'},
+      muth:  {normal:'Normal (<3 mm)',hafif:'Mild thickening (3–5 mm)',belirgin:'Significant (>5 mm)',kitle:'Mass formation'},
+      mutp:  {normal:'Normal/smooth',difuz:'Diffuse',polipoid:'Polypoid',kitle:'Mass'},
+      t1:    {na:'—',hipointens:'Hypointense',izointens:'Isointense',hiperintens:'Hyperintense'},
+      t2:    {na:'—',hiperintens:'Hyperintense',izointens:'Isointense',hipointens:'Hypointense'},
+      fil:   {havadar:'Aerated',air_fluid:'Air-fluid level',tam_sivi:'Complete fluid',tam_solid:'Complete solid/mass',ekspansil:'Expansile mass'},
+      dwi:   {yapilmadi:'Not performed',normal:'Normal',restricted:'Restricted diffusion (DWI↑/ADC↓)',t2shine:'T2 shine-through'},
+      ctg:   {hayir:'Not given',evet:'Given'},
+      ctp:   {yok:'No enhancement',ince:'Thin mucosal',periferal_rim:'Peripheral rim',heterogen:'Heterogeneous/nodular',solid_yogun:'Solid intense'},
+      bone:  {normal:'Normal',remodelasyon:'Thinning/Remodeling',erozyon:'Erosion/Destruction',skleroz:'Sclerosis',kalsifiye_kitle:'Calcified/Ossified Mass',fraktur:'Fracture'},
+      dens:  {na:'—',yumusak:'Soft tissue',kalsifiye:'Calcified/Ossified',karma:'Mixed'},
+      orb:   {yok:'None',periorbital:'Periorbital inflammation',erozyon:'Orbital wall erosion',orbital_ici:'Intraorbital extension'},
+      ic:    {yok:'None',kafa:'Skull base involvement',ic:'Intracranial extension'},
+    },
+    sinusLabels: {sag_maks:'Right Maxillary',sol_maks:'Left Maxillary',sag_front:'Right Frontal',sol_front:'Left Frontal',etmoid:'Ethmoid Sinus',sfenoid:'Sphenoid Sinus'},
+    rowLabels: {
+      age:'Age Group', dur:'Symptom Duration', ind:'Indication', imm:'Immune Status', tr:'Trauma',
+      sinPat:'Sinus Involvement', sinuses:'Involved Sinuses',
+      muth:'Mucosal Thickness', mutp:'Mucosal Pattern', muT2:'Mucosa T2',
+      fil:'Sinus Filling', coT1:'Content T1', coT2:'Content T2',
+      dwi:'Diffusion (DWI)', ct:'Contrast',
+      bone:'Bone Structure', dens:'Mass Density',
+      orb:'Orbital Extension', ic:'Skull Base/IC', lymph:'Lymphadenopathy',
+    },
+    rowVals: {
+      lymphYes:'Present', lymphNo:'None',
+    },
+    yorum: {
+      normal:       () => 'Paranasal sinus MRI shows normal appearance within the evaluated sequences. No pathological finding is detected.',
+      malign:       (name, pct) => `Findings are most consistent with ${name} (${pct}%). Histopathological confirmation is mandatory for malignant pathology. Nasal endoscopy, biopsy, and multidisciplinary oncology evaluation should be planned.`,
+      fungalInvaziv:(pct)       => `Findings are consistent with Invasive Fungal Sinusitis (${pct}%). In an immunosuppressed patient, these findings constitute an indication for EMERGENT endoscopy, tissue sampling, and antifungal therapy. ENT consultation should be requested urgently.`,
+      travma:       (name, pct) => `Findings are consistent with trauma-related pathology (${name}, ${pct}%). Clinical evaluation, CT correlation if needed, and relevant clinical consultation are recommended.`,
+      benign:       (name, pct) => `Findings are most consistent with ${name} (${pct}%). Clinical and endoscopic correlation is recommended. For benign tumors, CT (bone detail) may provide additional information for surgical planning.`,
+      other:        (name, pct) => `Findings are most consistent with ${name} (${pct}%). Clinical correlation and endoscopic evaluation if necessary are recommended.`,
+    },
+  },
+})[RV_LOCALE];
+
+/* ═══════════════════════════════════════════════════════
+   DIAGNOSES REGISTRY (logic only — display via T.dx)
 ═══════════════════════════════════════════════════════ */
 const DX = {
-  normal:            {name:'Normal Paranazal Sinüs',       cat:'normal',       catLabel:'Normal'},
-  akut_sinuzit:      {name:'Akut Rinosinüzit',            cat:'enfeksiyon',   catLabel:'Enfeksiyon'},
-  kronik_sinuzit:    {name:'Kronik Rinosinüzit',          cat:'enfeksiyon',   catLabel:'Enfeksiyon'},
-  fungal_invaziv:    {name:'İnvaziv Fungal Sinüzit',      cat:'enfeksiyon',   catLabel:'⚠ Acil / Enfeksiyon'},
-  fungal_alerjik:    {name:'Alerjik Fungal Sinüzit',      cat:'enfeksiyon',   catLabel:'Enfeksiyon'},
-  polipozis:         {name:'Polipozis Nasi',              cat:'enflamatuar',  catLabel:'Enflamatuar'},
-  mukozele:          {name:'Mukozele',                    cat:'kist',         catLabel:'Kist/Dilatasyon'},
-  piyosel:           {name:'Piyosel / Ampiyem',           cat:'enfeksiyon',   catLabel:'Enfeksiyon'},
-  hemosinus:         {name:'Hemosinus',                   cat:'travma',       catLabel:'Travma'},
-  fraktur:           {name:'Sinüs Duvarı Fraktürü',       cat:'travma',       catLabel:'Travma'},
-  osteom:            {name:'Osteom',                      cat:'benign',       catLabel:'Benign Tümör'},
-  inverted_papillom: {name:'İnverted Papillom',           cat:'benign',       catLabel:'Benign Tümör'},
-  fibrozus_displazi: {name:'Fibröz Displazi',             cat:'benign',       catLabel:'Benign/Displazi'},
-  ossifiye_fibrom:   {name:'Ossifiye Fibrom',             cat:'benign',       catLabel:'Benign Tümör'},
-  skuamoz:           {name:'Skuamöz Hücreli Karsinom',   cat:'malign',       catLabel:'Malign Tümör'},
-  adenokarsinom:     {name:'Adenokarsinom',               cat:'malign',       catLabel:'Malign Tümör'},
-  lenfoma:           {name:'Lenfoma',                     cat:'malign',       catLabel:'Malign Tümör'},
-  metastaz:          {name:'Metastaz',                    cat:'malign',       catLabel:'Malign Tümör'},
-  kondrosarkom:      {name:'Kondrosarkom / Osteosarkom',  cat:'malign',       catLabel:'Malign Tümör'},
+  normal:            {cat:'normal'},
+  akut_sinuzit:      {cat:'enfeksiyon'},
+  kronik_sinuzit:    {cat:'enfeksiyon'},
+  fungal_invaziv:    {cat:'enfeksiyon'},
+  fungal_alerjik:    {cat:'enfeksiyon'},
+  polipozis:         {cat:'enflamatuar'},
+  mukozele:          {cat:'kist'},
+  piyosel:           {cat:'enfeksiyon'},
+  hemosinus:         {cat:'travma'},
+  fraktur:           {cat:'travma'},
+  osteom:            {cat:'benign'},
+  inverted_papillom: {cat:'benign'},
+  fibrozus_displazi: {cat:'benign'},
+  ossifiye_fibrom:   {cat:'benign'},
+  skuamoz:           {cat:'malign'},
+  adenokarsinom:     {cat:'malign'},
+  lenfoma:           {cat:'malign'},
+  metastaz:          {cat:'malign'},
+  kondrosarkom:      {cat:'malign'},
 };
 
 const CAT_COL = {
@@ -221,13 +552,13 @@ function computeDx(ans) {
   if (bo.structure==='remodelasyon') {
     ab++;
     s.mukozele+=26; s.inverted_papillom+=12; s.ossifiye_fibrom+=12; s.fibrozus_displazi+=8;
-    // Remodelasyon ≠ erozyon → osteom değil
+    // Remodelasyon != erozyon
   }
   if (bo.structure==='erozyon') {
     ab++;
     s.skuamoz+=32; s.fungal_invaziv+=26; s.adenokarsinom+=20;
     s.inverted_papillom+=14; s.lenfoma+=14; s.metastaz+=14; s.kondrosarkom+=14;
-    // Osteom ASLA erozyon yapmaz
+    // Osteom never causes erosion
     s.osteom = 0;
     s.ossifiye_fibrom = Math.max(0, s.ossifiye_fibrom-10);
   }
@@ -236,9 +567,8 @@ function computeDx(ans) {
   }
   if (bo.structure==='kalsifiye_kitle') {
     ab++;
-    // Bu osteomun TEMEL göstergesidir
+    // Primary indicator for osteoma
     s.osteom+=55; s.ossifiye_fibrom+=24; s.fibrozus_displazi+=12; s.kondrosarkom+=14;
-    // Kalsifiye kitle = malign değil (kalsifiye karsinom nadirdir)
     s.skuamoz    = Math.max(0, s.skuamoz-5);
     s.lenfoma    = Math.max(0, s.lenfoma-5);
     s.metastaz   = Math.max(0, s.metastaz-5);
@@ -249,7 +579,6 @@ function computeDx(ans) {
   }
   if (bo.density==='kalsifiye') {
     ab++; s.osteom+=30; s.ossifiye_fibrom+=20; s.kondrosarkom+=14; s.fibrozus_displazi+=12;
-    // Kalsifiye yoğun kitle = malign değil
     s.skuamoz    = Math.max(0, s.skuamoz-8);
     s.lenfoma    = Math.max(0, s.lenfoma-8);
     s.piyosel    = Math.max(0, s.piyosel-5);
@@ -272,21 +601,21 @@ function computeDx(ans) {
 
   // RULE: If truly no abnormal findings → 100% Normal
   if (ab===0 && sinNormal) {
-    return [{key:'normal',...DX.normal,color:CAT_COL.normal,percentage:100,score:100}];
+    return [{key:'normal',...DX.normal,...T.dx.normal,color:CAT_COL.normal,percentage:100,score:100}];
   }
   if (ab===0 && !si.pattern) {
-    return [{key:'normal',...DX.normal,color:CAT_COL.normal,percentage:100,score:100}];
+    return [{key:'normal',...DX.normal,...T.dx.normal,color:CAT_COL.normal,percentage:100,score:100}];
   }
 
   // Build ranked results (exclude 'normal' from pathology list)
   const results = Object.entries(s)
     .filter(([k]) => k !== 'normal')
-    .map(([key,score]) => ({key,...DX[key],color:CAT_COL[DX[key].cat],score}))
+    .map(([key,score]) => ({key,...DX[key],...T.dx[key],color:CAT_COL[DX[key].cat],score}))
     .filter(r => r.score > 0)
     .sort((a,b) => b.score - a.score);
 
   if (results.length===0) {
-    return [{key:'normal',...DX.normal,color:CAT_COL.normal,percentage:100,score:0}];
+    return [{key:'normal',...DX.normal,...T.dx.normal,color:CAT_COL.normal,percentage:100,score:0}];
   }
 
   const top5 = results.slice(0,5);
@@ -353,20 +682,11 @@ function S0_Clinical({ans,set}) {
   const c=ans.clinical;
   const u=(k,v)=>set(a=>({...a,clinical:{...a.clinical,[k]:v}}));
   return (<>
-    <RadioGroup label="Yaş Grubu" val={c.age} onChange={v=>u('age',v)} opts={[
-      {v:'cocuk',l:'Çocuk / Adölesan (<18)'},{v:'genc',l:'Genç Yetişkin (18–40)'},
-      {v:'orta',l:'Orta Yaş (40–60)'},{v:'ileri',l:'İleri Yaş (>60)'}]}/>
-    <RadioGroup label="Semptom Süresi" val={c.duration} onChange={v=>u('duration',v)} opts={[
-      {v:'akut',l:'Akut (<4 hafta)'},{v:'subakut',l:'Subakut (4–12 hafta)'},
-      {v:'kronik',l:'Kronik (>12 hafta)'},{v:'belirsiz',l:'Belirsiz / Rutin izleme'}]}/>
-    <RadioGroup label="Başvuru Endikasyonu" val={c.indication} onChange={v=>u('indication',v)} opts={[
-      {v:'sinuzit',l:'Sinüzit bulguları'},{v:'kitle',l:'Kitle / Şişlik'},
-      {v:'epistaksis',l:'Epistaksis'},{v:'gorme',l:'Görme değişikliği / Proptozis'},
-      {v:'travma',l:'Travma'},{v:'izleme',l:'Rutin izleme / İzlem'}]}/>
-    <RadioGroup label="İmmün Durum" val={c.immune} onChange={v=>u('immune',v)} opts={[
-      {v:'normal',l:'İmmün yetkin (normal)'},{v:'immuno',l:'İmmünosuprese / Diyabetik / Hematolojik malignite'}]}/>
-    <RadioGroup label="Travma Öyküsü" val={c.trauma} onChange={v=>u('trauma',v)} opts={[
-      {v:'yok',l:'Travma yok'},{v:'var',l:'Travma öyküsü mevcut'}]}/>
+    <RadioGroup label={T.labels.age.label} val={c.age} onChange={v=>u('age',v)} opts={T.opts.age}/>
+    <RadioGroup label={T.labels.duration.label} val={c.duration} onChange={v=>u('duration',v)} opts={T.opts.duration}/>
+    <RadioGroup label={T.labels.indication.label} val={c.indication} onChange={v=>u('indication',v)} opts={T.opts.indication}/>
+    <RadioGroup label={T.labels.immune.label} val={c.immune} onChange={v=>u('immune',v)} opts={T.opts.immune}/>
+    <RadioGroup label={T.labels.trauma.label} val={c.trauma} onChange={v=>u('trauma',v)} opts={T.opts.trauma}/>
   </>);
 }
 
@@ -374,17 +694,10 @@ function S1_Sinus({ans,set}) {
   const s=ans.sinus;
   const u=(k,v)=>set(a=>({...a,sinus:{...a.sinus,[k]:v}}));
   return (<>
-    <RadioGroup label="Sinüs Tutulum Paterni" val={s.pattern} onChange={v=>u('pattern',v)} opts={[
-      {v:'normal',l:'Tüm sinüsler normal / havadar'},
-      {v:'unilateral',l:'Tek taraflı tutulum'},
-      {v:'bilateral',l:'İki taraflı tutulum'},
-      {v:'yaygın',l:'Yaygın / Pansinüzit'}]}/>
+    <RadioGroup label={T.labels.sinPat.label} val={s.pattern} onChange={v=>u('pattern',v)} opts={T.opts.sinPat}/>
     {s.pattern && s.pattern!=='normal' && (
-      <CheckGroup label="Tutulan Sinüsler" note="Birden fazla seçilebilir"
-        vals={s.sinuses} onChange={v=>u('sinuses',v)} opts={[
-          {v:'sag_maks',l:'Sağ Maksiller'},{v:'sol_maks',l:'Sol Maksiller'},
-          {v:'sag_front',l:'Sağ Frontal'},{v:'sol_front',l:'Sol Frontal'},
-          {v:'etmoid',l:'Etmoid Sinüs'},{v:'sfenoid',l:'Sfenoid Sinüs'}]}/>
+      <CheckGroup label={T.labels.sinuses.label} note={T.labels.sinuses.note}
+        vals={s.sinuses} onChange={v=>u('sinuses',v)} opts={T.opts.sinuses}/>
     )}
   </>);
 }
@@ -393,16 +706,9 @@ function S2_Mucosal({ans,set}) {
   const m=ans.mucosal;
   const u=(k,v)=>set(a=>({...a,mucosal:{...a.mucosal,[k]:v}}));
   return (<>
-    <RadioGroup label="Mukoza Kalınlığı" val={m.thickness} onChange={v=>u('thickness',v)} opts={[
-      {v:'normal',l:'Normal (<3 mm)'},{v:'hafif',l:'Hafif kalınlaşma (3–5 mm)'},
-      {v:'belirgin',l:'Belirgin kalınlaşma (>5 mm)'},{v:'kitle',l:'Kitle oluşturuyor'}]}/>
-    <RadioGroup label="Mukozal Patern" val={m.pattern} onChange={v=>u('pattern',v)} opts={[
-      {v:'normal',l:'Normal / düzgün'},{v:'difuz',l:'Diffüz kalınlaşma'},
-      {v:'polipoid',l:'Polipoid kalınlaşma'},{v:'kitle',l:'Kitle lezyonu'}]}/>
-    <RadioGroup label="Mukoza / İçerik T2 Sinyali" val={m.t2} onChange={v=>u('t2',v)} opts={[
-      {v:'hiperintens',l:'Hiperintens (sıvı / enflamasyon)'},
-      {v:'izointens',l:'İzointens (mukoid / solid)'},
-      {v:'hipointens',l:'Hipointens (fungal / kalın / kuruma)'}]}/>
+    <RadioGroup label={T.labels.thickness.label} val={m.thickness} onChange={v=>u('thickness',v)} opts={T.opts.thickness}/>
+    <RadioGroup label={T.labels.muPat.label} val={m.pattern} onChange={v=>u('pattern',v)} opts={T.opts.muPat}/>
+    <RadioGroup label={T.labels.muT2.label} val={m.t2} onChange={v=>u('t2',v)} opts={T.opts.muT2}/>
   </>);
 }
 
@@ -410,24 +716,11 @@ function S3_Content({ans,set}) {
   const c=ans.content;
   const u=(k,v)=>set(a=>({...a,content:{...a.content,[k]:v}}));
   return (<>
-    <RadioGroup label="Sinüs Dolum Durumu" val={c.filling} onChange={v=>u('filling',v)} opts={[
-      {v:'havadar',l:'Havadar (normal)'},
-      {v:'air_fluid',l:'Hava-sıvı seviyesi'},
-      {v:'tam_sivi',l:'Tam sıvı dolumu'},
-      {v:'tam_solid',l:'Tam solid / kitle dolumu'},
-      {v:'ekspansil',l:'Ekspansil kitle (sinüs genişlemiş)'}]}/>
-    <RadioGroup label="İçerik / Kitle T1 Sinyali"
-      note="Havadar sinüslerde 'Değerlendirilemiyor' seçiniz"
-      val={c.t1} onChange={v=>u('t1',v)} opts={[
-        {v:'na',l:'Değerlendirilemiyor / havadar'},
-        {v:'hipointens',l:'Hipointens (ince sıvı)'},
-        {v:'izointens',l:'İzointens (mukoid / solid)'},
-        {v:'hiperintens',l:'Hiperintens (kanlı / kalın sekresyon)'}]}/>
-    <RadioGroup label="İçerik / Kitle T2 Sinyali" val={c.t2} onChange={v=>u('t2',v)} opts={[
-      {v:'na',l:'Değerlendirilemiyor / havadar'},
-      {v:'hiperintens',l:'Hiperintens (ince sıvı / enflamasyon)'},
-      {v:'izointens',l:'İzointens (mukoid / solid)'},
-      {v:'hipointens',l:'Hipointens (fungal / fibrozis / kuruma)'}]}/>
+    <RadioGroup label={T.labels.filling.label} val={c.filling} onChange={v=>u('filling',v)} opts={T.opts.filling}/>
+    <RadioGroup label={T.labels.coT1.label}
+      note={T.labels.coT1.note}
+      val={c.t1} onChange={v=>u('t1',v)} opts={T.opts.coT1}/>
+    <RadioGroup label={T.labels.coT2.label} val={c.t2} onChange={v=>u('t2',v)} opts={T.opts.coT2}/>
   </>);
 }
 
@@ -435,12 +728,8 @@ function S4_Diffusion({ans,set}) {
   const d=ans.diffusion;
   const u=(k,v)=>set(a=>({...a,diffusion:{...a.diffusion,[k]:v}}));
   return (<>
-    <div className="info-box">💡 Gerçek kısıtlama: DWI'da yüksek sinyal + ADC haritasında düşük sinyal (ADC değeri &lt;1.0×10⁻³ mm²/s)</div>
-    <RadioGroup label="Diffüzyon Bulgusu (DWI / ADC)" val={d.dwi} onChange={v=>u('dwi',v)} opts={[
-      {v:'yapilmadi',l:'DWI yapılmadı / değerlendirilemedi'},
-      {v:'normal',l:'Normal difüzyon (kısıtlama yok)'},
-      {v:'restricted',l:'Gerçek kısıtlama (DWI ↑ / ADC ↓)'},
-      {v:'t2shine',l:'T2 shine-through (yalancı kısıtlama)'}]}/>
+    <div className="info-box">{T.info.diffusion}</div>
+    <RadioGroup label={T.labels.dwi.label} val={d.dwi} onChange={v=>u('dwi',v)} opts={T.opts.dwi}/>
   </>);
 }
 
@@ -448,15 +737,9 @@ function S5_Contrast({ans,set}) {
   const c=ans.contrast;
   const u=(k,v)=>set(a=>({...a,contrast:{...a.contrast,[k]:v}}));
   return (<>
-    <RadioGroup label="Kontrast Enjeksiyonu" val={c.given} onChange={v=>u('given',v)} opts={[
-      {v:'hayir',l:'Kontrast verilmedi'},{v:'evet',l:'Gadolinyum kontrast verildi'}]}/>
+    <RadioGroup label={T.labels.ctGiven.label} val={c.given} onChange={v=>u('given',v)} opts={T.opts.ctGiven}/>
     {c.given==='evet' && (
-      <RadioGroup label="Kontrast Tutulum Paterni" val={c.pattern} onChange={v=>u('pattern',v)} opts={[
-        {v:'yok',l:'Tutulum yok / minimal'},
-        {v:'ince',l:'İnce mukozal / periferal tutulum (benign)'},
-        {v:'periferal_rim',l:'Kalın periferik rim tutulumu'},
-        {v:'heterogen',l:'Heterojen / nodüler tutulum'},
-        {v:'solid_yogun',l:'Solid kitle — yoğun tutulum'}]}/>
+      <RadioGroup label={T.labels.ctPat.label} val={c.pattern} onChange={v=>u('pattern',v)} opts={T.opts.ctPat}/>
     )}
   </>);
 }
@@ -465,20 +748,10 @@ function S6_Bone({ans,set}) {
   const b=ans.bone;
   const u=(k,v)=>set(a=>({...a,bone:{...a.bone,[k]:v}}));
   return (<>
-    <div className="info-box">💡 Osteom: Frontal sinüste sık, kemik yoğunluğunda sert kalsifiye kitle. T1 ve T2'de hipointens, kontrast tutmaz, erozyon yapmaz.</div>
-    <RadioGroup label="Kemik Yapı" val={b.structure} onChange={v=>u('structure',v)} opts={[
-      {v:'normal',l:'Normal'},
-      {v:'remodelasyon',l:'İncelme / remodelasyon (ekspansif bası)'},
-      {v:'erozyon',l:'Erozyon / destrüksiyon'},
-      {v:'skleroz',l:'Skleroz / kalınlaşma'},
-      {v:'kalsifiye_kitle',l:'Kalsifiye / ossifiye kitle (kemik yoğunluğunda)'},
-      {v:'fraktur',l:'Fraktür hattı mevcut'}]}/>
-    <RadioGroup label="Kitle / Lezyon Yoğunluğu" note="Sinüs içi kitle veya dolum varsa seçiniz"
-      val={b.density} onChange={v=>u('density',v)} opts={[
-        {v:'na',l:'Uygulanamaz / kitle yok'},
-        {v:'yumusak',l:'Yumuşak doku dansitesi'},
-        {v:'kalsifiye',l:"Kalsifiye / ossifiye (MRI'da hipointens kütle)"},
-        {v:'karma',l:'Karma (kalsifiye + yumuşak doku)'}]}/>
+    <div className="info-box">{T.info.bone}</div>
+    <RadioGroup label={T.labels.boneStr.label} val={b.structure} onChange={v=>u('structure',v)} opts={T.opts.boneStr}/>
+    <RadioGroup label={T.labels.boneDens.label} note={T.labels.boneDens.note}
+      val={b.density} onChange={v=>u('density',v)} opts={T.opts.boneDens}/>
   </>);
 }
 
@@ -486,18 +759,9 @@ function S7_Advanced({ans,set}) {
   const a=ans.advanced;
   const u=(k,v)=>set(x=>({...x,advanced:{...x.advanced,[k]:v}}));
   return (<>
-    <RadioGroup label="Orbital Uzanım" val={a.orbital} onChange={v=>u('orbital',v)} opts={[
-      {v:'yok',l:'Yok'},
-      {v:'periorbital',l:'Periorbital ödem / inflamasyon'},
-      {v:'erozyon',l:'Orbital duvar erozyonu'},
-      {v:'orbital_ici',l:'Orbital içi yayılım (yağ / ekstraoküler kaslar)'}]}/>
-    <RadioGroup label="İntrakranial / Kafa Tabanı" val={a.intracranial} onChange={v=>u('intracranial',v)} opts={[
-      {v:'yok',l:'Yok'},
-      {v:'kafa',l:'Kafa tabanı tutulumu / erozyon'},
-      {v:'ic',l:'İntrakranial uzanım'}]}/>
-    <RadioGroup label="Servikal Lenfadenopati" val={a.lymph} onChange={v=>u('lymph',v)} opts={[
-      {v:'yok',l:'Boyun LAP yok'},
-      {v:'var',l:'Servikal lenfadenopati mevcut'}]}/>
+    <RadioGroup label={T.labels.orbital.label} val={a.orbital} onChange={v=>u('orbital',v)} opts={T.opts.orbital}/>
+    <RadioGroup label={T.labels.intracranial.label} val={a.intracranial} onChange={v=>u('intracranial',v)} opts={T.opts.intracranial}/>
+    <RadioGroup label={T.labels.lymph.label} val={a.lymph} onChange={v=>u('lymph',v)} opts={T.opts.lymph}/>
   </>);
 }
 
@@ -509,75 +773,62 @@ function buildReport(ans, results) {
   const top = results[0];
 
   const L = (map,v) => map[v] || v || '—';
-  const labs = {
-    age:      {cocuk:'Çocuk/Adölesan',genc:'Genç yetişkin (18–40)',orta:'Orta yaş (40–60)',ileri:'İleri yaş (>60)'},
-    dur:      {akut:'Akut (<4 hafta)',subakut:'Subakut (4–12 hafta)',kronik:'Kronik (>12 hafta)',belirsiz:'Belirsiz'},
-    ind:      {sinuzit:'Sinüzit',kitle:'Kitle/Şişlik',epistaksis:'Epistaksis',gorme:'Görme değişikliği',travma:'Travma',izleme:'Rutin izleme'},
-    imm:      {normal:'İmmün yetkin',immuno:'İmmünosuprese/Diyabetik'},
-    tr:       {yok:'Yok',var:'Mevcut'},
-    pat:      {normal:'Normal (havadar)',unilateral:'Tek taraflı',bilateral:'İki taraflı',yaygın:'Yaygın/Pansinüzit'},
-    muth:     {normal:'Normal (<3 mm)',hafif:'Hafif kalınlaşma (3–5 mm)',belirgin:'Belirgin (>5 mm)',kitle:'Kitle oluşturuyor'},
-    mutp:     {normal:'Normal/düzgün',difuz:'Diffüz',polipoid:'Polipoid',kitle:'Kitle'},
-    t1:       {na:'—',hipointens:'Hipointens',izointens:'İzointens',hiperintens:'Hiperintens'},
-    t2:       {na:'—',hiperintens:'Hiperintens',izointens:'İzointens',hipointens:'Hipointens'},
-    fil:      {havadar:'Havadar',air_fluid:'Hava-sıvı seviyesi',tam_sivi:'Tam sıvı',tam_solid:'Tam solid/kitle',ekspansil:'Ekspansil kitle'},
-    dwi:      {yapilmadi:'Yapılmadı',normal:'Normal',restricted:'Kısıtlama mevcut (DWI↑/ADC↓)',t2shine:'T2 shine-through'},
-    ctg:      {hayir:'Verilmedi',evet:'Verildi'},
-    ctp:      {yok:'Tutulum yok',ince:'İnce mukozal',periferal_rim:'Periferik rim',heterogen:'Heterojen/nodüler',solid_yogun:'Solid yoğun'},
-    bone:     {normal:'Normal',remodelasyon:'İncelme/Remodelasyon',erozyon:'Erozyon/Destrüksiyon',skleroz:'Skleroz',kalsifiye_kitle:'Kalsifiye/Ossifiye Kitle',fraktur:'Fraktür'},
-    dens:     {na:'—',yumusak:'Yumuşak doku',kalsifiye:'Kalsifiye/Ossifiye',karma:'Karma'},
-    orb:      {yok:'Yok',periorbital:'Periorbital inflamasyon',erozyon:'Orbital duvar erozyonu',orbital_ici:'Orbital içi yayılım'},
-    ic:       {yok:'Yok',kafa:'Kafa tabanı tutulumu',ic:'İntrakranial uzanım'},
-  };
+  const labs = T.labs;
+  const rl = T.rowLabels;
+  const rv = T.rowVals;
+
+  const sinusesDisplay = si.sinuses?.length
+    ? si.sinuses.map(v => T.sinusLabels[v] || v).join(', ')
+    : '—';
 
   const rows = [
-    {label:'Yaş Grubu',         val:L(labs.age,cl.age)},
-    {label:'Semptom Süresi',    val:L(labs.dur,cl.duration)},
-    {label:'Endikasyon',        val:L(labs.ind,cl.indication)},
-    {label:'İmmün Durum',       val:L(labs.imm,cl.immune)},
-    {label:'Travma',            val:L(labs.tr,cl.trauma)},
-    {label:'─────────────',    val:''},
-    {label:'Sinüs Tutulumu',    val:L(labs.pat,si.pattern)},
-    {label:'Tutulan Sinüsler',  val:si.sinuses?.length ? si.sinuses.join(', ').replace(/_/g,' ') : '—'},
-    {label:'─────────────',    val:''},
-    {label:'Mukoza Kalınlığı',  val:L(labs.muth,mu.thickness)},
-    {label:'Mukozal Patern',    val:L(labs.mutp,mu.pattern)},
-    {label:'Mukoza T2',         val:L(labs.t2,mu.t2)},
-    {label:'─────────────',    val:''},
-    {label:'Sinüs Dolumu',      val:L(labs.fil,co.filling)},
-    {label:'İçerik T1',         val:L(labs.t1,co.t1)},
-    {label:'İçerik T2',         val:L(labs.t2,co.t2)},
-    {label:'─────────────',    val:''},
-    {label:'Diffüzyon (DWI)',   val:L(labs.dwi,df.dwi)},
-    {label:'Kontrast',          val:L(labs.ctg,ct.given)+(ct.given==='evet'?' — '+L(labs.ctp,ct.pattern):'')},
-    {label:'─────────────',    val:''},
-    {label:'Kemik Yapı',        val:L(labs.bone,bo.structure)},
-    {label:'Kitle Yoğunluğu',   val:L(labs.dens,bo.density)},
-    {label:'─────────────',    val:''},
-    {label:'Orbital Uzanım',    val:L(labs.orb,adv.orbital)},
-    {label:'Kafa Tabanı/IC',    val:L(labs.ic,adv.intracranial)},
-    {label:'Lenfadenopati',     val:adv.lymph==='var'?'Mevcut':'Yok'},
+    {label:rl.age,    val:L(labs.age,cl.age)},
+    {label:rl.dur,    val:L(labs.dur,cl.duration)},
+    {label:rl.ind,    val:L(labs.ind,cl.indication)},
+    {label:rl.imm,    val:L(labs.imm,cl.immune)},
+    {label:rl.tr,     val:L(labs.tr,cl.trauma)},
+    {label:'─────────────', val:''},
+    {label:rl.sinPat, val:L(labs.pat,si.pattern)},
+    {label:rl.sinuses,val:sinusesDisplay},
+    {label:'─────────────', val:''},
+    {label:rl.muth,   val:L(labs.muth,mu.thickness)},
+    {label:rl.mutp,   val:L(labs.mutp,mu.pattern)},
+    {label:rl.muT2,   val:L(labs.t2,mu.t2)},
+    {label:'─────────────', val:''},
+    {label:rl.fil,    val:L(labs.fil,co.filling)},
+    {label:rl.coT1,   val:L(labs.t1,co.t1)},
+    {label:rl.coT2,   val:L(labs.t2,co.t2)},
+    {label:'─────────────', val:''},
+    {label:rl.dwi,    val:L(labs.dwi,df.dwi)},
+    {label:rl.ct,     val:L(labs.ctg,ct.given)+(ct.given==='evet'?' — '+L(labs.ctp,ct.pattern):'')},
+    {label:'─────────────', val:''},
+    {label:rl.bone,   val:L(labs.bone,bo.structure)},
+    {label:rl.dens,   val:L(labs.dens,bo.density)},
+    {label:'─────────────', val:''},
+    {label:rl.orb,    val:L(labs.orb,adv.orbital)},
+    {label:rl.ic,     val:L(labs.ic,adv.intracranial)},
+    {label:rl.lymph,  val:adv.lymph==='var'?rv.lymphYes:rv.lymphNo},
   ];
 
   let yorum='', yorumCls='yorum ok';
 
   if (top.key==='normal') {
-    yorum='Paranazal sinüs MRI incelemesi değerlendirilen sekanslar dahilinde normal görünümdedir. Patolojik bulgu saptanmamıştır.';
+    yorum=T.yorum.normal();
     yorumCls='yorum ok';
   } else if (top.cat==='malign') {
-    yorum=`Bulgular en olası olarak ${top.name} (%${top.percentage}) ile uyumludur. Malign patoloji açısından histopatolojik doğrulama zorunludur. Nazal endoskopi, biyopsi ve multidisipliner onkoloji değerlendirmesi planlanmalıdır.`;
+    yorum=T.yorum.malign(top.name, top.percentage);
     yorumCls='yorum danger';
   } else if (top.key==='fungal_invaziv') {
-    yorum=`Bulgular İnvaziv Fungal Sinüzit (%${top.percentage}) ile uyumludur. İmmünosuprese hastada bu bulgu ACİL endoskopi, doku örneği alınması ve antifungal tedavi endikasyonu oluşturmaktadır. ENT konsültasyonu acilen istenmelidir.`;
+    yorum=T.yorum.fungalInvaziv(top.percentage);
     yorumCls='yorum danger';
   } else if (top.cat==='travma') {
-    yorum=`Bulgular travma ilişkili patoloji (${top.name}, %${top.percentage}) ile uyumludur. Klinik değerlendirme, gerekirse BT korelasyonu ve ilgili klinik konsültasyon önerilir.`;
+    yorum=T.yorum.travma(top.name, top.percentage);
     yorumCls='yorum warn';
   } else if (top.cat==='benign') {
-    yorum=`Bulgular en olası olarak ${top.name} (%${top.percentage}) ile uyumludur. Klinik ve endoskopik korelasyon önerilir. Benign tümörlerde cerrahi planlama için BT (kemik detayı) ek bilgi sağlayabilir.`;
+    yorum=T.yorum.benign(top.name, top.percentage);
     yorumCls='yorum info';
   } else {
-    yorum=`Bulgular en olası olarak ${top.name} (%${top.percentage}) ile uyumludur. Klinik korelasyon ve gerekirse endoskopik değerlendirme önerilir.`;
+    yorum=T.yorum.other(top.name, top.percentage);
     yorumCls='yorum ok';
   }
 
@@ -591,24 +842,25 @@ function StepResult({ans, results, onReset}) {
   const {rows, yorum, yorumCls} = useMemo(()=>buildReport(ans,results),[ans,results]);
 
   const handleCopy = () => {
-    const tanılar = results.map((r,i)=>`${i+1}. ${r.name} — %${r.percentage}`).join('\n');
-    const bulgular = rows.filter(r=>r.label&&r.val&&!r.label.startsWith('─'))
+    const diagnoses = results.map((r,i)=>`${i+1}. ${r.name} — ${r.percentage}%`).join('\n');
+    const findings = rows.filter(r=>r.label&&r.val&&!r.label.startsWith('─'))
       .map(r=>`${r.label}: ${r.val}`).join('\n');
     navigator.clipboard.writeText(
-      `PARANAZAL SİNÜS MRI RAPORU\n\nBULGULAR:\n${bulgular}\n\nOLASI TANILAR:\n${tanılar}\n\nYORUM:\n${yorum}`
+      `${T.clip.header}\n\n${T.clip.findings}\n${findings}\n\n${T.clip.dx}\n${diagnoses}\n\n${T.clip.yorum}\n${yorum}`
     );
-    alert('Rapor panoya kopyalandı.');
+    alert(T.ui.alertCopied);
   };
 
   const handleDownload = () => {
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Paranazal MRI Raporu</title></head><body style="font-family:Segoe UI,sans-serif;padding:40px;max-width:800px;margin:0 auto">
-<h2 style="color:#1a1a2e;border-bottom:2px solid #ebe8ff;padding-bottom:8px">Paranazal Sinüs MRI — Bulgu Özeti</h2>
-<h3 style="color:#35306a;margin-top:20px">Bulgular</h3>
+    const dl = T.dl;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dl.h2}</title></head><body style="font-family:Segoe UI,sans-serif;padding:40px;max-width:800px;margin:0 auto">
+<h2 style="color:#1a1a2e;border-bottom:2px solid #ebe8ff;padding-bottom:8px">${dl.h2}</h2>
+<h3 style="color:#35306a;margin-top:20px">${dl.h3Find}</h3>
 <table style="width:100%;border-collapse:collapse">${rows.filter(r=>r.val&&!r.label.startsWith('─')).map(r=>`<tr style="border-bottom:1px solid #eee"><td style="padding:6px 10px;font-weight:600;color:#4a4570;width:200px">${r.label}</td><td style="padding:6px 10px">${r.val}</td></tr>`).join('')}</table>
-<h3 style="color:#35306a;margin-top:20px">Olası Tanılar</h3>
-<table style="width:100%;border-collapse:collapse">${results.map((r,i)=>`<tr style="border-bottom:1px solid #eee"><td style="padding:6px 10px;font-weight:600">#${i+1} ${r.name}</td><td style="padding:6px 10px;font-weight:700">%${r.percentage}</td></tr>`).join('')}</table>
-<div style="background:#f0f4ff;border-left:4px solid #7b61ff;padding:14px 18px;border-radius:6px;margin-top:16px;font-size:14px"><strong>YORUM:</strong> ${yorum}</div>
-<p style="margin-top:20px;font-size:11px;color:#999">Bu rapor MRI Karar Destek Sistemi tarafından oluşturulmuştur. Klinik korelasyon zorunludur.</p>
+<h3 style="color:#35306a;margin-top:20px">${dl.h3Dx}</h3>
+<table style="width:100%;border-collapse:collapse">${results.map((r,i)=>`<tr style="border-bottom:1px solid #eee"><td style="padding:6px 10px;font-weight:600">#${i+1} ${r.name}</td><td style="padding:6px 10px;font-weight:700">${r.percentage}%</td></tr>`).join('')}</table>
+<div style="background:#f0f4ff;border-left:4px solid #7b61ff;padding:14px 18px;border-radius:6px;margin-top:16px;font-size:14px"><strong>${dl.yorumPfx}</strong>${yorum}</div>
+<p style="margin-top:20px;font-size:11px;color:#999">${dl.footer}</p>
 </body></html>`;
     const blob = new Blob([html],{type:'text/html'});
     const url = URL.createObjectURL(blob);
@@ -620,16 +872,16 @@ function StepResult({ans, results, onReset}) {
   return (
     <div style={{animation:'fadeIn .3s ease'}}>
       <div className="export-bar no-print">
-        <button className="btn btn-secondary" onClick={handleCopy}>📋 Panoya Kopyala</button>
-        <button className="btn btn-secondary" onClick={()=>window.print()}>🖨️ Yazdır / PDF</button>
-        <button className="btn btn-secondary" onClick={handleDownload}>💾 HTML İndir</button>
-        <button className="btn btn-danger" style={{marginLeft:'auto'}} onClick={onReset}>↺ Yeniden Başla</button>
+        <button className="btn btn-secondary" onClick={handleCopy}>{T.ui.copyBtn}</button>
+        <button className="btn btn-secondary" onClick={()=>window.print()}>{T.ui.printBtn}</button>
+        <button className="btn btn-secondary" onClick={handleDownload}>{T.ui.downloadBtn}</button>
+        <button className="btn btn-danger" style={{marginLeft:'auto'}} onClick={onReset}>{T.ui.resetBtn}</button>
       </div>
 
       {/* Diagnoses */}
       <div style={{marginBottom:28}}>
         <div style={{fontSize:11,letterSpacing:'2.5px',textTransform:'uppercase',color:'var(--accent)',marginBottom:14}}>
-          Diferansiyel Tanı Değerlendirmesi
+          {T.ui.diffDxHeader}
         </div>
         {results.map((r,i) => (
           <div key={r.key} className={`res-card${i===0?' top':''}`}
@@ -651,8 +903,8 @@ function StepResult({ans, results, onReset}) {
 
       {/* Report */}
       <div className="report">
-        <h2>Paranazal Sinüs MRI — Bulgu Özeti</h2>
-        <h3>Klinik &amp; Görüntüleme Bulguları</h3>
+        <h2>{T.report.h2}</h2>
+        <h3>{T.report.h3Findings}</h3>
         <table className="rtable">
           <tbody>
             {rows.map((row,i) =>
@@ -666,7 +918,7 @@ function StepResult({ans, results, onReset}) {
           </tbody>
         </table>
 
-        <h3>Tanı Değerlendirmesi</h3>
+        <h3>{T.report.h3Dx}</h3>
         <table className="rtable">
           <tbody>
             {results.map((r,i)=>(
@@ -679,12 +931,11 @@ function StepResult({ans, results, onReset}) {
         </table>
 
         <div className={yorumCls}>
-          <strong>YORUM: </strong>{yorum}
+          <strong>{T.report.yorumLabel}</strong>{yorum}
         </div>
 
         <p style={{marginTop:16,fontSize:11,color:'#999',fontStyle:'italic'}}>
-          Bu rapor MRI Karar Destek Sistemi (Gülhane EAH, Radyoloji) tarafından oluşturulmuştur.
-          Klinik korelasyon ve uzman değerlendirmesi zorunludur.
+          {T.report.footer}
         </p>
       </div>
     </div>
@@ -694,16 +945,7 @@ function StepResult({ans, results, onReset}) {
 /* ═══════════════════════════════════════════════════════
    STEP CONFIG & VALIDATION
 ═══════════════════════════════════════════════════════ */
-const STEPS = [
-  {section:'Hasta & Klinik',       title:'Klinik Bağlam',          desc:'Yaş, semptom süresi, başvuru endikasyonu, immün durum'},
-  {section:'Görüntüleme',           title:'Sinüs Tutulumu',          desc:'Hangi sinüsler etkileniyor ve tutulum paterni'},
-  {section:'Görüntüleme',           title:'Mukozal Değerlendirme',  desc:'Mukoza kalınlığı, patern ve T2 sinyal özellikleri'},
-  {section:'Görüntüleme',           title:'Sinüs İçeriği',          desc:'Dolum durumu, T1 ve T2 sinyal özellikleri'},
-  {section:'Sekans Analizi',        title:'Diffüzyon (DWI/ADC)',     desc:'Difüzyon kısıtlaması ve ADC değerlendirmesi'},
-  {section:'Sekans Analizi',        title:'Kontrast Tutulumu',       desc:'Gadolinyum sonrası tutulum paterni'},
-  {section:'Yapısal Analiz',        title:'Kemik Yapı',              desc:'Sinüs duvarları, kemik değişiklikleri ve kitle yoğunluğu'},
-  {section:'Uzanım & Komplikasyon', title:'İleri Bulgular',          desc:'Orbital, intrakranial uzanım ve lenfadenopati'},
-];
+const STEPS = T.steps;
 
 function isComplete(step, ans) {
   const {clinical:c,sinus:s,mucosal:m,content:co,diffusion:d,contrast:ct,bone:b,advanced:a} = ans;
@@ -764,9 +1006,9 @@ function App() {
     <div className="app">
       {/* Header */}
       <div className="header">
-        <div className="header-badge">MRI Karar Destek Sistemi</div>
-        <h1>Paranazal Sinüs MRI</h1>
-        <p>Kapsamlı bulgu değerlendirmesi · Diferansiyel tanı · Yüzdeli olasılık analizi</p>
+        <div className="header-badge">{T.ui.badge}</div>
+        <h1>{T.ui.h1}</h1>
+        <p>{T.ui.subtitle}</p>
       </div>
 
       {!done ? (<>
@@ -779,7 +1021,7 @@ function App() {
 
         {/* Step */}
         <div className="step-card" key={step}>
-          <div className="step-section">{STEPS[step].section} · Adım {step+1}/{STEPS.length}</div>
+          <div className="step-section">{STEPS[step].section} · {T.ui.stepOf(step+1, STEPS.length)}</div>
           <div className="step-title">{STEPS[step].title}</div>
           <div className="step-desc">{STEPS[step].desc}</div>
           {stepCmp[step]}
@@ -787,16 +1029,16 @@ function App() {
 
         {/* Nav */}
         <div className="nav">
-          <button className="btn btn-secondary" onClick={back} disabled={step===0}>← Geri</button>
+          <button className="btn btn-secondary" onClick={back} disabled={step===0}>{T.ui.back}</button>
           <button className="btn btn-primary" onClick={next} disabled={!ok}>
-            {step===STEPS.length-1 ? '🔍 Tanıyı Hesapla' : 'İleri →'}
+            {step===STEPS.length-1 ? T.ui.calc : T.ui.next}
           </button>
         </div>
       </>) : (
         <div className="step-card">
-          <div className="step-section">SONUÇ · Diferansiyel Tanı</div>
-          <div className="step-title">MRI Değerlendirme Raporu</div>
-          <div className="step-desc">Seçilen bulgulara göre hesaplanmış olasılık dağılımı</div>
+          <div className="step-section">{T.ui.resultSection}</div>
+          <div className="step-title">{T.ui.resultTitle}</div>
+          <div className="step-desc">{T.ui.resultDesc}</div>
           <StepResult ans={ans} results={results} onReset={reset}/>
         </div>
       )}

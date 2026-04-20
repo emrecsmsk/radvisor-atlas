@@ -128,7 +128,310 @@ body{background:#fff;color:#000}
 <script type="text/babel">
 const {useState,useMemo,useRef,useCallback} = React;
 
+/* ══════════════ LOCALE ══════════════ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    title: 'Over MRG Karar Destek Sistemi',
+    sub: 'Kistik & Solid Lezyon Değerlendirme — v2.0',
+    back: '← Geri',
+    next: 'İleri →',
+    continue: 'Devam →',
+    generateReport: 'Rapor Oluştur ✓',
+    finishCyst: 'Kisti Tamamla ✓',
+    finishMass: 'Kitleyi Tamamla ✓',
+    print: '🖨️ PDF Yazdır',
+    copyHtml: '📋 HTML Kopyala',
+    edit: '← Düzenle',
+    reset: '🔄 Sıfırla',
+    copyAlert: 'Rapor HTML olarak panoya kopyalandı!',
+    resetConfirm: 'Tüm verileri sıfırlamak istediğinize emin misiniz?',
+    reportTitle: '📋 Over MRG Değerlendirme Raporu',
+    date: 'Tarih',
+    param: 'Parametre',
+    value: 'Değer',
+    status: 'Durum',
+    size: 'Boyut',
+    contour: 'Kontur',
+    internal: 'İnternal',
+    septa: 'Septa',
+    septaThick: 'Septa Kalınlığı',
+    septaCount: 'Septa Sayısı',
+    wallThick: 'Duvar Kalınlığı',
+    solidComp: 'Solid Komponent',
+    solidSize: 'Solid Boyut',
+    suspicion: 'Şüphe',
+    interpretation: '📊 YORUM',
+    diffDx: '🔍 Ayırıcı Tanı',
+    diagnosis: 'Tanı',
+    match: 'Uyum',
+    cysticLesions: 'Kistik Lezyonlar',
+    solidMasses: 'Solid Kitleler',
+    noLesion: 'Lezyon saptanmadı.',
+    addCyst: '+ Kist Ekle',
+    addMass: '+ Kitle Ekle',
+    ascites: 'Asit',
+    peritoneal: 'Peritoneal İmplant',
+    lap: 'Lenfadenopati',
+    uterineInvasion: 'Uterus İnvazyonu',
+    otherFindings: 'Diğer Bulgular',
+    otherFindingsPlaceholder: 'Serbest metin...',
+    other: 'Diğer',
+    quickRulesTitle: '📌 Hızlı Tanı Kuralları Referansı',
+    findingPattern: 'Bulgu Paterni',
+    possibleDx: 'Olası Tanı',
+    rightOvary: 'Sağ Over',
+    leftOvary: 'Sol Over',
+    ovaryStatusTitle: (side) => `${side} — Durum & Boyut`,
+    ovaryStatusDesc: 'Overin genel durumunu ve boyutunu belirtiniz.',
+    ovaryStatusLabel: 'Durum',
+    ovarySizePlaceholder: 'ör: 35x28x25',
+    cystLoopTitle: (side) => `${side} — Kistler`,
+    cystLoopDesc: 'Over üzerindeki kistik lezyonları ekleyiniz.',
+    massLoopTitle: (side) => `${side} — Kitleler (Tümör)`,
+    massLoopDesc: 'Over üzerindeki solid kitleleri/tümörleri ekleyiniz.',
+    ekTitle: '📋 Ek Bulgular',
+    ekDesc: "Pelvik MRG'de eşlik eden ek bulguları belirtiniz.",
+    cystSizeTitle: (n) => `📏 Kist #${n} — Boyut`,
+    cystContourTitle: (n) => `🔲 Kist #${n} — Kontur & İç Yapı`,
+    cystSeptaTitle: (n) => `🔀 Kist #${n} — Septa`,
+    cystSignalTitle: (n) => `🔬 Kist #${n} — Kist İçi Sinyal`,
+    cystSignalDesc: 'Kist iç sıvısının sinyal karakteristiklerini seçiniz.',
+    cystWallTitle: (n) => `🧱 Kist #${n} — Duvar Yapısı`,
+    cystSolidTitle: (n) => `⬛ Kist #${n} — Solid Komponent`,
+    cystSolidDesc: 'Kist içinde solid komponent varlığını belirtiniz.',
+    cystSolidDetailTitle: (n) => `⬛ Kist #${n} — Solid Detay`,
+    massSizeTitle: (n) => `📏 Kitle #${n} — Boyut & Morfoloji`,
+    massSignalTitle: (n) => `🔬 Kitle #${n} — Sinyal Karakteristikleri`,
+    massSignalTitle2: (n) => `🔬 Kitle #${n} — Sinyal (devam)`,
+    spCystSignal: 'Kist İçi Sinyal',
+    spWallSignal: 'Duvar Sinyal',
+    spSolidSignal: 'Solid Sinyal',
+    spMassSignal: 'Kitle Sinyali',
+    sizePlaceholder: 'ör: 45x38',
+    massPlaceholder: 'ör: 55x42',
+    wallPlaceholder: 'ör: 2',
+    septaPlaceholder: 'ör: 2',
+    septaCountPlaceholder: 'ör: 3',
+    solidSizePlaceholder: 'ör: 15x12',
+    internalLabel: 'İnternal Görünüm',
+    phaseTabs: ['Sağ Over','Sağ Kist','Sağ Kitle','Sol Over','Sol Kist','Sol Kitle','Ek Bulgular','Rapor'],
+    durumOptions: ['Normal','Atrofik','İzlenmedi','Lezyon Var'],
+    kontOptions: ['Düzenli','Düzensiz','Lobule'],
+    internalOptions: ['Homojen','Heterojen'],
+    septaOptions: ['Var','Yok'],
+    solidOptions: ['Yok','Var'],
+    varlıkOptions: ['Yok','Var'],
+    asitOptions: ['Yok','Az Miktarda','Belirgin'],
+    sigHi: 'Hiperintens',
+    sigLo: 'Hipointens',
+    sigIz: 'İzointens',
+    dwiRes: 'Kısıtlıyor',
+    dwiNoRes: 'Kısıtlamıyor',
+    ceNone: 'İzlenmiyor',
+    ceWeak: 'Zayıf',
+    ceStrong: 'Güçlü',
+    sevHigh: (f) => `Yüksek şüpheli bulgular mevcut: ${f}. Malignite açısından ileri değerlendirme önerilir.`,
+    sevMid: (f) => `Orta düzeyde şüpheli bulgular: ${f}. Takip veya ileri tetkik değerlendirilmelidir.`,
+    sevLow: (f) => `Düşük şüpheli bulgular: ${f}. Benign özellikler ön planda olup rutin takip yeterli olabilir.`,
+    sevNone: 'Belirgin şüpheli bulgu saptanmadı. Benign özellikte lezyon.',
+    fSolid: 'solid komponent',
+    fThickSepta: 'kalın septa (>3mm)',
+    fThinSepta: 'ince septa',
+    fThickWall: 'kalın duvar',
+    fSolidMass: 'solid kitle',
+    fDwi: 'difüzyon kısıtlaması',
+    fCe: 'güçlü kontrastlanma',
+    fIrregular: 'düzensiz kontur',
+    fHetero: 'heterojen yapı',
+    fFat: 'yağ içeriği (T1↑ FS↓)',
+    fEndo: 'T2 shading + T1↑ (endometrioma paterni)',
+    cystLabel: 'Kist',
+    massLabel: 'Kitle',
+    ddxNames: {
+      "Basit over kisti": "Basit over kisti",
+      "Hemorajik kist": "Hemorajik kist",
+      "Endometrioma": "Endometrioma",
+      "Mature kistik teratom (Dermoid)": "Mature kistik teratom (Dermoid)",
+      "Seröz kistadenom": "Seröz kistadenom",
+      "Müsinöz kistadenom": "Müsinöz kistadenom",
+      "Seröz borderline tümör": "Seröz borderline tümör",
+      "Müsinöz borderline tümör": "Müsinöz borderline tümör",
+      "Seröz kistadenokarsinom": "Seröz kistadenokarsinom",
+      "Müsinöz karsinom": "Müsinöz karsinom",
+      "Fibroma / Thecoma": "Fibroma / Thecoma",
+      "Brenner tümörü": "Brenner tümörü",
+      "Granüloza hücreli tümör": "Granüloza hücreli tümör",
+      "Over metastazı (Krukenberg)": "Over metastazı (Krukenberg)",
+      "Tubo-ovaryan apse": "Tubo-ovaryan apse",
+      "Over torsiyonu": "Over torsiyonu",
+    },
+    quickRules: [
+      {cond:"T1 yüksek + fat suppression'da sinyal kaybı", diag:"Teratom (Dermoid)"},
+      {cond:"T1 yüksek + T2 shading", diag:"Endometrioma"},
+      {cond:"T1 yüksek + septa yok", diag:"Hemorajik kist"},
+      {cond:"Güçlü difüzyon kısıtlaması + solid komponent", diag:"Over kanseri"},
+      {cond:"Güçlü difüzyon kısıtlaması + bilateral solid", diag:"Krukenberg metastazı"},
+      {cond:"Difüzyon kısıtlaması + pürülan içerik", diag:"Tubo-ovaryan apse"},
+      {cond:"CE: İnce duvar kontrastlanması", diag:"Basit kist"},
+      {cond:"CE: Septal kontrastlanma", diag:"Kistadenom"},
+      {cond:"CE: Papiller kontrastlanma", diag:"Borderline / Malign"},
+      {cond:"CE: Rim kontrastlanma", diag:"Apse"},
+    ],
+  },
+  en: {
+    title: 'Ovarian MRI Decision Support System',
+    sub: 'Cystic & Solid Lesion Evaluation — v2.0',
+    back: '← Back',
+    next: 'Next →',
+    continue: 'Continue →',
+    generateReport: 'Generate Report ✓',
+    finishCyst: 'Finish Cyst ✓',
+    finishMass: 'Finish Mass ✓',
+    print: '🖨️ Print PDF',
+    copyHtml: '📋 Copy HTML',
+    edit: '← Edit',
+    reset: '🔄 Reset',
+    copyAlert: 'Report HTML copied to clipboard!',
+    resetConfirm: 'Are you sure you want to reset all data?',
+    reportTitle: '📋 Ovarian MRI Evaluation Report',
+    date: 'Date',
+    param: 'Parameter',
+    value: 'Value',
+    status: 'Status',
+    size: 'Size',
+    contour: 'Contour',
+    internal: 'Internal',
+    septa: 'Septation',
+    septaThick: 'Septation Thickness',
+    septaCount: 'Septation Count',
+    wallThick: 'Wall Thickness',
+    solidComp: 'Solid Component',
+    solidSize: 'Solid Size',
+    suspicion: 'Suspicion',
+    interpretation: '📊 INTERPRETATION',
+    diffDx: '🔍 Differential Diagnosis',
+    diagnosis: 'Diagnosis',
+    match: 'Match',
+    cysticLesions: 'Cystic Lesions',
+    solidMasses: 'Solid Masses',
+    noLesion: 'No lesion detected.',
+    addCyst: '+ Add Cyst',
+    addMass: '+ Add Mass',
+    ascites: 'Ascites',
+    peritoneal: 'Peritoneal Implants',
+    lap: 'Lymphadenopathy',
+    uterineInvasion: 'Uterine Invasion',
+    otherFindings: 'Other Findings',
+    otherFindingsPlaceholder: 'Free text...',
+    other: 'Other',
+    quickRulesTitle: '📌 Quick Diagnosis Rules Reference',
+    findingPattern: 'Finding Pattern',
+    possibleDx: 'Possible Diagnosis',
+    rightOvary: 'Right Ovary',
+    leftOvary: 'Left Ovary',
+    ovaryStatusTitle: (side) => `${side} — Status & Size`,
+    ovaryStatusDesc: 'Specify the general status and size of the ovary.',
+    ovaryStatusLabel: 'Status',
+    ovarySizePlaceholder: 'e.g.: 35x28x25',
+    cystLoopTitle: (side) => `${side} — Cysts`,
+    cystLoopDesc: 'Add cystic lesions on the ovary.',
+    massLoopTitle: (side) => `${side} — Masses (Tumor)`,
+    massLoopDesc: 'Add solid masses/tumors on the ovary.',
+    ekTitle: '📋 Additional Findings',
+    ekDesc: 'Specify accompanying additional findings on pelvic MRI.',
+    cystSizeTitle: (n) => `📏 Cyst #${n} — Size`,
+    cystContourTitle: (n) => `🔲 Cyst #${n} — Contour & Internal Structure`,
+    cystSeptaTitle: (n) => `🔀 Cyst #${n} — Septation`,
+    cystSignalTitle: (n) => `🔬 Cyst #${n} — Intracystic Signal`,
+    cystSignalDesc: 'Select signal characteristics of the cyst fluid.',
+    cystWallTitle: (n) => `🧱 Cyst #${n} — Wall Structure`,
+    cystSolidTitle: (n) => `⬛ Cyst #${n} — Solid Component`,
+    cystSolidDesc: 'Specify presence of solid component within the cyst.',
+    cystSolidDetailTitle: (n) => `⬛ Cyst #${n} — Solid Detail`,
+    massSizeTitle: (n) => `📏 Mass #${n} — Size & Morphology`,
+    massSignalTitle: (n) => `🔬 Mass #${n} — Signal Characteristics`,
+    massSignalTitle2: (n) => `🔬 Mass #${n} — Signal (continued)`,
+    spCystSignal: 'Intracystic Signal',
+    spWallSignal: 'Wall Signal',
+    spSolidSignal: 'Solid Signal',
+    spMassSignal: 'Mass Signal',
+    sizePlaceholder: 'e.g.: 45x38',
+    massPlaceholder: 'e.g.: 55x42',
+    wallPlaceholder: 'e.g.: 2',
+    septaPlaceholder: 'e.g.: 2',
+    septaCountPlaceholder: 'e.g.: 3',
+    solidSizePlaceholder: 'e.g.: 15x12',
+    internalLabel: 'Internal Appearance',
+    phaseTabs: ['Right Ovary','Right Cyst','Right Mass','Left Ovary','Left Cyst','Left Mass','Additional','Report'],
+    durumOptions: ['Normal','Atrophic','Not visualized','Lesion Present'],
+    kontOptions: ['Regular','Irregular','Lobulated'],
+    internalOptions: ['Homogeneous','Heterogeneous'],
+    septaOptions: ['Present','Absent'],
+    solidOptions: ['Absent','Present'],
+    varlıkOptions: ['Absent','Present'],
+    asitOptions: ['Absent','Minimal','Significant'],
+    sigHi: 'Hyperintense',
+    sigLo: 'Hypointense',
+    sigIz: 'Isointense',
+    dwiRes: 'Restricted',
+    dwiNoRes: 'Not restricted',
+    ceNone: 'Not seen',
+    ceWeak: 'Weak',
+    ceStrong: 'Strong',
+    sevHigh: (f) => `Highly suspicious findings: ${f}. Further evaluation for malignancy is recommended.`,
+    sevMid: (f) => `Moderately suspicious findings: ${f}. Follow-up or further workup should be considered.`,
+    sevLow: (f) => `Low suspicion findings: ${f}. Benign features predominate; routine follow-up may be sufficient.`,
+    sevNone: 'No significant suspicious finding. Lesion with benign characteristics.',
+    fSolid: 'solid component',
+    fThickSepta: 'thick septation (>3mm)',
+    fThinSepta: 'thin septation',
+    fThickWall: 'thick wall',
+    fSolidMass: 'solid mass',
+    fDwi: 'restricted diffusion',
+    fCe: 'strong enhancement',
+    fIrregular: 'irregular contour',
+    fHetero: 'heterogeneous texture',
+    fFat: 'fat content (T1↑ FS↓)',
+    fEndo: 'T2 shading + T1↑ (endometrioma pattern)',
+    cystLabel: 'Cyst',
+    massLabel: 'Mass',
+    ddxNames: {
+      "Basit over kisti": "Simple ovarian cyst",
+      "Hemorajik kist": "Hemorrhagic cyst",
+      "Endometrioma": "Endometrioma",
+      "Mature kistik teratom (Dermoid)": "Mature cystic teratoma (Dermoid)",
+      "Seröz kistadenom": "Serous cystadenoma",
+      "Müsinöz kistadenom": "Mucinous cystadenoma",
+      "Seröz borderline tümör": "Serous borderline tumor",
+      "Müsinöz borderline tümör": "Mucinous borderline tumor",
+      "Seröz kistadenokarsinom": "Serous cystadenocarcinoma",
+      "Müsinöz karsinom": "Mucinous carcinoma",
+      "Fibroma / Thecoma": "Fibroma / Thecoma",
+      "Brenner tümörü": "Brenner tumor",
+      "Granüloza hücreli tümör": "Granulosa cell tumor",
+      "Over metastazı (Krukenberg)": "Ovarian metastasis (Krukenberg)",
+      "Tubo-ovaryan apse": "Tubo-ovarian abscess",
+      "Over torsiyonu": "Ovarian torsion",
+    },
+    quickRules: [
+      {cond:"T1 high + signal loss on fat suppression", diag:"Teratoma (Dermoid)"},
+      {cond:"T1 high + T2 shading", diag:"Endometrioma"},
+      {cond:"T1 high + no septation", diag:"Hemorrhagic cyst"},
+      {cond:"Strong restricted diffusion + solid component", diag:"Ovarian cancer"},
+      {cond:"Strong restricted diffusion + bilateral solid", diag:"Krukenberg metastasis"},
+      {cond:"Restricted diffusion + purulent content", diag:"Tubo-ovarian abscess"},
+      {cond:"CE: Thin wall enhancement", diag:"Simple cyst"},
+      {cond:"CE: Septal enhancement", diag:"Cystadenoma"},
+      {cond:"CE: Papillary enhancement", diag:"Borderline / Malignant"},
+      {cond:"CE: Rim enhancement", diag:"Abscess"},
+    ],
+  },
+})[RV_LOCALE];
+
 /* ══════════════ DIFFERENTIAL DIAGNOSIS TABLE (from ODT) ══════════════ */
+/* NOTE: scoring fields (t1, t2, dwi, artCe, venCe, kontur, internal, tip, septaTip)
+   MUST stay in Turkish — scoreLesion() uses .includes() on these values. */
 const DDX = [
   {id:0,name:"Basit over kisti",t1:"Düşük",t2:"Yüksek",dwi:"Yok",adc:"Yüksek",artCe:"Kontrastlanmaz",venCe:"Kontrastlanmaz",solid:false,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
   {id:1,name:"Hemorajik kist",t1:"Yüksek",t2:"Değişken/T2 shading",dwi:"Yok",adc:"Yüksek",artCe:"Kontrastlanmaz",venCe:"Kontrastlanmaz",solid:false,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
@@ -148,19 +451,6 @@ const DDX = [
   {id:15,name:"Over torsiyonu",t1:"Hafif yüksek",t2:"Yüksek (ödem)",dwi:"Restriksiyon olabilir",adc:"Düşük",artCe:"Azalmış",venCe:"Azalmış",solid:false,septa:false,septaTip:"yok",kontur:"Düzensiz",internal:"Heterojen",tip:"kist"},
 ];
 
-const QUICK_RULES=[
-  {cond:"T1 yüksek + fat suppression'da sinyal kaybı",diag:"Teratom (Dermoid)"},
-  {cond:"T1 yüksek + T2 shading",diag:"Endometrioma"},
-  {cond:"T1 yüksek + septa yok",diag:"Hemorajik kist"},
-  {cond:"Güçlü difüzyon kısıtlaması + solid komponent",diag:"Over kanseri"},
-  {cond:"Güçlü difüzyon kısıtlaması + bilateral solid",diag:"Krukenberg metastazı"},
-  {cond:"Difüzyon kısıtlaması + pürülan içerik",diag:"Tubo-ovaryan apse"},
-  {cond:"CE: İnce duvar kontrastlanması",diag:"Basit kist"},
-  {cond:"CE: Septal kontrastlanma",diag:"Kistadenom"},
-  {cond:"CE: Papiller kontrastlanma",diag:"Borderline / Malign"},
-  {cond:"CE: Rim kontrastlanma",diag:"Apse"},
-];
-
 /* ══════════════ HELPERS ══════════════ */
 const emptySignal=()=>({t1a:'',t2a:'',t1afs:'',t2afs:'',dwi:'',ce:''});
 const emptyCyst=()=>({boyut:'',kontur:'',internal:'',septa:'',septaK:'',septaS:'',signal:emptySignal(),duvarK:'',duvarSignal:emptySignal(),solidKomp:'',solidBoyut:'',solidSignal:emptySignal()});
@@ -169,13 +459,15 @@ const emptyOvary=()=>({durum:'',boyut:'',kistDurum:'',cysts:[],cIdx:-1,cStep:0,k
 
 /* ══════════════ SIGNAL PANEL ══════════════ */
 function SP({title,icon,data,onChange}){
+  /* State values (t1a, t2a, etc.) stay as Turkish strings for scoring;
+     display labels are localised via T */
   const rows=[
-    {k:'t1a',l:'T1A',o:['Hiperintens','Hipointens','İzointens']},
-    {k:'t2a',l:'T2A',o:['Hiperintens','Hipointens','İzointens']},
-    {k:'t1afs',l:'T1A FS',o:['Hiperintens','Hipointens','İzointens']},
-    {k:'t2afs',l:'T2A FS',o:['Hiperintens','Hipointens','İzointens']},
-    {k:'dwi',l:'DWI',o:['Kısıtlıyor','Kısıtlamıyor']},
-    {k:'ce',l:'CE',o:['İzlenmiyor','Zayıf','Güçlü']},
+    {k:'t1a',l:'T1A',o:['Hiperintens','Hipointens','İzointens'],d:[T.sigHi,T.sigLo,T.sigIz]},
+    {k:'t2a',l:'T2A',o:['Hiperintens','Hipointens','İzointens'],d:[T.sigHi,T.sigLo,T.sigIz]},
+    {k:'t1afs',l:'T1A FS',o:['Hiperintens','Hipointens','İzointens'],d:[T.sigHi,T.sigLo,T.sigIz]},
+    {k:'t2afs',l:'T2A FS',o:['Hiperintens','Hipointens','İzointens'],d:[T.sigHi,T.sigLo,T.sigIz]},
+    {k:'dwi',l:'DWI',o:['Kısıtlıyor','Kısıtlamıyor'],d:[T.dwiRes,T.dwiNoRes]},
+    {k:'ce',l:'CE',o:['İzlenmiyor','Zayıf','Güçlü'],d:[T.ceNone,T.ceWeak,T.ceStrong]},
   ];
   return(
     <div className="sp">
@@ -184,7 +476,7 @@ function SP({title,icon,data,onChange}){
         <div className="sr" key={r.k}>
           <span className="sl">{r.l}</span>
           <div className="so">
-            {r.o.map(v=><button key={v} className={`sb ${data[r.k]===v?'on':''}`} onClick={()=>onChange({...data,[r.k]:v})}>{v}</button>)}
+            {r.o.map((v,vi)=><button key={v} className={`sb ${data[r.k]===v?'on':''}`} onClick={()=>onChange({...data,[r.k]:v})}>{r.d[vi]}</button>)}
           </div>
         </div>
       ))}
@@ -193,6 +485,7 @@ function SP({title,icon,data,onChange}){
 }
 
 /* ══════════════ SCORING ENGINE ══════════════ */
+/* All comparisons rely on Turkish state values — do not translate */
 function scoreLesion(lesion,type){
   // type: 'kist' or 'kitle'
   const sig = lesion.signal || {};
@@ -293,30 +586,30 @@ function genYorum(lesion,type){
   let sev=0,f=[];
   const sig=lesion.signal||{};
   if(type==='kist'){
-    if(lesion.solidKomp==='Var'){sev+=30;f.push('solid komponent');}
+    if(lesion.solidKomp==='Var'){sev+=30;f.push(T.fSolid);}
     if(lesion.septa==='Var'){
       const k=parseFloat(lesion.septaK)||0;
-      if(k>3){sev+=15;f.push('kalın septa (>3mm)');}else{sev+=5;f.push('ince septa');}
+      if(k>3){sev+=15;f.push(T.fThickSepta);}else{sev+=5;f.push(T.fThinSepta);}
     }
-    if(lesion.duvarK){const dk=parseFloat(lesion.duvarK)||0;if(dk>3){sev+=10;f.push('kalın duvar');}}
+    if(lesion.duvarK){const dk=parseFloat(lesion.duvarK)||0;if(dk>3){sev+=10;f.push(T.fThickWall);}}
   }
-  if(type==='kitle'){sev+=20;f.push('solid kitle');}
-  if(sig.dwi==='Kısıtlıyor'){sev+=25;f.push('difüzyon kısıtlaması');}
-  if(sig.ce==='Güçlü'){sev+=20;f.push('güçlü kontrastlanma');}
-  if(lesion.kontur==='Düzensiz'){sev+=15;f.push('düzensiz kontur');}
-  if(lesion.internal==='Heterojen'){sev+=10;f.push('heterojen yapı');}
+  if(type==='kitle'){sev+=20;f.push(T.fSolidMass);}
+  if(sig.dwi==='Kısıtlıyor'){sev+=25;f.push(T.fDwi);}
+  if(sig.ce==='Güçlü'){sev+=20;f.push(T.fCe);}
+  if(lesion.kontur==='Düzensiz'){sev+=15;f.push(T.fIrregular);}
+  if(lesion.internal==='Heterojen'){sev+=10;f.push(T.fHetero);}
   // Dermoid check
-  if(sig.t1a==='Hiperintens'&&sig.t1afs==='Hipointens'){f.push('yağ içeriği (T1↑ FS↓)');sev=Math.max(sev-15,5);}
+  if(sig.t1a==='Hiperintens'&&sig.t1afs==='Hipointens'){f.push(T.fFat);sev=Math.max(sev-15,5);}
   // Endometrioma check
-  if(sig.t1a==='Hiperintens'&&sig.t2a==='Hipointens'&&sig.t1afs==='Hiperintens'){f.push('T2 shading + T1↑ (endometrioma paterni)');sev=Math.max(sev-10,10);}
+  if(sig.t1a==='Hiperintens'&&sig.t2a==='Hipointens'&&sig.t1afs==='Hiperintens'){f.push(T.fEndo);sev=Math.max(sev-10,10);}
 
   sev=Math.min(sev,100);
   let color=sev>=60?'var(--rd)':sev>=30?'var(--am)':'var(--gn)';
   let text='';
-  if(sev>=60) text=`Yüksek şüpheli bulgular mevcut: ${f.join(', ')}. Malignite açısından ileri değerlendirme önerilir.`;
-  else if(sev>=30) text=`Orta düzeyde şüpheli bulgular: ${f.join(', ')}. Takip veya ileri tetkik değerlendirilmelidir.`;
-  else if(f.length) text=`Düşük şüpheli bulgular: ${f.join(', ')}. Benign özellikler ön planda olup rutin takip yeterli olabilir.`;
-  else text='Belirgin şüpheli bulgu saptanmadı. Benign özellikte lezyon.';
+  if(sev>=60) text=T.sevHigh(f.join(', '));
+  else if(sev>=30) text=T.sevMid(f.join(', '));
+  else if(f.length) text=T.sevLow(f.join(', '));
+  else text=T.sevNone;
   return {text,sev,color};
 }
 
@@ -330,7 +623,7 @@ function App(){
   const [ek,setEk]=useState({asit:'',peritoneal:'',lap:'',utInvazyon:'',diger:''});
   const rRef=useRef(null);
 
-  const pLabels=['Sağ Over','Sağ Kist','Sağ Kitle','Sol Over','Sol Kist','Sol Kitle','Ek Bulgular','Rapor'];
+  const pLabels=T.phaseTabs;
   const progress=Math.round((phase/7)*100);
 
   /* ─ phase navigation ─ */
@@ -362,7 +655,7 @@ function App(){
   /* ─ generic updaters ─ */
   const ov=phase<3?sag:sol;
   const setOv=phase<3?setSag:setSol;
-  const ovL=phase<3?'Sağ Over':'Sol Over';
+  const ovL=phase<3?T.rightOvary:T.leftOvary;
 
   /* ─ CYST LOOP ─ */
   const addCyst=()=>{const c=[...ov.cysts,emptyCyst()];setOv({...ov,cysts:c,cIdx:c.length-1,cStep:0});};
@@ -407,25 +700,26 @@ function App(){
   /* ── Phase 0/3: Over Durumu + Boyut ── */
   const renderOverDurum=()=>(
     <div className="cd" key={`ov-${phase}`}>
-      <div className="cd-t">{phase<3?'➡️':'⬅️'} {ovL} — Durum & Boyut</div>
-      <div className="cd-d">Overin genel durumunu ve boyutunu belirtiniz.</div>
+      <div className="cd-t">{phase<3?'➡️':'⬅️'} {T.ovaryStatusTitle(ovL)}</div>
+      <div className="cd-d">{T.ovaryStatusDesc}</div>
       <div className="ig">
-        <label>Durum</label>
+        <label>{T.ovaryStatusLabel}</label>
         <div className="og c4">
-          {['Normal','Atrofik','İzlenmedi','Lezyon Var'].map(o=>(
-            <div key={o} className={`oi ${ov.durum===o?'sel':''}`} onClick={()=>setOv({...ov,durum:o})}><div className="rd"/>{o}</div>
+          {/* State values stay TR; display labels localised */}
+          {['Normal','Atrofik','İzlenmedi','Lezyon Var'].map((o,oi)=>(
+            <div key={o} className={`oi ${ov.durum===o?'sel':''}`} onClick={()=>setOv({...ov,durum:o})}><div className="rd"/>{T.durumOptions[oi]}</div>
           ))}
         </div>
       </div>
       {(ov.durum==='Normal'||ov.durum==='Lezyon Var')&&(
         <div className="ig">
-          <label>Boyut (mm)</label>
-          <input className="ifl" placeholder="ör: 35x28x25" value={ov.boyut} onChange={e=>setOv({...ov,boyut:e.target.value})}/>
+          <label>{T.size} (mm)</label>
+          <input className="ifl" placeholder={T.ovarySizePlaceholder} value={ov.boyut} onChange={e=>setOv({...ov,boyut:e.target.value})}/>
         </div>
       )}
       <div className="br">
-        {phase>0&&<button className="bt bt2" onClick={prevPhase}>← Geri</button>}
-        <button className="bt bt1" onClick={nextPhase} disabled={!ov.durum}>İleri →</button>
+        {phase>0&&<button className="bt bt2" onClick={prevPhase}>{T.back}</button>}
+        <button className="bt bt1" onClick={nextPhase} disabled={!ov.durum}>{T.next}</button>
       </div>
     </div>
   );
@@ -435,11 +729,11 @@ function App(){
     if(ov.cIdx===-1){
       return(
         <div className="cd" key={`cl-${phase}`}>
-          <div className="cd-t">🫧 {ovL} — Kistler</div>
-          <div className="cd-d">Over üzerindeki kistik lezyonları ekleyiniz.</div>
+          <div className="cd-t">🫧 {T.cystLoopTitle(ovL)}</div>
+          <div className="cd-d">{T.cystLoopDesc}</div>
           {ov.cysts.map((c,i)=>(
             <div className="li" key={i}>
-              <div className="li-i">Kist #{i+1}<span>{c.boyut?`${c.boyut}mm`:''} {c.kontur} {c.solidKomp?`S:${c.solidKomp}`:''}</span></div>
+              <div className="li-i">{T.cystLabel} #{i+1}<span>{c.boyut?`${c.boyut}mm`:''} {c.kontur} {c.solidKomp?`S:${c.solidKomp}`:''}</span></div>
               <div className="li-a">
                 <button className="lib" onClick={()=>editCyst(i)}>✏️</button>
                 <button className="lib del" onClick={()=>delCyst(i)}>🗑️</button>
@@ -447,9 +741,9 @@ function App(){
             </div>
           ))}
           <div className="br">
-            <button className="bt bt2" onClick={prevPhase}>← Geri</button>
-            <button className="bt bt1 bts" onClick={addCyst}>+ Kist Ekle</button>
-            <button className="bt bt3" onClick={nextPhase}>Devam →</button>
+            <button className="bt bt2" onClick={prevPhase}>{T.back}</button>
+            <button className="bt bt1 bts" onClick={addCyst}>{T.addCyst}</button>
+            <button className="bt bt3" onClick={nextPhase}>{T.continue}</button>
           </div>
         </div>
       );
@@ -458,56 +752,56 @@ function App(){
     const inner=()=>{
       switch(cs){
         case 0:return(<>
-          <div className="cd-t">📏 Kist #{ov.cIdx+1} — Boyut</div>
-          <div className="ig"><label>Boyut (mm)</label>
-            <input className="ifl" placeholder="ör: 45x38" value={cy.boyut} onChange={e=>updCyst('boyut',e.target.value)}/></div>
+          <div className="cd-t">{T.cystSizeTitle(ov.cIdx+1)}</div>
+          <div className="ig"><label>{T.size} (mm)</label>
+            <input className="ifl" placeholder={T.sizePlaceholder} value={cy.boyut} onChange={e=>updCyst('boyut',e.target.value)}/></div>
         </>);
         case 1:return(<>
-          <div className="cd-t">🔲 Kist #{ov.cIdx+1} — Kontur & İç Yapı</div>
-          <div className="ig"><label>Kontur</label>
-            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map(o=>(
-              <div key={o} className={`oi ${cy.kontur===o?'sel':''}`} onClick={()=>updCyst('kontur',o)}><div className="rd"/>{o}</div>
+          <div className="cd-t">{T.cystContourTitle(ov.cIdx+1)}</div>
+          <div className="ig"><label>{T.contour}</label>
+            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map((o,oi)=>(
+              <div key={o} className={`oi ${cy.kontur===o?'sel':''}`} onClick={()=>updCyst('kontur',o)}><div className="rd"/>{T.kontOptions[oi]}</div>
             ))}</div></div>
-          <div className="ig"><label>İnternal Görünüm</label>
-            <div className="og c2">{['Homojen','Heterojen'].map(o=>(
-              <div key={o} className={`oi ${cy.internal===o?'sel':''}`} onClick={()=>updCyst('internal',o)}><div className="rd"/>{o}</div>
+          <div className="ig"><label>{T.internalLabel}</label>
+            <div className="og c2">{['Homojen','Heterojen'].map((o,oi)=>(
+              <div key={o} className={`oi ${cy.internal===o?'sel':''}`} onClick={()=>updCyst('internal',o)}><div className="rd"/>{T.internalOptions[oi]}</div>
             ))}</div></div>
         </>);
         case 2:return(<>
-          <div className="cd-t">🔀 Kist #{ov.cIdx+1} — Septa</div>
-          <div className="og c2">{['Var','Yok'].map(o=>(
-            <div key={o} className={`oi ${cy.septa===o?'sel':''}`} onClick={()=>updCyst('septa',o)}><div className="rd"/>{o}</div>
+          <div className="cd-t">{T.cystSeptaTitle(ov.cIdx+1)}</div>
+          <div className="og c2">{['Var','Yok'].map((o,oi)=>(
+            <div key={o} className={`oi ${cy.septa===o?'sel':''}`} onClick={()=>updCyst('septa',o)}><div className="rd"/>{T.septaOptions[oi]}</div>
           ))}</div>
           {cy.septa==='Var'&&(<div style={{marginTop:14}}>
-            <div className="ig"><label>Septa Kalınlığı (mm)</label>
-              <input className="ifl" placeholder="ör: 2" value={cy.septaK} onChange={e=>updCyst('septaK',e.target.value)}/></div>
-            <div className="ig"><label>Septa Sayısı</label>
-              <input className="ifl" placeholder="ör: 3" value={cy.septaS} onChange={e=>updCyst('septaS',e.target.value)}/></div>
+            <div className="ig"><label>{T.septaThick} (mm)</label>
+              <input className="ifl" placeholder={T.septaPlaceholder} value={cy.septaK} onChange={e=>updCyst('septaK',e.target.value)}/></div>
+            <div className="ig"><label>{T.septaCount}</label>
+              <input className="ifl" placeholder={T.septaCountPlaceholder} value={cy.septaS} onChange={e=>updCyst('septaS',e.target.value)}/></div>
           </div>)}
         </>);
         case 3:return(<>
-          <div className="cd-t">🔬 Kist #{ov.cIdx+1} — Kist İçi Sinyal</div>
-          <div className="cd-d">Kist iç sıvısının sinyal karakteristiklerini seçiniz.</div>
-          <SP title="Kist İçi Sinyal" icon="💧" data={cy.signal} onChange={v=>updCyst('signal',v)}/>
+          <div className="cd-t">{T.cystSignalTitle(ov.cIdx+1)}</div>
+          <div className="cd-d">{T.cystSignalDesc}</div>
+          <SP title={T.spCystSignal} icon="💧" data={cy.signal} onChange={v=>updCyst('signal',v)}/>
         </>);
         case 4:return(<>
-          <div className="cd-t">🧱 Kist #{ov.cIdx+1} — Duvar Yapısı</div>
-          <div className="ig"><label>Duvar Kalınlığı (mm)</label>
-            <input className="ifl" placeholder="ör: 2" value={cy.duvarK} onChange={e=>updCyst('duvarK',e.target.value)}/></div>
-          <SP title="Duvar Sinyal" icon="🧱" data={cy.duvarSignal} onChange={v=>updCyst('duvarSignal',v)}/>
+          <div className="cd-t">{T.cystWallTitle(ov.cIdx+1)}</div>
+          <div className="ig"><label>{T.wallThick} (mm)</label>
+            <input className="ifl" placeholder={T.wallPlaceholder} value={cy.duvarK} onChange={e=>updCyst('duvarK',e.target.value)}/></div>
+          <SP title={T.spWallSignal} icon="🧱" data={cy.duvarSignal} onChange={v=>updCyst('duvarSignal',v)}/>
         </>);
         case 5:return(<>
-          <div className="cd-t">⬛ Kist #{ov.cIdx+1} — Solid Komponent</div>
-          <div className="cd-d">Kist içinde solid komponent varlığını belirtiniz.</div>
-          <div className="og c2">{['Yok','Var'].map(o=>(
-            <div key={o} className={`oi ${cy.solidKomp===o?'sel':''}`} onClick={()=>updCyst('solidKomp',o)}><div className="rd"/>{o}</div>
+          <div className="cd-t">{T.cystSolidTitle(ov.cIdx+1)}</div>
+          <div className="cd-d">{T.cystSolidDesc}</div>
+          <div className="og c2">{['Yok','Var'].map((o,oi)=>(
+            <div key={o} className={`oi ${cy.solidKomp===o?'sel':''}`} onClick={()=>updCyst('solidKomp',o)}><div className="rd"/>{T.solidOptions[oi]}</div>
           ))}</div>
         </>);
         case 6:return(<>
-          <div className="cd-t">⬛ Kist #{ov.cIdx+1} — Solid Detay</div>
-          <div className="ig"><label>Solid Komponent Boyutu (mm)</label>
-            <input className="ifl" placeholder="ör: 15x12" value={cy.solidBoyut} onChange={e=>updCyst('solidBoyut',e.target.value)}/></div>
-          <SP title="Solid Sinyal" icon="⬛" data={cy.solidSignal} onChange={v=>updCyst('solidSignal',v)}/>
+          <div className="cd-t">{T.cystSolidDetailTitle(ov.cIdx+1)}</div>
+          <div className="ig"><label>{T.solidComp} (mm)</label>
+            <input className="ifl" placeholder={T.solidSizePlaceholder} value={cy.solidBoyut} onChange={e=>updCyst('solidBoyut',e.target.value)}/></div>
+          <SP title={T.spSolidSignal} icon="⬛" data={cy.solidSignal} onChange={v=>updCyst('solidSignal',v)}/>
         </>);
         default:return null;
       }
@@ -516,9 +810,9 @@ function App(){
       <div className="cd" key={`ce-${phase}-${ov.cIdx}-${cs}`}>
         {inner()}
         <div className="br">
-          <button className="bt bt2" onClick={cPrev}>← Geri</button>
+          <button className="bt bt2" onClick={cPrev}>{T.back}</button>
           <button className="bt bt1" onClick={cNext}>
-            {(cs===5&&cy.solidKomp==='Yok')||cs===6?'Kisti Tamamla ✓':'İleri →'}
+            {(cs===5&&cy.solidKomp==='Yok')||cs===6?T.finishCyst:T.next}
           </button>
         </div>
       </div>
@@ -530,11 +824,11 @@ function App(){
     if(ov.mIdx===-1){
       return(
         <div className="cd" key={`ml-${phase}`}>
-          <div className="cd-t">🔴 {ovL} — Kitleler (Tümör)</div>
-          <div className="cd-d">Over üzerindeki solid kitleleri/tümörleri ekleyiniz.</div>
+          <div className="cd-t">🔴 {T.massLoopTitle(ovL)}</div>
+          <div className="cd-d">{T.massLoopDesc}</div>
           {ov.masses.map((m,i)=>(
             <div className="li" key={i}>
-              <div className="li-i">Kitle #{i+1}<span>{m.boyut?`${m.boyut}mm`:''} {m.kontur} {m.internal}</span></div>
+              <div className="li-i">{T.massLabel} #{i+1}<span>{m.boyut?`${m.boyut}mm`:''} {m.kontur} {m.internal}</span></div>
               <div className="li-a">
                 <button className="lib" onClick={()=>editMass(i)}>✏️</button>
                 <button className="lib del" onClick={()=>delMass(i)}>🗑️</button>
@@ -542,9 +836,9 @@ function App(){
             </div>
           ))}
           <div className="br">
-            <button className="bt bt2" onClick={prevPhase}>← Geri</button>
-            <button className="bt bt1 bts" onClick={addMass}>+ Kitle Ekle</button>
-            <button className="bt bt3" onClick={nextPhase}>Devam →</button>
+            <button className="bt bt2" onClick={prevPhase}>{T.back}</button>
+            <button className="bt bt1 bts" onClick={addMass}>{T.addMass}</button>
+            <button className="bt bt3" onClick={nextPhase}>{T.continue}</button>
           </div>
         </div>
       );
@@ -553,25 +847,25 @@ function App(){
     const inner=()=>{
       switch(st){
         case 0:return(<>
-          <div className="cd-t">📏 Kitle #{ov.mIdx+1} — Boyut & Morfoloji</div>
-          <div className="ig"><label>Boyut (mm)</label>
-            <input className="ifl" placeholder="ör: 55x42" value={ms.boyut} onChange={e=>updMass('boyut',e.target.value)}/></div>
-          <div className="ig"><label>Kontur</label>
-            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map(o=>(
-              <div key={o} className={`oi ${ms.kontur===o?'sel':''}`} onClick={()=>updMass('kontur',o)}><div className="rd"/>{o}</div>
+          <div className="cd-t">{T.massSizeTitle(ov.mIdx+1)}</div>
+          <div className="ig"><label>{T.size} (mm)</label>
+            <input className="ifl" placeholder={T.massPlaceholder} value={ms.boyut} onChange={e=>updMass('boyut',e.target.value)}/></div>
+          <div className="ig"><label>{T.contour}</label>
+            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map((o,oi)=>(
+              <div key={o} className={`oi ${ms.kontur===o?'sel':''}`} onClick={()=>updMass('kontur',o)}><div className="rd"/>{T.kontOptions[oi]}</div>
             ))}</div></div>
-          <div className="ig"><label>İnternal Görünüm</label>
-            <div className="og c2">{['Homojen','Heterojen'].map(o=>(
-              <div key={o} className={`oi ${ms.internal===o?'sel':''}`} onClick={()=>updMass('internal',o)}><div className="rd"/>{o}</div>
+          <div className="ig"><label>{T.internalLabel}</label>
+            <div className="og c2">{['Homojen','Heterojen'].map((o,oi)=>(
+              <div key={o} className={`oi ${ms.internal===o?'sel':''}`} onClick={()=>updMass('internal',o)}><div className="rd"/>{T.internalOptions[oi]}</div>
             ))}</div></div>
         </>);
         case 1:return(<>
-          <div className="cd-t">🔬 Kitle #{ov.mIdx+1} — Sinyal Karakteristikleri</div>
-          <SP title="Kitle Sinyali" icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
+          <div className="cd-t">{T.massSignalTitle(ov.mIdx+1)}</div>
+          <SP title={T.spMassSignal} icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
         </>);
         case 2:return(<>
-          <div className="cd-t">🔬 Kitle #{ov.mIdx+1} — Sinyal (devam)</div>
-          <SP title="Kitle Sinyali" icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
+          <div className="cd-t">{T.massSignalTitle2(ov.mIdx+1)}</div>
+          <SP title={T.spMassSignal} icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
         </>);
         default:return null;
       }
@@ -580,9 +874,9 @@ function App(){
       <div className="cd" key={`me-${phase}-${ov.mIdx}-${st}`}>
         {inner()}
         <div className="br">
-          <button className="bt bt2" onClick={mPrev}>← Geri</button>
+          <button className="bt bt2" onClick={mPrev}>{T.back}</button>
           <button className="bt bt1" onClick={mNext}>
-            {st>=1?'Kitleyi Tamamla ✓':'İleri →'}
+            {st>=1?T.finishMass:T.next}
           </button>
         </div>
       </div>
@@ -592,29 +886,29 @@ function App(){
   /* ── Phase 6: Ek Bulgular ── */
   const renderEk=()=>(
     <div className="cd" key="ek">
-      <div className="cd-t">📋 Ek Bulgular</div>
-      <div className="cd-d">Pelvik MRG'de eşlik eden ek bulguları belirtiniz.</div>
-      <div className="ig"><label>Asit</label>
-        <div className="og c3">{['Yok','Az Miktarda','Belirgin'].map(o=>(
-          <div key={o} className={`oi ${ek.asit===o?'sel':''}`} onClick={()=>setEk({...ek,asit:o})}><div className="rd"/>{o}</div>
+      <div className="cd-t">{T.ekTitle}</div>
+      <div className="cd-d">{T.ekDesc}</div>
+      <div className="ig"><label>{T.ascites}</label>
+        <div className="og c3">{['Yok','Az Miktarda','Belirgin'].map((o,oi)=>(
+          <div key={o} className={`oi ${ek.asit===o?'sel':''}`} onClick={()=>setEk({...ek,asit:o})}><div className="rd"/>{T.asitOptions[oi]}</div>
         ))}</div></div>
-      <div className="ig"><label>Peritoneal İmplant</label>
-        <div className="og c2">{['Yok','Var'].map(o=>(
-          <div key={o} className={`oi ${ek.peritoneal===o?'sel':''}`} onClick={()=>setEk({...ek,peritoneal:o})}><div className="rd"/>{o}</div>
+      <div className="ig"><label>{T.peritoneal}</label>
+        <div className="og c2">{['Yok','Var'].map((o,oi)=>(
+          <div key={o} className={`oi ${ek.peritoneal===o?'sel':''}`} onClick={()=>setEk({...ek,peritoneal:o})}><div className="rd"/>{T.varlıkOptions[oi]}</div>
         ))}</div></div>
-      <div className="ig"><label>Lenfadenopati</label>
-        <div className="og c2">{['Yok','Var'].map(o=>(
-          <div key={o} className={`oi ${ek.lap===o?'sel':''}`} onClick={()=>setEk({...ek,lap:o})}><div className="rd"/>{o}</div>
+      <div className="ig"><label>{T.lap}</label>
+        <div className="og c2">{['Yok','Var'].map((o,oi)=>(
+          <div key={o} className={`oi ${ek.lap===o?'sel':''}`} onClick={()=>setEk({...ek,lap:o})}><div className="rd"/>{T.varlıkOptions[oi]}</div>
         ))}</div></div>
-      <div className="ig"><label>Uterus İnvazyonu</label>
-        <div className="og c2">{['Yok','Var'].map(o=>(
-          <div key={o} className={`oi ${ek.utInvazyon===o?'sel':''}`} onClick={()=>setEk({...ek,utInvazyon:o})}><div className="rd"/>{o}</div>
+      <div className="ig"><label>{T.uterineInvasion}</label>
+        <div className="og c2">{['Yok','Var'].map((o,oi)=>(
+          <div key={o} className={`oi ${ek.utInvazyon===o?'sel':''}`} onClick={()=>setEk({...ek,utInvazyon:o})}><div className="rd"/>{T.varlıkOptions[oi]}</div>
         ))}</div></div>
-      <div className="ig"><label>Diğer Bulgular</label>
-        <input className="ifl" placeholder="Serbest metin..." value={ek.diger} onChange={e=>setEk({...ek,diger:e.target.value})}/></div>
+      <div className="ig"><label>{T.otherFindings}</label>
+        <input className="ifl" placeholder={T.otherFindingsPlaceholder} value={ek.diger} onChange={e=>setEk({...ek,diger:e.target.value})}/></div>
       <div className="br">
-        <button className="bt bt2" onClick={prevPhase}>← Geri</button>
-        <button className="bt bt3" onClick={nextPhase}>Rapor Oluştur ✓</button>
+        <button className="bt bt2" onClick={prevPhase}>{T.back}</button>
+        <button className="bt bt3" onClick={nextPhase}>{T.generateReport}</button>
       </div>
     </div>
   );
@@ -644,29 +938,29 @@ function App(){
       <div key={`${type}-${idx}`} style={{marginTop:14,borderTop:'1px solid var(--bd)',paddingTop:14}}>
         <h3 style={{fontSize:'.88rem'}}>{type==='kist'?'🫧':'🔴'} {label} #{idx+1}</h3>
         <table className="rt">
-          <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+          <thead><tr><th>{T.param}</th><th>{T.value}</th></tr></thead>
           <tbody>
-            {lesion.boyut&&<tr><td className="l">Boyut</td><td className="v">{lesion.boyut} mm</td></tr>}
-            {lesion.kontur&&<tr><td className="l">Kontur</td><td className="v">{lesion.kontur}</td></tr>}
-            {lesion.internal&&<tr><td className="l">İnternal</td><td className="v">{lesion.internal}</td></tr>}
-            {type==='kist'&&<tr><td className="l">Septa</td><td className="v">{lesion.septa||'-'}</td></tr>}
-            {type==='kist'&&lesion.septa==='Var'&&lesion.septaK&&<tr><td className="l">Septa Kalınlığı</td><td className="v">{lesion.septaK} mm</td></tr>}
-            {type==='kist'&&lesion.septa==='Var'&&lesion.septaS&&<tr><td className="l">Septa Sayısı</td><td className="v">{lesion.septaS}</td></tr>}
-            {type==='kist'&&lesion.duvarK&&<tr><td className="l">Duvar Kalınlığı</td><td className="v">{lesion.duvarK} mm</td></tr>}
-            {type==='kist'&&<tr><td className="l">Solid Komponent</td><td className="v">{lesion.solidKomp||'-'}</td></tr>}
-            {type==='kist'&&lesion.solidKomp==='Var'&&lesion.solidBoyut&&<tr><td className="l">Solid Boyut</td><td className="v">{lesion.solidBoyut} mm</td></tr>}
+            {lesion.boyut&&<tr><td className="l">{T.size}</td><td className="v">{lesion.boyut} mm</td></tr>}
+            {lesion.kontur&&<tr><td className="l">{T.contour}</td><td className="v">{lesion.kontur}</td></tr>}
+            {lesion.internal&&<tr><td className="l">{T.internal}</td><td className="v">{lesion.internal}</td></tr>}
+            {type==='kist'&&<tr><td className="l">{T.septa}</td><td className="v">{lesion.septa||'-'}</td></tr>}
+            {type==='kist'&&lesion.septa==='Var'&&lesion.septaK&&<tr><td className="l">{T.septaThick}</td><td className="v">{lesion.septaK} mm</td></tr>}
+            {type==='kist'&&lesion.septa==='Var'&&lesion.septaS&&<tr><td className="l">{T.septaCount}</td><td className="v">{lesion.septaS}</td></tr>}
+            {type==='kist'&&lesion.duvarK&&<tr><td className="l">{T.wallThick}</td><td className="v">{lesion.duvarK} mm</td></tr>}
+            {type==='kist'&&<tr><td className="l">{T.solidComp}</td><td className="v">{lesion.solidKomp||'-'}</td></tr>}
+            {type==='kist'&&lesion.solidKomp==='Var'&&lesion.solidBoyut&&<tr><td className="l">{T.solidSize}</td><td className="v">{lesion.solidBoyut} mm</td></tr>}
           </tbody>
         </table>
-        {sigTable(type==='kist'?'Kist İçi Sinyal':'Kitle Sinyali',lesion.signal)}
-        {type==='kist'&&sigTable('Duvar Sinyal',lesion.duvarSignal)}
-        {type==='kist'&&lesion.solidKomp==='Var'&&sigTable('Solid Sinyal',lesion.solidSignal)}
+        {sigTable(type==='kist'?T.spCystSignal:T.spMassSignal,lesion.signal)}
+        {type==='kist'&&sigTable(T.spWallSignal,lesion.duvarSignal)}
+        {type==='kist'&&lesion.solidKomp==='Var'&&sigTable(T.spSolidSignal,lesion.solidSignal)}
 
-        {/* YORUM */}
+        {/* INTERPRETATION */}
         <div className="yb">
-          <div className="yt">📊 YORUM</div>
+          <div className="yt">{T.interpretation}</div>
           <div className="yx">{y.text}</div>
           <div style={{display:'flex',alignItems:'center',gap:7,fontSize:'.72rem',color:'var(--tx3)'}}>
-            <span>Şüphe</span>
+            <span>{T.suspicion}</span>
             <div className="svb" style={{flex:1}}><div className="svf" style={{width:`${y.sev}%`,background:y.color}}/></div>
             <span style={{color:y.color,fontWeight:600}}>{y.sev}%</span>
           </div>
@@ -675,13 +969,13 @@ function App(){
         {/* DIFF DX */}
         {dx.length>0&&(
           <div style={{marginTop:10}}>
-            <div style={{fontSize:'.82rem',fontWeight:600,color:'var(--ac2)',marginBottom:6}}>🔍 Ayırıcı Tanı</div>
+            <div style={{fontSize:'.82rem',fontWeight:600,color:'var(--ac2)',marginBottom:6}}>{T.diffDx}</div>
             <table className="dt">
-              <thead><tr><th>Tanı</th><th>Uyum</th><th>T1</th><th>DWI</th><th>CE</th></tr></thead>
+              <thead><tr><th>{T.diagnosis}</th><th>{T.match}</th><th>T1</th><th>DWI</th><th>CE</th></tr></thead>
               <tbody>
                 {dx.map((d,j)=>(
                   <tr key={j} className={d.pct>=60?'mt':''}>
-                    <td style={{fontWeight:d.pct>=60?600:400}}>{d.name}</td>
+                    <td style={{fontWeight:d.pct>=60?600:400}}>{T.ddxNames[d.name]||d.name}</td>
                     <td><span className={`ms ${d.pct>=70?'mh':d.pct>=40?'mm':'ml'}`}>{d.pct}%</span></td>
                     <td>{d.t1}</td>
                     <td>{d.dwi}</td>
@@ -698,55 +992,55 @@ function App(){
 
   const renderOvReport=(ov,label)=>(
     <div className="rps">
-      <h3>{label==='Sağ Over'?'➡️':'⬅️'} {label}</h3>
+      <h3>{label===T.rightOvary?'➡️':'⬅️'} {label}</h3>
       <table className="rt">
-        <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+        <thead><tr><th>{T.param}</th><th>{T.value}</th></tr></thead>
         <tbody>
-          <tr><td className="l">Durum</td><td className="v">{ov.durum||'-'}</td></tr>
-          {ov.boyut&&<tr><td className="l">Boyut</td><td className="v">{ov.boyut} mm</td></tr>}
+          <tr><td className="l">{T.status}</td><td className="v">{ov.durum||'-'}</td></tr>
+          {ov.boyut&&<tr><td className="l">{T.size}</td><td className="v">{ov.boyut} mm</td></tr>}
         </tbody>
       </table>
-      {ov.cysts.length>0&&<div style={{marginTop:8,fontSize:'.78rem',fontWeight:600,color:'var(--cy)'}}>Kistik Lezyonlar ({ov.cysts.length})</div>}
-      {ov.cysts.map((c,i)=>renderLesionReport(c,i,'kist','Kist'))}
-      {ov.masses.length>0&&<div style={{marginTop:12,fontSize:'.78rem',fontWeight:600,color:'var(--pk)'}}>Solid Kitleler ({ov.masses.length})</div>}
-      {ov.masses.map((m,i)=>renderLesionReport(m,i,'kitle','Kitle'))}
-      {ov.cysts.length===0&&ov.masses.length===0&&<p style={{color:'var(--tx3)',fontSize:'.8rem',marginTop:8}}>Lezyon saptanmadı.</p>}
+      {ov.cysts.length>0&&<div style={{marginTop:8,fontSize:'.78rem',fontWeight:600,color:'var(--cy)'}}>{T.cysticLesions} ({ov.cysts.length})</div>}
+      {ov.cysts.map((c,i)=>renderLesionReport(c,i,'kist',T.cystLabel))}
+      {ov.masses.length>0&&<div style={{marginTop:12,fontSize:'.78rem',fontWeight:600,color:'var(--pk)'}}>{T.solidMasses} ({ov.masses.length})</div>}
+      {ov.masses.map((m,i)=>renderLesionReport(m,i,'kitle',T.massLabel))}
+      {ov.cysts.length===0&&ov.masses.length===0&&<p style={{color:'var(--tx3)',fontSize:'.8rem',marginTop:8}}>{T.noLesion}</p>}
     </div>
   );
 
   const renderRapor=()=>(
     <div ref={rRef}>
       <div className="cd" style={{textAlign:'center',background:'linear-gradient(135deg,var(--sf),var(--sf2))'}}>
-        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>📋 Over MRG Değerlendirme Raporu</h2>
-        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>{T.reportTitle}</h2>
+        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>{T.date}: {new Date().toLocaleDateString(RV_LOCALE==='en'?'en-US':'tr-TR')}</p>
       </div>
-      {renderOvReport(sag,'Sağ Over')}
-      {renderOvReport(sol,'Sol Over')}
+      {renderOvReport(sag,T.rightOvary)}
+      {renderOvReport(sol,T.leftOvary)}
       <div className="rps">
-        <h3>📋 Ek Bulgular</h3>
+        <h3>{T.ekTitle}</h3>
         <table className="rt">
-          <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+          <thead><tr><th>{T.param}</th><th>{T.value}</th></tr></thead>
           <tbody>
-            <tr><td className="l">Asit</td><td className="v">{ek.asit||'-'}</td></tr>
-            <tr><td className="l">Peritoneal İmplant</td><td className="v">{ek.peritoneal||'-'}</td></tr>
-            <tr><td className="l">Lenfadenopati</td><td className="v">{ek.lap||'-'}</td></tr>
-            <tr><td className="l">Uterus İnvazyonu</td><td className="v">{ek.utInvazyon||'-'}</td></tr>
-            {ek.diger&&<tr><td className="l">Diğer</td><td className="v">{ek.diger}</td></tr>}
+            <tr><td className="l">{T.ascites}</td><td className="v">{ek.asit||'-'}</td></tr>
+            <tr><td className="l">{T.peritoneal}</td><td className="v">{ek.peritoneal||'-'}</td></tr>
+            <tr><td className="l">{T.lap}</td><td className="v">{ek.lap||'-'}</td></tr>
+            <tr><td className="l">{T.uterineInvasion}</td><td className="v">{ek.utInvazyon||'-'}</td></tr>
+            {ek.diger&&<tr><td className="l">{T.other}</td><td className="v">{ek.diger}</td></tr>}
           </tbody>
         </table>
       </div>
       <div className="rps">
-        <h3>📌 Hızlı Tanı Kuralları Referansı</h3>
+        <h3>{T.quickRulesTitle}</h3>
         <table className="dt">
-          <thead><tr><th>Bulgu Paterni</th><th>Olası Tanı</th></tr></thead>
-          <tbody>{QUICK_RULES.map((r,i)=><tr key={i}><td>{r.cond}</td><td style={{fontWeight:600}}>{r.diag}</td></tr>)}</tbody>
+          <thead><tr><th>{T.findingPattern}</th><th>{T.possibleDx}</th></tr></thead>
+          <tbody>{T.quickRules.map((r,i)=><tr key={i}><td>{r.cond}</td><td style={{fontWeight:600}}>{r.diag}</td></tr>)}</tbody>
         </table>
       </div>
       <div className="exr">
-        <button className="exb" onClick={()=>window.print()}>🖨️ PDF Yazdır</button>
-        <button className="exb" onClick={handleCopy}>📋 HTML Kopyala</button>
-        <button className="bt bt2 bts" onClick={()=>setPhase(6)}>← Düzenle</button>
-        <button className="bt btd bts" onClick={handleReset}>🔄 Sıfırla</button>
+        <button className="exb" onClick={()=>window.print()}>{T.print}</button>
+        <button className="exb" onClick={handleCopy}>{T.copyHtml}</button>
+        <button className="bt bt2 bts" onClick={()=>setPhase(6)}>{T.edit}</button>
+        <button className="bt btd bts" onClick={handleReset}>{T.reset}</button>
       </div>
     </div>
   );
@@ -757,10 +1051,10 @@ function App(){
     ta.value=rRef.current.innerHTML;
     document.body.appendChild(ta);ta.select();
     document.execCommand('copy');document.body.removeChild(ta);
-    alert('Rapor HTML olarak panoya kopyalandı!');
+    alert(T.copyAlert);
   };
   const handleReset=()=>{
-    if(!confirm('Tüm verileri sıfırlamak istediğinize emin misiniz?'))return;
+    if(!confirm(T.resetConfirm))return;
     setSag(emptyOvary());setSol(emptyOvary());
     setEk({asit:'',peritoneal:'',lap:'',utInvazyon:'',diger:''});setPhase(0);
   };
@@ -775,8 +1069,8 @@ function App(){
   return(
     <div className="wrap">
       <div className="hdr">
-        <h1>Over MRG Karar Destek Sistemi</h1>
-        <div className="sub">Kistik & Solid Lezyon Değerlendirme — v2.0</div>
+        <h1>{T.title}</h1>
+        <div className="sub">{T.sub}</div>
 
       </div>
 

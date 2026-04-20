@@ -96,145 +96,685 @@ label.chk input[type=checkbox]{accent-color:var(--purple);margin-top:3px;flex-sh
 <script src="/bridge.js"></script>
 </head>
 <body>
-<h1>🧠 Beyin Difüzyon MRI Karar Destek Sistemi</h1>
-<p class="subtitle">Difüzyon Ağırlıklı Görüntüleme &amp; ADC Analizi</p>
+<h1 data-i18n-tr="🧠 Beyin Difüzyon MRI Karar Destek Sistemi" data-i18n-en="🧠 Brain Diffusion MRI Decision Support System"></h1>
+<p class="subtitle" data-i18n-tr="Difüzyon Ağırlıklı Görüntüleme &amp; ADC Analizi" data-i18n-en="Diffusion-Weighted Imaging &amp; ADC Analysis"></p>
 <div class="container" id="app"></div>
 <div class="print-overlay" id="printOverlay">
   <div class="print-toolbar">
-    <button class="btn btn-primary" onclick="window.print()">🖨️ Yazdır</button>
-    <button class="btn btn-primary" onclick="copyReport()">📋 Kopyala</button>
-    <button class="btn btn-secondary" onclick="closePrint()">✕ Kapat</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨️ <span data-i18n-tr="Yazdır" data-i18n-en="Print"></span></button>
+    <button class="btn btn-primary" onclick="copyReport()">📋 <span data-i18n-tr="Kopyala" data-i18n-en="Copy"></span></button>
+    <button class="btn btn-secondary" onclick="closePrint()">✕ <span data-i18n-tr="Kapat" data-i18n-en="Close"></span></button>
   </div>
   <div class="print-sheet" id="printSheet"></div>
 </div>
 
 <script>
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // Page header
+    pageTitle: 'Beyin Difüzyon MRI Karar Destek Sistemi',
+    pageSubtitle: 'Difüzyon Ağırlıklı Görüntüleme & ADC Analizi',
+
+    // Pathology names
+    pAkutIskemik: 'Akut İskemik İnme',
+    pAbse: 'Beyin Absesi',
+    pEpidermoid: 'Epidermoid Kist',
+    pYuksekGradeGlioma: 'Yüksek Gradeli Glioma',
+    pGlioblastoma: 'Glioblastoma (WHO Grade 4)',
+    pLenfoma: 'Primer SSS Lenfoması',
+    pMetastaz: 'Metastaz',
+    pMenenjioma: 'Menenjioma',
+    pDemyelinizan: 'Akut Demyelinizan Lezyon',
+    pMsPlak: 'MS Plağı',
+    pEnsefalit: 'Ensefalit',
+    pCjd: 'Creutzfeldt-Jakob Hastalığı (CJD)',
+    pSubakutInme: 'Subakut İnme',
+    pKronikEnfarkt: 'Kronik Enfarkt',
+
+    // Pathology descriptions
+    dAkutIskemik: 'Erken dönemde güçlü difüzyon kısıtlanması. Vasküler teritoryale uygun dağılım.',
+    dAbse: 'Merkezde çok belirgin difüzyon kısıtlanması, güçlü restriksiyon. Rim kontrastlanma tipiktir.',
+    dEpidermoid: 'DWI hiperintens, ADC düşük — difüzyon kısıtlanması gösterir. Araknoid kistten ayrımda kritik bulgudur.',
+    dYuksekGradeGlioma: 'Heterojen difüzyon kısıtlanması. Solid komponentte ADC düşük, nekrotik alanlarda yüksek olabilir.',
+    dGlioblastoma: 'Heterojen sinyal. Solid alanlarda ADC düşük, nekrotik bölgelerde yüksek. Kelebek paterni (korpus kallozum geçişi) tipiktir.',
+    dLenfoma: 'Belirgin difüzyon kısıtlanması, çok düşük ADC. Periventriküler yerleşim ve homojen kontrastlanma karakteristiktir.',
+    dMetastaz: 'Difüzyon bulguları değişken. Solid komponentte kısıtlanma olabilir. Multipl lezyonlar ve bilinen malignite öyküsü önemlidir.',
+    dMenenjioma: 'Hafif-orta difüzyon kısıtlanması. Ekstra-aksiyal yerleşim, dural tail, homojen kontrastlanma tipiktir.',
+    dDemyelinizan: 'Hafif difüzyon artışı, ADC genellikle korunmuş veya yüksek. Aktif plakta inkomplet halka kontrastlanma (open ring) görülebilir.',
+    dMsPlak: 'Genelde difüzyon kısıtlanması göstermez. Akut plakta hafif difüzyon değişikliği olabilir. Dawson parmakları tipik morfolojik bulgudur.',
+    dEnsefalit: 'Kortikal ve subkortikal difüzyon kısıtlanması, ödem bulguları. Herpes ensefalitinde temporal lob tutulumu tipiktir.',
+    dCjd: 'Kortikal ribbon pattern ve bazal ganglionlarda tipik difüzyon kısıtlanması. Hızlı progresif demans ile birlikte patognomoniktir.',
+    dSubakutInme: 'DWI hiperintens kalırken ADC psödonormalizasyon gösterir (1–2 hafta). T2 shine-through etkisi değerlendirilmelidir.',
+    dKronikEnfarkt: 'DWI hipointens, ADC yüksek. Difüzyon kısıtlanması yoktur, doku kaybı (ensefalomalazi) mevcuttur.',
+
+    // Step titles & questions
+    step1Title: 'Adım 1: DWI Sinyal Karakteri',
+    step1Q: "Lezyon DWI'da nasıl bir sinyal gösteriyor?",
+    step2Title: 'Adım 2: ADC Haritası Değerlendirmesi',
+    step2Q: 'ADC haritasında sinyal nasıl?',
+    step3Title: 'Adım 3: Lezyon Lokalizasyonu',
+    step3Q: 'Lezyonun lokalizasyonu (birden fazla seçilebilir):',
+    step4Title: 'Adım 4: Kontrastlanma Paterni',
+    step4Q: 'Kontrastlı serilerde lezyon nasıl kontrastlanıyor?',
+    step5Title: 'Adım 5: Morfolojik Özellikler',
+    step5Q: 'Ek morfolojik bulgular (birden fazla seçilebilir):',
+    step6Title: 'Adım 6: Klinik Bilgiler',
+    step6Q: 'Eşlik eden klinik bulgular (birden fazla seçilebilir):',
+    step7Title: 'Adım 7: ADC Değeri (Opsiyonel)',
+    step7Q: 'Ölçülen ADC değeri (varsa):',
+    adcPlaceholder: 'Örn: 0.65',
+
+    // DWI options
+    dwi_cok_hiperintens_l: 'Çok hiperintens',
+    dwi_cok_hiperintens_d: 'Belirgin parlak sinyal (abse, lenfoma)',
+    dwi_belirgin_hiperintens_l: 'Belirgin hiperintens',
+    dwi_belirgin_hiperintens_d: 'Parlak sinyal (akut iskemi, CJD)',
+    dwi_hiperintens_l: 'Hiperintens',
+    dwi_hiperintens_d: 'Artmış sinyal',
+    dwi_heterojen_hiperintens_l: 'Heterojen hiperintens',
+    dwi_heterojen_hiperintens_d: 'Karışık parlak alanlar (tümör)',
+    dwi_hafif_hiperintens_l: 'Hafif hiperintens',
+    dwi_hafif_hiperintens_d: 'Hafif sinyal artışı',
+    dwi_izointens_l: 'İzointens',
+    dwi_izointens_d: 'Normal sinyal',
+    dwi_hipointens_l: 'Hipointens',
+    dwi_hipointens_d: 'Düşük sinyal',
+    dwi_degisken_l: 'Değişken',
+    dwi_degisken_d: 'Karışık/belirgin olmayan patern',
+
+    // ADC options
+    adc_cok_dusuk_l: 'Çok düşük',
+    adc_cok_dusuk_d: 'Belirgin karanlık — güçlü restriksiyon',
+    adc_dusuk_l: 'Düşük',
+    adc_dusuk_d: 'Karanlık sinyal — restriksiyon mevcut',
+    adc_dusuk_orta_l: 'Düşük-orta',
+    adc_dusuk_orta_d: 'Hafif azalmış sinyal',
+    adc_orta_l: 'Orta',
+    adc_orta_d: 'Orta düzey sinyal',
+    adc_orta_yuksek_l: 'Orta-yüksek',
+    adc_orta_yuksek_d: 'Hafif artmış (T2 shine-through olası)',
+    adc_normal_yuksek_l: 'Normal-yüksek',
+    adc_normal_yuksek_d: 'Korunmuş ADC, restriksiyon yok',
+    adc_yuksek_l: 'Yüksek',
+    adc_yuksek_d: 'Parlak sinyal — restriksiyon yok',
+    adc_pseudonormal_l: 'Psödonormalizasyon',
+    adc_pseudonormal_d: 'Subakut fazda normale dönen ADC',
+
+    // Location options
+    loc_kortikal: 'Kortikal',
+    loc_subkortikal: 'Subkortikal',
+    loc_beyaz_cevher: 'Beyaz cevher (derin)',
+    loc_periventrikuler: 'Periventriküler',
+    loc_bazal_ganglion: 'Bazal ganglionlar',
+    loc_temporal: 'Temporal lob',
+    loc_limbik: 'Limbik sistem',
+    loc_insular: 'İnsular korteks',
+    loc_serebellum: 'Serebellum',
+    loc_serebellopontin: 'Serebellopontin açı',
+    loc_suprasellar: 'Suprasellar',
+    loc_intraventrikuler: 'İntraventriküler',
+    loc_ekstra_aksiyel: 'Ekstra-aksiyal',
+    loc_konveksite: 'Konveksite',
+    loc_falks: 'Falks / parasagittal',
+    loc_sfenoid: 'Sfenoid kanat',
+    loc_korpus_kallosum: 'Korpus kallozum',
+    loc_jukstakortikal: 'Jukstakortikal',
+    loc_infratentoryal: 'İnfratentoryal',
+
+    // Enhancement options
+    enh_yok: 'Kontrastlanma yok',
+    enh_homojen: 'Homojen kontrastlanma',
+    enh_heterojen: 'Heterojen kontrastlanma',
+    enh_rim: 'Rim (halka) kontrastlanma',
+    enh_inkomplet_ring: 'İnkomplet halka (open ring)',
+    enh_giral: 'Giral kontrastlanma',
+    enh_dural_tail: 'Dural tail',
+
+    // Morphology options
+    morph_vaskuler_teritor: 'Vasküler teritoryale uygun',
+    morph_periferal_odem: 'Periferal ödem',
+    morph_nekroz: 'Nekroz alanları',
+    morph_rim_enhancement: 'Rim enhancement',
+    morph_irreguler_sinir: 'İrregüler sınırlar',
+    morph_duzgun_sinir: 'Düzgün sınırlar',
+    morph_kistik: 'Kistik komponent',
+    morph_multipl: 'Multipl lezyonlar',
+    morph_homojen_kontrastlanma: 'Homojen kontrastlanma',
+    morph_open_ring: 'Open ring sign',
+    morph_dawson_finger: 'Dawson parmakları',
+    morph_ovoidal: 'Ovoidal şekil',
+    morph_periventrikuler: 'Periventriküler dağılım',
+    morph_ekstra_aksiyel: 'Ekstra-aksiyal yerleşim',
+    morph_dural_tail: 'Dural tail',
+    morph_kortikal_ribbon: 'Kortikal ribbon pattern',
+    morph_kortikal_odem: 'Kortikal ödem',
+    morph_bazal_ganglion_tutulumu: 'Bazal ganglion tutulumu',
+    morph_temporal_tutulum: 'Temporal lob tutulumu',
+    morph_korpus_kallosum_gecisi: 'Korpus kallozum geçişi (kelebek)',
+    morph_ensefalomalazi: 'Ensefalomalazi',
+
+    // Clinical options
+    clin_akut_norolojik_defisit: 'Akut nörolojik defisit (<24 saat)',
+    clin_norolojik_defisit: 'Nörolojik defisit (subakut/kronik)',
+    clin_hemiparezi: 'Hemiparezi / motor kayıp',
+    clin_basagrisi: 'Baş ağrısı',
+    clin_nobet: 'Nöbet / epilepsi',
+    clin_ates: 'Ateş / enfeksiyon bulguları',
+    clin_konfuzyon: 'Konfüzyon / bilinç değişikliği',
+    clin_hizli_demans: 'Hızlı progresif demans',
+    clin_miyoklonus: 'Miyoklonus',
+    clin_kognitif_bozukluk: 'Kognitif bozukluk',
+    clin_bilinen_malignite: 'Bilinen malignite',
+    clin_genc_hasta: 'Genç hasta (<40 yaş)',
+    clin_relaps_remisyon: 'Relaps-remisyon öyküsü',
+
+    // Navigation
+    back: '← Geri',
+    next: 'İleri →',
+    saveLesion: 'Lezyonu Kaydet →',
+
+    // Lesion loop
+    lesionSaved: 'Kaydedildi',
+    totalLesions: 'lezyon kayıtlı.',
+    anotherLesion: 'Başka lezyon var mı?',
+    addAnother: '➕ Evet, Yeni Lezyon Ekle',
+    showReport: '📋 Hayır, Raporu Göster',
+    backEdit: '← Geri Dön / Düzenle',
+    lesionsRecorded: 'lezyon kaydedildi',
+    lesionPrefix: 'Lezyon',
+
+    // Results
+    diffDxResults: 'Ayırıcı Tanı Sonuçları',
+    totalAnalyzed: 'lezyon analiz edildi.',
+    detailTable: 'Detaylı Uyum Tablosu',
+    colPathology: 'Patoloji',
+    colScore: 'Skor',
+    colMatch: 'Uyum',
+    colClinSig: 'Klinik Önemi',
+    commentTitle: 'YORUM',
+    refTable: 'Referans: Difüzyon MRI Patoloji Tablosu',
+    colDwi: 'DWI',
+    colAdc: 'ADC',
+    colDesc: 'Açıklama',
+    btnPrint: '🖨️ Yazdır / Dışa Aktar',
+    btnReset: '↻ Yeni Analiz',
+    stepLabel: 'Adım',
+    resultLabel: 'Sonuç',
+
+    // Score detail labels
+    scoreExact: 'Tam uyum',
+    scorePartial: 'Kısmi uyum',
+    scoreMismatch: 'Uyumsuz',
+    scoreNoData: 'Bilgi yok',
+    scoreLocMatch: 'uyum',
+    scoreMorphMatch: 'uyum',
+    scoreClinMatch: 'uyum',
+    scoreAdcVal: 'uyumlu',
+    scoreDwi: 'DWI',
+    scoreAdc: 'ADC',
+    scoreLoc: 'Lokalizasyon',
+    scoreEnh: 'Kontrastlanma',
+    scoreMorph: 'Morfoloji',
+    scoreClin: 'Klinik',
+    scoreAdcValue: 'ADC Değeri',
+
+    // Severity
+    sevHigh: 'Yüksek',
+    sevMed: 'Orta',
+    sevLow: 'Düşük',
+    sevHighDot: '● Yüksek',
+    sevMedDot: '● Orta',
+    sevLowDot: '● Düşük',
+
+    // Comment templates
+    commentBest: 'Bulgular en yüksek oranda',
+    commentBestPct: 'uyum) ile uyumludur.',
+    commentDiff: 'Ayırıcı tanıda',
+    commentDiffPct: 'da göz önünde bulundurulmalıdır.',
+    commentLow: 'Mevcut bulgularla en yakın eşleşme',
+    commentLowSuffix: 'olmakla birlikte uyum oranı düşüktür. Ek sekanslar ve klinik korelasyon önerilir.',
+    commentNone: 'Girilen bulgularla anlamlı bir eşleşme saptanmamıştır. Ek sekanslar ve klinik korelasyon önerilir.',
+    adcValueLabel: 'ADC Değeri',
+    adcUnit: '× 10⁻³ mm²/s',
+    adcBelirginRestriksiyon: 'Belirgin restriksiyon',
+    adcBelirginRestriksiyonSuffix: '(abse, lenfoma, akut iskemi düşünülmeli)',
+    adcRestriksiyon: 'Restriksiyon mevcut',
+    adcRestriksiyonSuffix: '(iskemi, yüksek sellülarite)',
+    adcOrta: 'Orta düzey',
+    adcOrtaSuffix: '(kısmi restriksiyon veya T2 shine-through)',
+    adcYok: 'Restriksiyon yok',
+    adcYokSuffix: '(T2 shine-through, kronik lezyon)',
+
+    // Print report
+    printTitle: 'Beyin Difüzyon MRI — Karar Destek Raporu',
+    printDate: 'Tarih:',
+    printTotalLesions: 'Toplam lezyon:',
+    printFindings: 'Bulgular',
+    printDwi: 'DWI Sinyali',
+    printAdcMap: 'ADC Haritası',
+    printLoc: 'Lokalizasyon',
+    printEnh: 'Kontrastlanma',
+    printMorph: 'Morfoloji',
+    printClin: 'Klinik',
+    printAdcVal: 'ADC Değeri',
+    printDiffDx: 'Ayırıcı Tanı Sıralaması',
+    printMatchPct: 'Uyum %',
+    printClinSig: 'Klinik Önemi',
+    printCommentLabel: 'YORUM',
+    printBest: 'Bulgular en yüksek oranda',
+    printBestSuffix: 'ile uyumludur.',
+    printLow: 'En yakın eşleşme',
+    printLowSuffix: 'olmakla birlikte uyum düşüktür. Ek değerlendirme önerilir.',
+    printDisclaimer: 'Bu rapor klinik karar destek amaçlıdır. Kesin tanı klinik ve radyolojik korelasyon gerektirir.',
+
+    // Copy
+    copySuccess: 'Rapor panoya kopyalandı.',
+    copyFail: 'Kopyalama başarısız.',
+  },
+  en: {
+    // Page header
+    pageTitle: 'Brain Diffusion MRI Decision Support System',
+    pageSubtitle: 'Diffusion-Weighted Imaging & ADC Analysis',
+
+    // Pathology names
+    pAkutIskemik: 'Acute Ischemic Stroke',
+    pAbse: 'Brain Abscess',
+    pEpidermoid: 'Epidermoid Cyst',
+    pYuksekGradeGlioma: 'High-Grade Glioma',
+    pGlioblastoma: 'Glioblastoma (WHO Grade 4)',
+    pLenfoma: 'Primary CNS Lymphoma',
+    pMetastaz: 'Metastasis',
+    pMenenjioma: 'Meningioma',
+    pDemyelinizan: 'Acute Demyelinating Lesion',
+    pMsPlak: 'MS Plaque',
+    pEnsefalit: 'Encephalitis',
+    pCjd: 'Creutzfeldt-Jakob Disease (CJD)',
+    pSubakutInme: 'Subacute Stroke',
+    pKronikEnfarkt: 'Chronic Infarct',
+
+    // Pathology descriptions
+    dAkutIskemik: 'Strong diffusion restriction in early phase. Distribution consistent with vascular territory.',
+    dAbse: 'Markedly prominent central diffusion restriction, strong restricted diffusion. Rim enhancement is typical.',
+    dEpidermoid: 'DWI hyperintense, ADC low — shows diffusion restriction. Critical finding to differentiate from arachnoid cyst.',
+    dYuksekGradeGlioma: 'Heterogeneous diffusion restriction. ADC low in solid component, may be high in necrotic areas.',
+    dGlioblastoma: 'Heterogeneous signal. ADC low in solid areas, high in necrotic regions. Butterfly pattern (corpus callosum crossing) is typical.',
+    dLenfoma: 'Marked diffusion restriction, very low ADC. Periventricular location and homogeneous enhancement are characteristic.',
+    dMetastaz: 'Diffusion findings variable. Restriction may occur in solid component. Multiple lesions and known malignancy history are important.',
+    dMenenjioma: 'Mild-moderate diffusion restriction. Extra-axial location, dural tail, homogeneous enhancement are typical.',
+    dDemyelinizan: 'Mild diffusion increase, ADC generally preserved or elevated. Incomplete ring enhancement (open ring) may be seen in active plaque.',
+    dMsPlak: 'Generally no diffusion restriction. Mild diffusion change may occur in acute plaque. Dawson fingers are the typical morphological finding.',
+    dEnsefalit: 'Cortical and subcortical diffusion restriction, edema findings. Temporal lobe involvement is typical in Herpes encephalitis.',
+    dCjd: 'Cortical ribbon pattern and typical diffusion restriction in basal ganglia. Pathognomonic when combined with rapidly progressive dementia.',
+    dSubakutInme: 'DWI remains hyperintense while ADC shows pseudonormalization (1–2 weeks). T2 shine-through effect should be evaluated.',
+    dKronikEnfarkt: 'DWI hypointense, ADC elevated. No diffusion restriction; tissue loss (encephalomalacia) is present.',
+
+    // Step titles & questions
+    step1Title: 'Step 1: DWI Signal Character',
+    step1Q: 'What type of signal does the lesion show on DWI?',
+    step2Title: 'Step 2: ADC Map Assessment',
+    step2Q: 'What is the signal on the ADC map?',
+    step3Title: 'Step 3: Lesion Localization',
+    step3Q: 'Lesion localization (multiple selections allowed):',
+    step4Title: 'Step 4: Enhancement Pattern',
+    step4Q: 'How does the lesion enhance on contrast-enhanced sequences?',
+    step5Title: 'Step 5: Morphological Features',
+    step5Q: 'Additional morphological findings (multiple selections allowed):',
+    step6Title: 'Step 6: Clinical Information',
+    step6Q: 'Accompanying clinical findings (multiple selections allowed):',
+    step7Title: 'Step 7: ADC Value (Optional)',
+    step7Q: 'Measured ADC value (if available):',
+    adcPlaceholder: 'e.g. 0.65',
+
+    // DWI options
+    dwi_cok_hiperintens_l: 'Very hyperintense',
+    dwi_cok_hiperintens_d: 'Markedly bright signal (abscess, lymphoma)',
+    dwi_belirgin_hiperintens_l: 'Markedly hyperintense',
+    dwi_belirgin_hiperintens_d: 'Bright signal (acute ischemia, CJD)',
+    dwi_hiperintens_l: 'Hyperintense',
+    dwi_hiperintens_d: 'Increased signal',
+    dwi_heterojen_hiperintens_l: 'Heterogeneously hyperintense',
+    dwi_heterojen_hiperintens_d: 'Mixed bright areas (tumor)',
+    dwi_hafif_hiperintens_l: 'Mildly hyperintense',
+    dwi_hafif_hiperintens_d: 'Mild signal increase',
+    dwi_izointens_l: 'Isointense',
+    dwi_izointens_d: 'Normal signal',
+    dwi_hipointens_l: 'Hypointense',
+    dwi_hipointens_d: 'Low signal',
+    dwi_degisken_l: 'Variable',
+    dwi_degisken_d: 'Mixed/indeterminate pattern',
+
+    // ADC options
+    adc_cok_dusuk_l: 'Very low',
+    adc_cok_dusuk_d: 'Markedly dark — strong restricted diffusion',
+    adc_dusuk_l: 'Low',
+    adc_dusuk_d: 'Dark signal — restricted diffusion present',
+    adc_dusuk_orta_l: 'Low-intermediate',
+    adc_dusuk_orta_d: 'Mildly reduced signal',
+    adc_orta_l: 'Intermediate',
+    adc_orta_d: 'Intermediate signal level',
+    adc_orta_yuksek_l: 'Intermediate-high',
+    adc_orta_yuksek_d: 'Mildly elevated (T2 shine-through possible)',
+    adc_normal_yuksek_l: 'Normal-high',
+    adc_normal_yuksek_d: 'Preserved ADC, no restricted diffusion',
+    adc_yuksek_l: 'High',
+    adc_yuksek_d: 'Bright signal — no restricted diffusion',
+    adc_pseudonormal_l: 'Pseudonormalization',
+    adc_pseudonormal_d: 'ADC returning to normal in subacute phase',
+
+    // Location options
+    loc_kortikal: 'Cortical',
+    loc_subkortikal: 'Subcortical',
+    loc_beyaz_cevher: 'White matter (deep)',
+    loc_periventrikuler: 'Periventricular',
+    loc_bazal_ganglion: 'Basal ganglia',
+    loc_temporal: 'Temporal lobe',
+    loc_limbik: 'Limbic system',
+    loc_insular: 'Insular cortex',
+    loc_serebellum: 'Cerebellum',
+    loc_serebellopontin: 'Cerebellopontine angle',
+    loc_suprasellar: 'Suprasellar',
+    loc_intraventrikuler: 'Intraventricular',
+    loc_ekstra_aksiyel: 'Extra-axial',
+    loc_konveksite: 'Convexity',
+    loc_falks: 'Falx / parasagittal',
+    loc_sfenoid: 'Sphenoid wing',
+    loc_korpus_kallosum: 'Corpus callosum',
+    loc_jukstakortikal: 'Juxtacortical',
+    loc_infratentoryal: 'Infratentorial',
+
+    // Enhancement options
+    enh_yok: 'No enhancement',
+    enh_homojen: 'Homogeneous enhancement',
+    enh_heterojen: 'Heterogeneous enhancement',
+    enh_rim: 'Rim (ring) enhancement',
+    enh_inkomplet_ring: 'Incomplete ring (open ring)',
+    enh_giral: 'Gyral enhancement',
+    enh_dural_tail: 'Dural tail',
+
+    // Morphology options
+    morph_vaskuler_teritor: 'Consistent with vascular territory',
+    morph_periferal_odem: 'Peripheral edema',
+    morph_nekroz: 'Necrosis areas',
+    morph_rim_enhancement: 'Rim enhancement',
+    morph_irreguler_sinir: 'Irregular margins',
+    morph_duzgun_sinir: 'Well-defined margins',
+    morph_kistik: 'Cystic component',
+    morph_multipl: 'Multiple lesions',
+    morph_homojen_kontrastlanma: 'Homogeneous enhancement',
+    morph_open_ring: 'Open ring sign',
+    morph_dawson_finger: 'Dawson fingers',
+    morph_ovoidal: 'Ovoid shape',
+    morph_periventrikuler: 'Periventricular distribution',
+    morph_ekstra_aksiyel: 'Extra-axial location',
+    morph_dural_tail: 'Dural tail',
+    morph_kortikal_ribbon: 'Cortical ribbon pattern',
+    morph_kortikal_odem: 'Cortical edema',
+    morph_bazal_ganglion_tutulumu: 'Basal ganglia involvement',
+    morph_temporal_tutulum: 'Temporal lobe involvement',
+    morph_korpus_kallosum_gecisi: 'Corpus callosum crossing (butterfly)',
+    morph_ensefalomalazi: 'Encephalomalacia',
+
+    // Clinical options
+    clin_akut_norolojik_defisit: 'Acute neurological deficit (<24 hours)',
+    clin_norolojik_defisit: 'Neurological deficit (subacute/chronic)',
+    clin_hemiparezi: 'Hemiparesis / motor loss',
+    clin_basagrisi: 'Headache',
+    clin_nobet: 'Seizure / epilepsy',
+    clin_ates: 'Fever / infection findings',
+    clin_konfuzyon: 'Confusion / altered consciousness',
+    clin_hizli_demans: 'Rapidly progressive dementia',
+    clin_miyoklonus: 'Myoclonus',
+    clin_kognitif_bozukluk: 'Cognitive impairment',
+    clin_bilinen_malignite: 'Known malignancy',
+    clin_genc_hasta: 'Young patient (<40 years)',
+    clin_relaps_remisyon: 'Relapsing-remitting history',
+
+    // Navigation
+    back: '← Back',
+    next: 'Next →',
+    saveLesion: 'Save Lesion →',
+
+    // Lesion loop
+    lesionSaved: 'Saved',
+    totalLesions: 'lesion(s) recorded.',
+    anotherLesion: 'Is there another lesion?',
+    addAnother: '➕ Yes, Add New Lesion',
+    showReport: '📋 No, Show Report',
+    backEdit: '← Back / Edit',
+    lesionsRecorded: 'lesion(s) recorded',
+    lesionPrefix: 'Lesion',
+
+    // Results
+    diffDxResults: 'Differential Diagnosis Results',
+    totalAnalyzed: 'lesion(s) analyzed.',
+    detailTable: 'Detailed Match Table',
+    colPathology: 'Pathology',
+    colScore: 'Score',
+    colMatch: 'Match',
+    colClinSig: 'Clinical Significance',
+    commentTitle: 'IMPRESSION',
+    refTable: 'Reference: Diffusion MRI Pathology Table',
+    colDwi: 'DWI',
+    colAdc: 'ADC',
+    colDesc: 'Description',
+    btnPrint: '🖨️ Print / Export',
+    btnReset: '↻ New Analysis',
+    stepLabel: 'Step',
+    resultLabel: 'Result',
+
+    // Score detail labels
+    scoreExact: 'Exact match',
+    scorePartial: 'Partial match',
+    scoreMismatch: 'Mismatch',
+    scoreNoData: 'No data',
+    scoreLocMatch: 'match',
+    scoreMorphMatch: 'match',
+    scoreClinMatch: 'match',
+    scoreAdcVal: 'compatible',
+    scoreDwi: 'DWI',
+    scoreAdc: 'ADC',
+    scoreLoc: 'Localization',
+    scoreEnh: 'Enhancement',
+    scoreMorph: 'Morphology',
+    scoreClin: 'Clinical',
+    scoreAdcValue: 'ADC Value',
+
+    // Severity
+    sevHigh: 'High',
+    sevMed: 'Intermediate',
+    sevLow: 'Low',
+    sevHighDot: '● High',
+    sevMedDot: '● Intermediate',
+    sevLowDot: '● Low',
+
+    // Comment templates
+    commentBest: 'Findings are most consistent with',
+    commentBestPct: 'match).',
+    commentDiff: 'In the differential diagnosis,',
+    commentDiffPct: 'should also be considered.',
+    commentLow: 'The closest match with the current findings is',
+    commentLowSuffix: 'however the match rate is low. Additional sequences and clinical correlation are recommended.',
+    commentNone: 'No significant match was found with the entered findings. Additional sequences and clinical correlation are recommended.',
+    adcValueLabel: 'ADC Value',
+    adcUnit: '× 10⁻³ mm²/s',
+    adcBelirginRestriksiyon: 'Marked restricted diffusion',
+    adcBelirginRestriksiyonSuffix: '(consider abscess, lymphoma, acute ischemia)',
+    adcRestriksiyon: 'Restricted diffusion present',
+    adcRestriksiyonSuffix: '(ischemia, high cellularity)',
+    adcOrta: 'Intermediate level',
+    adcOrtaSuffix: '(partial restriction or T2 shine-through)',
+    adcYok: 'No restricted diffusion',
+    adcYokSuffix: '(T2 shine-through, chronic lesion)',
+
+    // Print report
+    printTitle: 'Brain Diffusion MRI — Decision Support Report',
+    printDate: 'Date:',
+    printTotalLesions: 'Total lesions:',
+    printFindings: 'Findings',
+    printDwi: 'DWI Signal',
+    printAdcMap: 'ADC Map',
+    printLoc: 'Localization',
+    printEnh: 'Enhancement',
+    printMorph: 'Morphology',
+    printClin: 'Clinical',
+    printAdcVal: 'ADC Value',
+    printDiffDx: 'Differential Diagnosis Ranking',
+    printMatchPct: 'Match %',
+    printClinSig: 'Clinical Significance',
+    printCommentLabel: 'IMPRESSION',
+    printBest: 'Findings are most consistent with',
+    printBestSuffix: '.',
+    printLow: 'Closest match is',
+    printLowSuffix: 'however the match rate is low. Further evaluation recommended.',
+    printDisclaimer: 'This report is intended for clinical decision support. Definitive diagnosis requires clinical and radiological correlation.',
+
+    // Copy
+    copySuccess: 'Report copied to clipboard.',
+    copyFail: 'Copy failed.',
+  }
+})[RV_LOCALE];
+
+// Apply static i18n attributes after locale is known
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('[data-i18n-tr]').forEach(function(el){
+    el.textContent = RV_LOCALE === 'en'
+      ? (el.getAttribute('data-i18n-en') || el.getAttribute('data-i18n-tr'))
+      : el.getAttribute('data-i18n-tr');
+  });
+  // Print toolbar spans
+  document.querySelectorAll('[data-i18n-tr]').forEach(function(el){
+    var key = RV_LOCALE === 'en' ? 'data-i18n-en' : 'data-i18n-tr';
+    el.textContent = el.getAttribute(key) || el.textContent;
+  });
+});
+
 // === PATHOLOGY DATABASE ===
 const PATHOLOGIES = [
   {
-    id:'akut_iskemik',name:'Akut İskemik İnme',
+    id:'akut_iskemik',name:T.pAkutIskemik,
     dwi:'belirgin_hiperintens',adc:'dusuk',
     loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
     enhance:'yok',morph:['vaskuler_teritor'],
     clinical:['akut_norolojik_defisit','hemiparezi'],
-    desc:'Erken dönemde güçlü difüzyon kısıtlanması. Vasküler teritoryale uygun dağılım.',
+    desc:T.dAkutIskemik,
     severity:'high'
   },
   {
-    id:'beyin_absesi',name:'Beyin Absesi',
+    id:'beyin_absesi',name:T.pAbse,
     dwi:'cok_hiperintens',adc:'cok_dusuk',
     loc:['subkortikal','beyaz_cevher','bazal_ganglion'],
     enhance:'rim',morph:['rim_enhancement','periferal_odem'],
     clinical:['ates','basagrisi','norolojik_defisit'],
-    desc:'Merkezde çok belirgin difüzyon kısıtlanması, güçlü restriksiyon. Rim kontrastlanma tipiktir.',
+    desc:T.dAbse,
     severity:'high'
   },
   {
-    id:'epidermoid',name:'Epidermoid Kist',
+    id:'epidermoid',name:T.pEpidermoid,
     dwi:'hiperintens',adc:'dusuk',
     loc:['serebellopontin','suprasellar','intraventrikuler'],
     enhance:'yok',morph:['duzgun_sinir','kistik'],
     clinical:[],
-    desc:'DWI hiperintens, ADC düşük — difüzyon kısıtlanması gösterir. Araknoid kistten ayrımda kritik bulgudur.',
+    desc:T.dEpidermoid,
     severity:'med'
   },
   {
-    id:'yuksek_grade_glioma',name:'Yüksek Gradeli Glioma',
+    id:'yuksek_grade_glioma',name:T.pYuksekGradeGlioma,
     dwi:'heterojen_hiperintens',adc:'dusuk_orta',
     loc:['beyaz_cevher','subkortikal','kortikal'],
     enhance:'heterojen',morph:['nekroz','periferal_odem','irregüler_sinir'],
     clinical:['basagrisi','nobet','norolojik_defisit'],
-    desc:'Heterojen difüzyon kısıtlanması. Solid komponentte ADC düşük, nekrotik alanlarda yüksek olabilir.',
+    desc:T.dYuksekGradeGlioma,
     severity:'high'
   },
   {
-    id:'glioblastoma',name:'Glioblastoma (WHO Grade 4)',
+    id:'glioblastoma',name:T.pGlioblastoma,
     dwi:'heterojen_hiperintens',adc:'dusuk_orta',
     loc:['beyaz_cevher','subkortikal','kortikal'],
     enhance:'rim',morph:['nekroz','rim_enhancement','periferal_odem','irregüler_sinir','korpus_kallosum_gecisi'],
     clinical:['basagrisi','nobet','hemiparezi','norolojik_defisit'],
-    desc:'Heterojen sinyal. Solid alanlarda ADC düşük, nekrotik bölgelerde yüksek. Kelebek paterni (korpus kallozum geçişi) tipiktir.',
+    desc:T.dGlioblastoma,
     severity:'high'
   },
   {
-    id:'primer_lenfoma',name:'Primer SSS Lenfoması',
+    id:'primer_lenfoma',name:T.pLenfoma,
     dwi:'belirgin_hiperintens',adc:'cok_dusuk',
     loc:['periventrikuler','bazal_ganglion','korpus_kallosum','subkortikal'],
     enhance:'homojen',morph:['periventrikuler','homojen_kontrastlanma'],
     clinical:['norolojik_defisit','kognitif_bozukluk'],
-    desc:'Belirgin difüzyon kısıtlanması, çok düşük ADC. Periventriküler yerleşim ve homojen kontrastlanma karakteristiktir.',
+    desc:T.dLenfoma,
     severity:'high'
   },
   {
-    id:'metastaz',name:'Metastaz',
+    id:'metastaz',name:T.pMetastaz,
     dwi:'degisken',adc:'orta',
     loc:['kortikal','subkortikal','serebellum','bazal_ganglion'],
     enhance:'rim',morph:['multipl','rim_enhancement','periferal_odem'],
     clinical:['bilinen_malignite','basagrisi'],
-    desc:'Difüzyon bulguları değişken. Solid komponentte kısıtlanma olabilir. Multipl lezyonlar ve bilinen malignite öyküsü önemlidir.',
+    desc:T.dMetastaz,
     severity:'high'
   },
   {
-    id:'menenjioma',name:'Menenjioma',
+    id:'menenjioma',name:T.pMenenjioma,
     dwi:'hafif_hiperintens',adc:'dusuk_orta',
     loc:['ekstra_aksiyel','konveksite','falks','sfenoid'],
     enhance:'homojen',morph:['ekstra_aksiyel','dural_tail','homojen_kontrastlanma','duzgun_sinir'],
     clinical:[],
-    desc:'Hafif-orta difüzyon kısıtlanması. Ekstra-aksiyal yerleşim, dural tail, homojen kontrastlanma tipiktir.',
+    desc:T.dMenenjioma,
     severity:'low'
   },
   {
-    id:'demyelinizan',name:'Akut Demyelinizan Lezyon',
+    id:'demyelinizan',name:T.pDemyelinizan,
     dwi:'hafif_hiperintens',adc:'orta_yuksek',
     loc:['periventrikuler','beyaz_cevher','subkortikal'],
     enhance:'inkomplet_ring',morph:['periventrikuler','open_ring'],
     clinical:['genc_hasta','relaps_remisyon'],
-    desc:'Hafif difüzyon artışı, ADC genellikle korunmuş veya yüksek. Aktif plakta inkomplet halka kontrastlanma (open ring) görülebilir.',
+    desc:T.dDemyelinizan,
     severity:'med'
   },
   {
-    id:'ms_plak',name:'MS Plağı',
+    id:'ms_plak',name:T.pMsPlak,
     dwi:'izointens',adc:'normal_yuksek',
     loc:['periventrikuler','jukstakortikal','infratentoryal','beyaz_cevher'],
     enhance:'yok',morph:['dawson_finger','periventrikuler','ovoidal'],
     clinical:['genc_hasta','relaps_remisyon'],
-    desc:'Genelde difüzyon kısıtlanması göstermez. Akut plakta hafif difüzyon değişikliği olabilir. Dawson parmakları tipik morfolojik bulgudur.',
+    desc:T.dMsPlak,
     severity:'low'
   },
   {
-    id:'ensefalit',name:'Ensefalit',
+    id:'ensefalit',name:T.pEnsefalit,
     dwi:'hiperintens',adc:'dusuk_orta',
     loc:['temporal','limbik','kortikal','insular'],
     enhance:'heterojen',morph:['kortikal_odem','temporal_tutulum'],
     clinical:['ates','konfuzyon','nobet','basagrisi'],
-    desc:'Kortikal ve subkortikal difüzyon kısıtlanması, ödem bulguları. Herpes ensefalitinde temporal lob tutulumu tipiktir.',
+    desc:T.dEnsefalit,
     severity:'high'
   },
   {
-    id:'cjd',name:'Creutzfeldt-Jakob Hastalığı (CJD)',
+    id:'cjd',name:T.pCjd,
     dwi:'belirgin_hiperintens',adc:'dusuk',
     loc:['kortikal','bazal_ganglion'],
     enhance:'yok',morph:['kortikal_ribbon','bazal_ganglion_tutulumu'],
     clinical:['hizli_demans','miyoklonus','konfuzyon'],
-    desc:'Kortikal ribbon pattern ve bazal ganglionlarda tipik difüzyon kısıtlanması. Hızlı progresif demans ile birlikte patognomoniktir.',
+    desc:T.dCjd,
     severity:'high'
   },
   {
-    id:'subakut_inme',name:'Subakut İnme',
+    id:'subakut_inme',name:T.pSubakutInme,
     dwi:'hiperintens',adc:'pseudonormal',
     loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
     enhance:'giral',morph:['vaskuler_teritor'],
     clinical:['norolojik_defisit'],
-    desc:'DWI hiperintens kalırken ADC psödonormalizasyon gösterir (1–2 hafta). T2 shine-through etkisi değerlendirilmelidir.',
+    desc:T.dSubakutInme,
     severity:'med'
   },
   {
-    id:'kronik_enfarkt',name:'Kronik Enfarkt',
+    id:'kronik_enfarkt',name:T.pKronikEnfarkt,
     dwi:'hipointens',adc:'yuksek',
     loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
     enhance:'yok',morph:['vaskuler_teritor','ensefalomalazi'],
     clinical:[],
-    desc:'DWI hipointens, ADC yüksek. Difüzyon kısıtlanması yoktur, doku kaybı (ensefalomalazi) mevcuttur.',
+    desc:T.dKronikEnfarkt,
     severity:'low'
   }
 ];
@@ -242,121 +782,121 @@ const PATHOLOGIES = [
 // === WIZARD STEPS ===
 const STEPS = [
   {
-    id:'dwi',title:'Adım 1: DWI Sinyal Karakteri',type:'radio',
-    question:'Lezyon DWI\'da nasıl bir sinyal gösteriyor?',
+    id:'dwi',title:T.step1Title,type:'radio',
+    question:T.step1Q,
     options:[
-      {v:'cok_hiperintens',l:'Çok hiperintens',d:'Belirgin parlak sinyal (abse, lenfoma)'},
-      {v:'belirgin_hiperintens',l:'Belirgin hiperintens',d:'Parlak sinyal (akut iskemi, CJD)'},
-      {v:'hiperintens',l:'Hiperintens',d:'Artmış sinyal'},
-      {v:'heterojen_hiperintens',l:'Heterojen hiperintens',d:'Karışık parlak alanlar (tümör)'},
-      {v:'hafif_hiperintens',l:'Hafif hiperintens',d:'Hafif sinyal artışı'},
-      {v:'izointens',l:'İzointens',d:'Normal sinyal'},
-      {v:'hipointens',l:'Hipointens',d:'Düşük sinyal'},
-      {v:'degisken',l:'Değişken',d:'Karışık/belirgin olmayan patern'}
+      {v:'cok_hiperintens',l:T.dwi_cok_hiperintens_l,d:T.dwi_cok_hiperintens_d},
+      {v:'belirgin_hiperintens',l:T.dwi_belirgin_hiperintens_l,d:T.dwi_belirgin_hiperintens_d},
+      {v:'hiperintens',l:T.dwi_hiperintens_l,d:T.dwi_hiperintens_d},
+      {v:'heterojen_hiperintens',l:T.dwi_heterojen_hiperintens_l,d:T.dwi_heterojen_hiperintens_d},
+      {v:'hafif_hiperintens',l:T.dwi_hafif_hiperintens_l,d:T.dwi_hafif_hiperintens_d},
+      {v:'izointens',l:T.dwi_izointens_l,d:T.dwi_izointens_d},
+      {v:'hipointens',l:T.dwi_hipointens_l,d:T.dwi_hipointens_d},
+      {v:'degisken',l:T.dwi_degisken_l,d:T.dwi_degisken_d}
     ]
   },
   {
-    id:'adc',title:'Adım 2: ADC Haritası Değerlendirmesi',type:'radio',
-    question:'ADC haritasında sinyal nasıl?',
+    id:'adc',title:T.step2Title,type:'radio',
+    question:T.step2Q,
     options:[
-      {v:'cok_dusuk',l:'Çok düşük',d:'Belirgin karanlık — güçlü restriksiyon'},
-      {v:'dusuk',l:'Düşük',d:'Karanlık sinyal — restriksiyon mevcut'},
-      {v:'dusuk_orta',l:'Düşük-orta',d:'Hafif azalmış sinyal'},
-      {v:'orta',l:'Orta',d:'Orta düzey sinyal'},
-      {v:'orta_yuksek',l:'Orta-yüksek',d:'Hafif artmış (T2 shine-through olası)'},
-      {v:'normal_yuksek',l:'Normal-yüksek',d:'Korunmuş ADC, restriksiyon yok'},
-      {v:'yuksek',l:'Yüksek',d:'Parlak sinyal — restriksiyon yok'},
-      {v:'pseudonormal',l:'Psödonormalizasyon',d:'Subakut fazda normale dönen ADC'}
+      {v:'cok_dusuk',l:T.adc_cok_dusuk_l,d:T.adc_cok_dusuk_d},
+      {v:'dusuk',l:T.adc_dusuk_l,d:T.adc_dusuk_d},
+      {v:'dusuk_orta',l:T.adc_dusuk_orta_l,d:T.adc_dusuk_orta_d},
+      {v:'orta',l:T.adc_orta_l,d:T.adc_orta_d},
+      {v:'orta_yuksek',l:T.adc_orta_yuksek_l,d:T.adc_orta_yuksek_d},
+      {v:'normal_yuksek',l:T.adc_normal_yuksek_l,d:T.adc_normal_yuksek_d},
+      {v:'yuksek',l:T.adc_yuksek_l,d:T.adc_yuksek_d},
+      {v:'pseudonormal',l:T.adc_pseudonormal_l,d:T.adc_pseudonormal_d}
     ]
   },
   {
-    id:'loc',title:'Adım 3: Lezyon Lokalizasyonu',type:'checkbox',
-    question:'Lezyonun lokalizasyonu (birden fazla seçilebilir):',
+    id:'loc',title:T.step3Title,type:'checkbox',
+    question:T.step3Q,
     options:[
-      {v:'kortikal',l:'Kortikal'},
-      {v:'subkortikal',l:'Subkortikal'},
-      {v:'beyaz_cevher',l:'Beyaz cevher (derin)'},
-      {v:'periventrikuler',l:'Periventriküler'},
-      {v:'bazal_ganglion',l:'Bazal ganglionlar'},
-      {v:'temporal',l:'Temporal lob'},
-      {v:'limbik',l:'Limbik sistem'},
-      {v:'insular',l:'İnsular korteks'},
-      {v:'serebellum',l:'Serebellum'},
-      {v:'serebellopontin',l:'Serebellopontin açı'},
-      {v:'suprasellar',l:'Suprasellar'},
-      {v:'intraventrikuler',l:'İntraventriküler'},
-      {v:'ekstra_aksiyel',l:'Ekstra-aksiyal'},
-      {v:'konveksite',l:'Konveksite'},
-      {v:'falks',l:'Falks / parasagittal'},
-      {v:'sfenoid',l:'Sfenoid kanat'},
-      {v:'korpus_kallosum',l:'Korpus kallozum'},
-      {v:'jukstakortikal',l:'Jukstakortikal'},
-      {v:'infratentoryal',l:'İnfratentoryal'}
+      {v:'kortikal',l:T.loc_kortikal},
+      {v:'subkortikal',l:T.loc_subkortikal},
+      {v:'beyaz_cevher',l:T.loc_beyaz_cevher},
+      {v:'periventrikuler',l:T.loc_periventrikuler},
+      {v:'bazal_ganglion',l:T.loc_bazal_ganglion},
+      {v:'temporal',l:T.loc_temporal},
+      {v:'limbik',l:T.loc_limbik},
+      {v:'insular',l:T.loc_insular},
+      {v:'serebellum',l:T.loc_serebellum},
+      {v:'serebellopontin',l:T.loc_serebellopontin},
+      {v:'suprasellar',l:T.loc_suprasellar},
+      {v:'intraventrikuler',l:T.loc_intraventrikuler},
+      {v:'ekstra_aksiyel',l:T.loc_ekstra_aksiyel},
+      {v:'konveksite',l:T.loc_konveksite},
+      {v:'falks',l:T.loc_falks},
+      {v:'sfenoid',l:T.loc_sfenoid},
+      {v:'korpus_kallosum',l:T.loc_korpus_kallosum},
+      {v:'jukstakortikal',l:T.loc_jukstakortikal},
+      {v:'infratentoryal',l:T.loc_infratentoryal}
     ]
   },
   {
-    id:'enhance',title:'Adım 4: Kontrastlanma Paterni',type:'radio',
-    question:'Kontrastlı serilerde lezyon nasıl kontrastlanıyor?',
+    id:'enhance',title:T.step4Title,type:'radio',
+    question:T.step4Q,
     options:[
-      {v:'yok',l:'Kontrastlanma yok'},
-      {v:'homojen',l:'Homojen kontrastlanma'},
-      {v:'heterojen',l:'Heterojen kontrastlanma'},
-      {v:'rim',l:'Rim (halka) kontrastlanma'},
-      {v:'inkomplet_ring',l:'İnkomplet halka (open ring)'},
-      {v:'giral',l:'Giral kontrastlanma'},
-      {v:'dural_tail',l:'Dural tail'}
+      {v:'yok',l:T.enh_yok},
+      {v:'homojen',l:T.enh_homojen},
+      {v:'heterojen',l:T.enh_heterojen},
+      {v:'rim',l:T.enh_rim},
+      {v:'inkomplet_ring',l:T.enh_inkomplet_ring},
+      {v:'giral',l:T.enh_giral},
+      {v:'dural_tail',l:T.enh_dural_tail}
     ]
   },
   {
-    id:'morph',title:'Adım 5: Morfolojik Özellikler',type:'checkbox',
-    question:'Ek morfolojik bulgular (birden fazla seçilebilir):',
+    id:'morph',title:T.step5Title,type:'checkbox',
+    question:T.step5Q,
     options:[
-      {v:'vaskuler_teritor',l:'Vasküler teritoryale uygun'},
-      {v:'periferal_odem',l:'Periferal ödem'},
-      {v:'nekroz',l:'Nekroz alanları'},
-      {v:'rim_enhancement',l:'Rim enhancement'},
-      {v:'irregüler_sinir',l:'İrregüler sınırlar'},
-      {v:'duzgun_sinir',l:'Düzgün sınırlar'},
-      {v:'kistik',l:'Kistik komponent'},
-      {v:'multipl',l:'Multipl lezyonlar'},
-      {v:'homojen_kontrastlanma',l:'Homojen kontrastlanma'},
-      {v:'open_ring',l:'Open ring sign'},
-      {v:'dawson_finger',l:'Dawson parmakları'},
-      {v:'ovoidal',l:'Ovoidal şekil'},
-      {v:'periventrikuler',l:'Periventriküler dağılım'},
-      {v:'ekstra_aksiyel',l:'Ekstra-aksiyal yerleşim'},
-      {v:'dural_tail',l:'Dural tail'},
-      {v:'kortikal_ribbon',l:'Kortikal ribbon pattern'},
-      {v:'kortikal_odem',l:'Kortikal ödem'},
-      {v:'bazal_ganglion_tutulumu',l:'Bazal ganglion tutulumu'},
-      {v:'temporal_tutulum',l:'Temporal lob tutulumu'},
-      {v:'korpus_kallosum_gecisi',l:'Korpus kallozum geçişi (kelebek)'},
-      {v:'ensefalomalazi',l:'Ensefalomalazi'}
+      {v:'vaskuler_teritor',l:T.morph_vaskuler_teritor},
+      {v:'periferal_odem',l:T.morph_periferal_odem},
+      {v:'nekroz',l:T.morph_nekroz},
+      {v:'rim_enhancement',l:T.morph_rim_enhancement},
+      {v:'irregüler_sinir',l:T.morph_irreguler_sinir},
+      {v:'duzgun_sinir',l:T.morph_duzgun_sinir},
+      {v:'kistik',l:T.morph_kistik},
+      {v:'multipl',l:T.morph_multipl},
+      {v:'homojen_kontrastlanma',l:T.morph_homojen_kontrastlanma},
+      {v:'open_ring',l:T.morph_open_ring},
+      {v:'dawson_finger',l:T.morph_dawson_finger},
+      {v:'ovoidal',l:T.morph_ovoidal},
+      {v:'periventrikuler',l:T.morph_periventrikuler},
+      {v:'ekstra_aksiyel',l:T.morph_ekstra_aksiyel},
+      {v:'dural_tail',l:T.morph_dural_tail},
+      {v:'kortikal_ribbon',l:T.morph_kortikal_ribbon},
+      {v:'kortikal_odem',l:T.morph_kortikal_odem},
+      {v:'bazal_ganglion_tutulumu',l:T.morph_bazal_ganglion_tutulumu},
+      {v:'temporal_tutulum',l:T.morph_temporal_tutulum},
+      {v:'korpus_kallosum_gecisi',l:T.morph_korpus_kallosum_gecisi},
+      {v:'ensefalomalazi',l:T.morph_ensefalomalazi}
     ]
   },
   {
-    id:'clinical',title:'Adım 6: Klinik Bilgiler',type:'checkbox',
-    question:'Eşlik eden klinik bulgular (birden fazla seçilebilir):',
+    id:'clinical',title:T.step6Title,type:'checkbox',
+    question:T.step6Q,
     options:[
-      {v:'akut_norolojik_defisit',l:'Akut nörolojik defisit (<24 saat)'},
-      {v:'norolojik_defisit',l:'Nörolojik defisit (subakut/kronik)'},
-      {v:'hemiparezi',l:'Hemiparezi / motor kayıp'},
-      {v:'basagrisi',l:'Baş ağrısı'},
-      {v:'nobet',l:'Nöbet / epilepsi'},
-      {v:'ates',l:'Ateş / enfeksiyon bulguları'},
-      {v:'konfuzyon',l:'Konfüzyon / bilinç değişikliği'},
-      {v:'hizli_demans',l:'Hızlı progresif demans'},
-      {v:'miyoklonus',l:'Miyoklonus'},
-      {v:'kognitif_bozukluk',l:'Kognitif bozukluk'},
-      {v:'bilinen_malignite',l:'Bilinen malignite'},
-      {v:'genc_hasta',l:'Genç hasta (<40 yaş)'},
-      {v:'relaps_remisyon',l:'Relaps-remisyon öyküsü'}
+      {v:'akut_norolojik_defisit',l:T.clin_akut_norolojik_defisit},
+      {v:'norolojik_defisit',l:T.clin_norolojik_defisit},
+      {v:'hemiparezi',l:T.clin_hemiparezi},
+      {v:'basagrisi',l:T.clin_basagrisi},
+      {v:'nobet',l:T.clin_nobet},
+      {v:'ates',l:T.clin_ates},
+      {v:'konfuzyon',l:T.clin_konfuzyon},
+      {v:'hizli_demans',l:T.clin_hizli_demans},
+      {v:'miyoklonus',l:T.clin_miyoklonus},
+      {v:'kognitif_bozukluk',l:T.clin_kognitif_bozukluk},
+      {v:'bilinen_malignite',l:T.clin_bilinen_malignite},
+      {v:'genc_hasta',l:T.clin_genc_hasta},
+      {v:'relaps_remisyon',l:T.clin_relaps_remisyon}
     ]
   },
   {
-    id:'adc_val',title:'Adım 7: ADC Değeri (Opsiyonel)',type:'number',
-    question:'Ölçülen ADC değeri (varsa):',
-    field:{label:'ADC',unit:'× 10⁻³ mm²/s',min:0,max:4,step:0.01,placeholder:'Örn: 0.65'}
+    id:'adc_val',title:T.step7Title,type:'number',
+    question:T.step7Q,
+    field:{label:'ADC',unit:T.adcUnit,min:0,max:4,step:0.01,placeholder:T.adcPlaceholder}
   }
 ];
 
@@ -398,9 +938,9 @@ function renderStep(s,idx){
     h+=`<div class="num-group"><input type="number" id="numInput_${idx}" min="${s.field.min}" max="${s.field.max}" step="${s.field.step}" placeholder="${s.field.placeholder}" oninput="numChange(${idx},this.value)"><span class="unit">${s.field.unit}</span></div>`;
   }
   h+=`<div class="nav">`;
-  if(idx>0) h+=`<button class="btn btn-secondary" onclick="goStep(${idx-1})">← Geri</button>`;
-  if(idx<STEPS.length-1) h+=`<button class="btn btn-primary" onclick="goStep(${idx+1})">İleri →</button>`;
-  else h+=`<button class="btn btn-primary" onclick="saveLesion()">Lezyonu Kaydet →</button>`;
+  if(idx>0) h+=`<button class="btn btn-secondary" onclick="goStep(${idx-1})">${T.back}</button>`;
+  if(idx<STEPS.length-1) h+=`<button class="btn btn-primary" onclick="goStep(${idx+1})">${T.next}</button>`;
+  else h+=`<button class="btn btn-primary" onclick="saveLesion()">${T.saveLesion}</button>`;
   h+=`</div>`;
   return h;
 }
@@ -439,7 +979,7 @@ function showStep(n){
   if(el)el.classList.add('active');
   current=n;
   const total=STEPS.length;
-  document.getElementById('counter').textContent=n<total?`Adım ${n+1} / ${total}`:'Sonuç';
+  document.getElementById('counter').textContent=n<total?`${T.stepLabel} ${n+1} / ${total}`:T.resultLabel;
 }
 
 // === SCORING ENGINE ===
@@ -452,16 +992,16 @@ function calcScores(ans){
     // DWI match (weight 30)
     maxScore+=30;
     const dwi=a.dwi||'';
-    if(dwi===p.dwi){score+=30;details.push({k:'DWI',v:'Tam uyum',s:30});}
-    else if(dwiPartial(dwi,p.dwi)){score+=15;details.push({k:'DWI',v:'Kısmi uyum',s:15});}
-    else{details.push({k:'DWI',v:'Uyumsuz',s:0});}
+    if(dwi===p.dwi){score+=30;details.push({k:T.scoreDwi,v:T.scoreExact,s:30});}
+    else if(dwiPartial(dwi,p.dwi)){score+=15;details.push({k:T.scoreDwi,v:T.scorePartial,s:15});}
+    else{details.push({k:T.scoreDwi,v:T.scoreMismatch,s:0});}
 
     // ADC match (weight 30)
     maxScore+=30;
     const adc=a.adc||'';
-    if(adc===p.adc){score+=30;details.push({k:'ADC',v:'Tam uyum',s:30});}
-    else if(adcPartial(adc,p.adc)){score+=15;details.push({k:'ADC',v:'Kısmi uyum',s:15});}
-    else{details.push({k:'ADC',v:'Uyumsuz',s:0});}
+    if(adc===p.adc){score+=30;details.push({k:T.scoreAdc,v:T.scoreExact,s:30});}
+    else if(adcPartial(adc,p.adc)){score+=15;details.push({k:T.scoreAdc,v:T.scorePartial,s:15});}
+    else{details.push({k:T.scoreAdc,v:T.scoreMismatch,s:0});}
 
     // Location match (weight 20)
     maxScore+=20;
@@ -469,15 +1009,15 @@ function calcScores(ans){
     if(loc.length>0 && p.loc.length>0){
       const inter=loc.filter(l=>p.loc.includes(l)).length;
       const ls=Math.round(20*(inter/p.loc.length));
-      score+=ls;details.push({k:'Lokalizasyon',v:`${inter}/${p.loc.length} uyum`,s:ls});
-    }else{details.push({k:'Lokalizasyon',v:'Bilgi yok',s:0});}
+      score+=ls;details.push({k:T.scoreLoc,v:`${inter}/${p.loc.length} ${T.scoreLocMatch}`,s:ls});
+    }else{details.push({k:T.scoreLoc,v:T.scoreNoData,s:0});}
 
     // Enhancement (weight 10)
     maxScore+=10;
     const enh=a.enhance||'';
-    if(enh===p.enhance){score+=10;details.push({k:'Kontrastlanma',v:'Tam uyum',s:10});}
-    else if(enh==='dural_tail'&&p.enhance==='homojen'&&p.id==='menenjioma'){score+=8;details.push({k:'Kontrastlanma',v:'Kısmi uyum',s:8});}
-    else{details.push({k:'Kontrastlanma',v:'Uyumsuz',s:0});}
+    if(enh===p.enhance){score+=10;details.push({k:T.scoreEnh,v:T.scoreExact,s:10});}
+    else if(enh==='dural_tail'&&p.enhance==='homojen'&&p.id==='menenjioma'){score+=8;details.push({k:T.scoreEnh,v:T.scorePartial,s:8});}
+    else{details.push({k:T.scoreEnh,v:T.scoreMismatch,s:0});}
 
     // Morphology (weight 10)
     maxScore+=10;
@@ -485,8 +1025,8 @@ function calcScores(ans){
     if(morph.length>0 && p.morph.length>0){
       const inter=morph.filter(m=>p.morph.includes(m)).length;
       const ms=Math.round(10*(inter/p.morph.length));
-      score+=ms;details.push({k:'Morfoloji',v:`${inter}/${p.morph.length} uyum`,s:ms});
-    }else{details.push({k:'Morfoloji',v:'Bilgi yok',s:0});}
+      score+=ms;details.push({k:T.scoreMorph,v:`${inter}/${p.morph.length} ${T.scoreMorphMatch}`,s:ms});
+    }else{details.push({k:T.scoreMorph,v:T.scoreNoData,s:0});}
 
     // Clinical (weight bonus 10)
     const clin=a.clinical||[];
@@ -494,14 +1034,14 @@ function calcScores(ans){
       maxScore+=10;
       const inter=clin.filter(c=>p.clinical.includes(c)).length;
       const cs=Math.round(10*(inter/p.clinical.length));
-      score+=cs;details.push({k:'Klinik',v:`${inter}/${p.clinical.length} uyum`,s:cs});
+      score+=cs;details.push({k:T.scoreClin,v:`${inter}/${p.clinical.length} ${T.scoreClinMatch}`,s:cs});
     }
 
     // ADC value bonus
     const adcVal=a.adc_val;
     if(adcVal!=null){
       if((p.adc==='cok_dusuk'&&adcVal<0.5)||(p.adc==='dusuk'&&adcVal>=0.4&&adcVal<0.8)||(p.adc==='dusuk_orta'&&adcVal>=0.6&&adcVal<1.0)||(p.adc==='orta'&&adcVal>=0.8&&adcVal<1.2)||(p.adc==='orta_yuksek'&&adcVal>=1.0&&adcVal<1.5)||(p.adc==='normal_yuksek'&&adcVal>=1.2)||(p.adc==='yuksek'&&adcVal>=1.5)){
-        score+=5;maxScore+=5;details.push({k:'ADC Değeri',v:`${adcVal} uyumlu`,s:5});
+        score+=5;maxScore+=5;details.push({k:T.scoreAdcValue,v:`${adcVal} ${T.scoreAdcVal}`,s:5});
       }
     }
 
@@ -547,14 +1087,14 @@ function barColor(pct){
 }
 
 function sevLabel(s){
-  if(s==='high')return'<span class="severity-high">● Yüksek</span>';
-  if(s==='med')return'<span class="severity-med">● Orta</span>';
-  return'<span class="severity-low">● Düşük</span>';
+  if(s==='high')return`<span class="severity-high">${T.sevHighDot}</span>`;
+  if(s==='med')return`<span class="severity-med">${T.sevMedDot}</span>`;
+  return`<span class="severity-low">${T.sevLowDot}</span>`;
 }
 
 // === LESION LOOP ===
 function saveLesion(){
-  const label=`Lezyon ${lesions.length+1}`;
+  const label=`${T.lesionPrefix} ${lesions.length+1}`;
   lesions.push({
     label,
     answers:{
@@ -571,21 +1111,21 @@ function showAskMore(){
   const last=lesions[lesions.length-1];
   const el=document.getElementById('step_ask_more');
   el.innerHTML=`
-    <div class="step-title" style="color:var(--green)">✔ ${last.label} Kaydedildi</div>
-    <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:18px">Toplam <b style="color:var(--text)">${lesions.length}</b> lezyon kayıtlı.</p>
-    <p style="font-size:1rem;margin-bottom:14px">Başka lezyon var mı?</p>
+    <div class="step-title" style="color:var(--green)">✔ ${last.label} ${T.lesionSaved}</div>
+    <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:18px">${T.lesionPrefix}: <b style="color:var(--text)">${lesions.length}</b> ${T.totalLesions}</p>
+    <p style="font-size:1rem;margin-bottom:14px">${T.anotherLesion}</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="addAnotherLesion()" style="flex:1;min-width:160px">➕ Evet, Yeni Lezyon Ekle</button>
-      <button class="btn btn-secondary" onclick="finalizeLesions()" style="flex:1;min-width:160px;border-color:var(--green);color:var(--green)">📋 Hayır, Raporu Göster</button>
+      <button class="btn btn-primary" onclick="addAnotherLesion()" style="flex:1;min-width:160px">${T.addAnother}</button>
+      <button class="btn btn-secondary" onclick="finalizeLesions()" style="flex:1;min-width:160px;border-color:var(--green);color:var(--green)">${T.showReport}</button>
     </div>
     <div class="nav" style="margin-top:16px">
-      <button class="btn btn-secondary" onclick="editLastLesion()">← Geri Dön / Düzenle</button>
+      <button class="btn btn-secondary" onclick="editLastLesion()">${T.backEdit}</button>
     </div>
   `;
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
   current=-1;
-  document.getElementById('counter').textContent=`${lesions.length} lezyon kaydedildi`;
+  document.getElementById('counter').textContent=`${lesions.length} ${T.lesionsRecorded}`;
 }
 
 function addAnotherLesion(){
@@ -612,11 +1152,11 @@ function finalizeLesions(){
 
 // === RESULTS ===
 function showResults(){
-  const all=lesions.length>0?lesions:[{label:'Lezyon 1',answers}];
+  const all=lesions.length>0?lesions:[{label:`${T.lesionPrefix} 1`,answers}];
 
-  let h=`<div class="step-title">Ayırıcı Tanı Sonuçları</div>`;
+  let h=`<div class="step-title">${T.diffDxResults}</div>`;
   if(all.length>1){
-    h+=`<p style="font-size:.85rem;color:var(--text-dim);margin-bottom:14px">Toplam <b>${all.length}</b> lezyon analiz edildi.</p>`;
+    h+=`<p style="font-size:.85rem;color:var(--text-dim);margin-bottom:14px">${T.lesionPrefix}: <b>${all.length}</b> ${T.totalAnalyzed}</p>`;
   }
 
   all.forEach((les,li)=>{
@@ -638,47 +1178,47 @@ function showResults(){
     });
     h+=`</div>`;
 
-    h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">Detaylı Uyum Tablosu</div>`;
+    h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">${T.detailTable}</div>`;
     const show=top.slice(0,5);
-    h+=`<table class="report-table"><thead><tr><th>Patoloji</th><th>Skor</th><th>Uyum</th><th>Klinik Önemi</th></tr></thead><tbody>`;
+    h+=`<table class="report-table"><thead><tr><th>${T.colPathology}</th><th>${T.colScore}</th><th>${T.colMatch}</th><th>${T.colClinSig}</th></tr></thead><tbody>`;
     show.forEach(r=>{
       h+=`<tr><td>${r.name}</td><td>%${r.pct}</td><td>${r.details.map(d=>`${d.k}: ${d.v}`).join(', ')}</td><td>${sevLabel(r.severity)}</td></tr>`;
     });
     h+=`</tbody></table></div>`;
 
-    h+=`<div class="yorum"><div class="yorum-title">YORUM — ${les.label}</div>`;
+    h+=`<div class="yorum"><div class="yorum-title">${T.commentTitle} — ${les.label}</div>`;
     if(best&&best.pct>=50){
-      h+=`Bulgular en yüksek oranda <b>${best.name}</b> (%${best.pct} uyum) ile uyumludur. ${best.desc}`;
+      h+=`${T.commentBest} <b>${best.name}</b> (%${best.pct} ${T.commentBestPct} ${best.desc}`;
       if(top[1]&&top[1].pct>=40){
-        h+=`<br><br>Ayırıcı tanıda <b>${top[1].name}</b> (%${top[1].pct}) da göz önünde bulundurulmalıdır.`;
+        h+=`<br><br>${T.commentDiff} <b>${top[1].name}</b> (%${top[1].pct}) ${T.commentDiffPct}`;
       }
     }else if(best){
-      h+=`Mevcut bulgularla en yakın eşleşme <b>${best.name}</b> (%${best.pct}) olmakla birlikte uyum oranı düşüktür. Ek sekanslar ve klinik korelasyon önerilir.`;
+      h+=`${T.commentLow} <b>${best.name}</b> (%${best.pct}) ${T.commentLowSuffix}`;
     }else{
-      h+=`Girilen bulgularla anlamlı bir eşleşme saptanmamıştır. Ek sekanslar ve klinik korelasyon önerilir.`;
+      h+=T.commentNone;
     }
     const adcVal=les.answers.adc_val;
     if(adcVal!=null){
-      h+=`<br><br><b>ADC Değeri:</b> ${adcVal} × 10⁻³ mm²/s — `;
-      if(adcVal<0.5)h+=`<span class="severity-high">Belirgin restriksiyon</span> (abse, lenfoma, akut iskemi düşünülmeli)`;
-      else if(adcVal<0.8)h+=`<span class="severity-high">Restriksiyon mevcut</span> (iskemi, yüksek sellülarite)`;
-      else if(adcVal<1.2)h+=`<span class="severity-med">Orta düzey</span> (kısmi restriksiyon veya T2 shine-through)`;
-      else h+=`<span class="severity-low">Restriksiyon yok</span> (T2 shine-through, kronik lezyon)`;
+      h+=`<br><br><b>${T.adcValueLabel}:</b> ${adcVal} ${T.adcUnit} — `;
+      if(adcVal<0.5)h+=`<span class="severity-high">${T.adcBelirginRestriksiyon}</span> ${T.adcBelirginRestriksiyonSuffix}`;
+      else if(adcVal<0.8)h+=`<span class="severity-high">${T.adcRestriksiyon}</span> ${T.adcRestriksiyonSuffix}`;
+      else if(adcVal<1.2)h+=`<span class="severity-med">${T.adcOrta}</span> ${T.adcOrtaSuffix}`;
+      else h+=`<span class="severity-low">${T.adcYok}</span> ${T.adcYokSuffix}`;
     }
     h+=`</div>`;
   });
 
   // Reference table
-  h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">Referans: Difüzyon MRI Patoloji Tablosu</div>`;
-  h+=`<table class="report-table"><thead><tr><th>Patoloji</th><th>DWI</th><th>ADC</th><th>Açıklama</th></tr></thead><tbody>`;
+  h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">${T.refTable}</div>`;
+  h+=`<table class="report-table"><thead><tr><th>${T.colPathology}</th><th>${T.colDwi}</th><th>${T.colAdc}</th><th>${T.colDesc}</th></tr></thead><tbody>`;
   PATHOLOGIES.forEach(p=>{
     h+=`<tr><td>${p.name}</td><td>${dwiLabel(p.dwi)}</td><td>${adcLabel(p.adc)}</td><td style="font-size:.8rem">${p.desc.substring(0,80)}…</td></tr>`;
   });
   h+=`</tbody></table></div>`;
 
   h+=`<div class="toolbar">
-    <button class="btn btn-primary" onclick="openPrint()">🖨️ Yazdır / Dışa Aktar</button>
-    <button class="btn btn-secondary" onclick="resetAll()">↻ Yeni Analiz</button>
+    <button class="btn btn-primary" onclick="openPrint()">${T.btnPrint}</button>
+    <button class="btn btn-secondary" onclick="resetAll()">${T.btnReset}</button>
   </div>`;
 
   const el=document.getElementById('step_result');
@@ -687,21 +1227,39 @@ function showResults(){
 }
 
 function dwiLabel(v){
-  const m={'cok_hiperintens':'Çok hiperintens','belirgin_hiperintens':'Belirgin hiperintens','hiperintens':'Hiperintens','heterojen_hiperintens':'Heterojen hiperintens','hafif_hiperintens':'Hafif hiperintens','izointens':'İzointens','hipointens':'Hipointens','degisken':'Değişken'};
+  const m={
+    'cok_hiperintens':T.dwi_cok_hiperintens_l,
+    'belirgin_hiperintens':T.dwi_belirgin_hiperintens_l,
+    'hiperintens':T.dwi_hiperintens_l,
+    'heterojen_hiperintens':T.dwi_heterojen_hiperintens_l,
+    'hafif_hiperintens':T.dwi_hafif_hiperintens_l,
+    'izointens':T.dwi_izointens_l,
+    'hipointens':T.dwi_hipointens_l,
+    'degisken':T.dwi_degisken_l
+  };
   return m[v]||v;
 }
 function adcLabel(v){
-  const m={'cok_dusuk':'Çok düşük','dusuk':'Düşük','dusuk_orta':'Düşük-orta','orta':'Orta','orta_yuksek':'Orta-yüksek','normal_yuksek':'Normal-yüksek','yuksek':'Yüksek','pseudonormal':'Psödonormalizasyon'};
+  const m={
+    'cok_dusuk':T.adc_cok_dusuk_l,
+    'dusuk':T.adc_dusuk_l,
+    'dusuk_orta':T.adc_dusuk_orta_l,
+    'orta':T.adc_orta_l,
+    'orta_yuksek':T.adc_orta_yuksek_l,
+    'normal_yuksek':T.adc_normal_yuksek_l,
+    'yuksek':T.adc_yuksek_l,
+    'pseudonormal':T.adc_pseudonormal_l
+  };
   return m[v]||v;
 }
 
 // === PRINT / EXPORT ===
 function openPrint(){
-  const all=lesions.length>0?lesions:[{label:'Lezyon 1',answers}];
-  const now=new Date().toLocaleString('tr-TR');
+  const all=lesions.length>0?lesions:[{label:`${T.lesionPrefix} 1`,answers}];
+  const now=new Date().toLocaleString(RV_LOCALE === 'en' ? 'en-GB' : 'tr-TR');
 
-  let h=`<h1 style="color:#7f5af0;font-size:16pt;margin-bottom:2px">Beyin Difüzyon MRI — Karar Destek Raporu</h1>`;
-  h+=`<p style="color:#666;font-size:9pt;margin-bottom:14px">Tarih: ${now} | Toplam lezyon: ${all.length}</p>`;
+  let h=`<h1 style="color:#7f5af0;font-size:16pt;margin-bottom:2px">${T.printTitle}</h1>`;
+  h+=`<p style="color:#666;font-size:9pt;margin-bottom:14px">${T.printDate} ${now} | ${T.printTotalLesions} ${all.length}</p>`;
 
   all.forEach((les,li)=>{
     const ans=les.answers;
@@ -713,37 +1271,37 @@ function openPrint(){
       h+=`<h2 style="background:#7f5af0;color:#fff;padding:6px 10px;border-radius:4px;font-size:12pt">${les.label}</h2>`;
     }
 
-    h+=`<h2>Bulgular</h2><table><tbody>`;
-    h+=`<tr><td><b>DWI Sinyali</b></td><td>${dwiLabel(ans.dwi||'')}</td></tr>`;
-    h+=`<tr><td><b>ADC Haritası</b></td><td>${adcLabel(ans.adc||'')}</td></tr>`;
+    h+=`<h2>${T.printFindings}</h2><table><tbody>`;
+    h+=`<tr><td><b>${T.printDwi}</b></td><td>${dwiLabel(ans.dwi||'')}</td></tr>`;
+    h+=`<tr><td><b>${T.printAdcMap}</b></td><td>${adcLabel(ans.adc||'')}</td></tr>`;
     const locLabels=(ans.loc||[]).map(v=>{const o=STEPS[2].options.find(x=>x.v===v);return o?o.l:v;});
-    h+=`<tr><td><b>Lokalizasyon</b></td><td>${locLabels.join(', ')||'—'}</td></tr>`;
+    h+=`<tr><td><b>${T.printLoc}</b></td><td>${locLabels.join(', ')||'—'}</td></tr>`;
     const enhLabel=STEPS[3].options.find(o=>o.v===ans.enhance);
-    h+=`<tr><td><b>Kontrastlanma</b></td><td>${enhLabel?enhLabel.l:'—'}</td></tr>`;
+    h+=`<tr><td><b>${T.printEnh}</b></td><td>${enhLabel?enhLabel.l:'—'}</td></tr>`;
     const morphLabels=(ans.morph||[]).map(v=>{const o=STEPS[4].options.find(x=>x.v===v);return o?o.l:v;});
-    h+=`<tr><td><b>Morfoloji</b></td><td>${morphLabels.join(', ')||'—'}</td></tr>`;
+    h+=`<tr><td><b>${T.printMorph}</b></td><td>${morphLabels.join(', ')||'—'}</td></tr>`;
     const clinLabels=(ans.clinical||[]).map(v=>{const o=STEPS[5].options.find(x=>x.v===v);return o?o.l:v;});
-    h+=`<tr><td><b>Klinik</b></td><td>${clinLabels.join(', ')||'—'}</td></tr>`;
-    if(ans.adc_val!=null) h+=`<tr><td><b>ADC Değeri</b></td><td>${ans.adc_val} × 10⁻³ mm²/s</td></tr>`;
+    h+=`<tr><td><b>${T.printClin}</b></td><td>${clinLabels.join(', ')||'—'}</td></tr>`;
+    if(ans.adc_val!=null) h+=`<tr><td><b>${T.printAdcVal}</b></td><td>${ans.adc_val} ${T.adcUnit}</td></tr>`;
     h+=`</tbody></table>`;
 
-    h+=`<h2>Ayırıcı Tanı Sıralaması</h2><table><thead><tr><th>Patoloji</th><th>Uyum %</th><th>Klinik Önemi</th></tr></thead><tbody>`;
+    h+=`<h2>${T.printDiffDx}</h2><table><thead><tr><th>${T.colPathology}</th><th>${T.printMatchPct}</th><th>${T.printClinSig}</th></tr></thead><tbody>`;
     top.forEach(r=>{
-      const sv=r.severity==='high'?'Yüksek':r.severity==='med'?'Orta':'Düşük';
+      const sv=r.severity==='high'?T.sevHigh:r.severity==='med'?T.sevMed:T.sevLow;
       h+=`<tr><td>${r.name}</td><td>%${r.pct}</td><td>${sv}</td></tr>`;
     });
     h+=`</tbody></table>`;
 
-    h+=`<div class="yorum-print"><b>YORUM${all.length>1?' — '+les.label:''}:</b> `;
+    h+=`<div class="yorum-print"><b>${T.printCommentLabel}${all.length>1?' — '+les.label:''}:</b> `;
     if(best&&best.pct>=50){
-      h+=`Bulgular en yüksek oranda ${best.name} (%${best.pct}) ile uyumludur. ${best.desc}`;
+      h+=`${T.printBest} ${best.name} (%${best.pct}) ${T.printBestSuffix} ${best.desc}`;
     }else if(best){
-      h+=`En yakın eşleşme ${best.name} (%${best.pct}) olmakla birlikte uyum düşüktür. Ek değerlendirme önerilir.`;
+      h+=`${T.printLow} ${best.name} (%${best.pct}) ${T.printLowSuffix}`;
     }
     h+=`</div>`;
   });
 
-  h+=`<p style="color:#999;font-size:8pt;margin-top:20px;border-top:1px solid #ddd;padding-top:8px">Bu rapor klinik karar destek amaçlıdır. Kesin tanı klinik ve radyolojik korelasyon gerektirir.</p>`;
+  h+=`<p style="color:#999;font-size:8pt;margin-top:20px;border-top:1px solid #ddd;padding-top:8px">${T.printDisclaimer}</p>`;
 
   document.getElementById('printSheet').innerHTML=h;
   document.getElementById('printOverlay').classList.add('show');
@@ -758,7 +1316,7 @@ function copyReport(){
   const sel=window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
-  try{document.execCommand('copy');alert('Rapor panoya kopyalandı.');}catch(e){alert('Kopyalama başarısız.');}
+  try{document.execCommand('copy');alert(T.copySuccess);}catch(e){alert(T.copyFail);}
   sel.removeAllRanges();
 }
 

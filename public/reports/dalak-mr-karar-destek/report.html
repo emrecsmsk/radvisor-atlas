@@ -18,73 +18,545 @@
   <div id="root"></div>
 
   <script type="text/babel">
+    const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+    const T = ({
+      tr: {
+        /* ── UI ── */
+        appTitle: "Dalak MR Karar Destek",
+        reportTitle: "Dalak MR – Rapor",
+        printTitle: "Dalak MR Değerlendirme Raporu",
+        reset: "Sıfırla",
+        newEval: "↺ Yeni Değerlendirme",
+        copy: "📋 Kopyala",
+        print: "🖨 Yazdır / PDF",
+        copied: "✓ Kopyalandı!",
+        copyFail: "✕ Kopyalanamadı",
+        continue: "Devam →",
+        back: "← Geri",
+        enterValue: "Değer girin",
+        date: "Tarih",
+        generalFindings: "Genel Bulgular",
+        lesion: "Lezyon",
+        impression: "YORUM – Olası Tanılar",
+        step: "Adım",
+        footer: "Bu rapor Dalak MR Karar Destek Sistemi tarafından oluşturulmuştur.",
+        reportHeader: "DALAK MR DEĞERLENDİRME RAPORU",
+        generalFindingsHeader: "GENEL BULGULAR",
+        locale: "tr-TR",
+        /* ── match substrings (lowercase, used in scoring) ── */
+        match: {
+          hiperintens: "hiperintens",
+          hipointens: "hipointens",
+          izointens: "izointens",
+          hafif: "hafif",
+          cokHiperintens: "çok hiperintens",
+          heterojen: "heterojen",
+          restriksiyon: "restriksiyon",
+          restNoYok: "restriksiyon yok",
+          geneldeRestNoYok: "genelde restriksiyon yok",
+          gucluRestriksiyon: "güçlü restriksiyon",
+          belirginRestriksiyon: "belirgin restriksiyon",
+          shineThrough: "shine-through",
+          degisken: "değişken",
+          yuksek: "yüksek",
+          dusuk: "düşük",
+          hafifDusuk: "hafif düşük",
+          cokDusuk: "çok düşük",
+          normal: "normal",
+          yok: "yok",
+          kontrastlanmaYok: "kontrastlanma yok",
+          rim: "rim",
+          periferik: "periferik",
+          homojen: "homojen",
+          progressif: "progressif",
+          devam: "devam",
+          nekroz: "nekroz",
+          minimal: "minimal",
+          kama: "kama",
+          zayif: "zayıf",
+          guclu: "güçlü",
+        },
+        /* ── option values (must stay consistent with getNextStep comparisons) ── */
+        opt: {
+          izlendi: "İzlendi",
+          izlenmedi: "İzlenmedi",
+          opere: "Opere (splenektomi)",
+          agenesis: "Agenesis",
+          tekil: "Tekil",
+          birdenFazla: "Birden fazla",
+          normal: "Normal",
+          ektopik: "Anormal (ektopik)",
+          var: "Var",
+          yok: "Yok",
+          kistik: "Kistik",
+          solid: "Solid",
+          mikst: "Mikst",
+          wedge: "Wedge shape (kama)",
+        },
+        /* ── pathology names (used in scoring regex) ── */
+        path: {
+          basitKist: "Basit kist",
+          hidatikKist: "Hidatik kist",
+          psodokist: "Psödokist (posttravmatik)",
+          hemanjiyom: "Hemanjiyom",
+          hamartom: "Hamartom",
+          lenfoma: "Lenfoma",
+          metastaz: "Metastaz",
+          abse: "Abse",
+          infarkt: "İnfarkt",
+          anjiyosarkom: "Anjiyosarkom",
+          granulomatoz: "Granülomatöz hastalık (TB, sarkoidoz)",
+          gamnaGandy: "Siderotik nodül (Gamna-Gandy)",
+        },
+        /* ── signal / enhancement labels ── */
+        sig: {
+          hiperintens: "Hiperintens",
+          hafifHiperintens: "Hafif hiperintens",
+          izointens: "İzointens",
+          hafifHipointens: "Hafif hipointens",
+          hipointens: "Hipointens",
+          guclu: "Güçlü",
+          zayif: "Zayıf",
+          minimal: "Minimal",
+          yok: "Yok",
+          duzenli: "Düzenli",
+          duzensiz: "Düzensiz",
+          lobule: "Lobüle",
+        },
+        /* ── phase labels ── */
+        phase: {
+          arterial: "Arteriyel Faz",
+          portal: "Portal Venöz Faz",
+          late: "Geç Faz",
+          arterialShort: "Arteriyel",
+          portalShort: "Portal",
+          lateShort: "Geç Faz",
+        },
+        /* ── pathology field values ── */
+        pv: {
+          hipointens: "Hipointens",
+          cokHiperintensSepta: "Çok hiperintens, septa/daughter kistler",
+          cokHiperintens: "Çok hiperintens",
+          hiperintens: "Hiperintens",
+          izointens: "İzointens",
+          hafifHiperintens: "Hafif hiperintens",
+          hafifHipointens: "Hafif hipointens",
+          heterojen: "Heterojen",
+          degisken: "Değişken",
+          yuksek: "Yüksek",
+          hafifDusuk: "Hafif düşük",
+          dusuk: "Düşük",
+          cokDusuk: "Çok düşük",
+          dusukNormal: "Düşük / normal",
+          normal: "Normal",
+          hafifRestriksiyon: "Hafif restriksiyon olabilir",
+          erkenRestriksiyon: "Erken restriksiyon olabilir",
+          geneldeRestYok: "Genelde restriksiyon yok",
+          restYok: "Restriksiyon yok",
+          restriksiyon: "Restriksiyon",
+          belirginRestriksiyon: "Belirgin restriksiyon",
+          gucluRestriksiyon: "Güçlü restriksiyon",
+          hafifParlak: "Hafif parlak (T2 shine-through)",
+          periferikRimKontrast: "Periferik rim kontrast",
+          kontrastlanmaYok: "Kontrastlanma yok",
+          geneldeKontrastYok: "Genelde kontrastlanma yok",
+          periferikNoduler: "Periferik nodüler kontrast",
+          progressifDolum: "Progressif dolum",
+          geckFazHomojen: "Geç fazda homojen",
+          homojenKontrast: "Homojen kontrast",
+          devamEder: "Devam eder",
+          hafifKontrast: "Hafif kontrast",
+          homojen: "Homojen",
+          rimKontrast: "Rim kontrast",
+          rim: "Rim",
+          rimVeyaHeterojen: "Rim veya heterojen",
+          rimDevam: "Rim devam",
+          heterojenKontrast: "Heterojen kontrast",
+          nekrozAlanlari: "Nekroz alanları",
+          minimal: "Minimal",
+          kamaDefekt: "Kama şeklinde defekt",
+          devam: "Devam",
+          yok: "Yok",
+          bos: "",
+          solid_regex: "(lenfoma|metastaz|hamartom|anjiyosarkom|granülom)",
+        },
+        /* ── step questions ── */
+        sq: {
+          S1: "Dalak değerlendirildi mi?",
+          S2: "İzlenmeme nedeni nedir?",
+          S3: "Dalak sayısı",
+          S4: "Dalak lokasyonu",
+          S5: "Ektopik dalak lokasyonu",
+          S6: "Dalak kraniokaudal (CC) boyutu (mm)",
+          S7: "Dalak şekli",
+          S8: "Aksesuar dalak",
+          S9: "Aksesuar dalak lokalizasyonu",
+          S10: "Aksesuar dalak boyutu (mm)",
+          S11: "Dalak parankim intensitesi",
+          S12: "Dalak parankim – T1A sinyal",
+          S13: "Dalak parankim – T2A sinyal",
+          S14: "Dalak parankim – DWI sinyal",
+          S15: "Dalak parankim – ADC sinyal",
+          S16: "Dalak konturu",
+          S17: "Dalakta lezyon var mı?",
+          L1: "Lezyon tipi",
+          L2: "Fokalite",
+          L3: "Lezyon konturu",
+          L4: "Lezyon boyutu (mm)",
+          L5: "Lezyon şekli",
+          L6: "Septasyon",
+          L7: "Septasyon tipi",
+          L8: "Lezyon lokasyonu",
+          L9: "Duvar kalınlığı (mm)",
+          L10: "Duvar konturu",
+          L11: "Kontrastlanma",
+          L12: "Kontrastlanma paterni – Arteriyel faz",
+          L13: "Kontrastlanma paterni – Portal venöz faz",
+          L14: "Kontrastlanma paterni – Geç faz",
+          L15: "Lezyon internal intensitesi",
+          L16: "Lezyon – T1A sinyal",
+          L17: "Lezyon – T2A sinyal",
+          L18: "Lezyon – DWI sinyal",
+          L19: "Lezyon – ADC sinyal",
+          L20: "Başka lezyon var mı?",
+        },
+        /* ── step options ── */
+        so: {
+          S1: ["İzlendi", "İzlenmedi"],
+          S2: ["Opere (splenektomi)", "Agenesis"],
+          S3: ["Tekil", "Birden fazla"],
+          S4: ["Normal", "Anormal (ektopik)"],
+          S5: ["Sağ üst kadran", "Sağ alt kadran", "Sol alt kadran", "Orta hat"],
+          S7: ["Lentiküler (normal)", "Deforme", "Cleft", "Lobüle"],
+          S8: ["Var", "Yok"],
+          S9: ["Hiler", "Üst pol", "Alt pol", "Posterior"],
+          S11: ["Homojen", "Heterojen"],
+          S16: ["Düzenli", "Düzensiz", "Lobüle"],
+          S17: ["Var", "Yok"],
+          L1: ["Kistik", "Solid", "Mikst"],
+          L2: ["Unifokal", "Multifokal"],
+          L3: ["Düzenli", "Düzensiz", "Lobüle"],
+          L5: ["Yuvarlak/Ovoid", "Lentiform", "Wedge shape (kama)", "Düzensiz"],
+          L6: ["Var", "Yok"],
+          L7: ["İnce tek", "Kalın tek", "İnce birkaç", "Kalın birkaç"],
+          L8: ["Hiler", "Subkapsüler", "Parankimal"],
+          L10: ["Düzenli", "Düzensiz"],
+          L11: ["Var", "Yok"],
+          L15: ["Homojen", "Heterojen"],
+          L20: ["Var", "Yok"],
+        },
+        /* ── scoring type badges ── */
+        score: {
+          cysticType: "Kistik tip",
+          solidType: "Solid tip",
+          wedgeShape: "Kama şekli",
+          septation: "Septasyon",
+          enhancement: "Kontrastlanma",
+        },
+      },
+      en: {
+        /* ── UI ── */
+        appTitle: "Spleen MRI Decision Support",
+        reportTitle: "Spleen MRI – Report",
+        printTitle: "Spleen MRI Evaluation Report",
+        reset: "Reset",
+        newEval: "↺ New Evaluation",
+        copy: "📋 Copy",
+        print: "🖨 Print / PDF",
+        copied: "✓ Copied!",
+        copyFail: "✕ Copy failed",
+        continue: "Continue →",
+        back: "← Back",
+        enterValue: "Enter value",
+        date: "Date",
+        generalFindings: "General Findings",
+        lesion: "Lesion",
+        impression: "IMPRESSION – Possible Diagnoses",
+        step: "Step",
+        footer: "This report was generated by the Spleen MRI Decision Support System.",
+        reportHeader: "SPLEEN MRI EVALUATION REPORT",
+        generalFindingsHeader: "GENERAL FINDINGS",
+        locale: "en-US",
+        /* ── match substrings (lowercase, used in scoring) ── */
+        match: {
+          hiperintens: "hyperintense",
+          hipointens: "hypointense",
+          izointens: "isointense",
+          hafif: "mild",
+          cokHiperintens: "very hyperintense",
+          heterojen: "heterogeneous",
+          restriksiyon: "restricted diffusion",
+          restNoYok: "no restricted diffusion",
+          geneldeRestNoYok: "generally no restricted diffusion",
+          gucluRestriksiyon: "markedly restricted diffusion",
+          belirginRestriksiyon: "markedly restricted diffusion",
+          shineThrough: "shine-through",
+          degisken: "variable",
+          yuksek: "high",
+          dusuk: "low",
+          hafifDusuk: "mildly low",
+          cokDusuk: "very low",
+          normal: "normal",
+          yok: "none",
+          kontrastlanmaYok: "no enhancement",
+          rim: "rim",
+          periferik: "peripheral",
+          homojen: "homogeneous",
+          progressif: "progressive",
+          devam: "persists",
+          nekroz: "necrosis",
+          minimal: "minimal",
+          kama: "wedge",
+          zayif: "weak",
+          guclu: "strong",
+        },
+        /* ── option values ── */
+        opt: {
+          izlendi: "Visualized",
+          izlenmedi: "Not visualized",
+          opere: "Post-operative (splenectomy)",
+          agenesis: "Agenesis",
+          tekil: "Single",
+          birdenFazla: "Multiple",
+          normal: "Normal",
+          ektopik: "Abnormal (ectopic)",
+          var: "Present",
+          yok: "Absent",
+          kistik: "Cystic",
+          solid: "Solid",
+          mikst: "Mixed",
+          wedge: "Wedge shape",
+        },
+        /* ── pathology names ── */
+        path: {
+          basitKist: "Simple cyst",
+          hidatikKist: "Hydatid cyst",
+          psodokist: "Pseudocyst (post-traumatic)",
+          hemanjiyom: "Hemangioma",
+          hamartom: "Hamartoma",
+          lenfoma: "Lymphoma",
+          metastaz: "Metastasis",
+          abse: "Abscess",
+          infarkt: "Infarct",
+          anjiyosarkom: "Angiosarcoma",
+          granulomatoz: "Granulomatous disease (TB, sarcoidosis)",
+          gamnaGandy: "Siderotic nodule (Gamna-Gandy body)",
+        },
+        /* ── signal / enhancement labels ── */
+        sig: {
+          hiperintens: "Hyperintense",
+          hafifHiperintens: "Mildly hyperintense",
+          izointens: "Isointense",
+          hafifHipointens: "Mildly hypointense",
+          hipointens: "Hypointense",
+          guclu: "Strong",
+          zayif: "Weak",
+          minimal: "Minimal",
+          yok: "None",
+          duzenli: "Regular",
+          duzensiz: "Irregular",
+          lobule: "Lobulated",
+        },
+        /* ── phase labels ── */
+        phase: {
+          arterial: "Arterial Phase",
+          portal: "Portal Venous Phase",
+          late: "Late Phase",
+          arterialShort: "Arterial",
+          portalShort: "Portal",
+          lateShort: "Late Phase",
+        },
+        /* ── pathology field values ── */
+        pv: {
+          hipointens: "Hypointense",
+          cokHiperintensSepta: "Very hyperintense, septa/daughter cysts",
+          cokHiperintens: "Very hyperintense",
+          hiperintens: "Hyperintense",
+          izointens: "Isointense",
+          hafifHiperintens: "Mildly hyperintense",
+          hafifHipointens: "Mildly hypointense",
+          heterojen: "Heterogeneous",
+          degisken: "Variable",
+          yuksek: "High",
+          hafifDusuk: "Mildly low",
+          dusuk: "Low",
+          cokDusuk: "Very low",
+          dusukNormal: "Low / normal",
+          normal: "Normal",
+          hafifRestriksiyon: "Mild restricted diffusion possible",
+          erkenRestriksiyon: "Early restricted diffusion possible",
+          geneldeRestYok: "Generally no restricted diffusion",
+          restYok: "No restricted diffusion",
+          restriksiyon: "Restricted diffusion",
+          belirginRestriksiyon: "Markedly restricted diffusion",
+          gucluRestriksiyon: "Markedly restricted diffusion",
+          hafifParlak: "Mildly bright (T2 shine-through)",
+          periferikRimKontrast: "Peripheral rim enhancement",
+          kontrastlanmaYok: "No enhancement",
+          geneldeKontrastYok: "Generally no enhancement",
+          periferikNoduler: "Peripheral nodular enhancement",
+          progressifDolum: "Progressive fill-in",
+          geckFazHomojen: "Homogeneous on late phase",
+          homojenKontrast: "Homogeneous enhancement",
+          devamEder: "Persists",
+          hafifKontrast: "Mild enhancement",
+          homojen: "Homogeneous",
+          rimKontrast: "Rim enhancement",
+          rim: "Rim",
+          rimVeyaHeterojen: "Rim or heterogeneous",
+          rimDevam: "Rim persists",
+          heterojenKontrast: "Heterogeneous enhancement",
+          nekrozAlanlari: "Areas of necrosis",
+          minimal: "Minimal",
+          kamaDefekt: "Wedge-shaped defect",
+          devam: "Persists",
+          yok: "None",
+          bos: "",
+          solid_regex: "(lymphoma|metastasis|hamartoma|angiosarcoma|granuloma)",
+        },
+        /* ── step questions ── */
+        sq: {
+          S1: "Was the spleen evaluated?",
+          S2: "Reason for non-visualization?",
+          S3: "Spleen count",
+          S4: "Spleen location",
+          S5: "Ectopic spleen location",
+          S6: "Spleen craniocaudal (CC) dimension (mm)",
+          S7: "Spleen shape",
+          S8: "Accessory spleen",
+          S9: "Accessory spleen localization",
+          S10: "Accessory spleen size (mm)",
+          S11: "Splenic parenchyma intensity",
+          S12: "Splenic parenchyma – T1 signal",
+          S13: "Splenic parenchyma – T2 signal",
+          S14: "Splenic parenchyma – DWI signal",
+          S15: "Splenic parenchyma – ADC signal",
+          S16: "Splenic contour",
+          S17: "Is there a splenic lesion?",
+          L1: "Lesion type",
+          L2: "Focality",
+          L3: "Lesion contour",
+          L4: "Lesion size (mm)",
+          L5: "Lesion shape",
+          L6: "Septation",
+          L7: "Septation type",
+          L8: "Lesion location",
+          L9: "Wall thickness (mm)",
+          L10: "Wall contour",
+          L11: "Enhancement",
+          L12: "Enhancement pattern – Arterial phase",
+          L13: "Enhancement pattern – Portal venous phase",
+          L14: "Enhancement pattern – Late phase",
+          L15: "Lesion internal intensity",
+          L16: "Lesion – T1 signal",
+          L17: "Lesion – T2 signal",
+          L18: "Lesion – DWI signal",
+          L19: "Lesion – ADC signal",
+          L20: "Is there another lesion?",
+        },
+        /* ── step options ── */
+        so: {
+          S1: ["Visualized", "Not visualized"],
+          S2: ["Post-operative (splenectomy)", "Agenesis"],
+          S3: ["Single", "Multiple"],
+          S4: ["Normal", "Abnormal (ectopic)"],
+          S5: ["Right upper quadrant", "Right lower quadrant", "Left lower quadrant", "Midline"],
+          S7: ["Lenticular (normal)", "Deformed", "Cleft", "Lobulated"],
+          S8: ["Present", "Absent"],
+          S9: ["Hilar", "Upper pole", "Lower pole", "Posterior"],
+          S11: ["Homogeneous", "Heterogeneous"],
+          S16: ["Regular", "Irregular", "Lobulated"],
+          S17: ["Present", "Absent"],
+          L1: ["Cystic", "Solid", "Mixed"],
+          L2: ["Unifocal", "Multifocal"],
+          L3: ["Regular", "Irregular", "Lobulated"],
+          L5: ["Round/Ovoid", "Lentiform", "Wedge shape", "Irregular"],
+          L6: ["Present", "Absent"],
+          L7: ["Thin single", "Thick single", "Thin multiple", "Thick multiple"],
+          L8: ["Hilar", "Subcapsular", "Parenchymal"],
+          L10: ["Regular", "Irregular"],
+          L11: ["Present", "Absent"],
+          L15: ["Homogeneous", "Heterogeneous"],
+          L20: ["Present", "Absent"],
+        },
+        /* ── scoring type badges ── */
+        score: {
+          cysticType: "Cystic type",
+          solidType: "Solid type",
+          wedgeShape: "Wedge shape",
+          septation: "Septation",
+          enhancement: "Enhancement",
+        },
+      },
+    })[RV_LOCALE];
+
     const { useState, useCallback, useMemo, useRef, useEffect } = React;
 
     /* ────────────────────────── CONSTANTS ────────────────────────── */
     const SIGNAL_OPTIONS = [
-      "Hiperintens", "Hafif hiperintens", "İzointens", "Hafif hipointens", "Hipointens",
+      T.sig.hiperintens, T.sig.hafifHiperintens, T.sig.izointens, T.sig.hafifHipointens, T.sig.hipointens,
     ];
-    const CONTOUR_OPTIONS = ["Düzenli", "Düzensiz", "Lobüle"];
+    const CONTOUR_OPTIONS = [T.sig.duzenli, T.sig.duzensiz, T.sig.lobule];
     const PHASES = [
-      { key: "arterial", label: "Arteriyel Faz" },
-      { key: "portal", label: "Portal Venöz Faz" },
-      { key: "late", label: "Geç Faz" },
+      { key: "arterial", label: T.phase.arterial },
+      { key: "portal", label: T.phase.portal },
+      { key: "late", label: T.phase.late },
     ];
-    const ENHANCEMENT_LEVELS = ["Güçlü", "Zayıf", "Minimal", "Yok"];
+    const ENHANCEMENT_LEVELS = [T.sig.guclu, T.sig.zayif, T.sig.minimal, T.sig.yok];
 
     const PATHOLOGIES = [
-      { name: "Basit kist", t1: "Hipointens", t2: "Çok hiperintens", dwi: "Hafif parlak (T2 shine-through)", adc: "Yüksek", arterial: "Kontrastlanma yok", portal: "Yok", late: "Yok" },
-      { name: "Hidatik kist", t1: "Hipointens", t2: "Çok hiperintens, septa/daughter kistler", dwi: "Değişken", adc: "Yüksek", arterial: "Periferik rim kontrast", portal: "Rim", late: "Rim" },
-      { name: "Psödokist (posttravmatik)", t1: "Hipointens", t2: "Hiperintens", dwi: "Değişken", adc: "Yüksek", arterial: "Genelde kontrastlanma yok", portal: "Yok", late: "Yok" },
-      { name: "Hemanjiyom", t1: "Hipointens", t2: "Çok hiperintens", dwi: "Hafif hiperintens", adc: "Yüksek", arterial: "Periferik nodüler kontrast", portal: "Progressif dolum", late: "Geç fazda homojen" },
-      { name: "Hamartom", t1: "İzointens", t2: "Hafif hiperintens", dwi: "Hafif restriksiyon olabilir", adc: "Hafif düşük", arterial: "Homojen kontrast", portal: "Devam eder", late: "İzointens" },
-      { name: "Lenfoma", t1: "Hipointens", t2: "Hafif hiperintens", dwi: "Belirgin restriksiyon", adc: "Düşük", arterial: "Hafif kontrast", portal: "Homojen", late: "İzointens" },
-      { name: "Metastaz", t1: "Hipointens", t2: "Hiperintens", dwi: "Restriksiyon", adc: "Düşük", arterial: "Rim veya heterojen", portal: "Rim devam", late: "Heterojen" },
-      { name: "Abse", t1: "Hipointens", t2: "Hiperintens", dwi: "Güçlü restriksiyon", adc: "Çok düşük", arterial: "Rim kontrast", portal: "Rim", late: "Rim" },
-      { name: "İnfarkt", t1: "Hipointens", t2: "Hafif hiperintens", dwi: "Erken restriksiyon olabilir", adc: "Düşük / normal", arterial: "Kontrastlanma yok", portal: "Kama şeklinde defekt", late: "Devam" },
-      { name: "Anjiyosarkom", t1: "Heterojen", t2: "Heterojen", dwi: "Restriksiyon", adc: "Düşük", arterial: "Heterojen kontrast", portal: "Heterojen", late: "Nekroz alanları" },
-      { name: "Granülomatöz hastalık (TB, sarkoidoz)", t1: "Hipointens", t2: "Hipointens", dwi: "Genelde restriksiyon yok", adc: "Normal", arterial: "Minimal", portal: "Minimal", late: "Minimal" },
-      { name: "Siderotik nodül (Gamna-Gandy)", t1: "Hipointens", t2: "Hipointens", dwi: "Restriksiyon yok", adc: "Normal", arterial: "Kontrastlanma yok", portal: "Yok", late: "" },
+      { name: T.path.basitKist, t1: T.pv.hipointens, t2: T.pv.cokHiperintens, dwi: T.pv.hafifParlak, adc: T.pv.yuksek, arterial: T.pv.kontrastlanmaYok, portal: T.pv.yok, late: T.pv.yok },
+      { name: T.path.hidatikKist, t1: T.pv.hipointens, t2: T.pv.cokHiperintensSepta, dwi: T.pv.degisken, adc: T.pv.yuksek, arterial: T.pv.periferikRimKontrast, portal: T.pv.rim, late: T.pv.rim },
+      { name: T.path.psodokist, t1: T.pv.hipointens, t2: T.pv.hiperintens, dwi: T.pv.degisken, adc: T.pv.yuksek, arterial: T.pv.geneldeKontrastYok, portal: T.pv.yok, late: T.pv.yok },
+      { name: T.path.hemanjiyom, t1: T.pv.hipointens, t2: T.pv.cokHiperintens, dwi: T.pv.hafifHiperintens, adc: T.pv.yuksek, arterial: T.pv.periferikNoduler, portal: T.pv.progressifDolum, late: T.pv.geckFazHomojen },
+      { name: T.path.hamartom, t1: T.pv.izointens, t2: T.pv.hafifHiperintens, dwi: T.pv.hafifRestriksiyon, adc: T.pv.hafifDusuk, arterial: T.pv.homojenKontrast, portal: T.pv.devamEder, late: T.pv.izointens },
+      { name: T.path.lenfoma, t1: T.pv.hipointens, t2: T.pv.hafifHiperintens, dwi: T.pv.belirginRestriksiyon, adc: T.pv.dusuk, arterial: T.pv.hafifKontrast, portal: T.pv.homojen, late: T.pv.izointens },
+      { name: T.path.metastaz, t1: T.pv.hipointens, t2: T.pv.hiperintens, dwi: T.pv.restriksiyon, adc: T.pv.dusuk, arterial: T.pv.rimVeyaHeterojen, portal: T.pv.rimDevam, late: T.pv.heterojen },
+      { name: T.path.abse, t1: T.pv.hipointens, t2: T.pv.hiperintens, dwi: T.pv.gucluRestriksiyon, adc: T.pv.cokDusuk, arterial: T.pv.rimKontrast, portal: T.pv.rim, late: T.pv.rim },
+      { name: T.path.infarkt, t1: T.pv.hipointens, t2: T.pv.hafifHiperintens, dwi: T.pv.erkenRestriksiyon, adc: T.pv.dusukNormal, arterial: T.pv.kontrastlanmaYok, portal: T.pv.kamaDefekt, late: T.pv.devam },
+      { name: T.path.anjiyosarkom, t1: T.pv.heterojen, t2: T.pv.heterojen, dwi: T.pv.restriksiyon, adc: T.pv.dusuk, arterial: T.pv.heterojenKontrast, portal: T.pv.heterojen, late: T.pv.nekrozAlanlari },
+      { name: T.path.granulomatoz, t1: T.pv.hipointens, t2: T.pv.hipointens, dwi: T.pv.geneldeRestYok, adc: T.pv.normal, arterial: T.pv.minimal, portal: T.pv.minimal, late: T.pv.minimal },
+      { name: T.path.gamnaGandy, t1: T.pv.hipointens, t2: T.pv.hipointens, dwi: T.pv.restYok, adc: T.pv.normal, arterial: T.pv.kontrastlanmaYok, portal: T.pv.yok, late: T.pv.bos },
     ];
 
     const STEPS = [
-      { id: "S1", q: "Dalak değerlendirildi mi?", type: "single", opts: ["İzlendi", "İzlenmedi"] },
-      { id: "S2", q: "İzlenmeme nedeni nedir?", type: "single", opts: ["Opere (splenektomi)", "Agenesis"] },
-      { id: "S3", q: "Dalak sayısı", type: "single", opts: ["Tekil", "Birden fazla"] },
-      { id: "S4", q: "Dalak lokasyonu", type: "single", opts: ["Normal", "Anormal (ektopik)"] },
-      { id: "S5", q: "Ektopik dalak lokasyonu", type: "multi", opts: ["Sağ üst kadran", "Sağ alt kadran", "Sol alt kadran", "Orta hat"] },
-      { id: "S6", q: "Dalak kraniokaudal (CC) boyutu (mm)", type: "number", unit: "mm" },
-      { id: "S7", q: "Dalak şekli", type: "single", opts: ["Lentiküler (normal)", "Deforme", "Cleft", "Lobüle"] },
-      { id: "S8", q: "Aksesuar dalak", type: "single", opts: ["Var", "Yok"] },
-      { id: "S9", q: "Aksesuar dalak lokalizasyonu", type: "multi", opts: ["Hiler", "Üst pol", "Alt pol", "Posterior"] },
-      { id: "S10", q: "Aksesuar dalak boyutu (mm)", type: "number", unit: "mm" },
-      { id: "S11", q: "Dalak parankim intensitesi", type: "single", opts: ["Homojen", "Heterojen"] },
-      { id: "S12", q: "Dalak parankim – T1A sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "S13", q: "Dalak parankim – T2A sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "S14", q: "Dalak parankim – DWI sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "S15", q: "Dalak parankim – ADC sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "S16", q: "Dalak konturu", type: "single", opts: CONTOUR_OPTIONS },
-      { id: "S17", q: "Dalakta lezyon var mı?", type: "single", opts: ["Var", "Yok"] },
-      { id: "L1", q: "Lezyon tipi", type: "single", opts: ["Kistik", "Solid", "Mikst"] },
-      { id: "L2", q: "Fokalite", type: "single", opts: ["Unifokal", "Multifokal"] },
-      { id: "L3", q: "Lezyon konturu", type: "single", opts: CONTOUR_OPTIONS },
-      { id: "L4", q: "Lezyon boyutu (mm)", type: "number", unit: "mm" },
-      { id: "L5", q: "Lezyon şekli", type: "single", opts: ["Yuvarlak/Ovoid", "Lentiform", "Wedge shape (kama)", "Düzensiz"] },
-      { id: "L6", q: "Septasyon", type: "single", opts: ["Var", "Yok"] },
-      { id: "L7", q: "Septasyon tipi", type: "single", opts: ["İnce tek", "Kalın tek", "İnce birkaç", "Kalın birkaç"] },
-      { id: "L8", q: "Lezyon lokasyonu", type: "multi", opts: ["Hiler", "Subkapsüler", "Parankimal"] },
-      { id: "L9", q: "Duvar kalınlığı (mm)", type: "number", unit: "mm" },
-      { id: "L10", q: "Duvar konturu", type: "single", opts: ["Düzenli", "Düzensiz"] },
-      { id: "L11", q: "Kontrastlanma", type: "single", opts: ["Var", "Yok"] },
-      { id: "L12", q: "Kontrastlanma paterni – Arteriyel faz", type: "single", opts: ENHANCEMENT_LEVELS },
-      { id: "L13", q: "Kontrastlanma paterni – Portal venöz faz", type: "single", opts: ENHANCEMENT_LEVELS },
-      { id: "L14", q: "Kontrastlanma paterni – Geç faz", type: "single", opts: ENHANCEMENT_LEVELS },
-      { id: "L15", q: "Lezyon internal intensitesi", type: "single", opts: ["Homojen", "Heterojen"] },
-      { id: "L16", q: "Lezyon – T1A sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "L17", q: "Lezyon – T2A sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "L18", q: "Lezyon – DWI sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "L19", q: "Lezyon – ADC sinyal", type: "single", opts: SIGNAL_OPTIONS },
-      { id: "L20", q: "Başka lezyon var mı?", type: "single", opts: ["Var", "Yok"] },
+      { id: "S1", q: T.sq.S1, type: "single", opts: T.so.S1 },
+      { id: "S2", q: T.sq.S2, type: "single", opts: T.so.S2 },
+      { id: "S3", q: T.sq.S3, type: "single", opts: T.so.S3 },
+      { id: "S4", q: T.sq.S4, type: "single", opts: T.so.S4 },
+      { id: "S5", q: T.sq.S5, type: "multi", opts: T.so.S5 },
+      { id: "S6", q: T.sq.S6, type: "number", unit: "mm" },
+      { id: "S7", q: T.sq.S7, type: "single", opts: T.so.S7 },
+      { id: "S8", q: T.sq.S8, type: "single", opts: T.so.S8 },
+      { id: "S9", q: T.sq.S9, type: "multi", opts: T.so.S9 },
+      { id: "S10", q: T.sq.S10, type: "number", unit: "mm" },
+      { id: "S11", q: T.sq.S11, type: "single", opts: T.so.S11 },
+      { id: "S12", q: T.sq.S12, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S13", q: T.sq.S13, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S14", q: T.sq.S14, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S15", q: T.sq.S15, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S16", q: T.sq.S16, type: "single", opts: CONTOUR_OPTIONS },
+      { id: "S17", q: T.sq.S17, type: "single", opts: T.so.S17 },
+      { id: "L1", q: T.sq.L1, type: "single", opts: T.so.L1 },
+      { id: "L2", q: T.sq.L2, type: "single", opts: T.so.L2 },
+      { id: "L3", q: T.sq.L3, type: "single", opts: CONTOUR_OPTIONS },
+      { id: "L4", q: T.sq.L4, type: "number", unit: "mm" },
+      { id: "L5", q: T.sq.L5, type: "single", opts: T.so.L5 },
+      { id: "L6", q: T.sq.L6, type: "single", opts: T.so.L6 },
+      { id: "L7", q: T.sq.L7, type: "single", opts: T.so.L7 },
+      { id: "L8", q: T.sq.L8, type: "multi", opts: T.so.L8 },
+      { id: "L9", q: T.sq.L9, type: "number", unit: "mm" },
+      { id: "L10", q: T.sq.L10, type: "single", opts: T.so.L10 },
+      { id: "L11", q: T.sq.L11, type: "single", opts: T.so.L11 },
+      { id: "L12", q: T.sq.L12, type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L13", q: T.sq.L13, type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L14", q: T.sq.L14, type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L15", q: T.sq.L15, type: "single", opts: T.so.L15 },
+      { id: "L16", q: T.sq.L16, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L17", q: T.sq.L17, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L18", q: T.sq.L18, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L19", q: T.sq.L19, type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L20", q: T.sq.L20, type: "single", opts: T.so.L20 },
     ];
 
     const STEP_MAP = Object.fromEntries(STEPS.map((s) => [s.id, s]));
@@ -92,14 +564,14 @@
     function getNextStep(currentId, answers) {
       const a = answers[currentId];
       switch (currentId) {
-        case "S1": return a === "İzlendi" ? "S3" : "S2";
+        case "S1": return a === T.opt.izlendi ? "S3" : "S2";
         case "S2": return "END";
         case "S3": return "S4";
-        case "S4": return a === "Anormal (ektopik)" ? "S5" : "S6";
+        case "S4": return a === T.opt.ektopik ? "S5" : "S6";
         case "S5": return "S6";
         case "S6": return "S7";
         case "S7": return "S8";
-        case "S8": return a === "Var" ? "S9" : "S11";
+        case "S8": return a === T.opt.var ? "S9" : "S11";
         case "S9": return "S10";
         case "S10": return "S11";
         case "S11": return "S12";
@@ -108,18 +580,18 @@
         case "S14": return "S15";
         case "S15": return "S16";
         case "S16": return "S17";
-        case "S17": return a === "Var" ? "L1" : "END";
+        case "S17": return a === T.opt.var ? "L1" : "END";
         case "L1": return "L2";
         case "L2": return "L3";
         case "L3": return "L4";
         case "L4": return "L5";
         case "L5": return "L6";
-        case "L6": return a === "Var" ? "L7" : "L8";
+        case "L6": return a === T.opt.var ? "L7" : "L8";
         case "L7": return "L8";
         case "L8": return "L9";
         case "L9": return "L10";
         case "L10": return "L11";
-        case "L11": return a === "Var" ? "L12" : "L15";
+        case "L11": return a === T.opt.var ? "L12" : "L15";
         case "L12": return "L13";
         case "L13": return "L14";
         case "L14": return "L15";
@@ -128,7 +600,7 @@
         case "L17": return "L18";
         case "L18": return "L19";
         case "L19": return "L20";
-        case "L20": return a === "Var" ? "LOOP" : "END";
+        case "L20": return a === T.opt.var ? "LOOP" : "END";
         default: return "END";
       }
     }
@@ -137,11 +609,11 @@
       if (!userSignal || !expected) return false;
       const u = userSignal.toLowerCase();
       const e = expected.toLowerCase();
-      if (e.includes("çok hiperintens")) return u.includes("hiperintens");
-      if (e === "heterojen") return true;
-      if (e.includes("hipointens") && u.includes("hipointens")) return true;
-      if (e.includes("hiperintens") && u.includes("hiperintens")) return true;
-      if (e.includes("izointens") && u.includes("izointens")) return true;
+      if (e.includes(T.match.cokHiperintens)) return u.includes(T.match.hiperintens);
+      if (e === T.match.heterojen) return true;
+      if (e.includes(T.match.hipointens) && u.includes(T.match.hipointens)) return true;
+      if (e.includes(T.match.hiperintens) && u.includes(T.match.hiperintens)) return true;
+      if (e.includes(T.match.izointens) && u.includes(T.match.izointens)) return true;
       return false;
     }
 
@@ -149,11 +621,11 @@
       if (!userDwi || !expected) return false;
       const u = userDwi.toLowerCase();
       const e = expected.toLowerCase();
-      if (e.includes("restriksiyon yok") || e.includes("genelde restriksiyon yok")) return u.includes("izointens") || u.includes("hipointens");
-      if (e.includes("güçlü restriksiyon") || e.includes("belirgin restriksiyon")) return u.includes("hiperintens") && !u.includes("hafif");
-      if (e.includes("restriksiyon")) return u.includes("hiperintens");
-      if (e.includes("hafif") || e.includes("shine-through")) return u.includes("hafif hiperintens") || u.includes("hiperintens");
-      if (e.includes("değişken")) return true;
+      if (e.includes(T.match.restNoYok) || e.includes(T.match.geneldeRestNoYok)) return u.includes(T.match.izointens) || u.includes(T.match.hipointens);
+      if (e.includes(T.match.gucluRestriksiyon) || e.includes(T.match.belirginRestriksiyon)) return u.includes(T.match.hiperintens) && !u.includes(T.match.hafif);
+      if (e.includes(T.match.restriksiyon)) return u.includes(T.match.hiperintens);
+      if (e.includes(T.match.hafif) || e.includes(T.match.shineThrough)) return u.includes(T.match.hiperintens);
+      if (e.includes(T.match.degisken)) return true;
       return false;
     }
 
@@ -161,10 +633,10 @@
       if (!userAdc || !expected) return false;
       const u = userAdc.toLowerCase();
       const e = expected.toLowerCase();
-      if (e.includes("yüksek")) return u.includes("hiperintens");
-      if (e.includes("çok düşük")) return u.includes("hipointens") && !u.includes("hafif");
-      if (e.includes("düşük") || e.includes("hafif düşük")) return u.includes("hipointens");
-      if (e.includes("normal")) return u.includes("izointens") || u.includes("hafif");
+      if (e.includes(T.match.yuksek)) return u.includes(T.match.hiperintens);
+      if (e.includes(T.match.cokDusuk)) return u.includes(T.match.hipointens) && !u.includes(T.match.hafif);
+      if (e.includes(T.match.dusuk) || e.includes(T.match.hafifDusuk)) return u.includes(T.match.hipointens);
+      if (e.includes(T.match.normal)) return u.includes(T.match.izointens) || u.includes(T.match.hafif);
       return false;
     }
 
@@ -172,13 +644,13 @@
       if (!userEnh || !expected) return false;
       const u = userEnh.toLowerCase();
       const e = expected.toLowerCase();
-      if (e.includes("yok") || e.includes("kontrastlanma yok")) return u === "yok";
-      if (e.includes("rim") || e.includes("periferik")) return u === "zayıf" || u === "güçlü";
-      if (e.includes("homojen") || e.includes("progressif") || e.includes("devam")) return u === "güçlü" || u === "zayıf";
-      if (e.includes("heterojen") || e.includes("nekroz")) return true;
-      if (e.includes("minimal")) return u === "minimal" || u === "yok";
-      if (e.includes("hafif")) return u === "zayıf" || u === "minimal";
-      if (e.includes("kama")) return true;
+      if (e.includes(T.match.yok) || e.includes(T.match.kontrastlanmaYok)) return u === T.match.yok;
+      if (e.includes(T.match.rim) || e.includes(T.match.periferik)) return u === T.match.zayif || u === T.match.guclu;
+      if (e.includes(T.match.homojen) || e.includes(T.match.progressif) || e.includes(T.match.devam)) return u === T.match.guclu || u === T.match.zayif;
+      if (e.includes(T.match.heterojen) || e.includes(T.match.nekroz)) return true;
+      if (e.includes(T.match.minimal)) return u === T.match.minimal || u === T.match.yok;
+      if (e.includes(T.match.hafif)) return u === T.match.zayif || u === T.match.minimal;
+      if (e.includes(T.match.kama)) return true;
       return false;
     }
 
@@ -189,13 +661,13 @@
 
         total++;
         const t1Match = checkSignalMatch(lesion.L16, p.t1);
-        if (t1Match) { matched++; checks.push({ label: "T1A", pass: true }); }
-        else checks.push({ label: "T1A", pass: false });
+        if (t1Match) { matched++; checks.push({ label: "T1", pass: true }); }
+        else checks.push({ label: "T1", pass: false });
 
         total++;
         const t2Match = checkSignalMatch(lesion.L17, p.t2);
-        if (t2Match) { matched++; checks.push({ label: "T2A", pass: true }); }
-        else checks.push({ label: "T2A", pass: false });
+        if (t2Match) { matched++; checks.push({ label: "T2", pass: true }); }
+        else checks.push({ label: "T2", pass: false });
 
         total++;
         const dwiMatch = checkDwiMatch(lesion.L18, p.dwi);
@@ -207,43 +679,43 @@
         if (adcMatch) { matched++; checks.push({ label: "ADC", pass: true }); }
         else checks.push({ label: "ADC", pass: false });
 
-        if (lesion.L11 === "Var") {
+        if (lesion.L11 === T.opt.var) {
           total++;
           const artMatch = checkEnhMatch(lesion.L12, p.arterial);
-          if (artMatch) { matched++; checks.push({ label: "Arteriyel", pass: true }); }
-          else checks.push({ label: "Arteriyel", pass: false });
+          if (artMatch) { matched++; checks.push({ label: T.phase.arterialShort, pass: true }); }
+          else checks.push({ label: T.phase.arterialShort, pass: false });
 
           total++;
           const porMatch = checkEnhMatch(lesion.L13, p.portal);
-          if (porMatch) { matched++; checks.push({ label: "Portal", pass: true }); }
-          else checks.push({ label: "Portal", pass: false });
+          if (porMatch) { matched++; checks.push({ label: T.phase.portalShort, pass: true }); }
+          else checks.push({ label: T.phase.portalShort, pass: false });
 
           total++;
           const lateMatch = checkEnhMatch(lesion.L14, p.late);
-          if (lateMatch) { matched++; checks.push({ label: "Geç Faz", pass: true }); }
-          else checks.push({ label: "Geç Faz", pass: false });
+          if (lateMatch) { matched++; checks.push({ label: T.phase.lateShort, pass: true }); }
+          else checks.push({ label: T.phase.lateShort, pass: false });
         } else {
           total++;
-          const noEnh = /yok|kontrastlanma yok/i.test(p.arterial);
-          if (noEnh) { matched++; checks.push({ label: "Kontrastlanma", pass: true }); }
-          else checks.push({ label: "Kontrastlanma", pass: false });
+          const noEnh = new RegExp(T.match.yok + "|" + T.match.kontrastlanmaYok, "i").test(p.arterial);
+          if (noEnh) { matched++; checks.push({ label: T.score.enhancement, pass: true }); }
+          else checks.push({ label: T.score.enhancement, pass: false });
         }
 
-        if (lesion.L1 === "Kistik" && /kist/i.test(p.name)) {
+        if (lesion.L1 === T.opt.kistik && new RegExp(T.path.basitKist + "|" + T.path.hidatikKist + "|" + T.path.psodokist, "i").test(p.name)) {
           matched += 0.5;
-          checks.push({ label: "Kistik tip", pass: true });
+          checks.push({ label: T.score.cysticType, pass: true });
         }
-        if (lesion.L1 === "Solid" && /(lenfoma|metastaz|hamartom|anjiyosarkom|granülom)/i.test(p.name)) {
+        if (lesion.L1 === T.opt.solid && new RegExp(T.pv.solid_regex, "i").test(p.name)) {
           matched += 0.5;
-          checks.push({ label: "Solid tip", pass: true });
+          checks.push({ label: T.score.solidType, pass: true });
         }
-        if (lesion.L5 === "Wedge shape (kama)" && p.name === "İnfarkt") {
+        if (lesion.L5 === T.opt.wedge && p.name === T.path.infarkt) {
           matched += 1;
-          checks.push({ label: "Kama şekli", pass: true });
+          checks.push({ label: T.score.wedgeShape, pass: true });
         }
-        if (lesion.L6 === "Var" && p.name === "Hidatik kist") {
+        if (lesion.L6 === T.opt.var && p.name === T.path.hidatikKist) {
           matched += 0.5;
-          checks.push({ label: "Septasyon", pass: true });
+          checks.push({ label: T.score.septation, pass: true });
         }
 
         const pct = total > 0 ? Math.round((matched / total) * 100) : 0;
@@ -306,7 +778,7 @@
 
     /* ══════ REPORT SCREEN ══════ */
     function ReportScreen({ answers, lesions, onReset, onCopy, onPrint, copyMsg }) {
-      const date = new Date().toLocaleDateString("tr-TR");
+      const date = new Date().toLocaleDateString(T.locale);
       const lesionScores = useMemo(() => lesions.map((les) => ({ les, scores: scoreLesion(les) })), [lesions]);
 
       return (
@@ -346,19 +818,19 @@
             <div style={styles.headerInner}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={styles.logoIcon}>◈</span>
-                <span style={styles.logoText}>Dalak MR – Rapor</span>
+                <span style={styles.logoText}>{T.reportTitle}</span>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <button onClick={onCopy} style={styles.actionBtn}>{copyMsg || "📋 Kopyala"}</button>
-                <button onClick={onPrint} style={{ ...styles.actionBtn, background: COLORS.accent, color: "#fff" }}>🖨 Yazdır / PDF</button>
-                <button onClick={onReset} style={styles.resetBtn}>↺ Yeni Değerlendirme</button>
+                <button onClick={onCopy} style={styles.actionBtn}>{copyMsg || T.copy}</button>
+                <button onClick={onPrint} style={{ ...styles.actionBtn, background: COLORS.accent, color: "#fff" }}>{T.print}</button>
+                <button onClick={onReset} style={styles.resetBtn}>{T.newEval}</button>
               </div>
             </div>
           </div>
 
           <div style={styles.reportBody} className="no-print">
             <div style={styles.reportSection}>
-              <h3 style={styles.sectionTitle}>Genel Bulgular</h3>
+              <h3 style={styles.sectionTitle}>{T.generalFindings}</h3>
               <table style={styles.reportTable}>
                 <tbody>
                   {STEPS.filter((s) => !s.id.startsWith("L") && answers[s.id] !== undefined).map((s, i) => (
@@ -373,7 +845,7 @@
 
             {lesionScores.map(({ les, scores }) => (
               <div key={les._num} style={styles.reportSection}>
-                <h3 style={styles.sectionTitle}>Lezyon #{les._num}</h3>
+                <h3 style={styles.sectionTitle}>{T.lesion} #{les._num}</h3>
                 <table style={styles.reportTable}>
                   <tbody>
                     {STEPS.filter((s) => s.id.startsWith("L") && les[s.id] !== undefined).map((s, i) => (
@@ -385,7 +857,7 @@
                   </tbody>
                 </table>
                 <div style={styles.yorumBox}>
-                  <h4 style={styles.yorumTitle}>YORUM – Olası Tanılar</h4>
+                  <h4 style={styles.yorumTitle}>{T.impression}</h4>
                   {scores.filter((sc) => sc.pct > 0).map((sc) => (
                     <div key={sc.name} style={styles.scoreRow}>
                       <div style={styles.scoreHeader}>
@@ -411,9 +883,9 @@
 
           {/* Print-only version */}
           <div className="print-only print-report">
-            <h1>Dalak MR Değerlendirme Raporu</h1>
-            <p className="print-date">Tarih: {date}</p>
-            <h2>Genel Bulgular</h2>
+            <h1>{T.printTitle}</h1>
+            <p className="print-date">{T.date}: {date}</p>
+            <h2>{T.generalFindings}</h2>
             <table>
               <tbody>
                 {STEPS.filter((s) => !s.id.startsWith("L") && answers[s.id] !== undefined).map((s) => (
@@ -426,7 +898,7 @@
             </table>
             {lesionScores.map(({ les, scores }) => (
               <div key={les._num}>
-                <h2>Lezyon #{les._num}</h2>
+                <h2>{T.lesion} #{les._num}</h2>
                 <table>
                   <tbody>
                     {STEPS.filter((s) => s.id.startsWith("L") && les[s.id] !== undefined).map((s) => (
@@ -438,7 +910,7 @@
                   </tbody>
                 </table>
                 <div className="yorum-box">
-                  <h3 className="yorum-title">YORUM – Olası Tanılar</h3>
+                  <h3 className="yorum-title">{T.impression}</h3>
                   {scores.filter((sc) => sc.pct > 0).map((sc) => {
                     const color = sc.pct >= 70 ? "#22c55e" : sc.pct >= 40 ? "#f59e0b" : "#ef4444";
                     return (
@@ -463,7 +935,7 @@
                 </div>
               </div>
             ))}
-            <p className="footer">Bu rapor Dalak MR Karar Destek Sistemi tarafından oluşturulmuştur.</p>
+            <p className="footer">{T.footer}</p>
           </div>
         </div>
       );
@@ -576,12 +1048,12 @@
       const generateReportText = useCallback(() => {
         let lines = [];
         lines.push("═══════════════════════════════════════════");
-        lines.push("  DALAK MR DEĞERLENDİRME RAPORU");
+        lines.push(`  ${T.reportHeader}`);
         lines.push("═══════════════════════════════════════════");
-        lines.push(`  Tarih: ${new Date().toLocaleDateString("tr-TR")}`);
+        lines.push(`  ${T.date}: ${new Date().toLocaleDateString(T.locale)}`);
         lines.push("───────────────────────────────────────────");
         lines.push("");
-        lines.push("▸ GENEL BULGULAR");
+        lines.push(`▸ ${T.generalFindingsHeader}`);
         lines.push("───────────────────────────────────────────");
         for (const sid of STEPS.filter((s) => !s.id.startsWith("L")).map((s) => s.id)) {
           if (answers[sid] !== undefined) {
@@ -592,7 +1064,7 @@
         lines.push("");
         if (allLesions.length > 0) {
           for (const les of allLesions) {
-            lines.push(`▸ LEZYON #${les._num}`);
+            lines.push(`▸ ${T.lesion} #${les._num}`);
             lines.push("───────────────────────────────────────────");
             for (const sid of STEPS.filter((s) => s.id.startsWith("L")).map((s) => s.id)) {
               if (les[sid] !== undefined) {
@@ -602,7 +1074,7 @@
             }
             lines.push("");
             const scores = scoreLesion(les);
-            lines.push("  YORUM – Olası Tanılar:");
+            lines.push(`  ${T.impression}:`);
             for (const sc of scores.filter((s) => s.pct > 0)) {
               lines.push(`    ${sc.name}: %${sc.pct}`);
             }
@@ -622,9 +1094,9 @@
         ta.select();
         try {
           document.execCommand("copy");
-          setCopyMsg("✓ Kopyalandı!");
+          setCopyMsg(T.copied);
         } catch (e) {
-          setCopyMsg("✕ Kopyalanamadı");
+          setCopyMsg(T.copyFail);
         }
         document.body.removeChild(ta);
         setTimeout(() => setCopyMsg(""), 2500);
@@ -647,21 +1119,21 @@
             <div style={styles.headerInner}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={styles.logoIcon}>◈</span>
-                <span style={styles.logoText}>Dalak MR Karar Destek</span>
+                <span style={styles.logoText}>{T.appTitle}</span>
               </div>
-              <button onClick={resetAll} style={styles.resetBtn}>Sıfırla</button>
+              <button onClick={resetAll} style={styles.resetBtn}>{T.reset}</button>
             </div>
             <div style={styles.progressTrack}>
               <div style={{ ...styles.progressBar, width: `${progress}%` }} />
             </div>
             <div style={styles.progressLabel}>
-              {isLesionStep ? `Lezyon #${lesionNum} – ${currentStepId}` : `Adım ${currentStepId}`} · %{progress}
+              {isLesionStep ? `${T.lesion} #${lesionNum} – ${currentStepId}` : `${T.step} ${currentStepId}`} · %{progress}
             </div>
           </div>
 
           <div style={styles.content} ref={contentRef}>
             <div key={currentStepId} style={{ ...styles.questionCard, animation: `${animDir === "in" ? "slideIn" : "slideOut"} 0.3s ease` }}>
-              {isLesionStep && <div style={styles.lesionBadge}>Lezyon #{lesionNum}</div>}
+              {isLesionStep && <div style={styles.lesionBadge}>{T.lesion} #{lesionNum}</div>}
               <h2 style={styles.questionTitle}>{step && step.q}</h2>
 
               {step && step.type === "single" && (
@@ -689,7 +1161,7 @@
                     })}
                   </div>
                   <button onClick={handleMultiSubmit} disabled={multiSelect.length === 0} style={{ ...styles.submitBtn, opacity: multiSelect.length === 0 ? 0.4 : 1 }}>
-                    Devam →
+                    {T.continue}
                   </button>
                 </div>
               )}
@@ -698,17 +1170,17 @@
                 <div style={styles.numberRow}>
                   <input type="number" value={currentInput} onChange={(e) => setCurrentInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleNumberSubmit()}
-                    placeholder="Değer girin" style={styles.numInput} autoFocus />
+                    placeholder={T.enterValue} style={styles.numInput} autoFocus />
                   <span style={styles.unitLabel}>{step.unit}</span>
                   <button onClick={handleNumberSubmit} disabled={!currentInput} style={{ ...styles.submitBtn, opacity: !currentInput ? 0.4 : 1, marginTop: 0 }}>
-                    Devam →
+                    {T.continue}
                   </button>
                 </div>
               )}
             </div>
 
             {stepHistory.length > 1 && (
-              <button onClick={goBack} style={styles.backBtn}>← Geri</button>
+              <button onClick={goBack} style={styles.backBtn}>{T.back}</button>
             )}
           </div>
 

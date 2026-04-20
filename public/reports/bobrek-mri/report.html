@@ -17,95 +17,693 @@ body{background:#0f0e17;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 @keyframes barGrow{from{width:0;}to{width:var(--w);}}
 @media print{.no-print{display:none!important;}body{background:#fff!important;color:#000!important;}}
 </style>
-<!-- radvisor-atlas bridge -->
-<script src="/bridge.js"></script>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // Header / app title
+    appTitle: 'Böbrek MRI Değerlendirme',
+    appSubtitle: 'Multilezyoner Ayırıcı Tanı · 25 Patoloji',
+    // Navigation
+    navBack: '← Geri',
+    navNext: 'İleri →',
+    // Section names
+    secGeneral: 'Genel',
+    secLezList: 'Lezyon Listesi',
+    secEkBulgu: 'Ek Bulgular',
+    secBaglam: 'Bağlam',
+    secSonuc: 'Sonuç',
+    secLezEntry: (n) => `Lezyon Girişi (${n})`,
+    stepOf: (a, b) => `${a} / ${b}`,
+    lezStep: (n, cur, tot) => `Lezyon ${n} girişi — adım ${cur}/${tot}`,
+    // Step titles
+    titles: [
+      'Klinik Bilgi', 'Teknik Bilgi', 'Genel Böbrek Değerlendirmesi',
+      'Lezyon Listesi',
+      'Lezyon — Lokalizasyon & Boyut',
+      'Lezyon — Karakterizasyon',
+      'Lezyon — T1/T2/Yağ Sinyalleri',
+      'Lezyon — DWI / ADC',
+      'Lezyon — Kontrast Dinamikleri',
+      'Lezyon — Kistik Kriterler / Özel Bulgular',
+      'Böbrek Dışı Bulgular',
+      'Klinik Bağlam',
+      'Ayırıcı Tanı & Rapor',
+    ],
+    // Option labels — TARAF
+    tarafSag: 'Sağ',
+    tarafSol: 'Sol',
+    tarafBilateral: 'Bilateral',
+    // Option labels — POL
+    polUst: 'Üst pol',
+    polOrta: 'Orta zon',
+    polAlt: 'Alt pol',
+    polHiler: 'Hiler bölge',
+    polDiffuz: 'Diffüz / tüm böbrek',
+    // Option labels — SAYI
+    sayiTekil: 'Tekil',
+    sayiMultiple: 'Multiple (2-5)',
+    sayiCok: 'Çok sayıda (>5)',
+    sayiDiffuz: 'Diffüz / yaygın',
+    // Option labels — KARAKTER
+    karSolid: 'Solid kitle',
+    karKistik: 'Kistik lezyon',
+    karKombine: 'Kombine (solid+kistik)',
+    karInfiltratif: 'İnfiltratif / diffüz',
+    karVask: 'Vasküler / parankim dışı',
+    // Option labels — T1/T2
+    hipo: 'Hipoinans',
+    izo: 'İzoinans',
+    hiper: 'Hiperinans',
+    het: 'Heterojen',
+    hiperBelirgin: 'Hiperinans (belirgin)',
+    // Option labels — YAG
+    yagYok: 'Yok',
+    yagMakro: 'Makroskobik yağ (T1↑, kimyasal kayma)',
+    yagMikro: 'Mikroskobik yağ (opposed phase ↓)',
+    yagHet: 'Heterojen yağ dağılımı',
+    // Option labels — DWI
+    dwiSerbest: 'Serbest difüzyon (parlak ADC)',
+    dwiHafif: 'Hafif kısıtlı',
+    dwiKisitli: 'Belirgin kısıtlı',
+    dwiCokKisitli: 'Çok belirgin kısıtlı (koyu ADC)',
+    // Option labels — ADC
+    adcYuksek: 'Yüksek (>1.6×10⁻³)',
+    adcNormal: 'Normal (1.2–1.6×10⁻³)',
+    adcDusuk: 'Düşük (0.8–1.2×10⁻³)',
+    adcCokDusuk: 'Çok düşük (<0.8×10⁻³)',
+    // Option labels — KONTRAST
+    kontrYok: 'Tutulum yok',
+    kontrCm: 'Kortikomedüller faz tutulumu (hızlı wash-out)',
+    kontrPersistan: 'Persistan / progressif artış',
+    kontrUniform: 'Uniform / homojen',
+    kontrHet: 'Heterojen tutulum',
+    kontrRim: 'Rim / halka tarzı tutulum',
+    kontrStriated: 'Striated nephrogram (çizgili)',
+    kontrAz: 'Zayıf / minimal tutulum',
+    // Option labels — SKAR
+    skarYok: 'Yok',
+    skarMerkezi: 'Merkezi skar (T2 hipo, kontrastlanan)',
+    skarPeriferik: 'Periferik fibrozis',
+    // Option labels — BOSNIAK
+    bosniakI: 'Bosniak I – Basit kist (ince duvar, septasyon yok, kontrast yok)',
+    bosniakII: 'Bosniak II – Minimal komplike (ince septalar, kalsifikasyon, protein)',
+    bosniakIIF: 'Bosniak IIF – Orta komplike (>1 ince septal, hafif kontrast, takip)',
+    bosniakIII: 'Bosniak III – Kompleks (kalın septalar/duvar, belirgin kontrast)',
+    bosniakIV: 'Bosniak IV – Kistik malign (solid enhancing nodül)',
+    // Option labels — PERIRENAL
+    perNormal: 'Normal',
+    perEnflamasyon: 'Yağ doku inflamasyonu',
+    perHematom: 'Hematom/kanama',
+    perKitle: 'Kitle uzanımı',
+    perFibroz: 'Fibrozis/kalınlaşma',
+    // Option labels — HIDRONEFROZ
+    hidYok: 'Yok',
+    hidHafif: 'Hafif (grade 1-2)',
+    hidOrta: 'Orta (grade 2-3)',
+    hidIleri: 'İleri (grade 4)',
+    // Option labels — BAGLAM
+    baglamRutin: 'Rutin tarama / insidental',
+    baglamKitle: 'Bilinen/şüpheli kitle',
+    baglamTravma: 'Travma',
+    baglamEnfeksiyon: 'Ateş / enfeksiyon',
+    baglamOnkoloji: 'Sistemik malignite takibi',
+    baglamVaskuler: 'Vasküler hastalık şüphesi',
+    baglamPediatrik: 'Pediatrik hasta (<18 yaş)',
+    baglamImmun: 'İmmünosupresif / diyabetik',
+    // Option labels — KORTEKS
+    kortNormal: 'Normal',
+    kortIncelme: 'Kortikal incelme',
+    kortDuzensiz: 'Düzensizlik',
+    kortKayip: 'Fokal kayıp',
+    kortKalin: 'Difüz kalınlaşma',
+    // Option labels — BOYUT_BOB
+    boyNormal: 'Normal boyut',
+    boyBuyuk: 'Büyümüş',
+    boyKucuk: 'Küçülmüş/atrofik',
+    // Option labels — LN
+    lnNormal: 'Normal',
+    lnBuyumush: 'Büyümüş lenf nodu (>1 cm)',
+    lnMultiple: 'Multiple büyümüş',
+    lnRetroperitoneal: 'Retroperitoneal lenfadenopati',
+    // Option labels — RV
+    rvAcik: 'Açık',
+    rvTrombuz: 'Trombüs (bland/tümöral?)',
+    rvGenislemis: 'Genişlemiş',
+    // Option labels — SEKANS
+    seqT1: 'T1 TSE/SE',
+    seqT2: 'T2 TSE',
+    seqT2fs: 'T2 FS',
+    seqDWI: 'DWI/ADC',
+    seqT1fsCE: 'T1 FS Kontrastlı (dinamik)',
+    seqIPOP: 'In-phase / Opposed-phase',
+    seqDCE: 'DCE (dinamik CE)',
+    seqT2star: 'T2*',
+    seqMRU: 'MR Ürografi',
+    // Option labels — KONTR
+    kontrKontsuz: 'Kontrastsız',
+    kontrGd: 'Gadolinyum verildi (standart doz)',
+    kontrGdDusuk: 'Gadolinyum (düşük doz)',
+    kontrHepatospecific: 'Hepatoselüler spesifik ajan',
+    // Pathology names
+    patCcRCC: 'Berrak Hücreli RCC',
+    patPapRCC: 'Papiller RCC',
+    patChRCC: 'Kromofob RCC',
+    patUroCC: 'Ürotelyal Karsinom',
+    patMedRCC: 'Toplayıcı Kanal Karsinomu',
+    patLenfoma: 'Renal Lenfoma',
+    patMetastaz: 'Renal Metastaz',
+    patWilms: 'Wilms Tümörü (Nefroblastom)',
+    patAml: 'AML (Klasik, Yağlı)',
+    patAmlPf: 'AML (Yağ Fakir – pf)',
+    patOnko: 'Onkositom',
+    patMetadrn: 'Metanefrik Adenom',
+    patKist12: 'Basit/Minimal Komplike Kist',
+    patKistIIF: 'Orta Komplike Kist (IIF)',
+    patKistIII: 'Kompleks Kist (Bosniak III)',
+    patKistIV: 'Kistik RCC (Bosniak IV)',
+    patAdpkd: 'ADPKD / Polikistik Böbrek',
+    patPyelo: 'Akut Pyelonefrit / Fokal Nefrit',
+    patApse: 'Renal Apse',
+    patXgp: 'Ksantogranülomatöz Pyelonefrit',
+    patTbc: 'Renal Tüberküloz',
+    patKontuz: 'Kontüzyon / Laserasyon',
+    patHematom: 'Subkapsüler / Perinefrik Hematom',
+    patInfarkt: 'Renal İnfarkt',
+    patVrentrom: 'Renal Ven Trombozu',
+    // Pathology categories
+    katMalign: 'Malign Tümör',
+    katBenign: 'Benign Tümör',
+    katKistik: 'Kistik Lezyon',
+    katEnfektif: 'Enfektif',
+    katTravmatik: 'Travmatik',
+    katVaskuler: 'Vasküler',
+    // UI labels — StepKlinik
+    qYas: 'Yaş',
+    qYasPh: 'Örn: 58',
+    qCinsiyet: 'Cinsiyet',
+    optErkek: 'Erkek',
+    optKadin: 'Kadın',
+    qEndikasyon: 'Endikasyon',
+    qEndikasyonPh: 'İnsidental kitle / hematüri / ağrı / takip...',
+    qBaglam: 'Klinik Bağlam',
+    qBaglamHint: 'Ayırıcı tanı motorunu etkiler',
+    // UI labels — StepTeknik
+    qSekans: 'Uygulanan Sekanslar',
+    qSekansHint: 'Çoklu seçim',
+    qKontrast: 'Kontrast',
+    // UI labels — StepGenelBobrek
+    sagBobrek: 'Sağ Böbrek',
+    solBobrek: 'Sol Böbrek',
+    qBoyut: 'Boyut',
+    qKorteks: 'Korteks',
+    qHidronefrozis: 'Hidronefrozis',
+    qGenelNot: 'Genel Not',
+    qGenelNotPh: 'Asimetri, genel parankimal değişiklik...',
+    // UI labels — StepPreLoop
+    noLezyon: 'Saptanan lezyonları ekleyin. Lezyon yoksa "İleri" ile devam edin.',
+    lezAdded: (n) => `${n} lezyon eklendi. Yeni lezyon ekleyebilir veya devam edebilirsiniz.`,
+    addLezBtn: '+ Lezyon Ekle',
+    // LezCard
+    lezCardTitle: (n, taraf, tip) => `Lezyon ${n} — ${taraf} böbrek, ${tip}`,
+    delBtn: 'Sil',
+    // StepLezLok
+    qTaraf: 'Taraf',
+    qLokPol: 'Lokalizasyon (Pol)',
+    qSayi: 'Sayı / Dağılım',
+    qBoyutMm: 'Boyut – en büyük (mm)',
+    qBoyutMmPh: 'mm',
+    qNotOps: 'Not (opsiyonel)',
+    qNotOpsPh: 'Ek klinik not...',
+    // StepLezKarakter
+    qLezKarakter: 'Lezyon Karakteri',
+    qLezKarakterHint: 'Dominant karakter',
+    // StepLezSignal
+    qT1: 'T1 Sinyali',
+    qT2: 'T2 Sinyali',
+    qYag: 'Yağ Bileşeni',
+    qYagHint: 'Kimyasal kayma / yağ baskılı görüntüler',
+    qSkar: 'Merkezi Skar (opsiyonel)',
+    // StepLezDWI
+    qDWI: 'DWI Görünümü',
+    qADC: 'ADC Değeri (görsel)',
+    // StepLezKontrast
+    qKontrPat: 'Kontrast Tutulum Paterni',
+    qKontrPatHint: 'En baskın patern',
+    qPerirenal: 'Perirenal Doku',
+    // StepLezSpecial
+    qBosniak: 'Bosniak Kategorisi (2019 rev.)',
+    qBosniakHint: 'Kistik lezyon değerlendirmesi',
+    qYagDisiOzel: 'Yağ Dışı Özel Bulgular',
+    chkKals: 'Kalsifikasyon',
+    chkKanama: 'İntralesyonel kanama (T1 fokal hiperinans)',
+    chkVenUzanim: 'Renal ven / IVC uzanımı',
+    chkKapsulTasma: 'Kapsül taşma / perinefrik uzanım',
+    qInfiltratif: 'İnfiltratif Patern',
+    chkToplayici: 'Toplayıcı sistem tutulumu',
+    chkUreterKalin: 'İpsilateral üreter kalınlaşması',
+    chkTumBobrek: 'Tüm böbrek tutulumu (diffüz)',
+    qHidroLez: 'Hidronefrozis (lezyon ilişkili)',
+    // StepEkBulgular
+    qLenf: 'Lenf Nodu',
+    qRenalVen: 'Renal Ven / IVC',
+    qAdrenal: 'Adrenal (opsiyonel)',
+    qAdrenalPh: 'Normal / lezyon tanımı...',
+    qEkBulgu: 'Diğer Karın İçi Bulgular',
+    qEkBulguPh: 'Ek bulgular...',
+    // StepBaglam
+    qBaglamGuncelle: 'Klinik Bağlam (güncelle)',
+    qBaglamGuncelleHint: 'Skoring motorunu optimize eder',
+    qGenelNotSonuc: 'Genel Not / Sonuç Yorumu',
+    qGenelNotSonucPh: 'Klinik yorum, önceki tetkiklerle karşılaştırma...',
+    // StepSonuc
+    noLezMsg: 'Kayıtlı lezyon yok — genel böbrek değerlendirmesi raporu oluşturulacak.',
+    lezSonucTitle: (n, taraf) => `Lezyon ${n} — ${taraf} Böbrek`,
+    qSonucNot: 'Sonuç Notu (opsiyonel)',
+    qSonucNotPh: 'Klinik öneri, takip süresi...',
+    btnRaporGoster: 'Raporu Göster',
+    btnKopyala: 'Panoya Kopyala',
+    btnHtmlIndir: 'HTML İndir',
+    btnYazdir: 'Yazdır',
+    btnKopyalandi: 'Kopyalandı ✓',
+    // Warning flags
+    warnMalign: '⚠ Malign tümör yüksek ayırıcı tanıda — ileri değerlendirme / biyopsi planlanmalıdır.',
+    warnEnfek: '⚠ Enfektif patoloji yüksek olasılıklı — klinik ve laboratuvar korelasyonu önerilir.',
+    warnTravma: '⚠ Travmatik lezyon saptandı — AAST evreleme değerlendirmesi önerilir.',
+    // Report modal
+    modalTitle: 'Böbrek MRI Raporu',
+    btnModalKopyala: 'Kopyala',
+    btnModalYazdir: 'Yazdır',
+    btnModalHtmlIndir: 'HTML İndir',
+    // LezCard tip labels
+    tipSolid: 'Solid',
+    tipKistik: 'Kistik',
+    tipKombine: 'Kombine',
+    tipInfiltratif: 'İnfiltratif',
+    tipVask: 'Vasküler',
+    // Report text
+    rptTitle: 'BÖBREK MRI RAPORU',
+    rptKlinikBilgi: 'KLİNİK BİLGİ',
+    rptYasCinsiyet: (yas, cins) => `Yaş/Cinsiyet: ${yas}${cins?' / '+cins:''}`,
+    rptEndikasyon: (v) => `Endikasyon: ${v}`,
+    rptBaglam: (v) => `Klinik bağlam: ${v}`,
+    rptTeknik: 'TEKNİK',
+    rptSekans: (v) => `Sekans: ${v}`,
+    rptKontrast: (v) => `Kontrast: ${v}`,
+    rptGenelDeg: 'GENEL DEĞERLENDİRME',
+    rptSagBobrek: (boyut, korteks) => `Sağ böbrek: ${boyut}, korteks ${korteks}`,
+    rptSolBobrek: (boyut, korteks) => `Sol böbrek: ${boyut}, korteks ${korteks}`,
+    rptHidronefrozis: (sag, sol) => `Hidronefrozis: Sağ ${sag} / Sol ${sol}`,
+    rptLezDeg: 'LEZYON DEĞERLENDİRMESİ',
+    rptNoLez: 'Böbreklerde kontrastlanan patolojik lezyon saptanmadı.',
+    rptEkBulgular: 'BÖBREK DIŞI BULGULAR',
+    rptLenf: (v) => `Lenf nodu: ${v}`,
+    rptRenalVen: (v) => `Renal ven: ${v}`,
+    rptAdrenal: (v) => `Adrenal: ${v}`,
+    rptEk: (v) => `Ek: ${v}`,
+    rptNot: (v) => `\nNOT: ${v}`,
+    rptLezHeader: (n, taraf, pol) => `Lezyon ${n} [${taraf} böbrek - ${pol}]`,
+    rptBoyut: (v) => `   Boyut: ${v} mm`,
+    rptSayi: (v) => `   Sayı: ${v}`,
+    rptKarakter: (v) => `   Karakter: ${v}`,
+    rptT1: (v) => `   T1: ${v}`,
+    rptT2: (v) => `   T2: ${v}`,
+    rptYag: (v) => `   Yağ: ${v}`,
+    rptDWI: (dwi, adc) => `   DWI/ADC: ${dwi}${adc?' / ADC: '+adc:''}`,
+    rptKontrPat: (v) => `   Kontrast: ${v}`,
+    rptBosniak: (v) => `   Bosniak: ${v}`,
+    rptPerirenal: (v) => `   Perirenal: ${v}`,
+    rptAyiriTani: '   Ayırıcı Tanı:',
+    rptAyiriItem: (ad, pct, kat) => `     • ${ad} (%${pct}) — ${kat}`,
+    rptLezNot: (v) => `   Not: ${v}`,
+    rptDlTitle: 'Böbrek MRI Raporu',
+    rptDlH1: 'Böbrek MRI Raporu',
+    rptDlFilename: 'bobrek_mri_raporu.html',
+  },
+  en: {
+    appTitle: 'Kidney MRI Assessment',
+    appSubtitle: 'Multi-lesion Differential Diagnosis · 25 Pathologies',
+    navBack: '← Back',
+    navNext: 'Next →',
+    secGeneral: 'General',
+    secLezList: 'Lesion List',
+    secEkBulgu: 'Additional Findings',
+    secBaglam: 'Context',
+    secSonuc: 'Result',
+    secLezEntry: (n) => `Lesion Entry (${n})`,
+    stepOf: (a, b) => `${a} / ${b}`,
+    lezStep: (n, cur, tot) => `Lesion ${n} entry — step ${cur}/${tot}`,
+    titles: [
+      'Clinical Information', 'Technical Information', 'General Kidney Assessment',
+      'Lesion List',
+      'Lesion — Localization & Size',
+      'Lesion — Characterization',
+      'Lesion — T1/T2/Fat Signals',
+      'Lesion — DWI / ADC',
+      'Lesion — Contrast Dynamics',
+      'Lesion — Cystic Criteria / Special Findings',
+      'Extrenal Findings',
+      'Clinical Context',
+      'Differential Diagnosis & Report',
+    ],
+    tarafSag: 'Right',
+    tarafSol: 'Left',
+    tarafBilateral: 'Bilateral',
+    polUst: 'Upper pole',
+    polOrta: 'Mid zone',
+    polAlt: 'Lower pole',
+    polHiler: 'Hilar region',
+    polDiffuz: 'Diffuse / entire kidney',
+    sayiTekil: 'Solitary',
+    sayiMultiple: 'Multiple (2-5)',
+    sayiCok: 'Numerous (>5)',
+    sayiDiffuz: 'Diffuse / widespread',
+    karSolid: 'Solid mass',
+    karKistik: 'Cystic lesion',
+    karKombine: 'Combined (solid+cystic)',
+    karInfiltratif: 'Infiltrative / diffuse',
+    karVask: 'Vascular / extraparenchymal',
+    hipo: 'Hypointense',
+    izo: 'Isointense',
+    hiper: 'Hyperintense',
+    het: 'Heterogeneous',
+    hiperBelirgin: 'Hyperintense (marked)',
+    yagYok: 'None',
+    yagMakro: 'Macroscopic fat (T1↑, chemical shift)',
+    yagMikro: 'Microscopic fat (opposed phase ↓)',
+    yagHet: 'Heterogeneous fat distribution',
+    dwiSerbest: 'Free diffusion (bright ADC)',
+    dwiHafif: 'Mildly restricted',
+    dwiKisitli: 'Markedly restricted',
+    dwiCokKisitli: 'Severely restricted diffusion (dark ADC)',
+    adcYuksek: 'High (>1.6×10⁻³)',
+    adcNormal: 'Normal (1.2–1.6×10⁻³)',
+    adcDusuk: 'Low (0.8–1.2×10⁻³)',
+    adcCokDusuk: 'Very low (<0.8×10⁻³)',
+    kontrYok: 'No enhancement',
+    kontrCm: 'Corticomedullary phase enhancement (rapid wash-out)',
+    kontrPersistan: 'Persistent / progressive enhancement',
+    kontrUniform: 'Uniform / homogeneous enhancement',
+    kontrHet: 'Heterogeneous enhancement',
+    kontrRim: 'Rim / ring-type enhancement',
+    kontrStriated: 'Striated nephrogram',
+    kontrAz: 'Weak / minimal enhancement',
+    skarYok: 'None',
+    skarMerkezi: 'Central scar (T2 hypointense, enhancing)',
+    skarPeriferik: 'Peripheral fibrosis',
+    bosniakI: 'Bosniak I – Simple cyst (thin wall, no septations, no enhancement)',
+    bosniakII: 'Bosniak II – Minimally complex (thin septa, calcification, protein)',
+    bosniakIIF: 'Bosniak IIF – Moderately complex (>1 thin septa, mild enhancement, follow-up)',
+    bosniakIII: 'Bosniak III – Complex (thick septa/wall, definite enhancement)',
+    bosniakIV: 'Bosniak IV – Cystic malignancy (solid enhancing nodule)',
+    perNormal: 'Normal',
+    perEnflamasyon: 'Perirenal fat inflammation',
+    perHematom: 'Hematoma/hemorrhage',
+    perKitle: 'Mass extension',
+    perFibroz: 'Fibrosis/thickening',
+    hidYok: 'None',
+    hidHafif: 'Mild (grade 1-2)',
+    hidOrta: 'Moderate (grade 2-3)',
+    hidIleri: 'Severe (grade 4)',
+    baglamRutin: 'Routine screening / incidental',
+    baglamKitle: 'Known/suspected mass',
+    baglamTravma: 'Trauma',
+    baglamEnfeksiyon: 'Fever / infection',
+    baglamOnkoloji: 'Systemic malignancy follow-up',
+    baglamVaskuler: 'Suspected vascular disease',
+    baglamPediatrik: 'Pediatric patient (<18 years)',
+    baglamImmun: 'Immunosuppressed / diabetic',
+    kortNormal: 'Normal',
+    kortIncelme: 'Cortical thinning',
+    kortDuzensiz: 'Irregularity',
+    kortKayip: 'Focal loss',
+    kortKalin: 'Diffuse thickening',
+    boyNormal: 'Normal size',
+    boyBuyuk: 'Enlarged',
+    boyKucuk: 'Reduced/atrophic',
+    lnNormal: 'Normal',
+    lnBuyumush: 'Enlarged lymph node (>1 cm)',
+    lnMultiple: 'Multiple enlarged',
+    lnRetroperitoneal: 'Retroperitoneal lymphadenopathy',
+    rvAcik: 'Patent',
+    rvTrombuz: 'Thrombus (bland/tumoral?)',
+    rvGenislemis: 'Dilated',
+    seqT1: 'T1 TSE/SE',
+    seqT2: 'T2 TSE',
+    seqT2fs: 'T2 Fat-Saturated',
+    seqDWI: 'DWI/ADC',
+    seqT1fsCE: 'T1 Fat-Sat Contrast-Enhanced (dynamic)',
+    seqIPOP: 'In-phase / Opposed-phase',
+    seqDCE: 'DCE (dynamic CE)',
+    seqT2star: 'T2*',
+    seqMRU: 'MR Urography',
+    kontrKontsuz: 'Non-contrast',
+    kontrGd: 'Gadolinium administered (standard dose)',
+    kontrGdDusuk: 'Gadolinium (low dose)',
+    kontrHepatospecific: 'Hepatospecific agent',
+    patCcRCC: 'Clear Cell RCC',
+    patPapRCC: 'Papillary RCC',
+    patChRCC: 'Chromophobe RCC',
+    patUroCC: 'Urothelial Carcinoma',
+    patMedRCC: 'Collecting Duct Carcinoma',
+    patLenfoma: 'Renal Lymphoma',
+    patMetastaz: 'Renal Metastasis',
+    patWilms: 'Wilms Tumor (Nephroblastoma)',
+    patAml: 'AML (Classic, Fatty)',
+    patAmlPf: 'AML (Poor-fat – pf)',
+    patOnko: 'Oncocytoma',
+    patMetadrn: 'Metanephric Adenoma',
+    patKist12: 'Simple/Minimally Complex Cyst',
+    patKistIIF: 'Moderately Complex Cyst (IIF)',
+    patKistIII: 'Complex Cyst (Bosniak III)',
+    patKistIV: 'Cystic RCC (Bosniak IV)',
+    patAdpkd: 'ADPKD / Polycystic Kidney',
+    patPyelo: 'Acute Pyelonephritis / Focal Nephritis',
+    patApse: 'Renal Abscess',
+    patXgp: 'Xanthogranulomatous Pyelonephritis',
+    patTbc: 'Renal Tuberculosis',
+    patKontuz: 'Contusion / Laceration',
+    patHematom: 'Subcapsular / Perinephric Hematoma',
+    patInfarkt: 'Renal Infarction',
+    patVrentrom: 'Renal Vein Thrombosis',
+    katMalign: 'Malignant Tumor',
+    katBenign: 'Benign Tumor',
+    katKistik: 'Cystic Lesion',
+    katEnfektif: 'Infectious',
+    katTravmatik: 'Traumatic',
+    katVaskuler: 'Vascular',
+    qYas: 'Age',
+    qYasPh: 'E.g.: 58',
+    qCinsiyet: 'Sex',
+    optErkek: 'Male',
+    optKadin: 'Female',
+    qEndikasyon: 'Indication',
+    qEndikasyonPh: 'Incidental mass / hematuria / pain / follow-up...',
+    qBaglam: 'Clinical Context',
+    qBaglamHint: 'Affects the differential diagnosis engine',
+    qSekans: 'Applied Sequences',
+    qSekansHint: 'Multiple selection',
+    qKontrast: 'Contrast',
+    sagBobrek: 'Right Kidney',
+    solBobrek: 'Left Kidney',
+    qBoyut: 'Size',
+    qKorteks: 'Cortex',
+    qHidronefrozis: 'Hydronephrosis',
+    qGenelNot: 'General Note',
+    qGenelNotPh: 'Asymmetry, general parenchymal change...',
+    noLezyon: 'Add detected lesions. If no lesion, proceed with "Next".',
+    lezAdded: (n) => `${n} lesion(s) added. You may add another lesion or continue.`,
+    addLezBtn: '+ Add Lesion',
+    lezCardTitle: (n, taraf, tip) => `Lesion ${n} — ${taraf} Kidney, ${tip}`,
+    delBtn: 'Delete',
+    qTaraf: 'Side',
+    qLokPol: 'Localization (Pole)',
+    qSayi: 'Number / Distribution',
+    qBoyutMm: 'Size – largest dimension (mm)',
+    qBoyutMmPh: 'mm',
+    qNotOps: 'Note (optional)',
+    qNotOpsPh: 'Additional clinical note...',
+    qLezKarakter: 'Lesion Character',
+    qLezKarakterHint: 'Dominant character',
+    qT1: 'T1 Signal',
+    qT2: 'T2 Signal',
+    qYag: 'Fat Component',
+    qYagHint: 'Chemical shift / fat-saturated images',
+    qSkar: 'Central Scar (optional)',
+    qDWI: 'DWI Appearance',
+    qADC: 'ADC Value (visual)',
+    qKontrPat: 'Contrast Enhancement Pattern',
+    qKontrPatHint: 'Dominant pattern',
+    qPerirenal: 'Perirenal Tissue',
+    qBosniak: 'Bosniak Classification (2019 rev.)',
+    qBosniakHint: 'Cystic lesion assessment',
+    qYagDisiOzel: 'Non-fat Special Findings',
+    chkKals: 'Calcification',
+    chkKanama: 'Intralesional hemorrhage (T1 focal hyperintense)',
+    chkVenUzanim: 'Renal vein / IVC extension',
+    chkKapsulTasma: 'Capsule breach / perinephric extension',
+    qInfiltratif: 'Infiltrative Pattern',
+    chkToplayici: 'Collecting system involvement',
+    chkUreterKalin: 'Ipsilateral ureteral thickening',
+    chkTumBobrek: 'Entire kidney involvement (diffuse)',
+    qHidroLez: 'Hydronephrosis (lesion-related)',
+    qLenf: 'Lymph Node',
+    qRenalVen: 'Renal Vein / IVC',
+    qAdrenal: 'Adrenal (optional)',
+    qAdrenalPh: 'Normal / lesion description...',
+    qEkBulgu: 'Other Intraabdominal Findings',
+    qEkBulguPh: 'Additional findings...',
+    qBaglamGuncelle: 'Clinical Context (update)',
+    qBaglamGuncelleHint: 'Optimizes the scoring engine',
+    qGenelNotSonuc: 'General Note / Conclusion',
+    qGenelNotSonucPh: 'Clinical interpretation, comparison with prior studies...',
+    noLezMsg: 'No lesions recorded — general kidney assessment report will be generated.',
+    lezSonucTitle: (n, taraf) => `Lesion ${n} — ${taraf} Kidney`,
+    qSonucNot: 'Conclusion Note (optional)',
+    qSonucNotPh: 'Clinical recommendation, follow-up interval...',
+    btnRaporGoster: 'Show Report',
+    btnKopyala: 'Copy to Clipboard',
+    btnHtmlIndir: 'Download HTML',
+    btnYazdir: 'Print',
+    btnKopyalandi: 'Copied ✓',
+    warnMalign: '⚠ Malignant tumor ranks high in differential — further evaluation / biopsy should be planned.',
+    warnEnfek: '⚠ Infectious pathology highly probable — clinical and laboratory correlation recommended.',
+    warnTravma: '⚠ Traumatic lesion detected — AAST grading evaluation recommended.',
+    modalTitle: 'Kidney MRI Report',
+    btnModalKopyala: 'Copy',
+    btnModalYazdir: 'Print',
+    btnModalHtmlIndir: 'Download HTML',
+    tipSolid: 'Solid',
+    tipKistik: 'Cystic',
+    tipKombine: 'Combined',
+    tipInfiltratif: 'Infiltrative',
+    tipVask: 'Vascular',
+    rptTitle: 'KIDNEY MRI REPORT',
+    rptKlinikBilgi: 'CLINICAL INFORMATION',
+    rptYasCinsiyet: (yas, cins) => `Age/Sex: ${yas}${cins?' / '+cins:''}`,
+    rptEndikasyon: (v) => `Indication: ${v}`,
+    rptBaglam: (v) => `Clinical context: ${v}`,
+    rptTeknik: 'TECHNICAL',
+    rptSekans: (v) => `Sequence: ${v}`,
+    rptKontrast: (v) => `Contrast: ${v}`,
+    rptGenelDeg: 'GENERAL ASSESSMENT',
+    rptSagBobrek: (boyut, korteks) => `Right kidney: ${boyut}, cortex ${korteks}`,
+    rptSolBobrek: (boyut, korteks) => `Left kidney: ${boyut}, cortex ${korteks}`,
+    rptHidronefrozis: (sag, sol) => `Hydronephrosis: Right ${sag} / Left ${sol}`,
+    rptLezDeg: 'LESION ASSESSMENT',
+    rptNoLez: 'No enhancing pathological lesion detected in the kidneys.',
+    rptEkBulgular: 'EXTRARENAL FINDINGS',
+    rptLenf: (v) => `Lymph node: ${v}`,
+    rptRenalVen: (v) => `Renal vein: ${v}`,
+    rptAdrenal: (v) => `Adrenal: ${v}`,
+    rptEk: (v) => `Additional: ${v}`,
+    rptNot: (v) => `\nNOTE: ${v}`,
+    rptLezHeader: (n, taraf, pol) => `Lesion ${n} [${taraf} kidney - ${pol}]`,
+    rptBoyut: (v) => `   Size: ${v} mm`,
+    rptSayi: (v) => `   Number: ${v}`,
+    rptKarakter: (v) => `   Character: ${v}`,
+    rptT1: (v) => `   T1: ${v}`,
+    rptT2: (v) => `   T2: ${v}`,
+    rptYag: (v) => `   Fat: ${v}`,
+    rptDWI: (dwi, adc) => `   DWI/ADC: ${dwi}${adc?' / ADC: '+adc:''}`,
+    rptKontrPat: (v) => `   Enhancement: ${v}`,
+    rptBosniak: (v) => `   Bosniak: ${v}`,
+    rptPerirenal: (v) => `   Perirenal: ${v}`,
+    rptAyiriTani: '   Differential Diagnosis:',
+    rptAyiriItem: (ad, pct, kat) => `     • ${ad} (${pct}%) — ${kat}`,
+    rptLezNot: (v) => `   Note: ${v}`,
+    rptDlTitle: 'Kidney MRI Report',
+    rptDlH1: 'Kidney MRI Report',
+    rptDlFilename: 'kidney_mri_report.html',
+  },
+})[RV_LOCALE];
+
 const {useState,useCallback,useMemo}=React;
 
 // ── ACCENT ───────────────────────────────────────────────────────────────────
 const AC='#06b6d4', AC2='#0891b2';
 
 // ── OPTION ARRAYS ─────────────────────────────────────────────────────────────
-const TARAF_OPT=[{v:'sag',l:'Sağ'},{v:'sol',l:'Sol'},{v:'bilateral',l:'Bilateral'}];
-const POL_OPT=[{v:'ust',l:'Üst pol'},{v:'orta',l:'Orta zon'},{v:'alt',l:'Alt pol'},{v:'hiler',l:'Hiler bölge'},{v:'diffuz',l:'Diffüz / tüm böbrek'}];
-const SAYI_OPT=[{v:'tekil',l:'Tekil'},{v:'multiple',l:'Multiple (2-5)'},{v:'cok',l:'Çok sayıda (>5)'},{v:'diffuz',l:'Diffüz / yaygın'}];
-const KARAKTER_OPT=[{v:'solid',l:'Solid kitle'},{v:'kistik',l:'Kistik lezyon'},{v:'kombine',l:'Kombine (solid+kistik)'},{v:'infiltratif',l:'İnfiltratif / diffüz'},{v:'vask',l:'Vasküler / parankim dışı'}];
-const T1_OPT=[{v:'hipo',l:'Hipoinans'},{v:'izo',l:'İzoinans'},{v:'hiper',l:'Hiperinans'},{v:'het',l:'Heterojen'}];
-const T2_OPT=[{v:'hipo',l:'Hipoinans'},{v:'izo',l:'İzoinans'},{v:'hiper',l:'Hiperinans (belirgin)'},{v:'het',l:'Heterojen'}];
-const YAG_OPT=[{v:'yok',l:'Yok'},{v:'makro',l:'Makroskobik yağ (T1↑, kimyasal kayma)'},{v:'mikro',l:'Mikroskobik yağ (opposed phase ↓)'},{v:'het',l:'Heterojen yağ dağılımı'}];
-const DWI_OPT=[{v:'serbest',l:'Serbest difüzyon (parlak ADC)'},{v:'hafif',l:'Hafif kısıtlı'},{v:'kisitli',l:'Belirgin kısıtlı'},{v:'cok_kisitli',l:'Çok belirgin kısıtlı (koyu ADC)'}];
-const ADC_OPT=[{v:'yuksek',l:'Yüksek (>1.6×10⁻³)'},{v:'normal',l:'Normal (1.2–1.6×10⁻³)'},{v:'dusuk',l:'Düşük (0.8–1.2×10⁻³)'},{v:'cok_dusuk',l:'Çok düşük (<0.8×10⁻³)'}];
+const TARAF_OPT=[{v:'sag',l:T.tarafSag},{v:'sol',l:T.tarafSol},{v:'bilateral',l:T.tarafBilateral}];
+const POL_OPT=[{v:'ust',l:T.polUst},{v:'orta',l:T.polOrta},{v:'alt',l:T.polAlt},{v:'hiler',l:T.polHiler},{v:'diffuz',l:T.polDiffuz}];
+const SAYI_OPT=[{v:'tekil',l:T.sayiTekil},{v:'multiple',l:T.sayiMultiple},{v:'cok',l:T.sayiCok},{v:'diffuz',l:T.sayiDiffuz}];
+const KARAKTER_OPT=[{v:'solid',l:T.karSolid},{v:'kistik',l:T.karKistik},{v:'kombine',l:T.karKombine},{v:'infiltratif',l:T.karInfiltratif},{v:'vask',l:T.karVask}];
+const T1_OPT=[{v:'hipo',l:T.hipo},{v:'izo',l:T.izo},{v:'hiper',l:T.hiper},{v:'het',l:T.het}];
+const T2_OPT=[{v:'hipo',l:T.hipo},{v:'izo',l:T.izo},{v:'hiper',l:T.hiperBelirgin},{v:'het',l:T.het}];
+const YAG_OPT=[{v:'yok',l:T.yagYok},{v:'makro',l:T.yagMakro},{v:'mikro',l:T.yagMikro},{v:'het',l:T.yagHet}];
+const DWI_OPT=[{v:'serbest',l:T.dwiSerbest},{v:'hafif',l:T.dwiHafif},{v:'kisitli',l:T.dwiKisitli},{v:'cok_kisitli',l:T.dwiCokKisitli}];
+const ADC_OPT=[{v:'yuksek',l:T.adcYuksek},{v:'normal',l:T.adcNormal},{v:'dusuk',l:T.adcDusuk},{v:'cok_dusuk',l:T.adcCokDusuk}];
 const KONTRAST_OPT=[
-  {v:'yok',l:'Tutulum yok'},
-  {v:'cm',l:'Kortikomedüller faz tutulumu (hızlı wash-out)'},
-  {v:'persistan',l:'Persistan / progressif artış'},
-  {v:'uniform',l:'Uniform / homojen'},
-  {v:'het',l:'Heterojen tutulum'},
-  {v:'rim',l:'Rim / halka tarzı tutulum'},
-  {v:'striated',l:'Striated nephrogram (çizgili)'},
-  {v:'az',l:'Zayıf / minimal tutulum'},
+  {v:'yok',l:T.kontrYok},
+  {v:'cm',l:T.kontrCm},
+  {v:'persistan',l:T.kontrPersistan},
+  {v:'uniform',l:T.kontrUniform},
+  {v:'het',l:T.kontrHet},
+  {v:'rim',l:T.kontrRim},
+  {v:'striated',l:T.kontrStriated},
+  {v:'az',l:T.kontrAz},
 ];
-const SKAR_OPT=[{v:'yok',l:'Yok'},{v:'merkezi',l:'Merkezi skar (T2 hipo, kontrastlanan)'},{v:'periferik',l:'Periferik fibrozis'}];
+const SKAR_OPT=[{v:'yok',l:T.skarYok},{v:'merkezi',l:T.skarMerkezi},{v:'periferik',l:T.skarPeriferik}];
 const BOSNIAK_OPT=[
-  {v:'I',l:'Bosniak I – Basit kist (ince duvar, septasyon yok, kontrast yok)'},
-  {v:'II',l:'Bosniak II – Minimal komplike (ince septalar, kalsifikasyon, protein)'},
-  {v:'IIF',l:'Bosniak IIF – Orta komplike (>1 ince septal, hafif kontrast, takip)'},
-  {v:'III',l:'Bosniak III – Kompleks (kalın septalar/duvar, belirgin kontrast)'},
-  {v:'IV',l:'Bosniak IV – Kistik malign (solid enhancing nodül)'},
+  {v:'I',l:T.bosniakI},
+  {v:'II',l:T.bosniakII},
+  {v:'IIF',l:T.bosniakIIF},
+  {v:'III',l:T.bosniakIII},
+  {v:'IV',l:T.bosniakIV},
 ];
-const PERIRENAL_OPT=[{v:'temiz',l:'Normal'},{v:'enflamasyon',l:'Yağ doku inflamasyonu'},{v:'hematom',l:'Hematom/kanama'},{v:'kitle',l:'Kitle uzanımı'},{v:'fibroz',l:'Fibrozis/kalınlaşma'}];
-const HIDRONEFROZ_OPT=[{v:'yok',l:'Yok'},{v:'hafif',l:'Hafif (grade 1-2)'},{v:'orta',l:'Orta (grade 2-3)'},{v:'ileri',l:'İleri (grade 4)'}];
+const PERIRENAL_OPT=[{v:'temiz',l:T.perNormal},{v:'enflamasyon',l:T.perEnflamasyon},{v:'hematom',l:T.perHematom},{v:'kitle',l:T.perKitle},{v:'fibroz',l:T.perFibroz}];
+const HIDRONEFROZ_OPT=[{v:'yok',l:T.hidYok},{v:'hafif',l:T.hidHafif},{v:'orta',l:T.hidOrta},{v:'ileri',l:T.hidIleri}];
 const BAGLAM_OPT=[
-  {v:'rutin',l:'Rutin tarama / insidental'},
-  {v:'kitle',l:'Bilinen/şüpheli kitle'},
-  {v:'travma',l:'Travma'},
-  {v:'enfeksiyon',l:'Ateş / enfeksiyon'},
-  {v:'onkoloji',l:'Sistemik malignite takibi'},
-  {v:'vaskuler',l:'Vasküler hastalık şüphesi'},
-  {v:'pediatrik',l:'Pediatrik hasta (<18 yaş)'},
-  {v:'immun',l:'İmmünosupresif / diyabetik'},
+  {v:'rutin',l:T.baglamRutin},
+  {v:'kitle',l:T.baglamKitle},
+  {v:'travma',l:T.baglamTravma},
+  {v:'enfeksiyon',l:T.baglamEnfeksiyon},
+  {v:'onkoloji',l:T.baglamOnkoloji},
+  {v:'vaskuler',l:T.baglamVaskuler},
+  {v:'pediatrik',l:T.baglamPediatrik},
+  {v:'immun',l:T.baglamImmun},
 ];
-const KORTEKS_OPT=[{v:'normal',l:'Normal'},{v:'incelme',l:'Kortikal incelme'},{v:'duzensiz',l:'Düzensizlik'},{v:'kayip',l:'Fokal kayıp'},{v:'kalın',l:'Difüz kalınlaşma'}];
-const BOYUT_BOB_OPT=[{v:'normal',l:'Normal boyut'},{v:'buyuk',l:'Büyümüş'},{v:'kucuk',l:'Küçülmüş/atrofik'}];
-const LN_OPT=[{v:'normal',l:'Normal'},{v:'buyumush',l:'Büyümüş lenf nodu (>1 cm)'},{v:'multiple',l:'Multiple büyümüş'},{v:'retroperitoneal',l:'Retroperitoneal lenfadenopati'}];
-const RV_OPT=[{v:'acik',l:'Açık'},{v:'trombuz',l:'Trombüs (bland/tümöral?)'},{v:'genislemis',l:'Genişlemiş'}];
+const KORTEKS_OPT=[{v:'normal',l:T.kortNormal},{v:'incelme',l:T.kortIncelme},{v:'duzensiz',l:T.kortDuzensiz},{v:'kayip',l:T.kortKayip},{v:'kalın',l:T.kortKalin}];
+const BOYUT_BOB_OPT=[{v:'normal',l:T.boyNormal},{v:'buyuk',l:T.boyBuyuk},{v:'kucuk',l:T.boyKucuk}];
+const LN_OPT=[{v:'normal',l:T.lnNormal},{v:'buyumush',l:T.lnBuyumush},{v:'multiple',l:T.lnMultiple},{v:'retroperitoneal',l:T.lnRetroperitoneal}];
+const RV_OPT=[{v:'acik',l:T.rvAcik},{v:'trombuz',l:T.rvTrombuz},{v:'genislemis',l:T.rvGenislemis}];
 
 // ── PATOLOJI VERİTABANI ──────────────────────────────────────────────────────
 const PATOLOGILER=[
-  // MALİGN
-  {id:'ccRCC',   ad:'Berrak Hücreli RCC',        kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'papRCC',  ad:'Papiller RCC',               kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'chRCC',   ad:'Kromofob RCC',               kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'uroCC',   ad:'Ürotelyal Karsinom',         kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'medRCC',  ad:'Toplayıcı Kanal Karsinomu',  kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'lenfoma', ad:'Renal Lenfoma',              kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'metastaz',ad:'Renal Metastaz',             kat:'Malign Tümör',   renk:'#f87171'},
-  {id:'wilms',   ad:'Wilms Tümörü (Nefroblastom)',kat:'Malign Tümör',   renk:'#f87171'},
-  // BENİGN
-  {id:'aml',     ad:'AML (Klasik, Yağlı)',        kat:'Benign Tümör',   renk:'#4ade80'},
-  {id:'aml_pf',  ad:'AML (Yağ Fakir – pf)',       kat:'Benign Tümör',   renk:'#4ade80'},
-  {id:'onko',    ad:'Onkositom',                  kat:'Benign Tümör',   renk:'#4ade80'},
-  {id:'metadrn', ad:'Metanefrik Adenom',          kat:'Benign Tümör',   renk:'#4ade80'},
-  // KİSTİK
-  {id:'kist12',  ad:'Basit/Minimal Komplike Kist',kat:'Kistik Lezyon',  renk:'#60a5fa'},
-  {id:'kistIIF', ad:'Orta Komplike Kist (IIF)',   kat:'Kistik Lezyon',  renk:'#60a5fa'},
-  {id:'kistIII', ad:'Kompleks Kist (Bosniak III)',kat:'Kistik Lezyon',  renk:'#60a5fa'},
-  {id:'kistIV',  ad:'Kistik RCC (Bosniak IV)',    kat:'Kistik Lezyon',  renk:'#fb923c'},
-  {id:'adpkd',   ad:'ADPKD / Polikistik Böbrek',  kat:'Kistik Lezyon',  renk:'#60a5fa'},
-  // ENFEKTİF
-  {id:'pyelo',   ad:'Akut Pyelonefrit / Fokal Nefrit', kat:'Enfektif',  renk:'#facc15'},
-  {id:'apse',    ad:'Renal Apse',                 kat:'Enfektif',       renk:'#facc15'},
-  {id:'xgp',     ad:'Ksantogranülomatöz Pyelonefrit', kat:'Enfektif',  renk:'#facc15'},
-  {id:'tbc',     ad:'Renal Tüberküloz',           kat:'Enfektif',       renk:'#facc15'},
-  // TRAVMATİK
-  {id:'kontuz',  ad:'Kontüzyon / Laserasyon',     kat:'Travmatik',      renk:'#c084fc'},
-  {id:'hematom', ad:'Subkapsüler / Perinefrik Hematom', kat:'Travmatik',renk:'#c084fc'},
-  // DİĞER
-  {id:'infarkt', ad:'Renal İnfarkt',              kat:'Vasküler',       renk:'#fb923c'},
-  {id:'vrentrom',ad:'Renal Ven Trombozu',         kat:'Vasküler',       renk:'#fb923c'},
+  // MALIGN
+  {id:'ccRCC',   ad:T.patCcRCC,    kat:T.katMalign, renk:'#f87171'},
+  {id:'papRCC',  ad:T.patPapRCC,   kat:T.katMalign, renk:'#f87171'},
+  {id:'chRCC',   ad:T.patChRCC,    kat:T.katMalign, renk:'#f87171'},
+  {id:'uroCC',   ad:T.patUroCC,    kat:T.katMalign, renk:'#f87171'},
+  {id:'medRCC',  ad:T.patMedRCC,   kat:T.katMalign, renk:'#f87171'},
+  {id:'lenfoma', ad:T.patLenfoma,  kat:T.katMalign, renk:'#f87171'},
+  {id:'metastaz',ad:T.patMetastaz, kat:T.katMalign, renk:'#f87171'},
+  {id:'wilms',   ad:T.patWilms,    kat:T.katMalign, renk:'#f87171'},
+  // BENIGN
+  {id:'aml',     ad:T.patAml,      kat:T.katBenign, renk:'#4ade80'},
+  {id:'aml_pf',  ad:T.patAmlPf,   kat:T.katBenign, renk:'#4ade80'},
+  {id:'onko',    ad:T.patOnko,     kat:T.katBenign, renk:'#4ade80'},
+  {id:'metadrn', ad:T.patMetadrn,  kat:T.katBenign, renk:'#4ade80'},
+  // KISTIK
+  {id:'kist12',  ad:T.patKist12,   kat:T.katKistik, renk:'#60a5fa'},
+  {id:'kistIIF', ad:T.patKistIIF,  kat:T.katKistik, renk:'#60a5fa'},
+  {id:'kistIII', ad:T.patKistIII,  kat:T.katKistik, renk:'#60a5fa'},
+  {id:'kistIV',  ad:T.patKistIV,   kat:T.katKistik, renk:'#fb923c'},
+  {id:'adpkd',   ad:T.patAdpkd,    kat:T.katKistik, renk:'#60a5fa'},
+  // ENFEKTIF
+  {id:'pyelo',   ad:T.patPyelo,    kat:T.katEnfektif, renk:'#facc15'},
+  {id:'apse',    ad:T.patApse,     kat:T.katEnfektif, renk:'#facc15'},
+  {id:'xgp',     ad:T.patXgp,     kat:T.katEnfektif, renk:'#facc15'},
+  {id:'tbc',     ad:T.patTbc,     kat:T.katEnfektif, renk:'#facc15'},
+  // TRAVMATIK
+  {id:'kontuz',  ad:T.patKontuz,   kat:T.katTravmatik, renk:'#c084fc'},
+  {id:'hematom', ad:T.patHematom,  kat:T.katTravmatik, renk:'#c084fc'},
+  // DIGER
+  {id:'infarkt', ad:T.patInfarkt,  kat:T.katVaskuler, renk:'#fb923c'},
+  {id:'vrentrom',ad:T.patVrentrom, kat:T.katVaskuler, renk:'#fb923c'},
 ];
 
 // ── SCORING ENGINE ────────────────────────────────────────────────────────────
@@ -362,15 +960,16 @@ function Chk({label,checked,onChange}){
   );
 }
 function LezCard({l,idx,onDelete}){
-  const tip={solid:'Solid',kistik:'Kistik',kombine:'Kombine',infiltratif:'İnfiltratif',vask:'Vasküler'}[l.karakter]||l.karakter||'?';
-  const taraf=l.taraf==='sag'?'Sağ':l.taraf==='sol'?'Sol':'Bil.';
+  const tipMap={solid:T.tipSolid,kistik:T.tipKistik,kombine:T.tipKombine,infiltratif:T.tipInfiltratif,vask:T.tipVask};
+  const tip=tipMap[l.karakter]||l.karakter||'?';
+  const taraf=l.taraf==='sag'?T.tarafSag:l.taraf==='sol'?T.tarafSol:'Bil.';
   return(
     <div style={{background:'#111a1e',borderRadius:10,padding:'12px 16px',
       border:'1px solid #1e2a2e',display:'flex',justifyContent:'space-between',
       alignItems:'flex-start',gap:12,marginBottom:8}}>
       <div>
         <div style={{color:AC,fontWeight:600,fontSize:13,marginBottom:3}}>
-          Lezyon {idx+1} — {taraf} böbrek, {tip}
+          {T.lezCardTitle(idx+1, taraf, tip)}
         </div>
         <div style={{color:'#4a7080',fontSize:12}}>
           {l.boyut?l.boyut+' mm · ':''}{l.sayi||''}{l.pol?' · '+l.pol:''}
@@ -379,7 +978,7 @@ function LezCard({l,idx,onDelete}){
       <button onClick={()=>onDelete(idx)} style={{
         background:'rgba(248,113,113,0.08)',border:'1px solid #f87171',color:'#f87171',
         borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontFamily:'inherit',flexShrink:0
-      }}>Sil</button>
+      }}>{T.delBtn}</button>
     </div>
   );
 }
@@ -410,19 +1009,7 @@ function DxBar({p,rank}){
 
 // ── STEP CONSTANTS ────────────────────────────────────────────────────────────
 const PRE=3,LS=4,LE=9,POSTL=10,TOTAL=13;
-const TITLES=[
-  'Klinik Bilgi','Teknik Bilgi','Genel Böbrek Değerlendirmesi',
-  'Lezyon Listesi',
-  'Lezyon — Lokalizasyon & Boyut',
-  'Lezyon — Karakterizasyon',
-  'Lezyon — T1/T2/Yağ Sinyalleri',
-  'Lezyon — DWI / ADC',
-  'Lezyon — Kontrast Dinamikleri',
-  'Lezyon — Kistik Kriterler / Özel Bulgular',
-  'Böbrek Dışı Bulgular',
-  'Klinik Bağlam',
-  'Ayırıcı Tanı & Rapor',
-];
+const TITLES=T.titles;
 
 // ── REPORT GENERATOR ──────────────────────────────────────────────────────────
 function lbl(opts,v){return opts.find(o=>o.v===v)?.l||v||'—';}
@@ -431,80 +1018,80 @@ function formatLez(l,i,baglam){
   const dx=getDxList(l,baglam);
   const top3=dx.filter(p=>p.pct>5).slice(0,3);
   const lines=[];
-  lines.push(`Lezyon ${i+1} [${lbl(TARAF_OPT,l.taraf)} böbrek - ${lbl(POL_OPT,l.pol)}]`);
-  if(l.boyut)lines.push(`   Boyut: ${l.boyut} mm`);
-  lines.push(`   Sayı: ${lbl(SAYI_OPT,l.sayi)}`);
-  lines.push(`   Karakter: ${lbl(KARAKTER_OPT,l.karakter)}`);
-  if(l.T1)lines.push(`   T1: ${lbl(T1_OPT,l.T1)}`);
-  if(l.T2)lines.push(`   T2: ${lbl(T2_OPT,l.T2)}`);
-  if(l.yag)lines.push(`   Yağ: ${lbl(YAG_OPT,l.yag)}`);
-  if(l.DWI)lines.push(`   DWI/ADC: ${lbl(DWI_OPT,l.DWI)}${l.ADC?' / ADC: '+lbl(ADC_OPT,l.ADC):''}`);
-  if(l.kontrast)lines.push(`   Kontrast: ${lbl(KONTRAST_OPT,l.kontrast)}`);
-  if(l.bosniak)lines.push(`   Bosniak: ${l.bosniak}`);
-  if(l.perirenal&&l.perirenal!=='temiz')lines.push(`   Perirenal: ${lbl(PERIRENAL_OPT,l.perirenal)}`);
+  lines.push(T.rptLezHeader(i+1, lbl(TARAF_OPT,l.taraf), lbl(POL_OPT,l.pol)));
+  if(l.boyut)lines.push(T.rptBoyut(l.boyut));
+  lines.push(T.rptSayi(lbl(SAYI_OPT,l.sayi)));
+  lines.push(T.rptKarakter(lbl(KARAKTER_OPT,l.karakter)));
+  if(l.T1)lines.push(T.rptT1(lbl(T1_OPT,l.T1)));
+  if(l.T2)lines.push(T.rptT2(lbl(T2_OPT,l.T2)));
+  if(l.yag)lines.push(T.rptYag(lbl(YAG_OPT,l.yag)));
+  if(l.DWI)lines.push(T.rptDWI(lbl(DWI_OPT,l.DWI), l.ADC?lbl(ADC_OPT,l.ADC):null));
+  if(l.kontrast)lines.push(T.rptKontrPat(lbl(KONTRAST_OPT,l.kontrast)));
+  if(l.bosniak)lines.push(T.rptBosniak(l.bosniak));
+  if(l.perirenal&&l.perirenal!=='temiz')lines.push(T.rptPerirenal(lbl(PERIRENAL_OPT,l.perirenal)));
   if(top3.length){
-    lines.push(`   Ayırıcı Tanı:`);
-    top3.forEach(p=>lines.push(`     • ${p.ad} (%${p.pct}) — ${p.kat}`));
+    lines.push(T.rptAyiriTani);
+    top3.forEach(p=>lines.push(T.rptAyiriItem(p.ad, p.pct, p.kat)));
   }
-  if(l.not)lines.push(`   Not: ${l.not}`);
+  if(l.not)lines.push(T.rptLezNot(l.not));
   return lines.join('\n');
 }
 
 function generateReport(d){
   const lines=[];
-  lines.push('BÖBREK MRI RAPORU');
+  lines.push(T.rptTitle);
   lines.push('─'.repeat(52));
   lines.push('');
-  lines.push('KLİNİK BİLGİ');
-  lines.push(`Yaş/Cinsiyet: ${d.yas||'—'}${d.cinsiyet?' / '+d.cinsiyet:''}`);
-  lines.push(`Endikasyon: ${d.endikasyon||'—'}`);
-  lines.push(`Klinik bağlam: ${lbl(BAGLAM_OPT,d.baglam)}`);
+  lines.push(T.rptKlinikBilgi);
+  lines.push(T.rptYasCinsiyet(d.yas||'—', d.cinsiyet));
+  lines.push(T.rptEndikasyon(d.endikasyon||'—'));
+  lines.push(T.rptBaglam(lbl(BAGLAM_OPT,d.baglam)));
   lines.push('');
-  lines.push('TEKNİK');
+  lines.push(T.rptTeknik);
   const seqTxt=Array.isArray(d.sekans)?d.sekans.join(', '):'—';
-  lines.push(`Sekans: ${seqTxt}`);
-  lines.push(`Kontrast: ${d.kontr||'—'}`);
+  lines.push(T.rptSekans(seqTxt));
+  lines.push(T.rptKontrast(d.kontr||'—'));
   lines.push('');
-  lines.push('GENEL DEĞERLENDİRME');
-  lines.push(`Sağ böbrek: ${lbl(BOYUT_BOB_OPT,d.sagBoyut)}, korteks ${lbl(KORTEKS_OPT,d.sagKorteks)}`);
-  lines.push(`Sol böbrek: ${lbl(BOYUT_BOB_OPT,d.solBoyut)}, korteks ${lbl(KORTEKS_OPT,d.solKorteks)}`);
+  lines.push(T.rptGenelDeg);
+  lines.push(T.rptSagBobrek(lbl(BOYUT_BOB_OPT,d.sagBoyut), lbl(KORTEKS_OPT,d.sagKorteks)));
+  lines.push(T.rptSolBobrek(lbl(BOYUT_BOB_OPT,d.solBoyut), lbl(KORTEKS_OPT,d.solKorteks)));
   if(d.sagHidro||d.solHidro){
-    lines.push(`Hidronefrozis: Sağ ${lbl(HIDRONEFROZ_OPT,d.sagHidro||'yok')} / Sol ${lbl(HIDRONEFROZ_OPT,d.solHidro||'yok')}`);
+    lines.push(T.rptHidronefrozis(lbl(HIDRONEFROZ_OPT,d.sagHidro||'yok'), lbl(HIDRONEFROZ_OPT,d.solHidro||'yok')));
   }
   lines.push('');
-  lines.push('LEZYON DEĞERLENDİRMESİ');
+  lines.push(T.rptLezDeg);
   if(d.lezyonlar.length===0){
-    lines.push('Böbreklerde kontrastlanan patolojik lezyon saptanmadı.');
+    lines.push(T.rptNoLez);
   } else {
     d.lezyonlar.forEach((l,i)=>lines.push(formatLez(l,i,d.baglam)));
   }
   lines.push('');
-  lines.push('BÖBREK DIŞI BULGULAR');
-  if(d.lenf)lines.push(`Lenf nodu: ${lbl(LN_OPT,d.lenf)}`);
-  if(d.renalVen&&d.renalVen!=='acik')lines.push(`Renal ven: ${lbl(RV_OPT,d.renalVen)}`);
-  if(d.adrenal)lines.push(`Adrenal: ${d.adrenal}`);
-  if(d.ekBulgu)lines.push(`Ek: ${d.ekBulgu}`);
-  if(d.not)lines.push(`\nNOT: ${d.not}`);
+  lines.push(T.rptEkBulgular);
+  if(d.lenf)lines.push(T.rptLenf(lbl(LN_OPT,d.lenf)));
+  if(d.renalVen&&d.renalVen!=='acik')lines.push(T.rptRenalVen(lbl(RV_OPT,d.renalVen)));
+  if(d.adrenal)lines.push(T.rptAdrenal(d.adrenal));
+  if(d.ekBulgu)lines.push(T.rptEk(d.ekBulgu));
+  if(d.not)lines.push(T.rptNot(d.not));
   return lines.join('\n');
 }
 
 // ── STEP RENDERS ──────────────────────────────────────────────────────────────
 const SEKANS_OPT=[
-  {v:'T1',l:'T1 TSE/SE'},{v:'T2',l:'T2 TSE'},{v:'T2fs',l:'T2 FS'},
-  {v:'DWI',l:'DWI/ADC'},{v:'T1fsCE',l:'T1 FS Kontrastlı (dinamik)'},
-  {v:'IP_OP',l:'In-phase / Opposed-phase'},{v:'DCE',l:'DCE (dinamik CE)'},
-  {v:'T2star',l:'T2*'},{v:'MRU',l:'MR Ürografi'},
+  {v:'T1',l:T.seqT1},{v:'T2',l:T.seqT2},{v:'T2fs',l:T.seqT2fs},
+  {v:'DWI',l:T.seqDWI},{v:'T1fsCE',l:T.seqT1fsCE},
+  {v:'IP_OP',l:T.seqIPOP},{v:'DCE',l:T.seqDCE},
+  {v:'T2star',l:T.seqT2star},{v:'MRU',l:T.seqMRU},
 ];
-const KONTR_OPT=[{v:'kontsuz',l:'Kontrastsız'},{v:'gd',l:'Gadolinyum verildi (standart doz)'},{v:'gd_dusuk',l:'Gadolinyum (düşük doz)'},{v:'hepatospecific',l:'Hepatoselüler spesifik ajan'}];
+const KONTR_OPT=[{v:'kontsuz',l:T.kontrKontsuz},{v:'gd',l:T.kontrGd},{v:'gd_dusuk',l:T.kontrGdDusuk},{v:'hepatospecific',l:T.kontrHepatospecific}];
 
 function StepKlinik({d,set}){
   return(<div>
-    <Q title="Yaş"><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph="Örn: 58" type="number"/></Q>
-    <Q title="Cinsiyet">
-      <Chips opts={[{v:'E',l:'Erkek'},{v:'K',l:'Kadın'}]} val={d.cinsiyet} onChange={v=>set('cinsiyet',v)}/>
+    <Q title={T.qYas}><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph={T.qYasPh} type="number"/></Q>
+    <Q title={T.qCinsiyet}>
+      <Chips opts={[{v:'E',l:T.optErkek},{v:'K',l:T.optKadin}]} val={d.cinsiyet} onChange={v=>set('cinsiyet',v)}/>
     </Q>
-    <Q title="Endikasyon"><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph="İnsidental kitle / hematüri / ağrı / takip..."/></Q>
-    <Q title="Klinik Bağlam" hint="Ayırıcı tanı motorunu etkiler">
+    <Q title={T.qEndikasyon}><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph={T.qEndikasyonPh}/></Q>
+    <Q title={T.qBaglam} hint={T.qBaglamHint}>
       <Chips opts={BAGLAM_OPT} val={d.baglam} onChange={v=>set('baglam',v)}/>
     </Q>
   </div>);
@@ -512,27 +1099,27 @@ function StepKlinik({d,set}){
 
 function StepTeknik({d,set}){
   return(<div>
-    <Q title="Uygulanan Sekanslar" hint="Çoklu seçim">
+    <Q title={T.qSekans} hint={T.qSekansHint}>
       <Chips opts={SEKANS_OPT} val={d.sekans} onChange={v=>set('sekans',v)} multi={true}/>
     </Q>
-    <Q title="Kontrast"><Chips opts={KONTR_OPT} val={d.kontr} onChange={v=>set('kontr',v)}/></Q>
+    <Q title={T.qKontrast}><Chips opts={KONTR_OPT} val={d.kontr} onChange={v=>set('kontr',v)}/></Q>
   </div>);
 }
 
 function StepGenelBobrek({d,set}){
   return(<div>
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-      {[['Sağ','sag'],['Sol','sol']].map(([label,pfx])=>(
+      {[[T.sagBobrek,'sag'],[T.solBobrek,'sol']].map(([label,pfx])=>(
         <div key={pfx} style={{background:'#111a1e',borderRadius:10,padding:16,border:'1px solid #1e2a2e'}}>
-          <div style={{color:AC,fontSize:12,fontWeight:600,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>{label} Böbrek</div>
-          <Q title="Boyut"><Chips opts={BOYUT_BOB_OPT} val={d[pfx+'Boyut']} onChange={v=>set(pfx+'Boyut',v)}/></Q>
-          <Q title="Korteks"><Chips opts={KORTEKS_OPT} val={d[pfx+'Korteks']} onChange={v=>set(pfx+'Korteks',v)}/></Q>
-          <Q title="Hidronefrozis"><Chips opts={HIDRONEFROZ_OPT} val={d[pfx+'Hidro']} onChange={v=>set(pfx+'Hidro',v)}/></Q>
+          <div style={{color:AC,fontSize:12,fontWeight:600,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>{label}</div>
+          <Q title={T.qBoyut}><Chips opts={BOYUT_BOB_OPT} val={d[pfx+'Boyut']} onChange={v=>set(pfx+'Boyut',v)}/></Q>
+          <Q title={T.qKorteks}><Chips opts={KORTEKS_OPT} val={d[pfx+'Korteks']} onChange={v=>set(pfx+'Korteks',v)}/></Q>
+          <Q title={T.qHidronefrozis}><Chips opts={HIDRONEFROZ_OPT} val={d[pfx+'Hidro']} onChange={v=>set(pfx+'Hidro',v)}/></Q>
         </div>
       ))}
     </div>
     <div style={{marginTop:16}}>
-      <Q title="Genel Not"><TxtIn val={d.genelBobrekNot} onChange={v=>set('genelBobrekNot',v)} ph="Asimetri, genel parankimal değişiklik..."/></Q>
+      <Q title={T.qGenelNot}><TxtIn val={d.genelBobrekNot} onChange={v=>set('genelBobrekNot',v)} ph={T.qGenelNotPh}/></Q>
     </div>
   </div>);
 }
@@ -541,8 +1128,8 @@ function StepPreLoop({d,set,addLez}){
   return(<div>
     <p style={{color:'#4a7080',fontSize:13,marginBottom:16}}>
       {d.lezyonlar.length===0
-        ? 'Saptanan lezyonları ekleyin. Lezyon yoksa "İleri" ile devam edin.'
-        : `${d.lezyonlar.length} lezyon eklendi. Yeni lezyon ekleyebilir veya devam edebilirsiniz.`}
+        ? T.noLezyon
+        : T.lezAdded(d.lezyonlar.length)}
     </p>
     {d.lezyonlar.map((l,i)=>(
       <LezCard key={i} l={l} idx={i} onDelete={idx=>set('lezyonlar',d.lezyonlar.filter((_,j)=>j!==idx))}/>
@@ -551,34 +1138,34 @@ function StepPreLoop({d,set,addLez}){
       width:'100%',padding:'12px',borderRadius:10,
       border:`2px dashed ${AC}`,background:'rgba(6,182,212,0.04)',
       color:AC,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
-    }}>+ Lezyon Ekle</button>
+    }}>{T.addLezBtn}</button>
   </div>);
 }
 
 function StepLezLok({cl,setCl}){
   return(<div>
-    <Q title="Taraf"><Chips opts={TARAF_OPT} val={cl.taraf} onChange={v=>setCl('taraf',v)}/></Q>
-    <Q title="Lokalizasyon (Pol)"><Chips opts={POL_OPT} val={cl.pol} onChange={v=>setCl('pol',v)}/></Q>
-    <Q title="Sayı / Dağılım"><Chips opts={SAYI_OPT} val={cl.sayi} onChange={v=>setCl('sayi',v)}/></Q>
-    <Q title="Boyut – en büyük (mm)"><TxtIn val={cl.boyut} onChange={v=>setCl('boyut',v)} ph="mm" type="number"/></Q>
-    <Q title="Not (opsiyonel)"><TxtIn val={cl.not} onChange={v=>setCl('not',v)} ph="Ek klinik not..."/></Q>
+    <Q title={T.qTaraf}><Chips opts={TARAF_OPT} val={cl.taraf} onChange={v=>setCl('taraf',v)}/></Q>
+    <Q title={T.qLokPol}><Chips opts={POL_OPT} val={cl.pol} onChange={v=>setCl('pol',v)}/></Q>
+    <Q title={T.qSayi}><Chips opts={SAYI_OPT} val={cl.sayi} onChange={v=>setCl('sayi',v)}/></Q>
+    <Q title={T.qBoyutMm}><TxtIn val={cl.boyut} onChange={v=>setCl('boyut',v)} ph={T.qBoyutMmPh} type="number"/></Q>
+    <Q title={T.qNotOps}><TxtIn val={cl.not} onChange={v=>setCl('not',v)} ph={T.qNotOpsPh}/></Q>
   </div>);
 }
 
 function StepLezKarakter({cl,setCl}){
-  return(<Q title="Lezyon Karakteri" hint="Dominant karakter">
+  return(<Q title={T.qLezKarakter} hint={T.qLezKarakterHint}>
     <Chips opts={KARAKTER_OPT} val={cl.karakter} onChange={v=>setCl('karakter',v)}/>
   </Q>);
 }
 
 function StepLezSignal({cl,setCl}){
   return(<div>
-    <Q title="T1 Sinyali"><Chips opts={T1_OPT} val={cl.T1} onChange={v=>setCl('T1',v)}/></Q>
-    <Q title="T2 Sinyali"><Chips opts={T2_OPT} val={cl.T2} onChange={v=>setCl('T2',v)}/></Q>
-    <Q title="Yağ Bileşeni" hint="Kimyasal kayma / yağ baskılı görüntüler">
+    <Q title={T.qT1}><Chips opts={T1_OPT} val={cl.T1} onChange={v=>setCl('T1',v)}/></Q>
+    <Q title={T.qT2}><Chips opts={T2_OPT} val={cl.T2} onChange={v=>setCl('T2',v)}/></Q>
+    <Q title={T.qYag} hint={T.qYagHint}>
       <Chips opts={YAG_OPT} val={cl.yag} onChange={v=>setCl('yag',v)}/>
     </Q>
-    <Q title="Merkezi Skar (opsiyonel)">
+    <Q title={T.qSkar}>
       <Chips opts={SKAR_OPT} val={cl.skar} onChange={v=>setCl('skar',v)}/>
     </Q>
   </div>);
@@ -586,17 +1173,17 @@ function StepLezSignal({cl,setCl}){
 
 function StepLezDWI({cl,setCl}){
   return(<div>
-    <Q title="DWI Görünümü"><Chips opts={DWI_OPT} val={cl.DWI} onChange={v=>setCl('DWI',v)}/></Q>
-    <Q title="ADC Değeri (görsel)"><Chips opts={ADC_OPT} val={cl.ADC} onChange={v=>setCl('ADC',v)}/></Q>
+    <Q title={T.qDWI}><Chips opts={DWI_OPT} val={cl.DWI} onChange={v=>setCl('DWI',v)}/></Q>
+    <Q title={T.qADC}><Chips opts={ADC_OPT} val={cl.ADC} onChange={v=>setCl('ADC',v)}/></Q>
   </div>);
 }
 
 function StepLezKontrast({cl,setCl}){
   return(<div>
-    <Q title="Kontrast Tutulum Paterni" hint="En baskın patern">
+    <Q title={T.qKontrPat} hint={T.qKontrPatHint}>
       <Chips opts={KONTRAST_OPT} val={cl.kontrast} onChange={v=>setCl('kontrast',v)}/>
     </Q>
-    <Q title="Perirenal Doku">
+    <Q title={T.qPerirenal}>
       <Chips opts={PERIRENAL_OPT} val={cl.perirenal} onChange={v=>setCl('perirenal',v)}/>
     </Q>
   </div>);
@@ -605,32 +1192,32 @@ function StepLezKontrast({cl,setCl}){
 function StepLezSpecial({cl,setCl}){
   return(<div>
     {(cl.karakter==='kistik'||cl.karakter==='kombine')&&(
-      <Q title="Bosniak Kategorisi (2019 rev.)" hint="Kistik lezyon değerlendirmesi">
+      <Q title={T.qBosniak} hint={T.qBosniakHint}>
         <Chips opts={BOSNIAK_OPT} val={cl.bosniak} onChange={v=>setCl('bosniak',v)}/>
       </Q>
     )}
     {cl.karakter==='solid'&&(
       <div>
-        <Q title="Yağ Dışı Özel Bulgular">
+        <Q title={T.qYagDisiOzel}>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <Chk label="Kalsifikasyon" checked={!!cl.kals} onChange={v=>setCl('kals',v)}/>
-            <Chk label="İntralesyonel kanama (T1 fokal hiperinans)" checked={!!cl.kanama} onChange={v=>setCl('kanama',v)}/>
-            <Chk label="Renal ven / IVC uzanımı" checked={!!cl.venUzanim} onChange={v=>setCl('venUzanim',v)}/>
-            <Chk label="Kapsül taşma / perinefrik uzanım" checked={!!cl.kapsulTasma} onChange={v=>setCl('kapsulTasma',v)}/>
+            <Chk label={T.chkKals} checked={!!cl.kals} onChange={v=>setCl('kals',v)}/>
+            <Chk label={T.chkKanama} checked={!!cl.kanama} onChange={v=>setCl('kanama',v)}/>
+            <Chk label={T.chkVenUzanim} checked={!!cl.venUzanim} onChange={v=>setCl('venUzanim',v)}/>
+            <Chk label={T.chkKapsulTasma} checked={!!cl.kapsulTasma} onChange={v=>setCl('kapsulTasma',v)}/>
           </div>
         </Q>
       </div>
     )}
     {cl.karakter==='infiltratif'&&(
-      <Q title="İnfiltratif Patern">
+      <Q title={T.qInfiltratif}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <Chk label="Toplayıcı sistem tutulumu" checked={!!cl.toplayiciSistem} onChange={v=>setCl('toplayiciSistem',v)}/>
-          <Chk label="İpsilateral üreter kalınlaşması" checked={!!cl.ureterKalin} onChange={v=>setCl('ureterKalin',v)}/>
-          <Chk label="Tüm böbrek tutulumu (diffüz)" checked={!!cl.tumBobrek} onChange={v=>setCl('tumBobrek',v)}/>
+          <Chk label={T.chkToplayici} checked={!!cl.toplayiciSistem} onChange={v=>setCl('toplayiciSistem',v)}/>
+          <Chk label={T.chkUreterKalin} checked={!!cl.ureterKalin} onChange={v=>setCl('ureterKalin',v)}/>
+          <Chk label={T.chkTumBobrek} checked={!!cl.tumBobrek} onChange={v=>setCl('tumBobrek',v)}/>
         </div>
       </Q>
     )}
-    <Q title="Hidronefrozis (lezyon ilişkili)">
+    <Q title={T.qHidroLez}>
       <Chips opts={HIDRONEFROZ_OPT} val={cl.hidronefroz} onChange={v=>setCl('hidronefroz',v)}/>
     </Q>
   </div>);
@@ -639,20 +1226,20 @@ function StepLezSpecial({cl,setCl}){
 
 function StepEkBulgular({d,set}){
   return(<div>
-    <Q title="Lenf Nodu"><Chips opts={LN_OPT} val={d.lenf} onChange={v=>set('lenf',v)}/></Q>
-    <Q title="Renal Ven / IVC"><Chips opts={RV_OPT} val={d.renalVen} onChange={v=>set('renalVen',v)}/></Q>
-    <Q title="Adrenal (opsiyonel)"><TxtIn val={d.adrenal} onChange={v=>set('adrenal',v)} ph="Normal / lezyon tanımı..."/></Q>
-    <Q title="Diğer Karın İçi Bulgular"><TxtIn val={d.ekBulgu} onChange={v=>set('ekBulgu',v)} ph="Ek bulgular..."/></Q>
+    <Q title={T.qLenf}><Chips opts={LN_OPT} val={d.lenf} onChange={v=>set('lenf',v)}/></Q>
+    <Q title={T.qRenalVen}><Chips opts={RV_OPT} val={d.renalVen} onChange={v=>set('renalVen',v)}/></Q>
+    <Q title={T.qAdrenal}><TxtIn val={d.adrenal} onChange={v=>set('adrenal',v)} ph={T.qAdrenalPh}/></Q>
+    <Q title={T.qEkBulgu}><TxtIn val={d.ekBulgu} onChange={v=>set('ekBulgu',v)} ph={T.qEkBulguPh}/></Q>
   </div>);
 }
 
 function StepBaglam({d,set}){
   return(<div>
-    <Q title="Klinik Bağlam (güncelle)" hint="Skoring motorunu optimize eder">
+    <Q title={T.qBaglamGuncelle} hint={T.qBaglamGuncelleHint}>
       <Chips opts={BAGLAM_OPT} val={d.baglam} onChange={v=>set('baglam',v)}/>
     </Q>
-    <Q title="Genel Not / Sonuç Yorumu">
-      <TxtIn val={d.not} onChange={v=>set('not',v)} ph="Klinik yorum, önceki tetkiklerle karşılaştırma..."/>
+    <Q title={T.qGenelNotSonuc}>
+      <TxtIn val={d.not} onChange={v=>set('not',v)} ph={T.qGenelNotSonucPh}/>
     </Q>
   </div>);
 }
@@ -666,7 +1253,7 @@ function StepSonuc({d,set,copyMsg,onCopy,onDownload}){
     {d.lezyonlar.length===0?(
       <div style={{padding:'20px',background:'#111a1e',borderRadius:10,
         border:'1px solid #1e2a2e',color:'#4a7080',fontSize:14,textAlign:'center'}}>
-        Kayıtlı lezyon yok — genel böbrek değerlendirmesi raporu oluşturulacak.
+        {T.noLezMsg}
       </div>
     ):(
       <div>
@@ -674,7 +1261,7 @@ function StepSonuc({d,set,copyMsg,onCopy,onDownload}){
           <div key={lezIdx} style={{background:'#111a1e',borderRadius:12,padding:20,
             border:'1px solid #1e2a2e',marginBottom:16}}>
             <div style={{color:AC,fontWeight:700,fontSize:14,marginBottom:16}}>
-              Lezyon {lezIdx} — {taraf==='sag'?'Sağ':taraf==='sol'?'Sol':'Bilateral'} Böbrek
+              {T.lezSonucTitle(lezIdx, taraf==='sag'?T.tarafSag:taraf==='sol'?T.tarafSol:T.tarafBilateral)}
             </div>
             {dx.filter(p=>p.pct>0).slice(0,8).map((p,i)=>(
               <DxBar key={p.id} p={p} rank={i+1}/>
@@ -690,36 +1277,36 @@ function StepSonuc({d,set,copyMsg,onCopy,onDownload}){
         const dx=getDxList(l,d.baglam);
         return {idx:i+1,top:dx[0],second:dx[1]};
       });
-      const hasMalign=topDx.some(x=>x.top&&x.top.kat==='Malign Tümör'&&x.top.pct>20);
-      const hasEnfek=topDx.some(x=>x.top&&x.top.kat==='Enfektif'&&x.top.pct>20);
-      const hasTravma=topDx.some(x=>x.top&&x.top.kat==='Travmatik'&&x.top.pct>20);
+      const hasMalign=topDx.some(x=>x.top&&x.top.kat===T.katMalign&&x.top.pct>20);
+      const hasEnfek=topDx.some(x=>x.top&&x.top.kat===T.katEnfektif&&x.top.pct>20);
+      const hasTravma=topDx.some(x=>x.top&&x.top.kat===T.katTravmatik&&x.top.pct>20);
       return(
         <div style={{marginBottom:16}}>
           {hasMalign&&<div style={{padding:'10px 14px',background:'rgba(248,113,113,0.08)',
             borderRadius:8,borderLeft:'3px solid #f87171',marginBottom:8,color:'#fca5a5',fontSize:13}}>
-            ⚠ Malign tümör yüksek ayırıcı tanıda — ileri değerlendirme / biyopsi planlanmalıdır.
+            {T.warnMalign}
           </div>}
           {hasEnfek&&<div style={{padding:'10px 14px',background:'rgba(250,204,21,0.08)',
             borderRadius:8,borderLeft:'3px solid #facc15',marginBottom:8,color:'#fde68a',fontSize:13}}>
-            ⚠ Enfektif patoloji yüksek olasılıklı — klinik ve laboratuvar korelasyonu önerilir.
+            {T.warnEnfek}
           </div>}
           {hasTravma&&<div style={{padding:'10px 14px',background:'rgba(192,132,252,0.08)',
             borderRadius:8,borderLeft:'3px solid #c084fc',marginBottom:8,color:'#e9d5ff',fontSize:13}}>
-            ⚠ Travmatik lezyon saptandı — AAST evreleme değerlendirmesi önerilir.
+            {T.warnTravma}
           </div>}
         </div>
       );
     })()}
 
-    <Q title="Sonuç Notu (opsiyonel)">
-      <TxtIn val={d.not} onChange={v=>set('not',v)} ph="Klinik öneri, takip süresi..."/>
+    <Q title={T.qSonucNot}>
+      <TxtIn val={d.not} onChange={v=>set('not',v)} ph={T.qSonucNotPh}/>
     </Q>
     <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:8}}>
       {[
-        ['Raporu Göster',()=>set('showReport',true),AC],
-        [copyMsg||'Panoya Kopyala',onCopy,'#4ade80'],
-        ['HTML İndir',onDownload,'#60a5fa'],
-        ['Yazdır',()=>window.print(),'#a78bfa'],
+        [T.btnRaporGoster,()=>set('showReport',true),AC],
+        [copyMsg||T.btnKopyala,onCopy,'#4ade80'],
+        [T.btnHtmlIndir,onDownload,'#60a5fa'],
+        [T.btnYazdir,()=>window.print(),'#a78bfa'],
       ].map(([label,fn,c])=>(
         <button key={label} onClick={fn} style={{
           padding:'10px 18px',borderRadius:8,border:`2px solid ${c}`,
@@ -801,31 +1388,31 @@ function App(){
   function copyReport(){
     const txt=generateReport(d);
     navigator.clipboard.writeText(txt).then(()=>{
-      setCopyMsg('Kopyalandı ✓');setTimeout(()=>setCopyMsg(''),2200);
+      setCopyMsg(T.btnKopyalandi);setTimeout(()=>setCopyMsg(''),2200);
     });
   }
   function dlHTML(){
     const txt=generateReport(d);
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Böbrek MRI Raporu</title>
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${T.rptDlTitle}</title>
 <style>body{font-family:Arial,sans-serif;max-width:820px;margin:40px auto;padding:20px;color:#111;}
 h1{color:#0891b2;border-bottom:2px solid #0891b2;padding-bottom:8px;}
 pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
-<body><h1>Böbrek MRI Raporu</h1><pre>${txt}</pre></body></html>`;
+<body><h1>${T.rptDlH1}</h1><pre>${txt}</pre></body></html>`;
     const blob=new Blob([html],{type:'text/html'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='bobrek_mri_raporu.html';
+    a.download=T.rptDlFilename;
     a.click();
   }
 
   const progress=Math.round((step/(TOTAL-1))*100);
   const sectionName=()=>{
-    if(step<=2)return'Genel';
-    if(step===PRE)return'Lezyon Listesi';
-    if(inLoop)return`Lezyon Girişi (${lezIdx+1})`;
-    if(step===POSTL)return'Ek Bulgular';
-    if(step===POSTL+1)return'Bağlam';
-    return'Sonuç';
+    if(step<=2)return T.secGeneral;
+    if(step===PRE)return T.secLezList;
+    if(inLoop)return T.secLezEntry(lezIdx+1);
+    if(step===POSTL)return T.secEkBulgu;
+    if(step===POSTL+1)return T.secBaglam;
+    return T.secSonuc;
   };
 
   function renderStep(){
@@ -857,15 +1444,15 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
         <div style={{background:'#fff',color:'#111',borderRadius:14,
           maxWidth:800,width:'100%',maxHeight:'88vh',overflow:'auto',padding:32}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
-            <h2 style={{margin:0,color:'#0891b2',fontSize:19}}>Böbrek MRI Raporu</h2>
+            <h2 style={{margin:0,color:'#0891b2',fontSize:19}}>{T.modalTitle}</h2>
             <button onClick={()=>set('showReport',false)} style={{background:'none',border:'none',
               cursor:'pointer',fontSize:22,color:'#888',lineHeight:1}}>×</button>
           </div>
           <pre style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.9,fontFamily:'monospace'}}>{rpt}</pre>
           <div style={{display:'flex',gap:10,marginTop:20,flexWrap:'wrap'}}>
-            <button onClick={copyReport} style={{padding:'8px 18px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||'Kopyala'}</button>
-            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>Yazdır</button>
-            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>HTML İndir</button>
+            <button onClick={copyReport} style={{padding:'8px 18px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||T.btnModalKopyala}</button>
+            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{T.btnModalYazdir}</button>
+            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{T.btnModalHtmlIndir}</button>
           </div>
         </div>
       </div>
@@ -885,12 +1472,12 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:17,flexShrink:0}}>⬡</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:15,fontWeight:700,color:'#e0f2f8'}}>Böbrek MRI Değerlendirme</div>
-              <div style={{fontSize:11,color:AC}}>Multilezyoner Ayırıcı Tanı · 25 Patoloji</div>
+              <div style={{fontSize:15,fontWeight:700,color:'#e0f2f8'}}>{T.appTitle}</div>
+              <div style={{fontSize:11,color:AC}}>{T.appSubtitle}</div>
             </div>
             <div style={{textAlign:'right',fontSize:11,color:'#2a5a6a'}}>
               <div>{sectionName()}</div>
-              <div style={{color:'#1a3a4a'}}>{step+1} / {TOTAL}</div>
+              <div style={{color:'#1a3a4a'}}>{T.stepOf(step+1, TOTAL)}</div>
             </div>
           </div>
           <div style={{height:3,background:'#0e2a36',borderRadius:2}}>
@@ -908,7 +1495,7 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
             {TITLES[step]}
           </div>
           {inLoop&&<div style={{fontSize:11,color:AC,marginTop:2}}>
-            Lezyon {lezIdx+1} girişi — adım {step-LS+1}/{LE-LS+1}
+            {T.lezStep(lezIdx+1, step-LS+1, LE-LS+1)}
           </div>}
         </div>
         <div style={{animation:'fadeIn 0.22s ease'}}>
@@ -922,13 +1509,13 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
             background:step===0?'#0f0e17':'#111a1e',
             color:step===0?'#0e2a36':'#4a7080',
             cursor:step===0?'default':'pointer',fontSize:13,fontFamily:'inherit',
-          }}>← Geri</button>
+          }}>{T.navBack}</button>
           {step<TOTAL-1&&(
             <button onClick={goNext} style={{
               padding:'10px 26px',borderRadius:8,border:'none',
               background:'linear-gradient(135deg,#0369a1,#06b6d4)',
               color:'#fff',cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:600,
-            }}>İleri →</button>
+            }}>{T.navNext}</button>
           )}
         </div>
       </div>
@@ -939,5 +1526,7 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
 </body>
 </html>

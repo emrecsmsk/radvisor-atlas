@@ -112,8 +112,8 @@ body>*:not(.print-overlay){display:none!important}
 <body>
 <div class="app">
 <div class="header">
-<h1>Hipofiz MRI Karar Destek Sistemi</h1>
-<div class="sub">Sellar / Parasellar Lezyon Değerlendirme &bull; Yapılandırılmış Raporlama</div>
+<h1 data-i18n-tr="Hipofiz MRI Karar Destek Sistemi" data-i18n-en="Pituitary MRI Decision Support System"></h1>
+<div class="sub" data-i18n-tr="Sellar / Parasellar Lezyon Değerlendirme &bull; Yapılandırılmış Raporlama" data-i18n-en="Sellar / Parasellar Lesion Evaluation &bull; Structured Reporting"></div>
 </div>
 <div class="progress-bar" id="progressBar"></div>
 
@@ -122,8 +122,8 @@ body>*:not(.print-overlay){display:none!important}
 
 <!-- NAVIGATION -->
 <div class="nav" id="navBar" style="display:none">
-<button class="btn btn-prev" id="btnPrev" onclick="goPrev()">&#8592; Geri</button>
-<button class="btn btn-next" id="btnNext" onclick="goNext()">İleri &#8594;</button>
+<button class="btn btn-prev" id="btnPrev" onclick="goPrev()" data-i18n-tr="&#8592; Geri" data-i18n-en="&#8592; Back"></button>
+<button class="btn btn-next" id="btnNext" onclick="goNext()" data-i18n-tr="İleri &#8594;" data-i18n-en="Next &#8594;"></button>
 </div>
 
 <!-- ASK MORE -->
@@ -134,209 +134,541 @@ body>*:not(.print-overlay){display:none!important}
 <div id="dxBars"></div>
 <div class="report-box" id="reportBox"></div>
 <div class="toolbar">
-<button class="btn btn-print" onclick="openPrint()">Yazdır / PDF</button>
-<button class="btn btn-copy" onclick="copyReport()">Kopyala</button>
-<button class="btn btn-reset" onclick="resetAll()">Yeni Değerlendirme</button>
+<button class="btn btn-print" onclick="openPrint()" data-i18n-tr="Yazdır / PDF" data-i18n-en="Print / PDF"></button>
+<button class="btn btn-copy" onclick="copyReport()" data-i18n-tr="Kopyala" data-i18n-en="Copy"></button>
+<button class="btn btn-reset" onclick="resetAll()" data-i18n-tr="Yeni Değerlendirme" data-i18n-en="New Evaluation"></button>
 </div>
 </div>
 </div>
 
 <!-- PRINT OVERLAY -->
 <div class="print-overlay" id="printOverlay">
-<button class="print-close" onclick="closePrint()">Kapat</button>
+<button class="print-close" onclick="closePrint()" data-i18n-tr="Kapat" data-i18n-en="Close"></button>
 <div class="print-toolbar">
-<button class="btn btn-print" onclick="window.print()">Yazdır</button>
-<button class="btn btn-copy" onclick="copyReport()">Kopyala</button>
+<button class="btn btn-print" onclick="window.print()" data-i18n-tr="Yazdır" data-i18n-en="Print"></button>
+<button class="btn btn-copy" onclick="copyReport()" data-i18n-tr="Kopyala" data-i18n-en="Copy"></button>
 </div>
 <div class="print-sheet" id="printSheet"></div>
 </div>
 
 <script>
+/* ===== LOCALE ===== */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    /* Pathology names */
+    pMikroadenom: 'Pitüiter Mikroadenom',
+    pMakroadenom: 'Pitüiter Makroadenom',
+    pRathke: 'Rathke Yarık Kisti',
+    pKranio: 'Kraniofaringioma',
+    pApopleksi: 'Pitüiter Apopleksi',
+    pHipofizit: 'Hipofizit',
+    pMeningiom: 'Meningiom (Sellar/Parasellar)',
+    pMetastaz: 'Pitüiter Metastaz',
+    pEmptySella: 'Empty Sella Sendromu',
+    pBasitKist: 'Pitüiter Basit Kist',
+    /* Pathology yorum */
+    yorumMikroadenom: 'Dinamik kontrastlı serilerde normal hipofiz parankimine göre geç kontrastlanan, iyi sınırlı, <10 mm lezyon pitüiter mikroadenom ile uyumludur. Fonksiyonel değerlendirme açısından hormonal panel önerilir.',
+    yorumMakroadenom: 'Sella genişleten, suprasellar uzanım gösteren, heterojen kontrastlanan kitle pitüiter makroadenom ile uyumludur. Kitle etkisi (kiazma basısı, kavernöz sinüs invazyonu) değerlendirilmelidir. Knosp sınıflaması uygulanmalıdır.',
+    yorumRathke: 'İntrasellar, iyi sınırlı, kontrastlanmayan veya ince rim kontrastlanması gösteren kistik lezyon Rathke yarık kisti ile uyumludur. Protein içeriğine bağlı T1 sinyal değişkenliği karakteristiktir. İntrakistik nodül varlığı tanıyı destekler.',
+    yorumKranio: 'Suprasellar yerleşimli, kistik-solid yapıda, kalsifikasyon içeren, solid komponentte belirgin kontrastlanan kitle kraniofaringioma ile uyumludur. Adamantinomatöz ve papiller alt tipler değerlendirilmelidir.',
+    yorumApopleksi: 'Sellar kitle içinde hemorajik sinyal değişiklikleri (T1 hiperintensitesi) pitüiter apopleksi ile uyumludur. Akut klinik tablo (ciddi baş ağrısı, görme bozukluğu, hormonal yetmezlik) eşlik ediyorsa acil cerrahi konsültasyon önerilir.',
+    yorumHipofizit: 'Diffüz hipofiz büyümesi, stalk kalınlaşması ve homojen-yoğun kontrastlanma hipofizit ile uyumludur. İmmünoterapi ilişkili hipofizit ayırıcı tanıda düşünülmelidir. Posterior hipofiz parlak noktası kaybı eşlik edebilir.',
+    yorumMeningiom: 'Parasellar yerleşimli, yoğun homojen kontrastlanan, dural kuyruk işareti gösteren ekstra-aksiyel kitle meningiom ile uyumludur. Kavernöz sinüs ve internal karotid arter ilişkisi değerlendirilmelidir.',
+    yorumMetastaz: 'Bilinen malignite öyküsü olan hastada, infundibulum tutulumu gösteren, belirgin difüzyon kısıtlılığı olan lezyon pitüiter metastaz ile uyumludur. Diabetes insipidus eşlik ediyorsa metastaz olasılığı artar.',
+    yorumEmptySella: 'Sellanın BOS sinyali ile dolu olması ve hipofiz dokusunun sella tabanında ince bir şerit halinde izlenmesi empty sella sendromu ile uyumludur. Primer ve sekonder formlar ayrılmalıdır.',
+    yorumBasitKist: 'İntrasellar, T1 hipointens / T2 belirgin hiperintens, kontrastlanma göstermeyen, difüzyon kısıtlılığı olmayan basit kistik lezyon pitüiter basit kist (pars intermedia kisti) ile uyumludur.',
+    /* Step titles & descs */
+    stepLocTitle: 'Lezyon Lokalizasyonu',
+    stepLocDesc: 'Lezyonun yerleşim bölgesini seçiniz (birden fazla seçilebilir).',
+    stepLocIntrasellar: 'İntrasellar',
+    stepLocSuprasellar: 'Suprasellar uzanım',
+    stepLocParasellar: 'Parasellar / Kavernöz sinüs',
+    stepLocInfundibular: 'İnfundibulum / Stalk tutulumu',
+    stepSizeTitle: 'Lezyon Boyutu',
+    stepSizeDesc: 'Lezyonun en büyük çapını belirtiniz.',
+    stepSizeMikro: '< 10 mm (Mikroadenom boyut)',
+    stepSizeMakro: '10–40 mm (Makroadenom boyut)',
+    stepSizeDev: '> 40 mm (Dev adenom boyut)',
+    stepSizeEmpty: 'Sellada kitle yok / BOS dolu',
+    stepSideTitle: 'Lezyon Tarafı',
+    stepSideDesc: 'Lezyonun sella içindeki lateralizasyonunu seçiniz.',
+    stepSideSag: 'Sağ',
+    stepSideSol: 'Sol',
+    stepSideBilateral: 'Bilateral / Orta hat',
+    stepSideSantral: 'Santral',
+    stepDimsTitle: 'Lezyon Boyutları (mm)',
+    stepDimsDesc: 'Lezyonun iki aksini milimetre cinsinden giriniz (opsiyonel).',
+    stepDimsDim1Label: 'En büyük aks (mm)',
+    stepDimsDim1Placeholder: 'Örn: 12',
+    stepDimsDim2Label: 'İkinci aks (mm)',
+    stepDimsDim2Placeholder: 'Örn: 8',
+    stepContourTitle: 'Lezyon Konturu',
+    stepContourDesc: 'Lezyonun sınır özelliğini seçiniz.',
+    stepContourDuzenli: 'Düzenli / İyi sınırlı',
+    stepContourDuzensiz: 'Düzensiz / Lobüle',
+    stepContourSilik: 'Silik / Belirsiz sınır',
+    stepInnerTitle: 'İç Yapı',
+    stepInnerDesc: 'Lezyonun iç sinyal yapısını seçiniz.',
+    stepInnerHomojen: 'Homojen',
+    stepInnerHeterojen: 'Heterojen',
+    stepT1Title: 'T1 Ağırlıklı Sinyal Karakteri',
+    stepT1Desc: 'Lezyonun prekontrast T1 sinyalini seçiniz.',
+    stepT1Hipointens: 'Hipointens',
+    stepT1Izointens: 'İzointens (normal hipofiz ile aynı)',
+    stepT1HiperintensKanama: 'Hiperintens (kanama / protein şüphesi)',
+    stepT1DegiskenHiper: 'Değişken / heterojen (kistik alanlar hiperintens)',
+    stepT1IzoHeterojen: 'İzointens / heterojen',
+    stepT1BOS: 'BOS sinyali ile aynı (hipointens)',
+    stepT2Title: 'T2 Ağırlıklı Sinyal Karakteri',
+    stepT2Desc: 'Lezyonun T2 sinyalini seçiniz.',
+    stepT2Hipointens: 'Hipointens',
+    stepT2HafifHiperintens: 'Hafif hiperintens',
+    stepT2Hiperintens: 'Hiperintens',
+    stepT2CokHiperintens: 'Çok hiperintens (sıvı sinyali)',
+    stepT2IzoHiperintens: 'İzointens – hafif hiperintens',
+    stepT2Degisken: 'Değişken / heterojen',
+    stepT2BOS: 'BOS sinyali',
+    stepDwiTitle: 'DWI / ADC Bulguları',
+    stepDwiDesc: 'Difüzyon ağırlıklı görüntüleme bulgularını seçiniz.',
+    stepDwiYok: 'Difüzyon kısıtlılığı yok (ADC yüksek)',
+    stepDwiHafif: 'Hafif difüzyon kısıtlılığı (ADC hafif düşük)',
+    stepDwiOlabilir: 'Difüzyon kısıtlılığı olabilir (ADC düşük)',
+    stepDwiBelirgin: 'Belirgin difüzyon kısıtlılığı (ADC düşük)',
+    stepKontrastTitle: 'Kontrastlanma Paterni',
+    stepKontrastDesc: 'Dinamik kontrastlı serilerde kontrastlanma paternini seçiniz.',
+    stepKontrastYok: 'Kontrastlanma yok',
+    stepKontrastYokRim: 'Kontrastlanma yok veya ince rim',
+    stepKontrastRim: 'İnce rim kontrastlanması',
+    stepKontrastGec: 'Normal hipofize göre geç kontrastlanma',
+    stepKontrastHeterojen: 'Heterojen kontrastlanma',
+    stepKontrastHomojenHizli: 'Homojen ve hızlı (yoğun) kontrastlanma',
+    stepKontrastYogunDural: 'Yoğun erken kontrastlanma + dural tail',
+    stepKontrastGuclu: 'Güçlü erken kontrastlanma',
+    stepKontrastSolidErken: 'Solid komponentte erken kontrastlanma (kistik alan kontrastlanmıyor)',
+    stepKontrastAzHeterojen: 'Kontrastlanma az veya heterojen',
+    stepEkTitle: 'Ek Morfolojik Bulgular',
+    stepEkDesc: 'Eşlik eden bulguları seçiniz (birden fazla seçilebilir).',
+    stepEkKist: 'Kistik komponent',
+    stepEkKanama: 'Hemorajik komponent',
+    stepEkKalsifikasyon: 'Kalsifikasyon',
+    stepEkDural: 'Dural kuyruk işareti (dural tail)',
+    stepEkStalkKalin: 'Stalk (infundibulum) kalınlaşması',
+    stepEkStalkDeviye: 'Stalk deviasyonu',
+    stepEkParlakNokta: 'Posterior hipofiz parlak noktası kaybı',
+    stepEkKiazma: 'Optik kiazma basısı / yukarı itilmesi',
+    stepEkKavInvazyon: 'Kavernöz sinüs invazyonu',
+    stepEkYok: 'Ek morfolojik bulgu yok',
+    stepKlinikTitle: 'Klinik Bilgiler',
+    stepKlinikDesc: 'Mevcut klinik bilgileri seçiniz (birden fazla seçilebilir).',
+    stepKlinikHorm: 'Hormonal bozukluk / hipersekresyon bulguları',
+    stepKlinikGorme: 'Görme alanı defekti',
+    stepKlinikBasAgrisi: 'Baş ağrısı (akut / kronik)',
+    stepKlinikDI: 'Diabetes insipidus',
+    stepKlinikMalig: 'Bilinen malignite öyküsü',
+    stepKlinikOtoimmun: 'Otoimmün hastalık / immünoterapi',
+    stepKlinikCocuk: 'Çocuk / adolesan hasta',
+    stepKlinikAkut: 'Akut klinik prezentasyon',
+    stepKlinikYok: 'Klinik bilgi mevcut değil',
+    /* Dynamic UI */
+    lesyonSaved: 'Kaydedildi',
+    lesyonLabel: (n) => `Lezyon ${n}`,
+    boyutKategorisi: 'Boyut kategorisi',
+    taraf: 'Taraf',
+    boyutlar: 'Boyutlar',
+    kontur: 'Kontur',
+    icYapi: 'İç yapı',
+    toplamLezyon: (n) => `Toplam <b style="color:var(--text)">${n}</b> lezyon kayıtlı.`,
+    bashkaLezyon: 'Başka lezyon var mı?',
+    evetYeniLezyon: 'Evet, Yeni Lezyon Ekle',
+    hayirDegerlendir: 'Hayır, Değerlendir',
+    geriDuzenle: 'Geri / Düzenle',
+    belirtilmedi: 'Belirtilmedi',
+    /* Buttons */
+    btnIleri: (isLast) => isLast ? 'Lezyonu Kaydet ✓' : 'İleri →',
+    /* Report */
+    reportTitle: 'YAPILANDIRILMIŞ HİPOFİZ MRI RAPORU',
+    reportPrintTitle: 'HİPOFİZ MRI — YAPILANDIRILMIŞ RAPOR',
+    lokalizasyon: 'Lokalizasyon',
+    ayiriciTani: 'AYIRICI TANI',
+    yorum: 'YORUM',
+    ayiriciTanida: (name) => ` Ayırıcı tanıda ${name} de düşünülmelidir.`,
+    printParam: 'Parametre',
+    printBulgu: 'Bulgu',
+    printTani: 'Tanı',
+    printOlasilik: 'Olasılık',
+    copySuccess: 'Rapor panoya kopyalandı.',
+    /* Report lines */
+    rLokalizasyon: 'Lokalizasyon',
+    rBoyutKat: 'Boyut kategorisi',
+    rTaraf: 'Taraf',
+    rBoyutlar: 'Boyutlar',
+    rKontur: 'Kontur',
+    rIcYapi: 'İç Yapı',
+    rT1: 'T1 Sinyal',
+    rT2: 'T2 Sinyal',
+    rDwi: 'DWI / ADC',
+    rKontrast: 'Kontrastlanma',
+    rEkBulgular: 'Ek Bulgular',
+    rKlinikBilgi: 'Klinik Bilgi',
+  },
+  en: {
+    /* Pathology names */
+    pMikroadenom: 'Pituitary Microadenoma',
+    pMakroadenom: 'Pituitary Macroadenoma',
+    pRathke: 'Rathke Cleft Cyst',
+    pKranio: 'Craniopharyngioma',
+    pApopleksi: 'Pituitary Apoplexy',
+    pHipofizit: 'Hypophysitis',
+    pMeningiom: 'Meningioma (Sellar/Parasellar)',
+    pMetastaz: 'Pituitary Metastasis',
+    pEmptySella: 'Empty Sella Syndrome',
+    pBasitKist: 'Pituitary Simple Cyst',
+    /* Pathology yorum */
+    yorumMikroadenom: 'A well-defined lesion <10 mm showing late enhancement relative to normal pituitary parenchyma on dynamic contrast-enhanced sequences is consistent with pituitary microadenoma. A hormonal panel is recommended for functional evaluation.',
+    yorumMakroadenom: 'A mass causing sellar enlargement with suprasellar extension and heterogeneous enhancement is consistent with pituitary macroadenoma. Mass effect (optic chiasm compression, cavernous sinus invasion) should be assessed. Knosp grading should be applied.',
+    yorumRathke: 'An intrasellar, well-defined cystic lesion with no enhancement or thin rim enhancement is consistent with a Rathke cleft cyst. T1 signal variability related to protein content is characteristic. The presence of an intracystic nodule supports the diagnosis.',
+    yorumKranio: 'A suprasellar mass with cystic-solid architecture, calcification, and prominent enhancement of the solid component is consistent with craniopharyngioma. Adamantinomatous and papillary subtypes should be evaluated.',
+    yorumApopleksi: 'Hemorrhagic signal changes (T1 hyperintensity) within a sellar mass are consistent with pituitary apoplexy. If an acute clinical picture (severe headache, visual disturbance, hormonal insufficiency) accompanies the findings, urgent surgical consultation is recommended.',
+    yorumHipofizit: 'Diffuse pituitary enlargement, stalk thickening, and homogeneous-intense enhancement are consistent with hypophysitis. Immunotherapy-related hypophysitis should be considered in the differential diagnosis. Loss of the posterior pituitary bright spot may be associated.',
+    yorumMeningiom: 'A parasellar extra-axial mass with dense homogeneous enhancement and a dural tail sign is consistent with meningioma. The relationship with the cavernous sinus and internal carotid artery should be evaluated.',
+    yorumMetastaz: 'In a patient with a known malignancy, a lesion involving the infundibulum with significant restricted diffusion is consistent with pituitary metastasis. If diabetes insipidus is present, the likelihood of metastasis increases.',
+    yorumEmptySella: 'Filling of the sella with CSF signal and visualization of pituitary tissue as a thin strip along the sellar floor is consistent with empty sella syndrome. Primary and secondary forms should be distinguished.',
+    yorumBasitKist: 'An intrasellar cystic lesion that is T1 hypointense / markedly T2 hyperintense, shows no enhancement, and has no restricted diffusion is consistent with a pituitary simple cyst (pars intermedia cyst).',
+    /* Step titles & descs */
+    stepLocTitle: 'Lesion Localization',
+    stepLocDesc: 'Select the location of the lesion (multiple selections allowed).',
+    stepLocIntrasellar: 'Intrasellar',
+    stepLocSuprasellar: 'Suprasellar extension',
+    stepLocParasellar: 'Parasellar / Cavernous sinus',
+    stepLocInfundibular: 'Infundibulum / Stalk involvement',
+    stepSizeTitle: 'Lesion Size',
+    stepSizeDesc: 'Specify the largest diameter of the lesion.',
+    stepSizeMikro: '< 10 mm (Microadenoma size)',
+    stepSizeMakro: '10–40 mm (Macroadenoma size)',
+    stepSizeDev: '> 40 mm (Giant adenoma size)',
+    stepSizeEmpty: 'No mass in sella / CSF-filled',
+    stepSideTitle: 'Lesion Side',
+    stepSideDesc: 'Select the lateralization of the lesion within the sella.',
+    stepSideSag: 'Right',
+    stepSideSol: 'Left',
+    stepSideBilateral: 'Bilateral / Midline',
+    stepSideSantral: 'Central',
+    stepDimsTitle: 'Lesion Dimensions (mm)',
+    stepDimsDesc: 'Enter the two axes of the lesion in millimetres (optional).',
+    stepDimsDim1Label: 'Largest axis (mm)',
+    stepDimsDim1Placeholder: 'e.g. 12',
+    stepDimsDim2Label: 'Second axis (mm)',
+    stepDimsDim2Placeholder: 'e.g. 8',
+    stepContourTitle: 'Lesion Contour',
+    stepContourDesc: 'Select the margin characteristics of the lesion.',
+    stepContourDuzenli: 'Regular / Well-defined',
+    stepContourDuzensiz: 'Irregular / Lobulated',
+    stepContourSilik: 'Ill-defined / Indistinct margin',
+    stepInnerTitle: 'Internal Structure',
+    stepInnerDesc: 'Select the internal signal characteristics of the lesion.',
+    stepInnerHomojen: 'Homogeneous',
+    stepInnerHeterojen: 'Heterogeneous',
+    stepT1Title: 'T1-Weighted Signal Character',
+    stepT1Desc: 'Select the pre-contrast T1 signal of the lesion.',
+    stepT1Hipointens: 'Hypointense',
+    stepT1Izointens: 'Isointense (same as normal pituitary)',
+    stepT1HiperintensKanama: 'Hyperintense (hemorrhage / protein suspicion)',
+    stepT1DegiskenHiper: 'Variable / heterogeneous (cystic areas hyperintense)',
+    stepT1IzoHeterojen: 'Isointense / heterogeneous',
+    stepT1BOS: 'Same as CSF signal (hypointense)',
+    stepT2Title: 'T2-Weighted Signal Character',
+    stepT2Desc: 'Select the T2 signal of the lesion.',
+    stepT2Hipointens: 'Hypointense',
+    stepT2HafifHiperintens: 'Mildly hyperintense',
+    stepT2Hiperintens: 'Hyperintense',
+    stepT2CokHiperintens: 'Markedly hyperintense (fluid signal)',
+    stepT2IzoHiperintens: 'Isointense – mildly hyperintense',
+    stepT2Degisken: 'Variable / heterogeneous',
+    stepT2BOS: 'CSF signal',
+    stepDwiTitle: 'DWI / ADC Findings',
+    stepDwiDesc: 'Select the diffusion-weighted imaging findings.',
+    stepDwiYok: 'No restricted diffusion (ADC high)',
+    stepDwiHafif: 'Mild restricted diffusion (ADC mildly low)',
+    stepDwiOlabilir: 'Possible restricted diffusion (ADC low)',
+    stepDwiBelirgin: 'Significant restricted diffusion (ADC low)',
+    stepKontrastTitle: 'Enhancement Pattern',
+    stepKontrastDesc: 'Select the enhancement pattern on dynamic contrast-enhanced sequences.',
+    stepKontrastYok: 'No enhancement',
+    stepKontrastYokRim: 'No enhancement or thin rim',
+    stepKontrastRim: 'Thin rim enhancement',
+    stepKontrastGec: 'Late enhancement relative to normal pituitary',
+    stepKontrastHeterojen: 'Heterogeneous enhancement',
+    stepKontrastHomojenHizli: 'Homogeneous and rapid (intense) enhancement',
+    stepKontrastYogunDural: 'Intense early enhancement + dural tail',
+    stepKontrastGuclu: 'Strong early enhancement',
+    stepKontrastSolidErken: 'Early enhancement of solid component (cystic area does not enhance)',
+    stepKontrastAzHeterojen: 'Minimal or heterogeneous enhancement',
+    stepEkTitle: 'Additional Morphological Findings',
+    stepEkDesc: 'Select accompanying findings (multiple selections allowed).',
+    stepEkKist: 'Cystic component',
+    stepEkKanama: 'Hemorrhagic component',
+    stepEkKalsifikasyon: 'Calcification',
+    stepEkDural: 'Dural tail sign',
+    stepEkStalkKalin: 'Stalk (infundibulum) thickening',
+    stepEkStalkDeviye: 'Stalk deviation',
+    stepEkParlakNokta: 'Loss of posterior pituitary bright spot',
+    stepEkKiazma: 'Optic chiasm compression / upward displacement',
+    stepEkKavInvazyon: 'Cavernous sinus invasion',
+    stepEkYok: 'No additional morphological findings',
+    stepKlinikTitle: 'Clinical Information',
+    stepKlinikDesc: 'Select available clinical information (multiple selections allowed).',
+    stepKlinikHorm: 'Hormonal disorder / hypersecretion findings',
+    stepKlinikGorme: 'Visual field defect',
+    stepKlinikBasAgrisi: 'Headache (acute / chronic)',
+    stepKlinikDI: 'Diabetes insipidus',
+    stepKlinikMalig: 'Known malignancy history',
+    stepKlinikOtoimmun: 'Autoimmune disease / immunotherapy',
+    stepKlinikCocuk: 'Child / adolescent patient',
+    stepKlinikAkut: 'Acute clinical presentation',
+    stepKlinikYok: 'Clinical information not available',
+    /* Dynamic UI */
+    lesyonSaved: 'Saved',
+    lesyonLabel: (n) => `Lesion ${n}`,
+    boyutKategorisi: 'Size category',
+    taraf: 'Side',
+    boyutlar: 'Dimensions',
+    kontur: 'Contour',
+    icYapi: 'Internal structure',
+    toplamLezyon: (n) => `Total <b style="color:var(--text)">${n}</b> lesion(s) recorded.`,
+    bashkaLezyon: 'Is there another lesion?',
+    evetYeniLezyon: 'Yes, Add New Lesion',
+    hayirDegerlendir: 'No, Evaluate',
+    geriDuzenle: 'Back / Edit',
+    belirtilmedi: 'Not specified',
+    /* Buttons */
+    btnIleri: (isLast) => isLast ? 'Save Lesion ✓' : 'Next →',
+    /* Report */
+    reportTitle: 'STRUCTURED PITUITARY MRI REPORT',
+    reportPrintTitle: 'PITUITARY MRI — STRUCTURED REPORT',
+    lokalizasyon: 'Localization',
+    ayiriciTani: 'DIFFERENTIAL DIAGNOSIS',
+    yorum: 'IMPRESSION',
+    ayiriciTanida: (name) => ` ${name} should also be considered in the differential diagnosis.`,
+    printParam: 'Parameter',
+    printBulgu: 'Finding',
+    printTani: 'Diagnosis',
+    printOlasilik: 'Probability',
+    copySuccess: 'Report copied to clipboard.',
+    /* Report lines */
+    rLokalizasyon: 'Localization',
+    rBoyutKat: 'Size category',
+    rTaraf: 'Side',
+    rBoyutlar: 'Dimensions',
+    rKontur: 'Contour',
+    rIcYapi: 'Internal Structure',
+    rT1: 'T1 Signal',
+    rT2: 'T2 Signal',
+    rDwi: 'DWI / ADC',
+    rKontrast: 'Enhancement',
+    rEkBulgular: 'Additional Findings',
+    rKlinikBilgi: 'Clinical Information',
+  }
+})[RV_LOCALE];
+
+/* ===== i18n DOM bootstrap ===== */
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('[data-i18n-tr]').forEach(function(el){
+    var key = RV_LOCALE === 'en' ? 'i18nEn' : 'i18nTr';
+    var val = el.dataset[key] || el.dataset.i18nTr;
+    if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'){
+      el.placeholder = val;
+    } else {
+      el.innerHTML = val;
+    }
+  });
+});
+
 /* ===== DATA ===== */
 const PATHOLOGIES = [
   {
-    id:'mikroadenom', name:'Pitüiter Mikroadenom',
+    id:'mikroadenom', name:T.pMikroadenom,
     criteria:{t1:'hipointens',t2:'hafif_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'hafif_dusuk',art:'gec_kontrast',ven:'geciken_dolum',size:'mikro',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:1,horm:1,malig:0},
     color:'#9d7aed',
-    yorum:'Dinamik kontrastlı serilerde normal hipofiz parankimine göre geç kontrastlanan, iyi sınırlı, <10 mm lezyon pitüiter mikroadenom ile uyumludur. Fonksiyonel değerlendirme açısından hormonal panel önerilir.'
+    yorum:T.yorumMikroadenom
   },
   {
-    id:'makroadenom', name:'Pitüiter Makroadenom',
+    id:'makroadenom', name:T.pMakroadenom,
     criteria:{t1:'izo_heterojen',t2:'hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'orta_dusuk',art:'heterojen_kontrast',ven:'persistan',size:'makro',loc_intra:1,loc_supra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:1,malig:0},
     color:'#7c5ce0',
-    yorum:'Sella genişleten, suprasellar uzanım gösteren, heterojen kontrastlanan kitle pitüiter makroadenom ile uyumludur. Kitle etkisi (kiazma basısı, kavernöz sinüs invazyonu) değerlendirilmelidir. Knosp sınıflaması uygulanmalıdır.'
+    yorum:T.yorumMakroadenom
   },
   {
-    id:'rathke', name:'Rathke Yarık Kisti',
+    id:'rathke', name:T.pRathke,
     criteria:{t1:'degisken_hiper',t2:'hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'yok_veya_rim',ven:'rim',size:'any',loc_intra:1,kist:1,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
     color:'#58b8f0',
-    yorum:'İntrasellar, iyi sınırlı, kontrastlanmayan veya ince rim kontrastlanması gösteren kistik lezyon Rathke yarık kisti ile uyumludur. Protein içeriğine bağlı T1 sinyal değişkenliği karakteristiktir. İntrakistik nodül varlığı tanıyı destekler.'
+    yorum:T.yorumRathke
   },
   {
-    id:'kranio', name:'Kraniofaringioma',
+    id:'kranio', name:T.pKranio,
     criteria:{t1:'degisken_hiper',t2:'hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'solid_erken',ven:'persistan',size:'makro',loc_supra:1,kist:1,kanama:0,kalsifikasyon:1,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0,yas_cocuk:1},
     color:'#f0c858',
-    yorum:'Suprasellar yerleşimli, kistik-solid yapıda, kalsifikasyon içeren, solid komponentte belirgin kontrastlanan kitle kraniofaringioma ile uyumludur. Adamantinomatöz ve papiller alt tipler değerlendirilmelidir.'
+    yorum:T.yorumKranio
   },
   {
-    id:'apopleksi', name:'Pitüiter Apopleksi',
+    id:'apopleksi', name:T.pApopleksi,
     criteria:{t1:'hiperintens_kanama',t2:'degisken',chem:'yok',dwi:'restriksiyon_olabilir',adc:'dusuk',art:'az_heterojen',ven:'degisken',size:'any',loc_intra:1,kist:0,kanama:1,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:1,malig:0,akut:1},
     color:'#ed6a7a',
-    yorum:'Sellar kitle içinde hemorajik sinyal değişiklikleri (T1 hiperintensitesi) pitüiter apopleksi ile uyumludur. Akut klinik tablo (ciddi baş ağrısı, görme bozukluğu, hormonal yetmezlik) eşlik ediyorsa acil cerrahi konsültasyon önerilir.'
+    yorum:T.yorumApopleksi
   },
   {
-    id:'hipofizit', name:'Hipofizit',
+    id:'hipofizit', name:T.pHipofizit,
     criteria:{t1:'izointens',t2:'hafif_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'orta',art:'homojen_hizli',ven:'persistan',size:'any',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:1,stalk_deviye:0,horm:1,malig:0,otoimmun:1},
     color:'#5ce0a8',
-    yorum:'Diffüz hipofiz büyümesi, stalk kalınlaşması ve homojen-yoğun kontrastlanma hipofizit ile uyumludur. İmmünoterapi ilişkili hipofizit ayırıcı tanıda düşünülmelidir. Posterior hipofiz parlak noktası kaybı eşlik edebilir.'
+    yorum:T.yorumHipofizit
   },
   {
-    id:'meningiom', name:'Meningiom (Sellar/Parasellar)',
+    id:'meningiom', name:T.pMeningiom,
     criteria:{t1:'izointens',t2:'izo_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'dusuk_orta',art:'yogun_erken_dural',ven:'persistan',size:'any',loc_para:1,kist:0,kanama:0,kalsifikasyon:0,dural:1,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
     color:'#f0985c',
-    yorum:'Parasellar yerleşimli, yoğun homojen kontrastlanan, dural kuyruk işareti gösteren ekstra-aksiyel kitle meningiom ile uyumludur. Kavernöz sinüs ve internal karotid arter ilişkisi değerlendirilmelidir.'
+    yorum:T.yorumMeningiom
   },
   {
-    id:'metastaz', name:'Pitüiter Metastaz',
+    id:'metastaz', name:T.pMetastaz,
     criteria:{t1:'izointens',t2:'hiperintens',chem:'yok',dwi:'belirgin_restriksiyon',adc:'dusuk',art:'guclu_erken',ven:'persistan',size:'any',loc_intra:1,loc_stalk:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:1,stalk_deviye:0,horm:0,malig:1},
     color:'#e05c8a',
-    yorum:'Bilinen malignite öyküsü olan hastada, infundibulum tutulumu gösteren, belirgin difüzyon kısıtlılığı olan lezyon pitüiter metastaz ile uyumludur. Diabetes insipidus eşlik ediyorsa metastaz olasılığı artar.'
+    yorum:T.yorumMetastaz
   },
   {
-    id:'empty_sella', name:'Empty Sella Sendromu',
+    id:'empty_sella', name:T.pEmptySella,
     criteria:{t1:'bos_sinyal',t2:'bos_sinyal',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'rim_ince',ven:'ayni',size:'any',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0,empty:1},
     color:'#88c8e8',
-    yorum:'Sellanın BOS sinyali ile dolu olması ve hipofiz dokusunun sella tabanında ince bir şerit halinde izlenmesi empty sella sendromu ile uyumludur. Primer ve sekonder formlar ayrılmalıdır.'
+    yorum:T.yorumEmptySella
   },
   {
-    id:'basit_kist', name:'Pitüiter Basit Kist',
+    id:'basit_kist', name:T.pBasitKist,
     criteria:{t1:'hipointens',t2:'cok_hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'cok_yuksek',art:'yok',ven:'yok',size:'mikro',loc_intra:1,kist:1,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
     color:'#a0d8c0',
-    yorum:'İntrasellar, T1 hipointens / T2 belirgin hiperintens, kontrastlanma göstermeyen, difüzyon kısıtlılığı olmayan basit kistik lezyon pitüiter basit kist (pars intermedia kisti) ile uyumludur.'
+    yorum:T.yorumBasitKist
   }
 ];
 
 /* ===== STEPS ===== */
 const STEPS = [
   {
-    id:'loc', title:'Lezyon Lokalizasyonu', desc:'Lezyonun yerleşim bölgesini seçiniz (birden fazla seçilebilir).', type:'multi',
+    id:'loc', title:T.stepLocTitle, desc:T.stepLocDesc, type:'multi',
     options:[
-      {val:'intrasellar', label:'İntrasellar'},
-      {val:'suprasellar', label:'Suprasellar uzanım'},
-      {val:'parasellar', label:'Parasellar / Kavernöz sinüs'},
-      {val:'infundibular', label:'İnfundibulum / Stalk tutulumu'}
+      {val:'intrasellar', label:T.stepLocIntrasellar},
+      {val:'suprasellar', label:T.stepLocSuprasellar},
+      {val:'parasellar', label:T.stepLocParasellar},
+      {val:'infundibular', label:T.stepLocInfundibular}
     ]
   },
   {
-    id:'size', title:'Lezyon Boyutu', desc:'Lezyonun en büyük çapını belirtiniz.', type:'radio',
+    id:'size', title:T.stepSizeTitle, desc:T.stepSizeDesc, type:'radio',
     options:[
-      {val:'mikro', label:'< 10 mm (Mikroadenom boyut)'},
-      {val:'makro', label:'10–40 mm (Makroadenom boyut)'},
-      {val:'dev', label:'> 40 mm (Dev adenom boyut)'},
-      {val:'empty', label:'Sellada kitle yok / BOS dolu'}
+      {val:'mikro', label:T.stepSizeMikro},
+      {val:'makro', label:T.stepSizeMakro},
+      {val:'dev', label:T.stepSizeDev},
+      {val:'empty', label:T.stepSizeEmpty}
     ]
   },
   {
-    id:'side', title:'Lezyon Tarafı', desc:'Lezyonun sella içindeki lateralizasyonunu seçiniz.', type:'radio',
+    id:'side', title:T.stepSideTitle, desc:T.stepSideDesc, type:'radio',
     options:[
-      {val:'Sağ', label:'Sağ'},
-      {val:'Sol', label:'Sol'},
-      {val:'Bilateral', label:'Bilateral / Orta hat'},
-      {val:'Santral', label:'Santral'}
+      {val:'Sağ', label:T.stepSideSag},
+      {val:'Sol', label:T.stepSideSol},
+      {val:'Bilateral', label:T.stepSideBilateral},
+      {val:'Santral', label:T.stepSideSantral}
     ]
   },
   {
-    id:'dims', title:'Lezyon Boyutları (mm)', desc:'Lezyonun iki aksini milimetre cinsinden giriniz (opsiyonel).', type:'dims'
+    id:'dims', title:T.stepDimsTitle, desc:T.stepDimsDesc, type:'dims'
   },
   {
-    id:'contour', title:'Lezyon Konturu', desc:'Lezyonun sınır özelliğini seçiniz.', type:'radio',
+    id:'contour', title:T.stepContourTitle, desc:T.stepContourDesc, type:'radio',
     options:[
-      {val:'Düzenli', label:'Düzenli / İyi sınırlı'},
-      {val:'Düzensiz', label:'Düzensiz / Lobüle'},
-      {val:'Silik', label:'Silik / Belirsiz sınır'}
+      {val:'Düzenli', label:T.stepContourDuzenli},
+      {val:'Düzensiz', label:T.stepContourDuzensiz},
+      {val:'Silik', label:T.stepContourSilik}
     ]
   },
   {
-    id:'inner', title:'İç Yapı', desc:'Lezyonun iç sinyal yapısını seçiniz.', type:'radio',
+    id:'inner', title:T.stepInnerTitle, desc:T.stepInnerDesc, type:'radio',
     options:[
-      {val:'Homojen', label:'Homojen'},
-      {val:'Heterojen', label:'Heterojen'}
+      {val:'Homojen', label:T.stepInnerHomojen},
+      {val:'Heterojen', label:T.stepInnerHeterojen}
     ]
   },
   {
-    id:'t1', title:'T1 Ağırlıklı Sinyal Karakteri', desc:'Lezyonun prekontrast T1 sinyalini seçiniz.', type:'radio',
+    id:'t1', title:T.stepT1Title, desc:T.stepT1Desc, type:'radio',
     options:[
-      {val:'hipointens', label:'Hipointens'},
-      {val:'izointens', label:'İzointens (normal hipofiz ile aynı)'},
-      {val:'hiperintens_kanama', label:'Hiperintens (kanama / protein şüphesi)'},
-      {val:'degisken_hiper', label:'Değişken / heterojen (kistik alanlar hiperintens)'},
-      {val:'izo_heterojen', label:'İzointens / heterojen'},
-      {val:'bos_sinyal', label:'BOS sinyali ile aynı (hipointens)'}
+      {val:'hipointens', label:T.stepT1Hipointens},
+      {val:'izointens', label:T.stepT1Izointens},
+      {val:'hiperintens_kanama', label:T.stepT1HiperintensKanama},
+      {val:'degisken_hiper', label:T.stepT1DegiskenHiper},
+      {val:'izo_heterojen', label:T.stepT1IzoHeterojen},
+      {val:'bos_sinyal', label:T.stepT1BOS}
     ]
   },
   {
-    id:'t2', title:'T2 Ağırlıklı Sinyal Karakteri', desc:'Lezyonun T2 sinyalini seçiniz.', type:'radio',
+    id:'t2', title:T.stepT2Title, desc:T.stepT2Desc, type:'radio',
     options:[
-      {val:'hipointens', label:'Hipointens'},
-      {val:'hafif_hiperintens', label:'Hafif hiperintens'},
-      {val:'hiperintens', label:'Hiperintens'},
-      {val:'cok_hiperintens', label:'Çok hiperintens (sıvı sinyali)'},
-      {val:'izo_hiperintens', label:'İzointens – hafif hiperintens'},
-      {val:'degisken', label:'Değişken / heterojen'},
-      {val:'bos_sinyal', label:'BOS sinyali'}
+      {val:'hipointens', label:T.stepT2Hipointens},
+      {val:'hafif_hiperintens', label:T.stepT2HafifHiperintens},
+      {val:'hiperintens', label:T.stepT2Hiperintens},
+      {val:'cok_hiperintens', label:T.stepT2CokHiperintens},
+      {val:'izo_hiperintens', label:T.stepT2IzoHiperintens},
+      {val:'degisken', label:T.stepT2Degisken},
+      {val:'bos_sinyal', label:T.stepT2BOS}
     ]
   },
   {
-    id:'dwi', title:'DWI / ADC Bulguları', desc:'Difüzyon ağırlıklı görüntüleme bulgularını seçiniz.', type:'radio',
+    id:'dwi', title:T.stepDwiTitle, desc:T.stepDwiDesc, type:'radio',
     options:[
-      {val:'restriksiyon_yok', label:'Difüzyon kısıtlılığı yok (ADC yüksek)'},
-      {val:'hafif_restriksiyon', label:'Hafif difüzyon kısıtlılığı (ADC hafif düşük)'},
-      {val:'restriksiyon_olabilir', label:'Difüzyon kısıtlılığı olabilir (ADC düşük)'},
-      {val:'belirgin_restriksiyon', label:'Belirgin difüzyon kısıtlılığı (ADC düşük)'}
+      {val:'restriksiyon_yok', label:T.stepDwiYok},
+      {val:'hafif_restriksiyon', label:T.stepDwiHafif},
+      {val:'restriksiyon_olabilir', label:T.stepDwiOlabilir},
+      {val:'belirgin_restriksiyon', label:T.stepDwiBelirgin}
     ]
   },
   {
-    id:'kontrast', title:'Kontrastlanma Paterni', desc:'Dinamik kontrastlı serilerde kontrastlanma paternini seçiniz.', type:'radio',
+    id:'kontrast', title:T.stepKontrastTitle, desc:T.stepKontrastDesc, type:'radio',
     options:[
-      {val:'yok', label:'Kontrastlanma yok'},
-      {val:'yok_veya_rim', label:'Kontrastlanma yok veya ince rim'},
-      {val:'rim_ince', label:'İnce rim kontrastlanması'},
-      {val:'gec_kontrast', label:'Normal hipofize göre geç kontrastlanma'},
-      {val:'heterojen_kontrast', label:'Heterojen kontrastlanma'},
-      {val:'homojen_hizli', label:'Homojen ve hızlı (yoğun) kontrastlanma'},
-      {val:'yogun_erken_dural', label:'Yoğun erken kontrastlanma + dural tail'},
-      {val:'guclu_erken', label:'Güçlü erken kontrastlanma'},
-      {val:'solid_erken', label:'Solid komponentte erken kontrastlanma (kistik alan kontrastlanmıyor)'},
-      {val:'az_heterojen', label:'Kontrastlanma az veya heterojen'}
+      {val:'yok', label:T.stepKontrastYok},
+      {val:'yok_veya_rim', label:T.stepKontrastYokRim},
+      {val:'rim_ince', label:T.stepKontrastRim},
+      {val:'gec_kontrast', label:T.stepKontrastGec},
+      {val:'heterojen_kontrast', label:T.stepKontrastHeterojen},
+      {val:'homojen_hizli', label:T.stepKontrastHomojenHizli},
+      {val:'yogun_erken_dural', label:T.stepKontrastYogunDural},
+      {val:'guclu_erken', label:T.stepKontrastGuclu},
+      {val:'solid_erken', label:T.stepKontrastSolidErken},
+      {val:'az_heterojen', label:T.stepKontrastAzHeterojen}
     ]
   },
   {
-    id:'ek', title:'Ek Morfolojik Bulgular', desc:'Eşlik eden bulguları seçiniz (birden fazla seçilebilir).', type:'multi',
+    id:'ek', title:T.stepEkTitle, desc:T.stepEkDesc, type:'multi',
     options:[
-      {val:'kist', label:'Kistik komponent'},
-      {val:'kanama', label:'Hemorajik komponent'},
-      {val:'kalsifikasyon', label:'Kalsifikasyon'},
-      {val:'dural', label:'Dural kuyruk işareti (dural tail)'},
-      {val:'stalk_kalin', label:'Stalk (infundibulum) kalınlaşması'},
-      {val:'stalk_deviye', label:'Stalk deviasyonu'},
-      {val:'parlak_nokta_kaybi', label:'Posterior hipofiz parlak noktası kaybı'},
-      {val:'kiazma_basi', label:'Optik kiazma basısı / yukarı itilmesi'},
-      {val:'kav_invazyon', label:'Kavernöz sinüs invazyonu'},
-      {val:'yok_ek', label:'Ek morfolojik bulgu yok'}
+      {val:'kist', label:T.stepEkKist},
+      {val:'kanama', label:T.stepEkKanama},
+      {val:'kalsifikasyon', label:T.stepEkKalsifikasyon},
+      {val:'dural', label:T.stepEkDural},
+      {val:'stalk_kalin', label:T.stepEkStalkKalin},
+      {val:'stalk_deviye', label:T.stepEkStalkDeviye},
+      {val:'parlak_nokta_kaybi', label:T.stepEkParlakNokta},
+      {val:'kiazma_basi', label:T.stepEkKiazma},
+      {val:'kav_invazyon', label:T.stepEkKavInvazyon},
+      {val:'yok_ek', label:T.stepEkYok}
     ]
   },
   {
-    id:'klinik', title:'Klinik Bilgiler', desc:'Mevcut klinik bilgileri seçiniz (birden fazla seçilebilir).', type:'multi',
+    id:'klinik', title:T.stepKlinikTitle, desc:T.stepKlinikDesc, type:'multi',
     options:[
-      {val:'horm', label:'Hormonal bozukluk / hipersekresyon bulguları'},
-      {val:'gorme', label:'Görme alanı defekti'},
-      {val:'bas_agrisi', label:'Baş ağrısı (akut / kronik)'},
-      {val:'di', label:'Diabetes insipidus'},
-      {val:'malig', label:'Bilinen malignite öyküsü'},
-      {val:'otoimmun', label:'Otoimmün hastalık / immünoterapi'},
-      {val:'cocuk', label:'Çocuk / adolesan hasta'},
-      {val:'akut', label:'Akut klinik prezentasyon'},
-      {val:'yok_klinik', label:'Klinik bilgi mevcut değil'}
+      {val:'horm', label:T.stepKlinikHorm},
+      {val:'gorme', label:T.stepKlinikGorme},
+      {val:'bas_agrisi', label:T.stepKlinikBasAgrisi},
+      {val:'di', label:T.stepKlinikDI},
+      {val:'malig', label:T.stepKlinikMalig},
+      {val:'otoimmun', label:T.stepKlinikOtoimmun},
+      {val:'cocuk', label:T.stepKlinikCocuk},
+      {val:'akut', label:T.stepKlinikAkut},
+      {val:'yok_klinik', label:T.stepKlinikYok}
     ]
   }
 ];
@@ -353,8 +685,8 @@ function init(){
   sc.innerHTML = STEPS.map((s,i)=>{
     let inner = `<div class="step-title">${i+1}. ${s.title}</div><div class="step-desc">${s.desc||''}</div>`;
     if(s.type==='dims'){
-      inner += `<div class="input-row" style="margin-bottom:14px"><label>En büyük aks (mm)</label><input type="number" class="num-input" id="inp_dim1" min="1" max="300" placeholder="Örn: 12" oninput="answers.dim1=this.value?parseFloat(this.value):null"></div>`;
-      inner += `<div class="input-row"><label>İkinci aks (mm)</label><input type="number" class="num-input" id="inp_dim2" min="1" max="300" placeholder="Örn: 8" oninput="answers.dim2=this.value?parseFloat(this.value):null"></div>`;
+      inner += `<div class="input-row" style="margin-bottom:14px"><label>${T.stepDimsDim1Label}</label><input type="number" class="num-input" id="inp_dim1" min="1" max="300" placeholder="${T.stepDimsDim1Placeholder}" oninput="answers.dim1=this.value?parseFloat(this.value):null"></div>`;
+      inner += `<div class="input-row"><label>${T.stepDimsDim2Label}</label><input type="number" class="num-input" id="inp_dim2" min="1" max="300" placeholder="${T.stepDimsDim2Placeholder}" oninput="answers.dim2=this.value?parseFloat(this.value):null"></div>`;
     } else {
       inner += `<div class="opt-group" id="opts_${s.id}">`;
       s.options.forEach(o=>{
@@ -377,7 +709,7 @@ function showStep(n){
   document.getElementById('btnPrev').style.visibility = n===0?'hidden':'visible';
   const isLast = n===STEPS.length-1;
   const btn = document.getElementById('btnNext');
-  btn.textContent = isLast?'Lezyonu Kaydet ✓':'İleri →';
+  btn.textContent = T.btnIleri(isLast);
   document.getElementById('resultSection').classList.remove('active');
   document.getElementById('askMoreSection').style.display='none';
 }
@@ -406,7 +738,7 @@ function goPrev(){
 
 /* ===== LESION LOOP ===== */
 function saveLesion(){
-  const label = `Lezyon ${lesions.length+1}`;
+  const label = T.lesyonLabel(lesions.length+1);
   lesions.push({
     label,
     data:{
@@ -429,21 +761,21 @@ function saveLesion(){
   const el = document.getElementById('askMoreSection');
   el.innerHTML = `
     <div class="report-box" style="margin-top:0">
-      <h3 style="color:var(--green)">✔ ${last.label} Kaydedildi</h3>
-      <div class="rline"><b>Boyut kategorisi:</b> <span>${sizeLabel}</span></div>
-      <div class="rline"><b>Taraf:</b> <span>${d.side||'—'}</span></div>
-      <div class="rline"><b>Boyutlar:</b> <span>${dimTxt}</span></div>
-      <div class="rline"><b>Kontur:</b> <span>${d.contour||'—'}</span></div>
-      <div class="rline"><b>İç yapı:</b> <span>${d.inner||'—'}</span></div>
+      <h3 style="color:var(--green)">&#10004; ${last.label} ${T.lesyonSaved}</h3>
+      <div class="rline"><b>${T.boyutKategorisi}:</b> <span>${sizeLabel}</span></div>
+      <div class="rline"><b>${T.taraf}:</b> <span>${d.side||'—'}</span></div>
+      <div class="rline"><b>${T.boyutlar}:</b> <span>${dimTxt}</span></div>
+      <div class="rline"><b>${T.kontur}:</b> <span>${d.contour||'—'}</span></div>
+      <div class="rline"><b>${T.icYapi}:</b> <span>${d.inner||'—'}</span></div>
     </div>
-    <p style="color:var(--text2);font-size:.85rem;margin:14px 0 6px">Toplam <b style="color:var(--text)">${lesions.length}</b> lezyon kayıtlı.</p>
-    <p style="font-size:1rem;margin-bottom:14px;color:var(--text)">Başka lezyon var mı?</p>
+    <p style="color:var(--text2);font-size:.85rem;margin:14px 0 6px">${T.toplamLezyon(lesions.length)}</p>
+    <p style="font-size:1rem;margin-bottom:14px;color:var(--text)">${T.bashkaLezyon}</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-      <button class="btn btn-next" onclick="addAnotherLesion()" style="flex:1;min-width:180px">➕ Evet, Yeni Lezyon Ekle</button>
-      <button class="btn" onclick="finalizeLesions()" style="flex:1;min-width:180px;background:var(--green);color:#0f0e17">📋 Hayır, Değerlendir</button>
+      <button class="btn btn-next" onclick="addAnotherLesion()" style="flex:1;min-width:180px">&#10133; ${T.evetYeniLezyon}</button>
+      <button class="btn" onclick="finalizeLesions()" style="flex:1;min-width:180px;background:var(--green);color:#0f0e17">&#128203; ${T.hayirDegerlendir}</button>
     </div>
     <div style="display:flex;justify-content:flex-start">
-      <button class="btn btn-prev" onclick="editLastLesion()" style="font-size:.82rem;padding:8px 18px">← Geri / Düzenle</button>
+      <button class="btn btn-prev" onclick="editLastLesion()" style="font-size:.82rem;padding:8px 18px">&#8592; ${T.geriDuzenle}</button>
     </div>
   `;
   el.style.display='block';
@@ -605,7 +937,7 @@ function calcLesionScores(data){
 }
 
 function calculate(){
-  const all = lesions.length>0 ? lesions : [{label:'Lezyon 1', data:{...answers, loc:answers.loc||[], ek:answers.ek||[], klinik:answers.klinik||[]}}];
+  const all = lesions.length>0 ? lesions : [{label:T.lesyonLabel(1), data:{...answers, loc:answers.loc||[], ek:answers.ek||[], klinik:answers.klinik||[]}}];
   window._allLesionResults = all.map(les=>({
     label: les.label,
     data: les.data,
@@ -624,7 +956,7 @@ function showResults(allLes){
     const sorted = Object.entries(les.scores).sort((a,b)=>b[1]-a[1]);
     const maxScore = sorted[0][1]||1;
     if(allLes.length>1){
-      barsHtml += `<div style="margin:${li>0?'18px':0} 0 8px;padding:6px 12px;background:var(--accent-glow);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-weight:600;color:var(--accent);font-size:.9rem">🔵 ${les.label}</div>`;
+      barsHtml += `<div style="margin:${li>0?'18px':0} 0 8px;padding:6px 12px;background:var(--accent-glow);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-weight:600;color:var(--accent);font-size:.9rem">&#128309; ${les.label}</div>`;
     }
     barsHtml += sorted.map(([id,sc])=>{
       const p=PATHOLOGIES.find(x=>x.id===id);
@@ -646,59 +978,59 @@ function getLabel(stepId, val){
 }
 function getMultiLabels(stepId, data){
   const arr = data[stepId]||[];
-  return arr.map(v=>getLabel(stepId,v)).join(', ') || 'Belirtilmedi';
+  return arr.map(v=>getLabel(stepId,v)).join(', ') || T.belirtilmedi;
 }
 
 function buildReport(allLes){
-  let html = `<h3>YAPILANDIRILMIŞ HİPOFİZ MRI RAPORU</h3>`;
-  let printHtml = `<h2>HİPOFİZ MRI — YAPILANDIRILMIŞ RAPOR</h2><p style="text-align:center;color:#666;font-size:11px">Tarih: ${new Date().toLocaleDateString('tr-TR')}</p>`;
+  let html = `<h3>${T.reportTitle}</h3>`;
+  let printHtml = `<h2>${T.reportPrintTitle}</h2><p style="text-align:center;color:#666;font-size:11px">${new Date().toLocaleDateString(RV_LOCALE === 'en' ? 'en-GB' : 'tr-TR')}</p>`;
 
   allLes.forEach((les,li)=>{
     const d = les.data;
     const sorted = Object.entries(les.scores).sort((a,b)=>b[1]-a[1]);
     const top3 = sorted.slice(0,3);
     const topP = PATHOLOGIES.find(x=>x.id===top3[0][0]);
-    const dimTxt = d.dim1!=null ? `${d.dim1}${d.dim2!=null?' × '+d.dim2:''} mm` : 'Belirtilmedi';
+    const dimTxt = d.dim1!=null ? `${d.dim1}${d.dim2!=null?' × '+d.dim2:''} mm` : T.belirtilmedi;
 
     if(allLes.length>1){
-      html += `<h3 style="color:var(--accent);margin:${li>0?'22px':8}px 0 10px">🔵 ${les.label}</h3>`;
-      printHtml += `<h3 style="color:#4a0e78;margin:${li>0?'20px':8}px 0 6px;padding:4px 8px;background:#f3eef8">🔵 ${les.label}</h3>`;
+      html += `<h3 style="color:var(--accent);margin:${li>0?'22px':8}px 0 10px">&#128309; ${les.label}</h3>`;
+      printHtml += `<h3 style="color:#4a0e78;margin:${li>0?'20px':8}px 0 6px;padding:4px 8px;background:#f3eef8">&#128309; ${les.label}</h3>`;
     }
 
     const lines = [
-      ['Lokalizasyon', getMultiLabels('loc', d)],
-      ['Boyut kategorisi', getLabel('size', d.size)||'Belirtilmedi'],
-      ['Taraf', d.side||'Belirtilmedi'],
-      ['Boyutlar', dimTxt],
-      ['Kontur', d.contour||'Belirtilmedi'],
-      ['İç Yapı', d.inner||'Belirtilmedi'],
-      ['T1 Sinyal', getLabel('t1', d.t1)||'Belirtilmedi'],
-      ['T2 Sinyal', getLabel('t2', d.t2)||'Belirtilmedi'],
-      ['DWI / ADC', getLabel('dwi', d.dwi)||'Belirtilmedi'],
-      ['Kontrastlanma', getLabel('kontrast', d.kontrast)||'Belirtilmedi'],
-      ['Ek Bulgular', getMultiLabels('ek', d)],
-      ['Klinik Bilgi', getMultiLabels('klinik', d)]
+      [T.rLokalizasyon, getMultiLabels('loc', d)],
+      [T.rBoyutKat, getLabel('size', d.size)||T.belirtilmedi],
+      [T.rTaraf, d.side||T.belirtilmedi],
+      [T.rBoyutlar, dimTxt],
+      [T.rKontur, d.contour||T.belirtilmedi],
+      [T.rIcYapi, d.inner||T.belirtilmedi],
+      [T.rT1, getLabel('t1', d.t1)||T.belirtilmedi],
+      [T.rT2, getLabel('t2', d.t2)||T.belirtilmedi],
+      [T.rDwi, getLabel('dwi', d.dwi)||T.belirtilmedi],
+      [T.rKontrast, getLabel('kontrast', d.kontrast)||T.belirtilmedi],
+      [T.rEkBulgular, getMultiLabels('ek', d)],
+      [T.rKlinikBilgi, getMultiLabels('klinik', d)]
     ];
 
     html += lines.map(([k,v])=>`<div class="rline"><b>${k}:</b> <span>${v}</span></div>`).join('');
-    html += `<h3 style="margin-top:18px">AYIRICI TANI${allLes.length>1?' — '+les.label:''}</h3>`;
+    html += `<h3 style="margin-top:18px">${T.ayiriciTani}${allLes.length>1?' — '+les.label:''}</h3>`;
     top3.forEach(([id,sc],i)=>{
       const p=PATHOLOGIES.find(x=>x.id===id);
       html += `<div class="rline"><b>${i+1}. ${p.name}</b> <span style="color:var(--accent);float:right">${sc}%</span></div>`;
     });
-    html += `<div class="yorum-box"><strong>YORUM${allLes.length>1?' — '+les.label:''}:</strong> ${topP.yorum}`;
-    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);html+=` Ayırıcı tanıda ${p2.name.toLowerCase()} de düşünülmelidir.`;}
+    html += `<div class="yorum-box"><strong>${T.yorum}${allLes.length>1?' — '+les.label:''}:</strong> ${topP.yorum}`;
+    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);html+=T.ayiriciTanida(p2.name.toLowerCase());}
     html += `</div>`;
 
     // Print HTML
-    printHtml += `<table><thead><tr><th style="width:30%">Parametre</th><th>Bulgu</th></tr></thead><tbody>`;
+    printHtml += `<table><thead><tr><th style="width:30%">${T.printParam}</th><th>${T.printBulgu}</th></tr></thead><tbody>`;
     lines.forEach(([k,v])=>printHtml+=`<tr><td><b>${k}</b></td><td>${v}</td></tr>`);
     printHtml += `</tbody></table>`;
-    printHtml += `<table><thead><tr><th style="width:10%">#</th><th>Tanı</th><th style="width:18%">Olasılık</th></tr></thead><tbody>`;
+    printHtml += `<table><thead><tr><th style="width:10%">#</th><th>${T.printTani}</th><th style="width:18%">${T.printOlasilik}</th></tr></thead><tbody>`;
     top3.forEach(([id,sc],i)=>{const p=PATHOLOGIES.find(x=>x.id===id);printHtml+=`<tr><td>${i+1}</td><td>${p.name}</td><td>${sc}%</td></tr>`});
     printHtml += `</tbody></table>`;
-    printHtml += `<div class="yorum-print"><b>YORUM${allLes.length>1?' — '+les.label:''}:</b> ${topP.yorum}`;
-    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);printHtml+=` Ayırıcı tanıda ${p2.name.toLowerCase()} de düşünülmelidir.`;}
+    printHtml += `<div class="yorum-print"><b>${T.yorum}${allLes.length>1?' — '+les.label:''}:</b> ${topP.yorum}`;
+    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);printHtml+=T.ayiriciTanida(p2.name.toLowerCase());}
     printHtml += `</div>`;
   });
 
@@ -718,7 +1050,7 @@ function copyReport(){
   sel.addRange(range);
   document.execCommand('copy');
   sel.removeAllRanges();
-  alert('Rapor panoya kopyalandı.');
+  alert(T.copySuccess);
 }
 
 function resetAll(){

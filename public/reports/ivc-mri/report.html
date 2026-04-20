@@ -99,34 +99,387 @@ width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: "IVC MRI Karar Destek Sistemi",
+    appSubtitle: "Inferior Vena Kava MR İnceleme",
+    stepPatient: "Hasta Bilgileri",
+    stepKonum: "IVC Konumu",
+    stepKalibrasyon: "Kalibrasyon Ölçümleri",
+    stepDuvar: "Duvar Özellikleri",
+    stepPatListesi: "Patoloji Yönetimi",
+    stepPatTip: "Patoloji Tipi & Lokalizasyon",
+    stepPatDetay: "Patoloji Detayları",
+    stepReport: "Rapor",
+    descPatient: "Hasta demografik bilgileri",
+    descKonum: "IVC'nin anatomik konumunu seçiniz",
+    descKalibrasyon: "IVC çap ölçümlerini giriniz",
+    descDuvar: "IVC duvar özelliklerini seçiniz (çoklu seçim)",
+    descPatListesi: "Saptanan patolojileri yönetin. Yeni ekleyebilir, düzenleyebilir veya silebilirsiniz.",
+    descPatTip: "Patoloji tipini ve lokalizasyonunu seçiniz",
+    labelPatientName: "Hasta Adı",
+    labelAge: "Yaş",
+    labelGender: "Cinsiyet",
+    labelProtocol: "Protokol",
+    placeholderName: "Ad Soyad",
+    placeholderAge: "Yaş",
+    placeholderProtocol: "MR Venografi / MR IVC vb.",
+    genderMale: "Erkek",
+    genderFemale: "Kadın",
+    konumNormal: "Normal Konum",
+    konumSol: "Sol Yerleşimli",
+    konumDuplike: "Duplike",
+    konumTortiyoze: "Tortiyoze",
+    duvarDuzenli: "Düzenli",
+    duvarKalsifiye: "Kalsifiye",
+    duvarUlsere: "Ülsere",
+    duvarDuzensiz: "Düzensiz",
+    labelCapCeliak: "Çöliak kesim çapı (mm)",
+    labelCapInfrarenal: "İnfrarenal kesim çapı (mm)",
+    labelCapBifurk: "İliak bif. öncesi çapı (mm)",
+    lokIvcCeliak: "IVC - Çöliak Kesim",
+    lokIvcInfrarenal: "IVC - İnfrarenal Kesim",
+    lokIvcBifurk: "IVC - Bifurkasyon Öncesi",
+    lokSmv: "SMV (Superior Mezenterik Ven)",
+    lokRenalR: "Sağ Renal Ven",
+    lokRenalL: "Sol Renal Ven",
+    lokIliakR: "Sağ İliak Ven",
+    lokIliakL: "Sol İliak Ven",
+    patEktazi: "Ektazi / Anevrizma",
+    patTrombus: "Trombüs",
+    patDarlik: "Darlık / Stenoz",
+    patKompresyon: "Kompresyon",
+    patDiger: "Diğer",
+    mesafeSmv: "IVC'ye ne kadar uzak (mm)",
+    mesafeRenal: "IVC'den ayrıldıktan kaç mm sonra",
+    mesafeIliak: "Bifurkasyondan kaç mm sonra",
+    labelLokalizasyon: "Lokalizasyon",
+    labelPatolojiTipi: "Patoloji Tipi",
+    labelBaslangic: "Başlangıç - Sol renal vene göre",
+    labelBitis: "Bitiş - Sol renal vene göre",
+    labelMesafe: "Mesafe (mm)",
+    labelDerece: "IVC'yi kaç derece kapsıyor",
+    placeholderDerece: "Derece (°)",
+    yonYukarida: "Yukarıda",
+    yonAsagida: "Aşağıda",
+    labelSaatBaslangic: "Saat pozisyonu (başlangıç)",
+    labelSaatBitis: "Saat pozisyonu (bitiş)",
+    placeholderSaat: "ör: 2",
+    placeholderSaatBitis: "ör: 5",
+    labelTrombusUzunluk: "Trombüs uzunluğu (mm)",
+    labelTrombusKalinlik: "Trombüs kalınlığı (mm)",
+    labelVenCap: "Ven çapı (mm)",
+    labelDarlikCap: "Darlık çapı (mm)",
+    labelLokMesafe: "Lokalizasyon mesafesi (mm)",
+    labelDarlikUzunluk: "Darlık uzunluğu (mm)",
+    stenosisAlert: (pct) => `Hesaplanan stenoz oranı: %${pct}`,
+    labelKompYon: "Kompresyon yönü",
+    labelKompNeden: "Kompresyon nedeni",
+    placeholderKompNeden: "Lenfadenopati, kitle, vb.",
+    kompAnterior: "Anterior",
+    kompPosterior: "Posterior",
+    kompLateralR: "Lateral sağ",
+    kompLateralL: "Lateral sol",
+    kompSirk: "Sirkümferansiyal",
+    labelAciklama: "Açıklama",
+    placeholderAciklama: "Bulguyu tanımlayınız...",
+    emptyState: "Henüz patoloji eklenmedi.",
+    btnEdit: "Düzenle",
+    btnDelete: "Sil",
+    btnAddNew: "＋ Yeni Patoloji Ekle",
+    btnCreateReport: "Rapor Oluştur →",
+    btnPrint: "Yazdır / PDF",
+    btnCopy: "Kopyala",
+    btnHtml: "HTML İndir",
+    btnBack: "Geri",
+    btnNext: "İleri",
+    btnCancel: "İptal",
+    btnSave: "Kaydet & Listeye Dön",
+    btnEditReport: "Düzenle",
+    statusEditing: "Düzenleme",
+    statusNew: "Yeni patoloji",
+    copyAlert: "Rapor panoya kopyalandı!",
+    reportTitle: "IVC MRI İNCELEME RAPORU",
+    reportHtmlTitle: "IVC MRI Raporu",
+    reportDownloadFilename: "ivc_mri_raporu.html",
+    tableParametre: "Parametre",
+    tableDeger: "Değer",
+    tableHash: "#",
+    tableLokalizasyon: "Lokalizasyon",
+    tableTip: "Tip",
+    tableDetaylar: "Detaylar",
+    sectionGenelDeg: "IVC Genel Değerlendirme",
+    sectionPatolojiler: (n) => `Saptanan Patolojiler (${n})`,
+    sectionYorum: "YORUM",
+    rowKonum: "Konum",
+    rowCapCeliak: "Çöliak kesim çapı",
+    rowCapInfrarenal: "İnfrarenal kesim çapı",
+    rowCapBifurk: "İliak bif. öncesi çapı",
+    rowDuvar: "Duvar",
+    duvarBelirtilmedi: "Belirtilmedi",
+    badgeEktazi: "Ektazi",
+    badgeAnevrizma: "Anevrizma",
+    yorumAnatomikVaryant: (konum) => `IVC konumu: ${konum} - anatomik varyant.`,
+    yorumEktazik: (n, mm) => `${n}: ${mm} mm - ektazik.`,
+    yorumAnevrizmatik: (n, mm) => `${n}: ${mm} mm - anevrizmatik genişleme.`,
+    yorumKalsifiye: "IVC duvarında kalsifikasyon.",
+    yorumUlsere: "IVC duvarında ülserasyon.",
+    yorumDuzensiz: "IVC duvarında düzensizlik - duvar patolojisi.",
+    yorumEktaziDetail: (loc, basM, basR, bitM, bitR, derece) => `${loc}: Ektazi (başlangıç: sol renal venden ${basM} mm ${basR}, bitiş: ${bitM} mm ${bitR}, ${derece}° kapsıyor).`,
+    yorumTrombus: (loc, saatF, saatT, uzunluk, kalinlik) => `${loc}: Trombüs (saat ${saatF}-${saatT}, ${uzunluk} mm uzunluk, ${kalinlik} mm kalınlık). Pulmoner emboli riski açısından klinik korelasyon önerilir.`,
+    yorumDarlik: (loc, pctStr, mesafe) => `${loc}: Darlık${pctStr}, ${mesafe} mm mesafede.`,
+    yorumKompresyon: (loc, neden, yon) => `${loc}: Kompresyon (${neden}, yön: ${yon}).`,
+    yorumDiger: (loc, aciklama) => `${loc}: ${aciklama}`,
+    yorumNoPatoloji: "IVC ve dallarında anlamlı patoloji saptanmamıştır.",
+    detailEktazi: (basM, basR, bitM, bitR, derece) => `Başlangıç: sol renal venden ${basM} mm ${basR}, Bitiş: ${bitM} mm ${bitR}, ${derece}°`,
+    detailTrombus: (saatF, saatT, uzunluk, kalinlik) => `Saat ${saatF}-${saatT}, ${uzunluk} mm uzunluk, ${kalinlik} mm kalınlık`,
+    detailDarlik: (cap, darlikCap, pctStr, mesafe) => `Çap: ${cap} mm, Darlık çapı: ${darlikCap} mm${pctStr}, Mesafe: ${mesafe} mm`,
+    detailKompresyon: (yon, neden) => `Yön: ${yon}, Neden: ${neden}`,
+    descEktaziStep: (loc) => `${loc} - Ektazi / Anevrizma detayları`,
+    descTrombusStep: (loc) => `${loc} - Trombüs detayları`,
+    descDarlikStep: (loc) => `${loc} - Darlık / Stenoz detayları`,
+    descKompresyonStep: (loc) => `${loc} - Kompresyon detayları`,
+    descDigerStep: (loc) => `${loc} - Ek bulgu`,
+    yorumCapCeliakLabel: "Çöliak kesim",
+    yorumCapInfrarenalLabel: "İnfrarenal kesim",
+    yorumCapBifurkLabel: "Bifurkasyon öncesi",
+    yorumNedenBelirtilmedi: "neden belirtilmedi",
+    yorumEkBulguBelirtilmedi: "Ek bulgu belirtilmedi.",
+    reportTableHastaAdi: "Hasta Adı",
+    reportTableYas: "Yaş",
+    reportTableCinsiyet: "Cinsiyet",
+    reportTableProtokol: "Protokol",
+  },
+  en: {
+    appTitle: "IVC MRI Decision Support System",
+    appSubtitle: "Inferior Vena Cava MRI Examination",
+    stepPatient: "Patient Information",
+    stepKonum: "IVC Position",
+    stepKalibrasyon: "Calibration Measurements",
+    stepDuvar: "Wall Characteristics",
+    stepPatListesi: "Pathology Management",
+    stepPatTip: "Pathology Type & Localization",
+    stepPatDetay: "Pathology Details",
+    stepReport: "Report",
+    descPatient: "Patient demographic information",
+    descKonum: "Select the anatomical position of the IVC",
+    descKalibrasyon: "Enter IVC diameter measurements",
+    descDuvar: "Select IVC wall characteristics (multiple selection)",
+    descPatListesi: "Manage detected pathologies. You can add new ones, edit or delete existing ones.",
+    descPatTip: "Select pathology type and localization",
+    labelPatientName: "Patient Name",
+    labelAge: "Age",
+    labelGender: "Gender",
+    labelProtocol: "Protocol",
+    placeholderName: "First Last Name",
+    placeholderAge: "Age",
+    placeholderProtocol: "MR Venography / MR IVC etc.",
+    genderMale: "Male",
+    genderFemale: "Female",
+    konumNormal: "Normal Position",
+    konumSol: "Left-sided",
+    konumDuplike: "Duplicated",
+    konumTortiyoze: "Tortuous",
+    duvarDuzenli: "Regular",
+    duvarKalsifiye: "Calcified",
+    duvarUlsere: "Ulcerated",
+    duvarDuzensiz: "Irregular",
+    labelCapCeliak: "Celiac segment diameter (mm)",
+    labelCapInfrarenal: "Infrarenal segment diameter (mm)",
+    labelCapBifurk: "Pre-iliac bifurcation diameter (mm)",
+    lokIvcCeliak: "IVC - Celiac Segment",
+    lokIvcInfrarenal: "IVC - Infrarenal Segment",
+    lokIvcBifurk: "IVC - Pre-bifurcation",
+    lokSmv: "SMV (Superior Mesenteric Vein)",
+    lokRenalR: "Right Renal Vein",
+    lokRenalL: "Left Renal Vein",
+    lokIliakR: "Right Iliac Vein",
+    lokIliakL: "Left Iliac Vein",
+    patEktazi: "Ectasia / Aneurysm",
+    patTrombus: "Thrombus",
+    patDarlik: "Stenosis",
+    patKompresyon: "Compression",
+    patDiger: "Other",
+    mesafeSmv: "Distance from IVC (mm)",
+    mesafeRenal: "Distance after branching from IVC (mm)",
+    mesafeIliak: "Distance after bifurcation (mm)",
+    labelLokalizasyon: "Localization",
+    labelPatolojiTipi: "Pathology Type",
+    labelBaslangic: "Start - Relative to left renal vein",
+    labelBitis: "End - Relative to left renal vein",
+    labelMesafe: "Distance (mm)",
+    labelDerece: "Degrees of IVC circumference involved",
+    placeholderDerece: "Degrees (°)",
+    yonYukarida: "Above",
+    yonAsagida: "Below",
+    labelSaatBaslangic: "Clock position (start)",
+    labelSaatBitis: "Clock position (end)",
+    placeholderSaat: "e.g. 2",
+    placeholderSaatBitis: "e.g. 5",
+    labelTrombusUzunluk: "Thrombus length (mm)",
+    labelTrombusKalinlik: "Thrombus thickness (mm)",
+    labelVenCap: "Vein diameter (mm)",
+    labelDarlikCap: "Stenosis diameter (mm)",
+    labelLokMesafe: "Localization distance (mm)",
+    labelDarlikUzunluk: "Stenosis length (mm)",
+    stenosisAlert: (pct) => `Calculated stenosis rate: ${pct}%`,
+    labelKompYon: "Compression direction",
+    labelKompNeden: "Compression cause",
+    placeholderKompNeden: "Lymphadenopathy, mass, etc.",
+    kompAnterior: "Anterior",
+    kompPosterior: "Posterior",
+    kompLateralR: "Right lateral",
+    kompLateralL: "Left lateral",
+    kompSirk: "Circumferential",
+    labelAciklama: "Description",
+    placeholderAciklama: "Describe the finding...",
+    emptyState: "No pathology added yet.",
+    btnEdit: "Edit",
+    btnDelete: "Delete",
+    btnAddNew: "＋ Add New Pathology",
+    btnCreateReport: "Generate Report →",
+    btnPrint: "Print / PDF",
+    btnCopy: "Copy",
+    btnHtml: "Download HTML",
+    btnBack: "Back",
+    btnNext: "Next",
+    btnCancel: "Cancel",
+    btnSave: "Save & Return to List",
+    btnEditReport: "Edit",
+    statusEditing: "Editing",
+    statusNew: "New pathology",
+    copyAlert: "Report copied to clipboard!",
+    reportTitle: "IVC MRI EXAMINATION REPORT",
+    reportHtmlTitle: "IVC MRI Report",
+    reportDownloadFilename: "ivc_mri_report.html",
+    tableParametre: "Parameter",
+    tableDeger: "Value",
+    tableHash: "#",
+    tableLokalizasyon: "Localization",
+    tableTip: "Type",
+    tableDetaylar: "Details",
+    sectionGenelDeg: "IVC General Assessment",
+    sectionPatolojiler: (n) => `Detected Pathologies (${n})`,
+    sectionYorum: "IMPRESSION",
+    rowKonum: "Position",
+    rowCapCeliak: "Celiac segment diameter",
+    rowCapInfrarenal: "Infrarenal segment diameter",
+    rowCapBifurk: "Pre-iliac bifurcation diameter",
+    rowDuvar: "Wall",
+    duvarBelirtilmedi: "Not specified",
+    badgeEktazi: "Ectasia",
+    badgeAnevrizma: "Aneurysm",
+    yorumAnatomikVaryant: (konum) => `IVC position: ${konum} - anatomical variant.`,
+    yorumEktazik: (n, mm) => `${n}: ${mm} mm - ectatic.`,
+    yorumAnevrizmatik: (n, mm) => `${n}: ${mm} mm - aneurysmal dilatation.`,
+    yorumKalsifiye: "Calcification in the IVC wall.",
+    yorumUlsere: "Ulceration in the IVC wall.",
+    yorumDuzensiz: "Irregularity in the IVC wall - wall pathology.",
+    yorumEktaziDetail: (loc, basM, basR, bitM, bitR, derece) => `${loc}: Ectasia (start: ${basM} mm ${basR} the left renal vein, end: ${bitM} mm ${bitR}, involving ${derece}°).`,
+    yorumTrombus: (loc, saatF, saatT, uzunluk, kalinlik) => `${loc}: Thrombus (clock ${saatF}-${saatT}, ${uzunluk} mm length, ${kalinlik} mm thickness). Clinical correlation recommended regarding pulmonary embolism risk.`,
+    yorumDarlik: (loc, pctStr, mesafe) => `${loc}: Stenosis${pctStr}, at ${mesafe} mm.`,
+    yorumKompresyon: (loc, neden, yon) => `${loc}: Compression (${neden}, direction: ${yon}).`,
+    yorumDiger: (loc, aciklama) => `${loc}: ${aciklama}`,
+    yorumNoPatoloji: "No significant pathology detected in the IVC and its tributaries.",
+    detailEktazi: (basM, basR, bitM, bitR, derece) => `Start: ${basM} mm ${basR} left renal vein, End: ${bitM} mm ${bitR}, ${derece}°`,
+    detailTrombus: (saatF, saatT, uzunluk, kalinlik) => `Clock ${saatF}-${saatT}, ${uzunluk} mm length, ${kalinlik} mm thickness`,
+    detailDarlik: (cap, darlikCap, pctStr, mesafe) => `Diameter: ${cap} mm, Stenosis diameter: ${darlikCap} mm${pctStr}, Distance: ${mesafe} mm`,
+    detailKompresyon: (yon, neden) => `Direction: ${yon}, Cause: ${neden}`,
+    descEktaziStep: (loc) => `${loc} - Ectasia / Aneurysm details`,
+    descTrombusStep: (loc) => `${loc} - Thrombus details`,
+    descDarlikStep: (loc) => `${loc} - Stenosis details`,
+    descKompresyonStep: (loc) => `${loc} - Compression details`,
+    descDigerStep: (loc) => `${loc} - Additional finding`,
+    yorumCapCeliakLabel: "Celiac segment",
+    yorumCapInfrarenalLabel: "Infrarenal segment",
+    yorumCapBifurkLabel: "Pre-bifurcation",
+    yorumNedenBelirtilmedi: "cause not specified",
+    yorumEkBulguBelirtilmedi: "No additional finding specified.",
+    reportTableHastaAdi: "Patient Name",
+    reportTableYas: "Age",
+    reportTableCinsiyet: "Gender",
+    reportTableProtokol: "Protocol",
+  }
+})[RV_LOCALE];
+
 const {useState,useMemo} = React;
 
 /* ═══ CONSTANTS ═══ */
 const LOKALIZASYONLAR=[
- {key:"ivc_celiak",label:"IVC - Çöliak Kesim"},
- {key:"ivc_infrarenal",label:"IVC - İnfrarenal Kesim"},
- {key:"ivc_bifurk",label:"IVC - Bifurkasyon Öncesi"},
- {key:"smv",label:"SMV (Superior Mezenterik Ven)"},
- {key:"renalR",label:"Sağ Renal Ven"},
- {key:"renalL",label:"Sol Renal Ven"},
- {key:"iliakR",label:"Sağ İliak Ven"},
- {key:"iliakL",label:"Sol İliak Ven"},
+ {key:"ivc_celiak",   labelKey:"lokIvcCeliak"},
+ {key:"ivc_infrarenal",labelKey:"lokIvcInfrarenal"},
+ {key:"ivc_bifurk",  labelKey:"lokIvcBifurk"},
+ {key:"smv",         labelKey:"lokSmv"},
+ {key:"renalR",      labelKey:"lokRenalR"},
+ {key:"renalL",      labelKey:"lokRenalL"},
+ {key:"iliakR",      labelKey:"lokIliakR"},
+ {key:"iliakL",      labelKey:"lokIliakL"},
 ];
 const PATOLOJI_TIPLERI=[
- {key:"ektazi",label:"Ektazi / Anevrizma"},
- {key:"trombus",label:"Trombüs"},
- {key:"darlik",label:"Darlık / Stenoz"},
- {key:"kompresyon",label:"Kompresyon"},
- {key:"diger",label:"Diğer"},
+ {key:"ektazi",     labelKey:"patEktazi"},
+ {key:"trombus",    labelKey:"patTrombus"},
+ {key:"darlik",     labelKey:"patDarlik"},
+ {key:"kompresyon", labelKey:"patKompresyon"},
+ {key:"diger",      labelKey:"patDiger"},
 ];
-const MESAFE_LABELS={smv:"IVC'ye ne kadar uzak (mm)",renalR:"IVC'den ayrıldıktan kaç mm sonra",renalL:"IVC'den ayrıldıktan kaç mm sonra",iliakR:"Bifurkasyondan kaç mm sonra",iliakL:"Bifurkasyondan kaç mm sonra"};
+
+const MESAFE_KEY_MAP={
+  smv:"mesafeSmv",
+  renalR:"mesafeRenal",
+  renalL:"mesafeRenal",
+  iliakR:"mesafeIliak",
+  iliakL:"mesafeIliak"
+};
 
 const STEP_IDS=["patient","konum","kalibrasyon","duvar","patListesi","patTip","patDetay","report"];
-const STEP_TITLES={patient:"Hasta Bilgileri",konum:"IVC Konumu",kalibrasyon:"Kalibrasyon Ölçümleri",duvar:"Duvar Özellikleri",patListesi:"Patoloji Yönetimi",patTip:"Patoloji Tipi & Lokalizasyon",patDetay:"Patoloji Detayları",report:"Rapor"};
+const STEP_TITLE_KEYS={
+  patient:"stepPatient",
+  konum:"stepKonum",
+  kalibrasyon:"stepKalibrasyon",
+  duvar:"stepDuvar",
+  patListesi:"stepPatListesi",
+  patTip:"stepPatTip",
+  patDetay:"stepPatDetay",
+  report:"stepReport"
+};
 
 const PRE_LOOP=4, LOOP_START=5, LOOP_END=6, REPORT=7;
 
 const emptyPat=()=>({id:Date.now(),lokalizasyon:"ivc_infrarenal",tip:"trombus",ektBasRel:"yukari",ektBasMm:"",ektBitRel:"asagi",ektBitMm:"",ektDerece:"",tromSaatFrom:"",tromSaatTo:"",tromUzunluk:"",tromKalinlik:"",cap:"",darlikCap:"",mesafe:"",darlikMm:"",kompYon:"",kompNeden:"",aciklama:""});
+
+/* ═══ LABEL HELPERS ═══ */
+const lokLabel=k=>T[LOKALIZASYONLAR.find(l=>l.key===k)?.labelKey]||k;
+const tipLabel=k=>T[PATOLOJI_TIPLERI.find(t=>t.key===k)?.labelKey]||k;
+
+// Stored values are TR keys; map them to locale display for report/yorum
+const YON_MAP={yukari:{tr:"yukarıda",en:"above"},asagi:{tr:"aşağıda",en:"below"}};
+const yonDisplay=v=>(YON_MAP[v]||{})[RV_LOCALE]||v;
+
+const KONUM_KEY_MAP={
+  "Normal Konum":"konumNormal",
+  "Sol Yerleşimli":"konumSol",
+  "Duplike":"konumDuplike",
+  "Tortiyoze":"konumTortiyoze"
+};
+const konumDisplay=v=>T[KONUM_KEY_MAP[v]]||v;
+
+const DUVAR_KEY_MAP={
+  "Düzenli":"duvarDuzenli",
+  "Kalsifiye":"duvarKalsifiye",
+  "Ülsere":"duvarUlsere",
+  "Düzensiz":"duvarDuzensiz"
+};
+const duvarDisplay=v=>T[DUVAR_KEY_MAP[v]]||v;
+
+const KOMPYON_KEY_MAP={
+  "Anterior":"kompAnterior",
+  "Posterior":"kompPosterior",
+  "Lateral sağ":"kompLateralR",
+  "Lateral sol":"kompLateralL",
+  "Sirkümferansiyal":"kompSirk"
+};
+const kompYonDisplay=v=>T[KOMPYON_KEY_MAP[v]]||v;
 
 /* ═══ APP ═══ */
 function App(){
@@ -139,8 +492,6 @@ function App(){
  const set=(k,v)=>setData(p=>({...p,[k]:v}));
  const setPat=(k,v)=>setCurrentPat(p=>({...p,[k]:v}));
  const curStepId=STEP_IDS[step];
- const lokLabel=k=>LOKALIZASYONLAR.find(l=>l.key===k)?.label||k;
- const tipLabel=k=>PATOLOJI_TIPLERI.find(t=>t.key===k)?.label||k;
  const stenosisPct=(cap,d)=>{const c=parseFloat(cap),dd=parseFloat(d);if(!c||!dd||c<=0)return null;return Math.round(((c-dd)/c)*100);};
 
  /* ─── 3-PART LOOP FIX ─── */
@@ -174,30 +525,34 @@ function App(){
 
  /* ─── Patoloji detail text ─── */
  const patDetailText=(p)=>{
-  if(p.tip==="ektazi") return `Başlangıç: sol renal venden ${p.ektBasMm||"?"} mm ${p.ektBasRel==="yukari"?"yukarıda":"aşağıda"}, Bitiş: ${p.ektBitMm||"?"} mm ${p.ektBitRel==="yukari"?"yukarıda":"aşağıda"}, ${p.ektDerece||"?"}°`;
-  if(p.tip==="trombus") return `Saat ${p.tromSaatFrom||"?"}-${p.tromSaatTo||"?"}, ${p.tromUzunluk||"?"} mm uzunluk, ${p.tromKalinlik||"?"} mm kalınlık`;
-  if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap);return `Çap: ${p.cap||"?"} mm, Darlık çapı: ${p.darlikCap||"?"} mm${pct!==null?` (%${pct})`:""}, Mesafe: ${p.mesafe||"?"} mm`;}
-  if(p.tip==="kompresyon") return `Yön: ${p.kompYon||"?"}, Neden: ${p.kompNeden||"?"}`;
+  if(p.tip==="ektazi") return T.detailEktazi(p.ektBasMm||"?",yonDisplay(p.ektBasRel),p.ektBitMm||"?",yonDisplay(p.ektBitRel),p.ektDerece||"?");
+  if(p.tip==="trombus") return T.detailTrombus(p.tromSaatFrom||"?",p.tromSaatTo||"?",p.tromUzunluk||"?",p.tromKalinlik||"?");
+  if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap);const pctStr=pct!==null?` (${RV_LOCALE==="tr"?`%${pct}`:`${pct}%`})`:"";return T.detailDarlik(p.cap||"?",p.darlikCap||"?",pctStr,p.mesafe||"?");}
+  if(p.tip==="kompresyon") return T.detailKompresyon(kompYonDisplay(p.kompYon)||"?",p.kompNeden||"?");
   return p.aciklama||"-";
  };
 
  /* ─── YORUM ─── */
  const generateYorum=()=>{
   const f=[];
-  if(data.konum!=="Normal Konum") f.push(`IVC konumu: ${data.konum} - anatomik varyant.`);
-  [{n:"Çöliak kesim",v:data.capCeliak},{n:"İnfrarenal kesim",v:data.capInfrarenal},{n:"Bifurkasyon öncesi",v:data.capBifurk}].forEach(c=>{const mm=parseFloat(c.v);if(mm>30) f.push(mm>=50?`${c.n}: ${mm} mm - anevrizmatik genişleme.`:`${c.n}: ${mm} mm - ektazik.`);});
-  if(data.duvar.includes("Kalsifiye")) f.push("IVC duvarında kalsifikasyon.");
-  if(data.duvar.includes("Ülsere")) f.push("IVC duvarında ülserasyon.");
-  if(data.duvar.includes("Düzensiz")) f.push("IVC duvarında düzensizlik - duvar patolojisi.");
+  if(data.konum!=="Normal Konum") f.push(T.yorumAnatomikVaryant(konumDisplay(data.konum)));
+  [
+    {n:T.yorumCapCeliakLabel,v:data.capCeliak},
+    {n:T.yorumCapInfrarenalLabel,v:data.capInfrarenal},
+    {n:T.yorumCapBifurkLabel,v:data.capBifurk}
+  ].forEach(c=>{const mm=parseFloat(c.v);if(mm>30) f.push(mm>=50?T.yorumAnevrizmatik(c.n,mm):T.yorumEktazik(c.n,mm));});
+  if(data.duvar.includes("Kalsifiye")) f.push(T.yorumKalsifiye);
+  if(data.duvar.includes("Ülsere")) f.push(T.yorumUlsere);
+  if(data.duvar.includes("Düzensiz")) f.push(T.yorumDuzensiz);
   patolojiler.forEach(p=>{
    const loc=lokLabel(p.lokalizasyon);
-   if(p.tip==="ektazi") f.push(`${loc}: Ektazi (başlangıç: sol renal venden ${p.ektBasMm||"?"} mm ${p.ektBasRel==="yukari"?"yukarıda":"aşağıda"}, bitiş: ${p.ektBitMm||"?"} mm ${p.ektBitRel==="yukari"?"yukarıda":"aşağıda"}, ${p.ektDerece||"?"}° kapsıyor).`);
-   else if(p.tip==="trombus") f.push(`${loc}: Trombüs (saat ${p.tromSaatFrom||"?"}-${p.tromSaatTo||"?"}, ${p.tromUzunluk||"?"} mm uzunluk, ${p.tromKalinlik||"?"} mm kalınlık). Pulmoner emboli riski açısından klinik korelasyon önerilir.`);
-   else if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap); f.push(`${loc}: Darlık${pct!==null?` (yaklaşık %${pct} stenoz)`:""}, ${p.mesafe||"?"} mm mesafede.`);}
-   else if(p.tip==="kompresyon") f.push(`${loc}: Kompresyon (${p.kompNeden||"neden belirtilmedi"}, yön: ${p.kompYon||"?"}).`);
-   else if(p.tip==="diger") f.push(`${loc}: ${p.aciklama||"Ek bulgu belirtilmedi."}`);
+   if(p.tip==="ektazi") f.push(T.yorumEktaziDetail(loc,p.ektBasMm||"?",yonDisplay(p.ektBasRel),p.ektBitMm||"?",yonDisplay(p.ektBitRel),p.ektDerece||"?"));
+   else if(p.tip==="trombus") f.push(T.yorumTrombus(loc,p.tromSaatFrom||"?",p.tromSaatTo||"?",p.tromUzunluk||"?",p.tromKalinlik||"?"));
+   else if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap);const pctStr=pct!==null?` (${RV_LOCALE==="tr"?`yaklaşık %${pct}`:`approx. ${pct}%`})`:""; f.push(T.yorumDarlik(loc,pctStr,p.mesafe||"?"));}
+   else if(p.tip==="kompresyon") f.push(T.yorumKompresyon(loc,p.kompNeden||T.yorumNedenBelirtilmedi,kompYonDisplay(p.kompYon)||"?"));
+   else if(p.tip==="diger") f.push(T.yorumDiger(loc,p.aciklama||T.yorumEkBulguBelirtilmedi));
   });
-  if(f.length===0) f.push("IVC ve dallarında anlamlı patoloji saptanmamıştır.");
+  if(f.length===0) f.push(T.yorumNoPatoloji);
   return f;
  };
 
@@ -205,153 +560,176 @@ function App(){
  const buildReportHTML=()=>{
   const yorumlar=generateYorum();
   let h=`<div style="font-family:'IBM Plex Sans',sans-serif;color:#111;line-height:1.7;font-size:14px">`;
-  h+=`<h2 style="border-bottom:2px solid #0284c7;padding-bottom:6px">IVC MRI İNCELEME RAPORU</h2>`;
-  h+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">Hasta Adı</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">Yaş</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#f0f9ff"><td style="padding:4px 10px;font-weight:600">Cinsiyet</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">Protokol</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
-  h+=`<h3 style="color:#0284c7;margin:14px 0 8px">IVC Genel Değerlendirme</h3>`;
-  h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">Parametre</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">Değer</th></tr>`;
-  [["Konum",data.konum],["Çöliak kesim çapı",data.capCeliak?data.capCeliak+" mm":"-"],["İnfrarenal kesim çapı",data.capInfrarenal?data.capInfrarenal+" mm":"-"],["İliak bif. öncesi çapı",data.capBifurk?data.capBifurk+" mm":"-"],["Duvar",data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"]].forEach((r,i)=>{h+=`<tr style="background:${i%2===0?"#fff":"#f0f9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:13px">${r[0]}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:13px">${r[1]}</td></tr>`;});
+  h+=`<h2 style="border-bottom:2px solid #0284c7;padding-bottom:6px">${T.reportTitle}</h2>`;
+  h+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">${T.reportTableHastaAdi}</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">${T.reportTableYas}</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#f0f9ff"><td style="padding:4px 10px;font-weight:600">${T.reportTableCinsiyet}</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">${T.reportTableProtokol}</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
+  h+=`<h3 style="color:#0284c7;margin:14px 0 8px">${T.sectionGenelDeg}</h3>`;
+  h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">${T.tableParametre}</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">${T.tableDeger}</th></tr>`;
+  [
+    [T.rowKonum,konumDisplay(data.konum)],
+    [T.rowCapCeliak,data.capCeliak?data.capCeliak+" mm":"-"],
+    [T.rowCapInfrarenal,data.capInfrarenal?data.capInfrarenal+" mm":"-"],
+    [T.rowCapBifurk,data.capBifurk?data.capBifurk+" mm":"-"],
+    [T.rowDuvar,data.duvar.length>0?data.duvar.map(duvarDisplay).join(", "):T.duvarBelirtilmedi]
+  ].forEach((r,i)=>{h+=`<tr style="background:${i%2===0?"#fff":"#f0f9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:13px">${r[0]}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:13px">${r[1]}</td></tr>`;});
   h+=`</table>`;
   if(patolojiler.length>0){
-   h+=`<h3 style="color:#0284c7">Saptanan Patolojiler (${patolojiler.length})</h3>`;
-   h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">#</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Lokalizasyon</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Tip</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Detaylar</th></tr>`;
+   h+=`<h3 style="color:#0284c7">${T.sectionPatolojiler(patolojiler.length)}</h3>`;
+   h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">${T.tableHash}</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">${T.tableLokalizasyon}</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">${T.tableTip}</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">${T.tableDetaylar}</th></tr>`;
    patolojiler.forEach((p,i)=>{h+=`<tr style="background:${i%2===0?"#fff":"#f0f9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px;font-weight:600">${i+1}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${lokLabel(p.lokalizasyon)}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${tipLabel(p.tip)}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${patDetailText(p)}</td></tr>`;});
    h+=`</table>`;
   }
-  h+=`<div style="background:#f0f9ff;border-left:4px solid #0284c7;padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0"><div style="font-weight:700;color:#0284c7;font-size:14px;margin-bottom:8px">YORUM</div>`;
+  h+=`<div style="background:#f0f9ff;border-left:4px solid #0284c7;padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0"><div style="font-weight:700;color:#0284c7;font-size:14px;margin-bottom:8px">${T.sectionYorum}</div>`;
   yorumlar.forEach(y=>{h+=`<p style="font-size:13px;color:#333;margin:4px 0">• ${y}</p>`;});
   h+=`</div></div>`;return h;
  };
 
  const handlePrint=()=>window.print();
- const handleCopy=()=>{const el=document.getElementById("report-content");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);document.execCommand("copy");s.removeAllRanges();alert("Rapor panoya kopyalandı!");};
- const handleHTML=()=>{const h=buildReportHTML();const f=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>IVC MRI Raporu</title></head><body>${h}</body></html>`;const b=new Blob([f],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ivc_mri_raporu.html";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);};
+ const handleCopy=()=>{const el=document.getElementById("report-content");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);document.execCommand("copy");s.removeAllRanges();alert(T.copyAlert);};
+ const handleHTML=()=>{const h=buildReportHTML();const f=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${T.reportHtmlTitle}</title></head><body>${h}</body></html>`;const b=new Blob([f],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=T.reportDownloadFilename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);};
 
  /* ═══ RENDER ═══ */
  const renderStep=()=>{
   switch(curStepId){
    case "patient": return(<>
-    <div className="step-desc">Hasta demografik bilgileri</div>
+    <div className="step-desc">{T.descPatient}</div>
     <div className="form-row">
-     <div className="form-group"><label>Hasta Adı</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder="Ad Soyad"/></div>
-     <div className="form-group"><label>Yaş</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder="Yaş"/></div>
+     <div className="form-group"><label>{T.labelPatientName}</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder={T.placeholderName}/></div>
+     <div className="form-group"><label>{T.labelAge}</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder={T.placeholderAge}/></div>
     </div>
     <div className="form-row">
-     <div className="form-group"><label>Cinsiyet</label><div className="opt-grid">{["Erkek","Kadın"].map(v=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{v}</div>)}</div></div>
-     <div className="form-group"><label>Protokol</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder="MR Venografi / MR IVC vb."/></div>
+     <div className="form-group"><label>{T.labelGender}</label><div className="opt-grid">{[["Erkek",T.genderMale],["Kadın",T.genderFemale]].map(([v,lbl])=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{lbl}</div>)}</div></div>
+     <div className="form-group"><label>{T.labelProtocol}</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder={T.placeholderProtocol}/></div>
     </div>
    </>);
 
    case "konum": return(<>
-    <div className="step-desc">IVC'nin anatomik konumunu seçiniz</div>
-    <div className="opt-grid">{["Normal Konum","Sol Yerleşimli","Duplike","Tortiyoze"].map(v=><div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{v}</div>)}</div>
+    <div className="step-desc">{T.descKonum}</div>
+    <div className="opt-grid">{[
+      ["Normal Konum",T.konumNormal],
+      ["Sol Yerleşimli",T.konumSol],
+      ["Duplike",T.konumDuplike],
+      ["Tortiyoze",T.konumTortiyoze]
+    ].map(([v,lbl])=><div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{lbl}</div>)}</div>
    </>);
 
    case "kalibrasyon": return(<>
-    <div className="step-desc">IVC çap ölçümlerini giriniz</div>
+    <div className="step-desc">{T.descKalibrasyon}</div>
     <div className="form-row3">
-     <div className="form-group"><label>Çöliak kesim çapı (mm)</label><input type="number" value={data.capCeliak} onChange={e=>set("capCeliak",e.target.value)} placeholder="mm"/></div>
-     <div className="form-group"><label>İnfrarenal kesim çapı (mm)</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
-     <div className="form-group"><label>İliak bif. öncesi çapı (mm)</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
+     <div className="form-group"><label>{T.labelCapCeliak}</label><input type="number" value={data.capCeliak} onChange={e=>set("capCeliak",e.target.value)} placeholder="mm"/></div>
+     <div className="form-group"><label>{T.labelCapInfrarenal}</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
+     <div className="form-group"><label>{T.labelCapBifurk}</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
     </div>
    </>);
 
    case "duvar": return(<>
-    <div className="step-desc">IVC duvar özelliklerini seçiniz (çoklu seçim)</div>
-    <div className="chk-grid">{["Düzenli","Kalsifiye","Ülsere","Düzensiz"].map(v=>{const s=data.duvar.includes(v);return <div key={v} className={"chk-btn"+(s?" sel":"")} onClick={()=>set("duvar",s?data.duvar.filter(x=>x!==v):[...data.duvar,v])}>{v}</div>;})}</div>
+    <div className="step-desc">{T.descDuvar}</div>
+    <div className="chk-grid">{[
+      ["Düzenli",T.duvarDuzenli],
+      ["Kalsifiye",T.duvarKalsifiye],
+      ["Ülsere",T.duvarUlsere],
+      ["Düzensiz",T.duvarDuzensiz]
+    ].map(([v,lbl])=>{const s=data.duvar.includes(v);return <div key={v} className={"chk-btn"+(s?" sel":"")} onClick={()=>set("duvar",s?data.duvar.filter(x=>x!==v):[...data.duvar,v])}>{lbl}</div>;})}</div>
    </>);
 
    /* ─── PRE-LOOP HUB ─── */
    case "patListesi": return(<>
-    <div className="step-desc">Saptanan patolojileri yönetin. Yeni ekleyebilir, düzenleyebilir veya silebilirsiniz.</div>
-    {patolojiler.length===0?<div className="empty-state">Henüz patoloji eklenmedi.</div>:(
+    <div className="step-desc">{T.descPatListesi}</div>
+    {patolojiler.length===0?<div className="empty-state">{T.emptyState}</div>:(
      <div className="pat-list">{patolojiler.map((p,i)=>(
       <div key={p.id} className="pat-item">
        <div className="pat-item-info">
         <div className="pat-item-title">{i+1}. {tipLabel(p.tip)}</div>
         <div className="pat-item-sub">{lokLabel(p.lokalizasyon)}
          {p.tip==="trombus"&&p.tromUzunluk&&` • ${p.tromUzunluk} mm`}
-         {p.tip==="darlik"&&p.cap&&` • Çap: ${p.cap} mm`}
+         {p.tip==="darlik"&&p.cap&&` • ${RV_LOCALE==="tr"?"Çap":"Diameter"}: ${p.cap} mm`}
          {p.tip==="ektazi"&&p.ektDerece&&` • ${p.ektDerece}°`}
          {p.tip==="kompresyon"&&p.kompNeden&&` • ${p.kompNeden}`}
         </div>
        </div>
        <div className="pat-item-actions">
-        <button className="pat-item-btn pat-edit" onClick={()=>editPat(i)}>Düzenle</button>
-        <button className="pat-item-btn pat-del" onClick={()=>deletePat(i)}>Sil</button>
+        <button className="pat-item-btn pat-edit" onClick={()=>editPat(i)}>{T.btnEdit}</button>
+        <button className="pat-item-btn pat-del" onClick={()=>deletePat(i)}>{T.btnDelete}</button>
        </div>
       </div>
      ))}</div>
     )}
-    <button className="add-btn" onClick={startNewPat}>＋ Yeni Patoloji Ekle</button>
-    <button className="report-btn" onClick={goToReport}>Rapor Oluştur →</button>
+    <button className="add-btn" onClick={startNewPat}>{T.btnAddNew}</button>
+    <button className="report-btn" onClick={goToReport}>{T.btnCreateReport}</button>
    </>);
 
    /* ─── LOOP START: Tip & Lokalizasyon ─── */
    case "patTip": return(<>
-    <div className="step-desc">Patoloji tipini ve lokalizasyonunu seçiniz</div>
-    <div className="form-group"><label>Lokalizasyon</label>
-     <div className="opt-grid">{LOKALIZASYONLAR.map(l=><div key={l.key} className={"opt-btn"+(currentPat.lokalizasyon===l.key?" sel":"")} onClick={()=>setPat("lokalizasyon",l.key)}>{l.label}</div>)}</div>
+    <div className="step-desc">{T.descPatTip}</div>
+    <div className="form-group"><label>{T.labelLokalizasyon}</label>
+     <div className="opt-grid">{LOKALIZASYONLAR.map(l=><div key={l.key} className={"opt-btn"+(currentPat.lokalizasyon===l.key?" sel":"")} onClick={()=>setPat("lokalizasyon",l.key)}>{T[l.labelKey]}</div>)}</div>
     </div>
-    <div className="form-group" style={{marginTop:16}}><label>Patoloji Tipi</label>
-     <div className="opt-grid">{PATOLOJI_TIPLERI.map(t=><div key={t.key} className={"opt-btn"+(currentPat.tip===t.key?" sel":"")} onClick={()=>setPat("tip",t.key)}>{t.label}</div>)}</div>
+    <div className="form-group" style={{marginTop:16}}><label>{T.labelPatolojiTipi}</label>
+     <div className="opt-grid">{PATOLOJI_TIPLERI.map(t=><div key={t.key} className={"opt-btn"+(currentPat.tip===t.key?" sel":"")} onClick={()=>setPat("tip",t.key)}>{T[t.labelKey]}</div>)}</div>
     </div>
    </>);
 
    /* ─── LOOP END: Detaylar ─── */
    case "patDetay": {
     const loc=currentPat.lokalizasyon;
-    const ml=MESAFE_LABELS[loc]||"Mesafe (mm)";
+    const mesafeKey=MESAFE_KEY_MAP[loc];
+    const ml=mesafeKey?T[mesafeKey]:T.labelLokMesafe;
     const isBranch=!loc.startsWith("ivc_");
 
     if(currentPat.tip==="ektazi") return(<>
-     <div className="step-desc">{lokLabel(loc)} - Ektazi / Anevrizma detayları</div>
+     <div className="step-desc">{T.descEktaziStep(lokLabel(loc))}</div>
      <div className="form-row">
-      <div className="form-group"><label>Başlangıç - Sol renal vene göre</label><div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBasRel===v?" sel":"")} onClick={()=>setPat("ektBasRel",v)}>{l}</div>)}</div></div>
-      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={currentPat.ektBasMm} onChange={e=>setPat("ektBasMm",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelBaslangic}</label><div className="opt-grid">{[["yukari",T.yonYukarida],["asagi",T.yonAsagida]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBasRel===v?" sel":"")} onClick={()=>setPat("ektBasRel",v)}>{l}</div>)}</div></div>
+      <div className="form-group"><label>{T.labelMesafe}</label><input type="number" value={currentPat.ektBasMm} onChange={e=>setPat("ektBasMm",e.target.value)} placeholder="mm"/></div>
      </div>
      <div className="form-row">
-      <div className="form-group"><label>Bitiş - Sol renal vene göre</label><div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBitRel===v?" sel":"")} onClick={()=>setPat("ektBitRel",v)}>{l}</div>)}</div></div>
-      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={currentPat.ektBitMm} onChange={e=>setPat("ektBitMm",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelBitis}</label><div className="opt-grid">{[["yukari",T.yonYukarida],["asagi",T.yonAsagida]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBitRel===v?" sel":"")} onClick={()=>setPat("ektBitRel",v)}>{l}</div>)}</div></div>
+      <div className="form-group"><label>{T.labelMesafe}</label><input type="number" value={currentPat.ektBitMm} onChange={e=>setPat("ektBitMm",e.target.value)} placeholder="mm"/></div>
      </div>
-     <div className="form-group"><label>IVC'yi kaç derece kapsıyor</label><input type="number" value={currentPat.ektDerece} onChange={e=>setPat("ektDerece",e.target.value)} placeholder="Derece (°)"/></div>
+     <div className="form-group"><label>{T.labelDerece}</label><input type="number" value={currentPat.ektDerece} onChange={e=>setPat("ektDerece",e.target.value)} placeholder={T.placeholderDerece}/></div>
     </>);
 
     if(currentPat.tip==="trombus") return(<>
-     <div className="step-desc">{lokLabel(loc)} - Trombüs detayları</div>
+     <div className="step-desc">{T.descTrombusStep(lokLabel(loc))}</div>
      <div className="form-row">
-      <div className="form-group"><label>Saat pozisyonu (başlangıç)</label><input type="text" value={currentPat.tromSaatFrom} onChange={e=>setPat("tromSaatFrom",e.target.value)} placeholder="ör: 2"/></div>
-      <div className="form-group"><label>Saat pozisyonu (bitiş)</label><input type="text" value={currentPat.tromSaatTo} onChange={e=>setPat("tromSaatTo",e.target.value)} placeholder="ör: 5"/></div>
+      <div className="form-group"><label>{T.labelSaatBaslangic}</label><input type="text" value={currentPat.tromSaatFrom} onChange={e=>setPat("tromSaatFrom",e.target.value)} placeholder={T.placeholderSaat}/></div>
+      <div className="form-group"><label>{T.labelSaatBitis}</label><input type="text" value={currentPat.tromSaatTo} onChange={e=>setPat("tromSaatTo",e.target.value)} placeholder={T.placeholderSaatBitis}/></div>
      </div>
      <div className="form-row">
-      <div className="form-group"><label>Trombüs uzunluğu (mm)</label><input type="number" value={currentPat.tromUzunluk} onChange={e=>setPat("tromUzunluk",e.target.value)} placeholder="mm"/></div>
-      <div className="form-group"><label>Trombüs kalınlığı (mm)</label><input type="number" value={currentPat.tromKalinlik} onChange={e=>setPat("tromKalinlik",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelTrombusUzunluk}</label><input type="number" value={currentPat.tromUzunluk} onChange={e=>setPat("tromUzunluk",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelTrombusKalinlik}</label><input type="number" value={currentPat.tromKalinlik} onChange={e=>setPat("tromKalinlik",e.target.value)} placeholder="mm"/></div>
      </div>
     </>);
 
     if(currentPat.tip==="darlik") return(<>
-     <div className="step-desc">{lokLabel(loc)} - Darlık / Stenoz detayları</div>
+     <div className="step-desc">{T.descDarlikStep(lokLabel(loc))}</div>
      <div className="form-row">
-      <div className="form-group"><label>Ven çapı (mm)</label><input type="number" value={currentPat.cap} onChange={e=>setPat("cap",e.target.value)} placeholder="mm"/></div>
-      <div className="form-group"><label>Darlık çapı (mm)</label><input type="number" value={currentPat.darlikCap} onChange={e=>setPat("darlikCap",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelVenCap}</label><input type="number" value={currentPat.cap} onChange={e=>setPat("cap",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelDarlikCap}</label><input type="number" value={currentPat.darlikCap} onChange={e=>setPat("darlikCap",e.target.value)} placeholder="mm"/></div>
      </div>
      <div className="form-row">
-      <div className="form-group"><label>{isBranch?ml:"Lokalizasyon mesafesi (mm)"}</label><input type="number" value={currentPat.mesafe} onChange={e=>setPat("mesafe",e.target.value)} placeholder="mm"/></div>
-      <div className="form-group"><label>Darlık uzunluğu (mm)</label><input type="number" value={currentPat.darlikMm} onChange={e=>setPat("darlikMm",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{isBranch?ml:T.labelLokMesafe}</label><input type="number" value={currentPat.mesafe} onChange={e=>setPat("mesafe",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelDarlikUzunluk}</label><input type="number" value={currentPat.darlikMm} onChange={e=>setPat("darlikMm",e.target.value)} placeholder="mm"/></div>
      </div>
-     {currentPat.cap&&currentPat.darlikCap&&stenosisPct(currentPat.cap,currentPat.darlikCap)!==null&&<div className="alert-info">Hesaplanan stenoz oranı: %{stenosisPct(currentPat.cap,currentPat.darlikCap)}</div>}
+     {currentPat.cap&&currentPat.darlikCap&&stenosisPct(currentPat.cap,currentPat.darlikCap)!==null&&<div className="alert-info">{T.stenosisAlert(stenosisPct(currentPat.cap,currentPat.darlikCap))}</div>}
     </>);
 
     if(currentPat.tip==="kompresyon") return(<>
-     <div className="step-desc">{lokLabel(loc)} - Kompresyon detayları</div>
+     <div className="step-desc">{T.descKompresyonStep(lokLabel(loc))}</div>
      <div className="form-row">
-      <div className="form-group"><label>Kompresyon yönü</label><div className="opt-grid">{["Anterior","Posterior","Lateral sağ","Lateral sol","Sirkümferansiyal"].map(v=><div key={v} className={"opt-btn"+(currentPat.kompYon===v?" sel":"")} onClick={()=>setPat("kompYon",v)}>{v}</div>)}</div></div>
-      <div className="form-group"><label>Kompresyon nedeni</label><input type="text" value={currentPat.kompNeden} onChange={e=>setPat("kompNeden",e.target.value)} placeholder="Lenfadenopati, kitle, vb."/></div>
+      <div className="form-group"><label>{T.labelKompYon}</label><div className="opt-grid">{[
+        ["Anterior",T.kompAnterior],
+        ["Posterior",T.kompPosterior],
+        ["Lateral sağ",T.kompLateralR],
+        ["Lateral sol",T.kompLateralL],
+        ["Sirkümferansiyal",T.kompSirk]
+      ].map(([v,lbl])=><div key={v} className={"opt-btn"+(currentPat.kompYon===v?" sel":"")} onClick={()=>setPat("kompYon",v)}>{lbl}</div>)}</div></div>
+      <div className="form-group"><label>{T.labelKompNeden}</label><input type="text" value={currentPat.kompNeden} onChange={e=>setPat("kompNeden",e.target.value)} placeholder={T.placeholderKompNeden}/></div>
      </div>
     </>);
 
     return(<>
-     <div className="step-desc">{lokLabel(loc)} - Ek bulgu</div>
-     <div className="form-group"><label>Açıklama</label><textarea value={currentPat.aciklama} onChange={e=>setPat("aciklama",e.target.value)} placeholder="Bulguyu tanımlayınız..." rows={4}/></div>
+     <div className="step-desc">{T.descDigerStep(lokLabel(loc))}</div>
+     <div className="form-group"><label>{T.labelAciklama}</label><textarea value={currentPat.aciklama} onChange={e=>setPat("aciklama",e.target.value)} placeholder={T.placeholderAciklama} rows={4}/></div>
     </>);
    }
 
@@ -360,31 +738,31 @@ function App(){
     const yorumlar=generateYorum();
     return(<>
      <div className="export-row" style={{marginBottom:16}}>
-      <button className="export-btn export-print" onClick={handlePrint}>Yazdır / PDF</button>
-      <button className="export-btn export-copy" onClick={handleCopy}>Kopyala</button>
-      <button className="export-btn export-html" onClick={handleHTML}>HTML İndir</button>
+      <button className="export-btn export-print" onClick={handlePrint}>{T.btnPrint}</button>
+      <button className="export-btn export-copy" onClick={handleCopy}>{T.btnCopy}</button>
+      <button className="export-btn export-html" onClick={handleHTML}>{T.btnHtml}</button>
      </div>
      <div className="report-wrap" id="report-content">
-      <h2>IVC MRI İNCELEME RAPORU</h2>
+      <h2>{T.reportTitle}</h2>
       <table className="report-table"><tbody>
-       <tr><td style={{fontWeight:600,width:150}}>Hasta Adı</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>Yaş</td><td>{data.patientAge||"-"}</td></tr>
-       <tr><td style={{fontWeight:600}}>Cinsiyet</td><td>{data.patientGender||"-"}</td><td style={{fontWeight:600}}>Protokol</td><td>{data.patientProtocol||"-"}</td></tr>
+       <tr><td style={{fontWeight:600,width:150}}>{T.reportTableHastaAdi}</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>{T.reportTableYas}</td><td>{data.patientAge||"-"}</td></tr>
+       <tr><td style={{fontWeight:600}}>{T.reportTableCinsiyet}</td><td>{data.patientGender?T[data.patientGender==="Erkek"?"genderMale":"genderFemale"]:"-"}</td><td style={{fontWeight:600}}>{T.reportTableProtokol}</td><td>{data.patientProtocol||"-"}</td></tr>
       </tbody></table>
-      <h3>IVC Genel Değerlendirme</h3>
-      <table className="report-table"><thead><tr><th>Parametre</th><th>Değer</th></tr></thead><tbody>
-       <tr><td style={{fontWeight:600}}>Konum</td><td>{data.konum}</td></tr>
-       <tr><td style={{fontWeight:600}}>Çöliak kesim çapı</td><td>{data.capCeliak?data.capCeliak+" mm":"-"}{parseFloat(data.capCeliak)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capCeliak)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-       <tr><td style={{fontWeight:600}}>İnfrarenal kesim çapı</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-       <tr><td style={{fontWeight:600}}>İliak bif. öncesi çapı</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-       <tr><td style={{fontWeight:600}}>Duvar</td><td>{data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"}</td></tr>
+      <h3>{T.sectionGenelDeg}</h3>
+      <table className="report-table"><thead><tr><th>{T.tableParametre}</th><th>{T.tableDeger}</th></tr></thead><tbody>
+       <tr><td style={{fontWeight:600}}>{T.rowKonum}</td><td>{konumDisplay(data.konum)}</td></tr>
+       <tr><td style={{fontWeight:600}}>{T.rowCapCeliak}</td><td>{data.capCeliak?data.capCeliak+" mm":"-"}{parseFloat(data.capCeliak)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capCeliak)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>{T.rowCapInfrarenal}</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>{T.rowCapBifurk}</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>{T.rowDuvar}</td><td>{data.duvar.length>0?data.duvar.map(duvarDisplay).join(", "):T.duvarBelirtilmedi}</td></tr>
       </tbody></table>
       {patolojiler.length>0&&<>
-       <h3>Saptanan Patolojiler ({patolojiler.length})</h3>
-       <div className="scroll-x"><table className="report-table"><thead><tr><th>#</th><th>Lokalizasyon</th><th>Tip</th><th>Detaylar</th></tr></thead><tbody>
+       <h3>{T.sectionPatolojiler(patolojiler.length)}</h3>
+       <div className="scroll-x"><table className="report-table"><thead><tr><th>{T.tableHash}</th><th>{T.tableLokalizasyon}</th><th>{T.tableTip}</th><th>{T.tableDetaylar}</th></tr></thead><tbody>
         {patolojiler.map((p,i)=><tr key={p.id}><td style={{fontWeight:600}}>{i+1}</td><td>{lokLabel(p.lokalizasyon)}</td><td>{tipLabel(p.tip)}</td><td style={{fontSize:".78rem"}}>{patDetailText(p)}</td></tr>)}
        </tbody></table></div>
       </>}
-      <div className="yorum-box"><div className="yorum-title">YORUM</div>{yorumlar.map((y,i)=><p key={i}>• {y}</p>)}</div>
+      <div className="yorum-box"><div className="yorum-title">{T.sectionYorum}</div>{yorumlar.map((y,i)=><p key={i}>• {y}</p>)}</div>
      </div>
     </>);
    }
@@ -400,8 +778,8 @@ function App(){
  return(
   <div className="app-wrap">
    <div className="header">
-    <h1>IVC MRI Karar Destek Sistemi</h1>
-    <p>Inferior Vena Kava MR İnceleme</p>
+    <h1>{T.appTitle}</h1>
+    <p>{T.appSubtitle}</p>
    </div>
    <div className="progress-bar">
     {progressSteps.map((s,i)=><div key={s} className={"progress-seg"+(i<currentLinear?" done":"")+(i===currentLinear?" active":"")}/>)}
@@ -410,15 +788,15 @@ function App(){
     {curStepId!=="report"&&curStepId!=="patListesi"&&(
      <div className="step-title">
       <span className="num">{isInLoop?"✎":step+1}</span>
-      {STEP_TITLES[curStepId]}
-      {isInLoop&&<span style={{fontSize:".75rem",color:"var(--text3)",marginLeft:8}}>({currentIdx>=0?"Düzenleme":"Yeni patoloji"})</span>}
+      {T[STEP_TITLE_KEYS[curStepId]]}
+      {isInLoop&&<span style={{fontSize:".75rem",color:"var(--text3)",marginLeft:8}}>({currentIdx>=0?T.statusEditing:T.statusNew})</span>}
      </div>
     )}
-    {curStepId==="patListesi"&&<div className="step-title"><span className="num">{PRE_LOOP+1}</span>{STEP_TITLES.patListesi}</div>}
+    {curStepId==="patListesi"&&<div className="step-title"><span className="num">{PRE_LOOP+1}</span>{T.stepPatListesi}</div>}
     {renderStep()}
-    {showDefaultNav&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev} disabled={step===0}>Geri</button><button className="btn btn-next" onClick={goNext}>İleri</button></div>}
-    {isInLoop&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>{step===LOOP_START?"İptal":"Geri"}</button>{step===LOOP_START&&<button className="btn btn-next" onClick={()=>setStep(LOOP_END)}>İleri</button>}{step===LOOP_END&&<button className="btn btn-next" onClick={finalizePathology}>Kaydet & Listeye Dön</button>}</div>}
-    {curStepId==="report"&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>Düzenle</button></div>}
+    {showDefaultNav&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev} disabled={step===0}>{T.btnBack}</button><button className="btn btn-next" onClick={goNext}>{T.btnNext}</button></div>}
+    {isInLoop&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>{step===LOOP_START?T.btnCancel:T.btnBack}</button>{step===LOOP_START&&<button className="btn btn-next" onClick={()=>setStep(LOOP_END)}>{T.btnNext}</button>}{step===LOOP_END&&<button className="btn btn-next" onClick={finalizePathology}>{T.btnSave}</button>}</div>}
+    {curStepId==="report"&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>{T.btnEditReport}</button></div>}
    </div>
   </div>
  );

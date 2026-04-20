@@ -116,218 +116,218 @@ header p{color:var(--textm);font-size:.85em;margin-top:4px}
 
 <div class="container">
   <header>
-    <h1>&#127973; Baş–Boyun MRI Karar Destek Sistemi</h1>
-    <p>50 patoloji &bull; Ağırlıklı diferansiyel skorlama &bull; Yapısal rapor</p>
+    <h1 data-i18n-tr="&#127973; Baş–Boyun MRI Karar Destek Sistemi" data-i18n-en="&#127973; Head and Neck MRI Decision Support System"></h1>
+    <p data-i18n-tr="50 patoloji &bull; Ağırlıklı diferansiyel skorlama &bull; Yapısal rapor" data-i18n-en="50 pathologies &bull; Weighted differential scoring &bull; Structured report"></p>
   </header>
 
   <div class="progress-bar" id="progBar"></div>
 
   <!-- S0: Hasta Bilgisi -->
   <div class="step-card active" id="step0">
-    <div class="step-title">Hasta Bilgileri <span>Adım 1/12</span></div>
-    <div class="form-group"><label>Hasta Adı / ID</label><input type="text" id="pName" placeholder="Opsiyonel"></div>
-    <div class="form-group"><label>Yaş</label><input type="number" id="pAge" min="0" max="120" placeholder="Yaş"></div>
-    <div class="form-group"><label>Cinsiyet</label>
+    <div class="step-title"><span data-i18n-tr="Hasta Bilgileri" data-i18n-en="Patient Information"></span> <span data-i18n-tr="Adım 1/12" data-i18n-en="Step 1/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Hasta Adı / ID" data-i18n-en="Patient Name / ID"></label><input type="text" id="pName" data-i18n-tr-placeholder="Opsiyonel" data-i18n-en-placeholder="Optional"></div>
+    <div class="form-group"><label data-i18n-tr="Yaş" data-i18n-en="Age"></label><input type="number" id="pAge" min="0" max="120" data-i18n-tr-placeholder="Yaş" data-i18n-en-placeholder="Age"></div>
+    <div class="form-group"><label data-i18n-tr="Cinsiyet" data-i18n-en="Sex"></label>
       <div class="radio-grid" data-name="pSex">
-        <div class="radio-opt" data-val="Erkek"><span class="dot"></span>Erkek</div>
-        <div class="radio-opt" data-val="Kadın"><span class="dot"></span>Kadın</div>
-        <div class="radio-opt" data-val="Çocuk"><span class="dot"></span>Çocuk (&lt;18)</div>
+        <div class="radio-opt" data-val="Erkek"><span class="dot"></span><span data-i18n-tr="Erkek" data-i18n-en="Male"></span></div>
+        <div class="radio-opt" data-val="Kadın"><span class="dot"></span><span data-i18n-tr="Kadın" data-i18n-en="Female"></span></div>
+        <div class="radio-opt" data-val="Çocuk"><span class="dot"></span><span data-i18n-tr="Çocuk (&lt;18)" data-i18n-en="Child (&lt;18)"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S1: Lokalizasyon -->
   <div class="step-card" id="step1">
-    <div class="step-title">Lezyon Lokalizasyonu <span>Adım 2/12</span></div>
-    <div class="form-group"><label>Primer lokalizasyon seçiniz</label>
+    <div class="step-title"><span data-i18n-tr="Lezyon Lokalizasyonu" data-i18n-en="Lesion Localization"></span> <span data-i18n-tr="Adım 2/12" data-i18n-en="Step 2/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Primer lokalizasyon seçiniz" data-i18n-en="Select primary localization"></label>
       <div class="radio-grid" data-name="loc">
-        <div class="radio-opt" data-val="boyun"><span class="dot"></span>Boyun (genel)</div>
-        <div class="radio-opt" data-val="parotis"><span class="dot"></span>Parotis / Tükürük Bezi</div>
-        <div class="radio-opt" data-val="tiroid"><span class="dot"></span>Tiroid</div>
-        <div class="radio-opt" data-val="nazal"><span class="dot"></span>Nazal Kavite / Sinüs</div>
-        <div class="radio-opt" data-val="orbita"><span class="dot"></span>Orbita</div>
-        <div class="radio-opt" data-val="larenks"><span class="dot"></span>Larenks</div>
-        <div class="radio-opt" data-val="nazofarenks"><span class="dot"></span>Nazofarenks</div>
-        <div class="radio-opt" data-val="orofarenks"><span class="dot"></span>Orofarenks</div>
-        <div class="radio-opt" data-val="hipofarenks"><span class="dot"></span>Hipofarenks</div>
-        <div class="radio-opt" data-val="sublingual"><span class="dot"></span>Sublingual / Ağız Tabanı</div>
-        <div class="radio-opt" data-val="vaskuler"><span class="dot"></span>Vasküler / Paragangliom</div>
-        <div class="radio-opt" data-val="sinir"><span class="dot"></span>Sinir Kılıfı</div>
-        <div class="radio-opt" data-val="diger"><span class="dot"></span>Diğer / Yaygın</div>
+        <div class="radio-opt" data-val="boyun"><span class="dot"></span><span data-i18n-tr="Boyun (genel)" data-i18n-en="Neck (general)"></span></div>
+        <div class="radio-opt" data-val="parotis"><span class="dot"></span><span data-i18n-tr="Parotis / Tükürük Bezi" data-i18n-en="Parotid / Salivary Gland"></span></div>
+        <div class="radio-opt" data-val="tiroid"><span class="dot"></span><span data-i18n-tr="Tiroid" data-i18n-en="Thyroid"></span></div>
+        <div class="radio-opt" data-val="nazal"><span class="dot"></span><span data-i18n-tr="Nazal Kavite / Sinüs" data-i18n-en="Nasal Cavity / Sinus"></span></div>
+        <div class="radio-opt" data-val="orbita"><span class="dot"></span><span data-i18n-tr="Orbita" data-i18n-en="Orbit"></span></div>
+        <div class="radio-opt" data-val="larenks"><span class="dot"></span><span data-i18n-tr="Larenks" data-i18n-en="Larynx"></span></div>
+        <div class="radio-opt" data-val="nazofarenks"><span class="dot"></span><span data-i18n-tr="Nazofarenks" data-i18n-en="Nasopharynx"></span></div>
+        <div class="radio-opt" data-val="orofarenks"><span class="dot"></span><span data-i18n-tr="Orofarenks" data-i18n-en="Oropharynx"></span></div>
+        <div class="radio-opt" data-val="hipofarenks"><span class="dot"></span><span data-i18n-tr="Hipofarenks" data-i18n-en="Hypopharynx"></span></div>
+        <div class="radio-opt" data-val="sublingual"><span class="dot"></span><span data-i18n-tr="Sublingual / Ağız Tabanı" data-i18n-en="Sublingual / Floor of Mouth"></span></div>
+        <div class="radio-opt" data-val="vaskuler"><span class="dot"></span><span data-i18n-tr="Vasküler / Paragangliom" data-i18n-en="Vascular / Paraganglioma"></span></div>
+        <div class="radio-opt" data-val="sinir"><span class="dot"></span><span data-i18n-tr="Sinir Kılıfı" data-i18n-en="Nerve Sheath"></span></div>
+        <div class="radio-opt" data-val="diger"><span class="dot"></span><span data-i18n-tr="Diğer / Yaygın" data-i18n-en="Other / Diffuse"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S2: Taraf -->
   <div class="step-card" id="stepSide">
-    <div class="step-title">Lezyon Tarafı <span>Adım 3/12</span></div>
-    <div class="form-group"><label>Lezyon hangi tarafta?</label>
+    <div class="step-title"><span data-i18n-tr="Lezyon Tarafı" data-i18n-en="Lesion Side"></span> <span data-i18n-tr="Adım 3/12" data-i18n-en="Step 3/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Lezyon hangi tarafta?" data-i18n-en="Which side is the lesion on?"></label>
       <div class="radio-grid" data-name="side">
-        <div class="radio-opt" data-val="Sağ"><span class="dot"></span>Sağ</div>
-        <div class="radio-opt" data-val="Sol"><span class="dot"></span>Sol</div>
-        <div class="radio-opt" data-val="Bilateral"><span class="dot"></span>Bilateral</div>
-        <div class="radio-opt" data-val="Orta hat"><span class="dot"></span>Orta hat</div>
+        <div class="radio-opt" data-val="Sağ"><span class="dot"></span><span data-i18n-tr="Sağ" data-i18n-en="Right"></span></div>
+        <div class="radio-opt" data-val="Sol"><span class="dot"></span><span data-i18n-tr="Sol" data-i18n-en="Left"></span></div>
+        <div class="radio-opt" data-val="Bilateral"><span class="dot"></span><span data-i18n-tr="Bilateral" data-i18n-en="Bilateral"></span></div>
+        <div class="radio-opt" data-val="Orta hat"><span class="dot"></span><span data-i18n-tr="Orta hat" data-i18n-en="Midline"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S3: Boyutlar -->
   <div class="step-card" id="stepDims">
-    <div class="step-title">Lezyon Boyutları <span>Adım 4/12</span></div>
-    <div class="form-group"><label>En büyük aks (mm)</label>
-      <input type="number" id="dim1" min="1" max="300" placeholder="Örn: 25" oninput="vals.dim1=this.value?parseFloat(this.value):null" style="max-width:160px">
+    <div class="step-title"><span data-i18n-tr="Lezyon Boyutları" data-i18n-en="Lesion Dimensions"></span> <span data-i18n-tr="Adım 4/12" data-i18n-en="Step 4/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="En büyük aks (mm)" data-i18n-en="Longest axis (mm)"></label>
+      <input type="number" id="dim1" min="1" max="300" data-i18n-tr-placeholder="Örn: 25" data-i18n-en-placeholder="e.g. 25" oninput="vals.dim1=this.value?parseFloat(this.value):null" style="max-width:160px">
     </div>
-    <div class="form-group" style="margin-top:12px"><label>İkinci aks (mm)</label>
-      <input type="number" id="dim2" min="1" max="300" placeholder="Örn: 18" oninput="vals.dim2=this.value?parseFloat(this.value):null" style="max-width:160px">
+    <div class="form-group" style="margin-top:12px"><label data-i18n-tr="İkinci aks (mm)" data-i18n-en="Second axis (mm)"></label>
+      <input type="number" id="dim2" min="1" max="300" data-i18n-tr-placeholder="Örn: 18" data-i18n-en-placeholder="e.g. 18" oninput="vals.dim2=this.value?parseFloat(this.value):null" style="max-width:160px">
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S4: Kontur -->
   <div class="step-card" id="stepContour">
-    <div class="step-title">Lezyon Konturu <span>Adım 5/12</span></div>
-    <div class="form-group"><label>Kontur özelliği</label>
+    <div class="step-title"><span data-i18n-tr="Lezyon Konturu" data-i18n-en="Lesion Contour"></span> <span data-i18n-tr="Adım 5/12" data-i18n-en="Step 5/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Kontur özelliği" data-i18n-en="Contour characteristic"></label>
       <div class="radio-grid" data-name="contour">
-        <div class="radio-opt" data-val="Düzenli"><span class="dot"></span>Düzenli</div>
-        <div class="radio-opt" data-val="Düzensiz"><span class="dot"></span>Düzensiz</div>
-        <div class="radio-opt" data-val="Lobüle"><span class="dot"></span>Lobüle</div>
-        <div class="radio-opt" data-val="Silik"><span class="dot"></span>Silik / Belirsiz</div>
+        <div class="radio-opt" data-val="Düzenli"><span class="dot"></span><span data-i18n-tr="Düzenli" data-i18n-en="Well-defined"></span></div>
+        <div class="radio-opt" data-val="Düzensiz"><span class="dot"></span><span data-i18n-tr="Düzensiz" data-i18n-en="Irregular"></span></div>
+        <div class="radio-opt" data-val="Lobüle"><span class="dot"></span><span data-i18n-tr="Lobüle" data-i18n-en="Lobulated"></span></div>
+        <div class="radio-opt" data-val="Silik"><span class="dot"></span><span data-i18n-tr="Silik / Belirsiz" data-i18n-en="Ill-defined / Indistinct"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S5: İç Yapı -->
   <div class="step-card" id="stepInner">
-    <div class="step-title">İç Yapı <span>Adım 6/12</span></div>
-    <div class="form-group"><label>Lezyonun iç yapısı</label>
+    <div class="step-title"><span data-i18n-tr="İç Yapı" data-i18n-en="Internal Structure"></span> <span data-i18n-tr="Adım 6/12" data-i18n-en="Step 6/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Lezyonun iç yapısı" data-i18n-en="Internal structure of the lesion"></label>
       <div class="radio-grid" data-name="inner">
-        <div class="radio-opt" data-val="Homojen"><span class="dot"></span>Homojen</div>
-        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span>Heterojen</div>
+        <div class="radio-opt" data-val="Homojen"><span class="dot"></span><span data-i18n-tr="Homojen" data-i18n-en="Homogeneous"></span></div>
+        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span><span data-i18n-tr="Heterojen" data-i18n-en="Heterogeneous"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S6: T1 -->
   <div class="step-card" id="step2">
-    <div class="step-title">T1 Ağırlıklı Sinyal <span>Adım 7/12</span></div>
-    <div class="form-group"><label>T1 sinyal intensitesi</label>
+    <div class="step-title"><span data-i18n-tr="T1 Ağırlıklı Sinyal" data-i18n-en="T1-Weighted Signal"></span> <span data-i18n-tr="Adım 7/12" data-i18n-en="Step 7/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="T1 sinyal intensitesi" data-i18n-en="T1 signal intensity"></label>
       <div class="radio-grid" data-name="t1">
-        <div class="radio-opt" data-val="Hipo"><span class="dot"></span>Hipointens</div>
-        <div class="radio-opt" data-val="İzointens"><span class="dot"></span>İzointens</div>
-        <div class="radio-opt" data-val="Hiper"><span class="dot"></span>Hiperintens</div>
-        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span>Heterojen</div>
+        <div class="radio-opt" data-val="Hipo"><span class="dot"></span><span data-i18n-tr="Hipointens" data-i18n-en="Hypointense"></span></div>
+        <div class="radio-opt" data-val="İzointens"><span class="dot"></span><span data-i18n-tr="İzointens" data-i18n-en="Isointense"></span></div>
+        <div class="radio-opt" data-val="Hiper"><span class="dot"></span><span data-i18n-tr="Hiperintens" data-i18n-en="Hyperintense"></span></div>
+        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span><span data-i18n-tr="Heterojen" data-i18n-en="Heterogeneous"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S3: T2 -->
   <div class="step-card" id="step3">
-    <div class="step-title">T2 Ağırlıklı Sinyal <span>Adım 8/12</span></div>
-    <div class="form-group"><label>T2 sinyal intensitesi</label>
+    <div class="step-title"><span data-i18n-tr="T2 Ağırlıklı Sinyal" data-i18n-en="T2-Weighted Signal"></span> <span data-i18n-tr="Adım 8/12" data-i18n-en="Step 8/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="T2 sinyal intensitesi" data-i18n-en="T2 signal intensity"></label>
       <div class="radio-grid" data-name="t2">
-        <div class="radio-opt" data-val="Çok hipo"><span class="dot"></span>Çok Hipointens</div>
-        <div class="radio-opt" data-val="Hipo"><span class="dot"></span>Hipointens</div>
-        <div class="radio-opt" data-val="İzointens"><span class="dot"></span>İzointens</div>
-        <div class="radio-opt" data-val="İzohiper"><span class="dot"></span>İzo-Hiperintens</div>
-        <div class="radio-opt" data-val="Hiper"><span class="dot"></span>Hiperintens</div>
-        <div class="radio-opt" data-val="Çok hiper"><span class="dot"></span>Çok Hiperintens</div>
-        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span>Heterojen</div>
-        <div class="radio-opt" data-val="Değişken"><span class="dot"></span>Değişken</div>
+        <div class="radio-opt" data-val="Çok hipo"><span class="dot"></span><span data-i18n-tr="Çok Hipointens" data-i18n-en="Markedly Hypointense"></span></div>
+        <div class="radio-opt" data-val="Hipo"><span class="dot"></span><span data-i18n-tr="Hipointens" data-i18n-en="Hypointense"></span></div>
+        <div class="radio-opt" data-val="İzointens"><span class="dot"></span><span data-i18n-tr="İzointens" data-i18n-en="Isointense"></span></div>
+        <div class="radio-opt" data-val="İzohiper"><span class="dot"></span><span data-i18n-tr="İzo-Hiperintens" data-i18n-en="Iso-Hyperintense"></span></div>
+        <div class="radio-opt" data-val="Hiper"><span class="dot"></span><span data-i18n-tr="Hiperintens" data-i18n-en="Hyperintense"></span></div>
+        <div class="radio-opt" data-val="Çok hiper"><span class="dot"></span><span data-i18n-tr="Çok Hiperintens" data-i18n-en="Markedly Hyperintense"></span></div>
+        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span><span data-i18n-tr="Heterojen" data-i18n-en="Heterogeneous"></span></div>
+        <div class="radio-opt" data-val="Değişken"><span class="dot"></span><span data-i18n-tr="Değişken" data-i18n-en="Variable"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S4: DWI -->
   <div class="step-card" id="step4">
-    <div class="step-title">Difüzyon Ağırlıklı Görüntüleme (DWI) <span>Adım 9/12</span></div>
-    <div class="form-group"><label>DWI bulgusu</label>
+    <div class="step-title"><span data-i18n-tr="Difüzyon Ağırlıklı Görüntüleme (DWI)" data-i18n-en="Diffusion-Weighted Imaging (DWI)"></span> <span data-i18n-tr="Adım 9/12" data-i18n-en="Step 9/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="DWI bulgusu" data-i18n-en="DWI finding"></label>
       <div class="radio-grid" data-name="dwi">
-        <div class="radio-opt" data-val="Yok"><span class="dot"></span>Kısıtlanma yok</div>
-        <div class="radio-opt" data-val="Hafif"><span class="dot"></span>Hafif kısıtlanma</div>
-        <div class="radio-opt" data-val="Var"><span class="dot"></span>Belirgin kısıtlanma</div>
-        <div class="radio-opt" data-val="Belirgin"><span class="dot"></span>Belirgin kısıtlanma</div>
-        <div class="radio-opt" data-val="Çok belirgin"><span class="dot"></span>Çok belirgin kısıtlanma</div>
-        <div class="radio-opt" data-val="Çok"><span class="dot"></span>Çok belirgin</div>
+        <div class="radio-opt" data-val="Yok"><span class="dot"></span><span data-i18n-tr="Kısıtlanma yok" data-i18n-en="No restricted diffusion"></span></div>
+        <div class="radio-opt" data-val="Hafif"><span class="dot"></span><span data-i18n-tr="Hafif kısıtlanma" data-i18n-en="Mild restricted diffusion"></span></div>
+        <div class="radio-opt" data-val="Var"><span class="dot"></span><span data-i18n-tr="Belirgin kısıtlanma" data-i18n-en="Restricted diffusion"></span></div>
+        <div class="radio-opt" data-val="Belirgin"><span class="dot"></span><span data-i18n-tr="Belirgin kısıtlanma" data-i18n-en="Restricted diffusion"></span></div>
+        <div class="radio-opt" data-val="Çok belirgin"><span class="dot"></span><span data-i18n-tr="Çok belirgin kısıtlanma" data-i18n-en="Markedly restricted diffusion"></span></div>
+        <div class="radio-opt" data-val="Çok"><span class="dot"></span><span data-i18n-tr="Çok belirgin" data-i18n-en="Markedly restricted"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S5: ADC -->
   <div class="step-card" id="step5">
-    <div class="step-title">ADC Değeri <span>Adım 10/12</span></div>
-    <div class="form-group"><label>ADC harita bulgusu</label>
+    <div class="step-title"><span data-i18n-tr="ADC Değeri" data-i18n-en="ADC Value"></span> <span data-i18n-tr="Adım 10/12" data-i18n-en="Step 10/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="ADC harita bulgusu" data-i18n-en="ADC map finding"></label>
       <div class="radio-grid" data-name="adc">
-        <div class="radio-opt" data-val="Çok düşük"><span class="dot"></span>Çok Düşük</div>
-        <div class="radio-opt" data-val="Düşük"><span class="dot"></span>Düşük</div>
-        <div class="radio-opt" data-val="Hafif düşük"><span class="dot"></span>Hafif Düşük</div>
-        <div class="radio-opt" data-val="Normal"><span class="dot"></span>Normal</div>
-        <div class="radio-opt" data-val="Yüksek"><span class="dot"></span>Yüksek</div>
+        <div class="radio-opt" data-val="Çok düşük"><span class="dot"></span><span data-i18n-tr="Çok Düşük" data-i18n-en="Very Low"></span></div>
+        <div class="radio-opt" data-val="Düşük"><span class="dot"></span><span data-i18n-tr="Düşük" data-i18n-en="Low"></span></div>
+        <div class="radio-opt" data-val="Hafif düşük"><span class="dot"></span><span data-i18n-tr="Hafif Düşük" data-i18n-en="Mildly Low"></span></div>
+        <div class="radio-opt" data-val="Normal"><span class="dot"></span><span data-i18n-tr="Normal" data-i18n-en="Normal"></span></div>
+        <div class="radio-opt" data-val="Yüksek"><span class="dot"></span><span data-i18n-tr="Yüksek" data-i18n-en="High"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S6: Kontrast -->
   <div class="step-card" id="step6">
-    <div class="step-title">Kontrast Tutulumu <span>Adım 11/12</span></div>
-    <div class="form-group"><label>Kontrastlanma paterni</label>
+    <div class="step-title"><span data-i18n-tr="Kontrast Tutulumu" data-i18n-en="Contrast Enhancement"></span> <span data-i18n-tr="Adım 11/12" data-i18n-en="Step 11/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Kontrastlanma paterni" data-i18n-en="Enhancement pattern"></label>
       <div class="radio-grid" data-name="ce">
-        <div class="radio-opt" data-val="Yok"><span class="dot"></span>Kontrastlanma yok</div>
-        <div class="radio-opt" data-val="Minimal"><span class="dot"></span>Minimal</div>
-        <div class="radio-opt" data-val="Hafif"><span class="dot"></span>Hafif</div>
-        <div class="radio-opt" data-val="Homojen"><span class="dot"></span>Homojen</div>
-        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span>Heterojen</div>
-        <div class="radio-opt" data-val="Rim"><span class="dot"></span>Rim (periferal)</div>
-        <div class="radio-opt" data-val="Güçlü"><span class="dot"></span>Güçlü / Yoğun</div>
-        <div class="radio-opt" data-val="Yoğun"><span class="dot"></span>Yoğun</div>
-        <div class="radio-opt" data-val="Nodüler"><span class="dot"></span>Nodüler</div>
-        <div class="radio-opt" data-val="Erken + washout"><span class="dot"></span>Erken + Washout</div>
-        <div class="radio-opt" data-val="Yavaş"><span class="dot"></span>Yavaş / Progresif</div>
-        <div class="radio-opt" data-val="Cerebriform"><span class="dot"></span>Cerebriform</div>
+        <div class="radio-opt" data-val="Yok"><span class="dot"></span><span data-i18n-tr="Kontrastlanma yok" data-i18n-en="No enhancement"></span></div>
+        <div class="radio-opt" data-val="Minimal"><span class="dot"></span><span data-i18n-tr="Minimal" data-i18n-en="Minimal"></span></div>
+        <div class="radio-opt" data-val="Hafif"><span class="dot"></span><span data-i18n-tr="Hafif" data-i18n-en="Mild"></span></div>
+        <div class="radio-opt" data-val="Homojen"><span class="dot"></span><span data-i18n-tr="Homojen" data-i18n-en="Homogeneous"></span></div>
+        <div class="radio-opt" data-val="Heterojen"><span class="dot"></span><span data-i18n-tr="Heterojen" data-i18n-en="Heterogeneous"></span></div>
+        <div class="radio-opt" data-val="Rim"><span class="dot"></span><span data-i18n-tr="Rim (periferal)" data-i18n-en="Rim (peripheral)"></span></div>
+        <div class="radio-opt" data-val="Güçlü"><span class="dot"></span><span data-i18n-tr="Güçlü / Yoğun" data-i18n-en="Strong / Intense"></span></div>
+        <div class="radio-opt" data-val="Yoğun"><span class="dot"></span><span data-i18n-tr="Yoğun" data-i18n-en="Intense"></span></div>
+        <div class="radio-opt" data-val="Nodüler"><span class="dot"></span><span data-i18n-tr="Nodüler" data-i18n-en="Nodular"></span></div>
+        <div class="radio-opt" data-val="Erken + washout"><span class="dot"></span><span data-i18n-tr="Erken + Washout" data-i18n-en="Early + Washout"></span></div>
+        <div class="radio-opt" data-val="Yavaş"><span class="dot"></span><span data-i18n-tr="Yavaş / Progresif" data-i18n-en="Slow / Progressive"></span></div>
+        <div class="radio-opt" data-val="Cerebriform"><span class="dot"></span><span data-i18n-tr="Cerebriform" data-i18n-en="Cerebriform"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="goNext()">İleri &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="goNext()" data-i18n-tr="İleri &#9654;" data-i18n-en="Next &#9654;"></button></div>
   </div>
 
   <!-- S7: Ek Özellikler -->
   <div class="step-card" id="step7">
-    <div class="step-title">Ek Morfolojik Özellikler <span>Adım 12/12</span></div>
-    <div class="form-group"><label>Varsa seçiniz (çoklu seçim)</label>
+    <div class="step-title"><span data-i18n-tr="Ek Morfolojik Özellikler" data-i18n-en="Additional Morphological Features"></span> <span data-i18n-tr="Adım 12/12" data-i18n-en="Step 12/12"></span></div>
+    <div class="form-group"><label data-i18n-tr="Varsa seçiniz (çoklu seçim)" data-i18n-en="Select if present (multiple choice)"></label>
       <div class="check-grid" data-name="features">
-        <div class="check-opt" data-val="nekroz"><span class="cbox"></span>Nekroz</div>
-        <div class="check-opt" data-val="hilum"><span class="cbox"></span>Hilum korunur</div>
-        <div class="check-opt" data-val="multipl"><span class="cbox"></span>Çoklu nodül / lezyon</div>
-        <div class="check-opt" data-val="inflamasyon"><span class="cbox"></span>Çevre inflamasyon / selülit</div>
-        <div class="check-opt" data-val="yag"><span class="cbox"></span>Yağ içeriği</div>
-        <div class="check-opt" data-val="kalsifikasyon"><span class="cbox"></span>Kalsifikasyon</div>
-        <div class="check-opt" data-val="perineural"><span class="cbox"></span>Perinöral yayılım</div>
-        <div class="check-opt" data-val="kemik"><span class="cbox"></span>Kemik tutulumu / invazyon</div>
-        <div class="check-opt" data-val="kikirdak"><span class="cbox"></span>Kıkırdak invazyonu</div>
-        <div class="check-opt" data-val="vaskuler"><span class="cbox"></span>Vasküler yapı / flow-void</div>
-        <div class="check-opt" data-val="salt_pepper"><span class="cbox"></span>Salt-pepper paterni</div>
-        <div class="check-opt" data-val="target"><span class="cbox"></span>Target sign</div>
-        <div class="check-opt" data-val="tram_track"><span class="cbox"></span>Tram-track sign</div>
-        <div class="check-opt" data-val="multikistik"><span class="cbox"></span>Multikistik</div>
-        <div class="check-opt" data-val="flebolit"><span class="cbox"></span>Flebolit</div>
-        <div class="check-opt" data-val="orta_hat"><span class="cbox"></span>Orta hat yerleşimi</div>
-        <div class="check-opt" data-val="scm_on"><span class="cbox"></span>SCM önünde</div>
-        <div class="check-opt" data-val="sinir_boyunca"><span class="cbox"></span>Sinir boyunca uzanım</div>
-        <div class="check-opt" data-val="retro_nod"><span class="cbox"></span>Retrofarengeal LAP</div>
-        <div class="check-opt" data-val="nod_met"><span class="cbox"></span>Nodal metastaz</div>
-        <div class="check-opt" data-val="hizli_buyume"><span class="cbox"></span>Hızlı büyüme / invazyon</div>
-        <div class="check-opt" data-val="travma"><span class="cbox"></span>Travma öyküsü</div>
-        <div class="check-opt" data-val="cocuk"><span class="cbox"></span>Çocukluk çağı lezyonu</div>
+        <div class="check-opt" data-val="nekroz"><span class="cbox"></span><span data-i18n-tr="Nekroz" data-i18n-en="Necrosis"></span></div>
+        <div class="check-opt" data-val="hilum"><span class="cbox"></span><span data-i18n-tr="Hilum korunur" data-i18n-en="Hilum preserved"></span></div>
+        <div class="check-opt" data-val="multipl"><span class="cbox"></span><span data-i18n-tr="Çoklu nodül / lezyon" data-i18n-en="Multiple nodules / lesions"></span></div>
+        <div class="check-opt" data-val="inflamasyon"><span class="cbox"></span><span data-i18n-tr="Çevre inflamasyon / selülit" data-i18n-en="Surrounding inflammation / cellulitis"></span></div>
+        <div class="check-opt" data-val="yag"><span class="cbox"></span><span data-i18n-tr="Yağ içeriği" data-i18n-en="Fat content"></span></div>
+        <div class="check-opt" data-val="kalsifikasyon"><span class="cbox"></span><span data-i18n-tr="Kalsifikasyon" data-i18n-en="Calcification"></span></div>
+        <div class="check-opt" data-val="perineural"><span class="cbox"></span><span data-i18n-tr="Perinöral yayılım" data-i18n-en="Perineural spread"></span></div>
+        <div class="check-opt" data-val="kemik"><span class="cbox"></span><span data-i18n-tr="Kemik tutulumu / invazyon" data-i18n-en="Bone involvement / invasion"></span></div>
+        <div class="check-opt" data-val="kikirdak"><span class="cbox"></span><span data-i18n-tr="Kıkırdak invazyonu" data-i18n-en="Cartilage invasion"></span></div>
+        <div class="check-opt" data-val="vaskuler"><span class="cbox"></span><span data-i18n-tr="Vasküler yapı / flow-void" data-i18n-en="Vascular structure / flow-void"></span></div>
+        <div class="check-opt" data-val="salt_pepper"><span class="cbox"></span><span data-i18n-tr="Salt-pepper paterni" data-i18n-en="Salt-and-pepper pattern"></span></div>
+        <div class="check-opt" data-val="target"><span class="cbox"></span><span data-i18n-tr="Target sign" data-i18n-en="Target sign"></span></div>
+        <div class="check-opt" data-val="tram_track"><span class="cbox"></span><span data-i18n-tr="Tram-track sign" data-i18n-en="Tram-track sign"></span></div>
+        <div class="check-opt" data-val="multikistik"><span class="cbox"></span><span data-i18n-tr="Multikistik" data-i18n-en="Multicystic"></span></div>
+        <div class="check-opt" data-val="flebolit"><span class="cbox"></span><span data-i18n-tr="Flebolit" data-i18n-en="Phlebolith"></span></div>
+        <div class="check-opt" data-val="orta_hat"><span class="cbox"></span><span data-i18n-tr="Orta hat yerleşimi" data-i18n-en="Midline location"></span></div>
+        <div class="check-opt" data-val="scm_on"><span class="cbox"></span><span data-i18n-tr="SCM önünde" data-i18n-en="Anterior to SCM"></span></div>
+        <div class="check-opt" data-val="sinir_boyunca"><span class="cbox"></span><span data-i18n-tr="Sinir boyunca uzanım" data-i18n-en="Extension along nerve"></span></div>
+        <div class="check-opt" data-val="retro_nod"><span class="cbox"></span><span data-i18n-tr="Retrofarengeal LAP" data-i18n-en="Retropharyngeal lymphadenopathy"></span></div>
+        <div class="check-opt" data-val="nod_met"><span class="cbox"></span><span data-i18n-tr="Nodal metastaz" data-i18n-en="Nodal metastasis"></span></div>
+        <div class="check-opt" data-val="hizli_buyume"><span class="cbox"></span><span data-i18n-tr="Hızlı büyüme / invazyon" data-i18n-en="Rapid growth / invasion"></span></div>
+        <div class="check-opt" data-val="travma"><span class="cbox"></span><span data-i18n-tr="Travma öyküsü" data-i18n-en="History of trauma"></span></div>
+        <div class="check-opt" data-val="cocuk"><span class="cbox"></span><span data-i18n-tr="Çocukluk çağı lezyonu" data-i18n-en="Pediatric lesion"></span></div>
       </div>
     </div>
-    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button><button class="btn btn-next" onclick="saveLesion()">Lezyonu Kaydet &#9654;</button></div>
+    <div class="btn-row"><button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button><button class="btn btn-next" onclick="saveLesion()" data-i18n-tr="Lezyonu Kaydet &#9654;" data-i18n-en="Save Lesion &#9654;"></button></div>
   </div>
 
   <!-- stepAskMore: Başka lezyon var mı? -->
@@ -337,11 +337,11 @@ header p{color:var(--textm);font-size:.85em;margin-top:4px}
 
   <!-- S8: Sonuçlar -->
   <div class="step-card" id="step8">
-    <div class="step-title">Diferansiyel Tanı Sonuçları <span>Sonuçlar</span></div>
+    <div class="step-title"><span data-i18n-tr="Diferansiyel Tanı Sonuçları" data-i18n-en="Differential Diagnosis Results"></span> <span data-i18n-tr="Sonuçlar" data-i18n-en="Results"></span></div>
     <div id="resultsArea"></div>
     <div class="btn-row">
-      <button class="btn btn-prev" onclick="goPrev()">&#9664; Geri</button>
-      <button class="btn btn-next btn-print" onclick="showReport()">&#128196; Rapor</button>
+      <button class="btn btn-prev" onclick="goPrev()" data-i18n-tr="&#9664; Geri" data-i18n-en="&#9664; Back"></button>
+      <button class="btn btn-next btn-print" onclick="showReport()" data-i18n-tr="&#128196; Rapor" data-i18n-en="&#128196; Report"></button>
     </div>
   </div>
 </div>
@@ -349,67 +349,204 @@ header p{color:var(--textm);font-size:.85em;margin-top:4px}
 <!-- Report Overlay -->
 <div class="report-overlay" id="reportOverlay">
   <div class="report-toolbar">
-    <button class="btn btn-sm btn-print" onclick="window.print()">&#128424; Yazdır</button>
-    <button class="btn btn-sm btn-copy" onclick="copyReport()">&#128203; Kopyala</button>
-    <button class="btn btn-sm btn-close" onclick="closeReport()">&#10005; Kapat</button>
+    <button class="btn btn-sm btn-print" onclick="window.print()" data-i18n-tr="&#128424; Yazdır" data-i18n-en="&#128424; Print"></button>
+    <button class="btn btn-sm btn-copy" onclick="copyReport()" data-i18n-tr="&#128203; Kopyala" data-i18n-en="&#128203; Copy"></button>
+    <button class="btn btn-sm btn-close" onclick="closeReport()" data-i18n-tr="&#10005; Kapat" data-i18n-en="&#10005; Close"></button>
   </div>
   <div class="report-sheet" id="reportSheet"></div>
 </div>
 
 <script>
+// ===== LOCALE =====
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = {
+  tr: {
+    headerTitle: 'Baş–Boyun MRI Karar Destek Raporu',
+    headerSub_age: 'Yaş',
+    headerSub_sex: 'Cinsiyet',
+    lesionSummary: 'Lezyon Özeti',
+    diffDiag: 'Diferansiyel Tanı Sıralaması',
+    col_no: '#',
+    col_pathology: 'Patoloji',
+    col_score: 'Skor',
+    col_key: 'Ayırt Edici Bulgu',
+    label_loc: 'Lokalizasyon',
+    label_side: 'Taraf',
+    label_dims: 'Boyutlar',
+    label_contour: 'Kontur',
+    label_inner: 'İç Yapı',
+    label_t1: 'T1 Sinyal',
+    label_t2: 'T2 Sinyal',
+    label_dwi: 'DWI',
+    label_adc: 'ADC',
+    label_contrast: 'Kontrast',
+    label_features: 'Ek Özellikler',
+    label_pd_t1: 'T1:',
+    label_pd_t2: 'T2:',
+    label_pd_dwi: 'DWI:',
+    label_pd_adc: 'ADC:',
+    label_pd_contrast: 'Kontrast:',
+    label_pd_key: 'Ayırt Edici:',
+    label_pd_loc: 'Lokalizasyon:',
+    yorum_prefix: 'YORUM',
+    confidence_high: 'yüksek',
+    confidence_mid: 'orta',
+    confidence_low: 'düşük',
+    yorum_sentence: (lesLabel, name, pct, conf, dimTxt, contour, inner, key) =>
+      `${lesLabel}: MRI sinyal özellikleri ve morfolojik bulguların analizi sonucunda en olası tanı <b>${name}</b> olarak değerlendirilmiştir (eşleşme: %${pct}, güvenilirlik: ${conf}). Boyut: ${dimTxt}, kontur: ${contour}, iç yapı: ${inner}. Ayırt edici bulgu: <b>${key}</b>.`,
+    yorum_diff: (names) => ` Diferansiyel tanıda ayrıca ${names} düşünülmelidir.`,
+    disclaimer: 'Bu rapor karar destek amaçlıdır. Kesin tanı için klinik, patolojik ve radyolojik korelasyon gereklidir.',
+    noMatch: 'Eşleşen patoloji bulunamadı.',
+    saved_title: (label) => `✔ ${label} Kaydedildi`,
+    saved_loc: 'Lokalizasyon',
+    saved_side: 'Taraf',
+    saved_dims: 'Boyut',
+    saved_contour: 'Kontur',
+    saved_inner: 'İç yapı',
+    saved_total: (n) => `Toplam <b style="color:var(--text)">${n}</b> lezyon kayıtlı.`,
+    ask_more: 'Başka lezyon var mı?',
+    btn_add: '➕ Evet, Yeni Lezyon Ekle',
+    btn_finalize: '📋 Hayır, Raporu Hesapla',
+    btn_edit: '&#9664; Geri / Düzenle',
+    copy_ok: 'Rapor panoya kopyalandı!',
+    copy_fail: 'Kopyalama başarısız.',
+  },
+  en: {
+    headerTitle: 'Head and Neck MRI Decision Support Report',
+    headerSub_age: 'Age',
+    headerSub_sex: 'Sex',
+    lesionSummary: 'Lesion Summary',
+    diffDiag: 'Differential Diagnosis Ranking',
+    col_no: '#',
+    col_pathology: 'Pathology',
+    col_score: 'Score',
+    col_key: 'Key Finding',
+    label_loc: 'Localization',
+    label_side: 'Side',
+    label_dims: 'Dimensions',
+    label_contour: 'Contour',
+    label_inner: 'Internal Structure',
+    label_t1: 'T1 Signal',
+    label_t2: 'T2 Signal',
+    label_dwi: 'DWI',
+    label_adc: 'ADC',
+    label_contrast: 'Contrast',
+    label_features: 'Additional Features',
+    label_pd_t1: 'T1:',
+    label_pd_t2: 'T2:',
+    label_pd_dwi: 'DWI:',
+    label_pd_adc: 'ADC:',
+    label_pd_contrast: 'Enhancement:',
+    label_pd_key: 'Key Finding:',
+    label_pd_loc: 'Localization:',
+    yorum_prefix: 'IMPRESSION',
+    confidence_high: 'high',
+    confidence_mid: 'moderate',
+    confidence_low: 'low',
+    yorum_sentence: (lesLabel, name, pct, conf, dimTxt, contour, inner, key) =>
+      `${lesLabel}: Analysis of MRI signal characteristics and morphological findings suggests the most likely diagnosis is <b>${name}</b> (match: ${pct}%, confidence: ${conf}). Dimensions: ${dimTxt}, contour: ${contour}, internal structure: ${inner}. Key finding: <b>${key}</b>.`,
+    yorum_diff: (names) => ` Differential diagnosis should also include ${names}.`,
+    disclaimer: 'This report is intended for decision support only. Definitive diagnosis requires clinical, pathological, and radiological correlation.',
+    noMatch: 'No matching pathology found.',
+    saved_title: (label) => `✔ ${label} Saved`,
+    saved_loc: 'Localization',
+    saved_side: 'Side',
+    saved_dims: 'Dimensions',
+    saved_contour: 'Contour',
+    saved_inner: 'Internal structure',
+    saved_total: (n) => `Total <b style="color:var(--text)">${n}</b> lesion(s) recorded.`,
+    ask_more: 'Is there another lesion?',
+    btn_add: '➕ Yes, Add New Lesion',
+    btn_finalize: '📋 No, Calculate Report',
+    btn_edit: '&#9664; Back / Edit',
+    copy_ok: 'Report copied to clipboard!',
+    copy_fail: 'Copy failed.',
+  }
+}[RV_LOCALE];
+
+// ===== LOCALE-AWARE LABEL MAPS =====
+const LOC_LABEL = {
+  tr: { boyun:'Boyun (genel)', parotis:'Parotis / Tükürük Bezi', tiroid:'Tiroid', nazal:'Nazal Kavite / Sinüs', orbita:'Orbita', larenks:'Larenks', nazofarenks:'Nazofarenks', orofarenks:'Orofarenks', hipofarenks:'Hipofarenks', sublingual:'Sublingual / Ağız Tabanı', vaskuler:'Vasküler / Paragangliom', sinir:'Sinir Kılıfı', diger:'Diğer / Yaygın' },
+  en: { boyun:'Neck (general)', parotis:'Parotid / Salivary Gland', tiroid:'Thyroid', nazal:'Nasal Cavity / Sinus', orbita:'Orbit', larenks:'Larynx', nazofarenks:'Nasopharynx', orofarenks:'Oropharynx', hipofarenks:'Hypopharynx', sublingual:'Sublingual / Floor of Mouth', vaskuler:'Vascular / Paraganglioma', sinir:'Nerve Sheath', diger:'Other / Diffuse' }
+}[RV_LOCALE];
+
+const SIDE_LABEL = {
+  tr: { 'Sağ':'Sağ', 'Sol':'Sol', 'Bilateral':'Bilateral', 'Orta hat':'Orta hat' },
+  en: { 'Sağ':'Right', 'Sol':'Left', 'Bilateral':'Bilateral', 'Orta hat':'Midline' }
+}[RV_LOCALE];
+
+const CONTOUR_LABEL = {
+  tr: { 'Düzenli':'Düzenli', 'Düzensiz':'Düzensiz', 'Lobüle':'Lobüle', 'Silik':'Silik / Belirsiz' },
+  en: { 'Düzenli':'Well-defined', 'Düzensiz':'Irregular', 'Lobüle':'Lobulated', 'Silik':'Ill-defined / Indistinct' }
+}[RV_LOCALE];
+
+const INNER_LABEL = {
+  tr: { 'Homojen':'Homojen', 'Heterojen':'Heterojen' },
+  en: { 'Homojen':'Homogeneous', 'Heterojen':'Heterogeneous' }
+}[RV_LOCALE];
+
+function locLabel(v){ return LOC_LABEL[v] || v || '—'; }
+function sideLabel(v){ return SIDE_LABEL[v] || v || '—'; }
+function contourLabel(v){ return CONTOUR_LABEL[v] || v || '—'; }
+function innerLabel(v){ return INNER_LABEL[v] || v || '—'; }
+
 // ===== PATHOLOGY DATABASE =====
 const DB = [
-{id:1,name:"Reaktif lenf nodu",t1:"İzointens",t2:"Hafif hiper",dwi:"Hafif",adc:"Hafif düşük",ce:"Homojen",key:"Hilum korunur",loc:["boyun","diger"],feats:["hilum"],tags:["benign","lenf"]},
-{id:2,name:"Metastatik lenf nodu",t1:"Hipo",t2:"Hiper",dwi:"Belirgin",adc:"Düşük",ce:"Heterojen",key:"Nekroz",loc:["boyun","diger"],feats:["nekroz","nod_met"],tags:["malign","lenf"]},
-{id:3,name:"Lenfoma",t1:"Hipo",t2:"İzohiper",dwi:"Belirgin",adc:"Düşük",ce:"Homojen",key:"Çoklu nod",loc:["boyun","diger"],feats:["multipl"],tags:["malign","lenf"]},
-{id:4,name:"Boyun absesi",t1:"Hipo",t2:"Hiper",dwi:"Çok belirgin",adc:"Çok düşük",ce:"Rim",key:"Çevre inflamasyon",loc:["boyun","diger"],feats:["inflamasyon"],tags:["infeksiyon"]},
-{id:5,name:"Brankiyal kleft kisti",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"SCM önünde",loc:["boyun"],feats:["scm_on"],tags:["kist","konjenital"]},
-{id:6,name:"Tiroglossal kanal kisti",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Rim",key:"Orta hat",loc:["boyun"],feats:["orta_hat"],tags:["kist","konjenital"]},
-{id:7,name:"Dermoid kist",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Yağ içerik",loc:["boyun","orbita","sublingual"],feats:["yag"],tags:["kist","konjenital"]},
-{id:8,name:"Epidermoid kist",t1:"Hipo",t2:"Hiper",dwi:"Belirgin",adc:"Düşük",ce:"Yok",key:"DWI parlak",loc:["boyun","diger"],feats:[],tags:["kist"]},
-{id:9,name:"Lipom",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Yağ baskıda kaybolur",loc:["boyun","diger"],feats:["yag"],tags:["benign"]},
-{id:10,name:"Liposarkom",t1:"Heterojen",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Yağ + solid",loc:["boyun","diger"],feats:["yag"],tags:["malign"]},
-{id:11,name:"Pleomorfik adenom",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Homojen",key:"Parotis",loc:["parotis"],feats:[],tags:["benign","tukuruk"]},
-{id:12,name:"Warthin tümörü",t1:"İzointens",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Erken + washout",key:"Parotis alt pol",loc:["parotis"],feats:[],tags:["benign","tukuruk"]},
-{id:13,name:"Mukoepidermoid karsinom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Parotis malign",loc:["parotis"],feats:[],tags:["malign","tukuruk"]},
-{id:14,name:"Adenoid kistik karsinom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Perinöral yayılım",loc:["parotis","diger"],feats:["perineural"],tags:["malign","tukuruk"]},
-{id:15,name:"Parotis metastazı",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Nodüler",loc:["parotis"],feats:[],tags:["malign","metastaz"]},
-{id:16,name:"Karotis cisim tümörü",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Normal",ce:"Yoğun",key:"Salt-pepper",loc:["vaskuler","boyun"],feats:["vaskuler","salt_pepper"],tags:["paragangliom"]},
-{id:17,name:"Glomus jugulare",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Temporal kemik",loc:["vaskuler"],feats:["vaskuler","salt_pepper","kemik"],tags:["paragangliom"]},
-{id:18,name:"Schwannoma",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Heterojen",key:"Sinir boyunca",loc:["sinir","boyun"],feats:["sinir_boyunca"],tags:["sinir"]},
-{id:19,name:"Nörofibrom",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Heterojen",key:"Target sign",loc:["sinir","boyun"],feats:["target"],tags:["sinir"]},
-{id:20,name:"Laringeal karsinom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kıkırdak invazyonu",loc:["larenks"],feats:["kikirdak"],tags:["malign","scc"]},
-{id:21,name:"Nazofarenks karsinomu",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Homojen",key:"Retrofarengeal nod",loc:["nazofarenks"],feats:["retro_nod","nod_met"],tags:["malign","scc"]},
-{id:22,name:"Orofarenks SCC",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Tonsil kitle",loc:["orofarenks"],feats:["nod_met"],tags:["malign","scc"]},
-{id:23,name:"Hipofarenks SCC",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Piriform sinüs",loc:["hipofarenks"],feats:[],tags:["malign","scc"]},
-{id:24,name:"Tiroid nodülü (benign)",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Homojen",key:"İyi sınırlı",loc:["tiroid"],feats:[],tags:["benign","tiroid"]},
-{id:25,name:"Tiroid papiller karsinom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Nod metastazı",loc:["tiroid"],feats:["nod_met"],tags:["malign","tiroid"]},
-{id:26,name:"Tiroid medüller karsinom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kalsifikasyon",loc:["tiroid"],feats:["kalsifikasyon"],tags:["malign","tiroid"]},
-{id:27,name:"Tiroid anaplastik karsinom",t1:"Heterojen",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Hızlı invazyon",loc:["tiroid"],feats:["hizli_buyume","kemik"],tags:["malign","tiroid"]},
-{id:28,name:"Ranula",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Sublingual",loc:["sublingual"],feats:[],tags:["kist","benign"]},
-{id:29,name:"Plunging ranula",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Boyuna uzanır",loc:["sublingual","boyun"],feats:[],tags:["kist","benign"]},
-{id:30,name:"Hemanjiyom",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Nodüler",key:"Vasküler",loc:["boyun","diger"],feats:["vaskuler"],tags:["vaskuler","benign"]},
-{id:31,name:"Venöz malformasyon",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yavaş",key:"Flebolit",loc:["boyun","diger"],feats:["flebolit","vaskuler"],tags:["vaskuler","benign"]},
-{id:32,name:"Kapiller hemanjiom",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Çocuk",loc:["boyun","diger"],feats:["cocuk","vaskuler"],tags:["vaskuler","benign"]},
-{id:33,name:"Lenfanjiyom",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Multikistik",loc:["boyun","diger"],feats:["multikistik","cocuk"],tags:["vaskuler","benign","konjenital"]},
-{id:34,name:"Boyun hematomu",t1:"Hiper",t2:"Değişken",dwi:"Yok",adc:"Normal",ce:"Yok",key:"Travma",loc:["boyun","diger"],feats:["travma"],tags:["travma"]},
-{id:35,name:"Fibromatozis",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kas infiltrasyon",loc:["boyun","diger"],feats:[],tags:["benign"]},
-{id:36,name:"Rabdomyosarkom",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Çocuk",loc:["boyun","diger","orbita","nazofarenks"],feats:["cocuk"],tags:["malign"]},
-{id:37,name:"Osteosarkom",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kemik",loc:["boyun","diger"],feats:["kemik"],tags:["malign"]},
-{id:38,name:"Kondrosarkom",t1:"Hipo",t2:"Çok hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kıkırdak",loc:["boyun","larenks","diger"],feats:["kikirdak"],tags:["malign"]},
-{id:39,name:"İnverted papilloma",t1:"Hipo",t2:"Heterojen",dwi:"Hafif",adc:"Hafif düşük",ce:"Cerebriform",key:"Nazal kavite",loc:["nazal"],feats:[],tags:["benign","nazal"]},
-{id:40,name:"Sinüs mukoseli",t1:"Hiper",t2:"Heterojen",dwi:"Yok",adc:"Yüksek",ce:"Rim",key:"Ekspansiyon",loc:["nazal"],feats:[],tags:["benign","nazal"]},
-{id:41,name:"Fungal sinüzit",t1:"Hipo",t2:"Çok hipo",dwi:"Yok",adc:"Normal",ce:"Minimal",key:"T2 koyu",loc:["nazal"],feats:[],tags:["infeksiyon","nazal"]},
-{id:42,name:"Sinüs absesi",t1:"Hipo",t2:"Hiper",dwi:"Çok",adc:"Düşük",ce:"Rim",key:"Enfeksiyon",loc:["nazal"],feats:["inflamasyon"],tags:["infeksiyon","nazal"]},
-{id:43,name:"Orbital psödotümör",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Hafif düşük",ce:"Güçlü",key:"Kas tendon tutulur",loc:["orbita"],feats:[],tags:["inflamasyon","orbita"]},
-{id:44,name:"Orbital lenfoma",t1:"Hipo",t2:"İzointens",dwi:"Var",adc:"Düşük",ce:"Homojen",key:"Lakrimal bez",loc:["orbita"],feats:[],tags:["malign","orbita"]},
-{id:45,name:"Optik sinir meninjiomu",t1:"İzointens",t2:"İzointens",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Tram-track",loc:["orbita"],feats:["tram_track"],tags:["benign","orbita"]},
-{id:46,name:"Optik gliom",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Normal",ce:"Hafif",key:"Sinir geniş",loc:["orbita"],feats:["cocuk"],tags:["tümör","orbita"]},
-{id:47,name:"Orbital dermoid",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Yağ",loc:["orbita"],feats:["yag"],tags:["kist","orbita"]},
-{id:48,name:"Orbital abse",t1:"Hipo",t2:"Hiper",dwi:"Çok",adc:"Düşük",ce:"Rim",key:"Selülit",loc:["orbita"],feats:["inflamasyon"],tags:["infeksiyon","orbita"]},
-{id:49,name:"Orbital metastaz",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kemik",loc:["orbita"],feats:["kemik"],tags:["malign","metastaz","orbita"]},
-{id:50,name:"Melanom metastazı",t1:"Hiper",t2:"Hipo",dwi:"Var",adc:"Düşük",ce:"Güçlü",key:"Melanin",loc:["orbita","diger","boyun"],feats:[],tags:["malign","metastaz"]}
+{id:1,name:"Reaktif lenf nodu",name_en:"Reactive lymph node",t1:"İzointens",t2:"Hafif hiper",dwi:"Hafif",adc:"Hafif düşük",ce:"Homojen",key:"Hilum korunur",key_en:"Hilum preserved",loc:["boyun","diger"],feats:["hilum"],tags:["benign","lenf"]},
+{id:2,name:"Metastatik lenf nodu",name_en:"Metastatic lymph node",t1:"Hipo",t2:"Hiper",dwi:"Belirgin",adc:"Düşük",ce:"Heterojen",key:"Nekroz",key_en:"Necrosis",loc:["boyun","diger"],feats:["nekroz","nod_met"],tags:["malign","lenf"]},
+{id:3,name:"Lenfoma",name_en:"Lymphoma",t1:"Hipo",t2:"İzohiper",dwi:"Belirgin",adc:"Düşük",ce:"Homojen",key:"Çoklu nod",key_en:"Multiple nodes",loc:["boyun","diger"],feats:["multipl"],tags:["malign","lenf"]},
+{id:4,name:"Boyun absesi",name_en:"Neck abscess",t1:"Hipo",t2:"Hiper",dwi:"Çok belirgin",adc:"Çok düşük",ce:"Rim",key:"Çevre inflamasyon",key_en:"Surrounding inflammation",loc:["boyun","diger"],feats:["inflamasyon"],tags:["infeksiyon"]},
+{id:5,name:"Brankiyal kleft kisti",name_en:"Branchial cleft cyst",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"SCM önünde",key_en:"Anterior to SCM",loc:["boyun"],feats:["scm_on"],tags:["kist","konjenital"]},
+{id:6,name:"Tiroglossal kanal kisti",name_en:"Thyroglossal duct cyst",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Rim",key:"Orta hat",key_en:"Midline",loc:["boyun"],feats:["orta_hat"],tags:["kist","konjenital"]},
+{id:7,name:"Dermoid kist",name_en:"Dermoid cyst",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Yağ içerik",key_en:"Fat content",loc:["boyun","orbita","sublingual"],feats:["yag"],tags:["kist","konjenital"]},
+{id:8,name:"Epidermoid kist",name_en:"Epidermoid cyst",t1:"Hipo",t2:"Hiper",dwi:"Belirgin",adc:"Düşük",ce:"Yok",key:"DWI parlak",key_en:"DWI bright",loc:["boyun","diger"],feats:[],tags:["kist"]},
+{id:9,name:"Lipom",name_en:"Lipoma",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Yağ baskıda kaybolur",key_en:"Suppresses on fat-saturated sequences",loc:["boyun","diger"],feats:["yag"],tags:["benign"]},
+{id:10,name:"Liposarkom",name_en:"Liposarcoma",t1:"Heterojen",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Yağ + solid",key_en:"Fat + solid component",loc:["boyun","diger"],feats:["yag"],tags:["malign"]},
+{id:11,name:"Pleomorfik adenom",name_en:"Pleomorphic adenoma",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Homojen",key:"Parotis",key_en:"Parotid gland",loc:["parotis"],feats:[],tags:["benign","tukuruk"]},
+{id:12,name:"Warthin tümörü",name_en:"Warthin tumor",t1:"İzointens",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Erken + washout",key:"Parotis alt pol",key_en:"Parotid inferior pole",loc:["parotis"],feats:[],tags:["benign","tukuruk"]},
+{id:13,name:"Mukoepidermoid karsinom",name_en:"Mucoepidermoid carcinoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Parotis malign",key_en:"Parotid malignancy",loc:["parotis"],feats:[],tags:["malign","tukuruk"]},
+{id:14,name:"Adenoid kistik karsinom",name_en:"Adenoid cystic carcinoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Perinöral yayılım",key_en:"Perineural spread",loc:["parotis","diger"],feats:["perineural"],tags:["malign","tukuruk"]},
+{id:15,name:"Parotis metastazı",name_en:"Parotid metastasis",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Nodüler",key_en:"Nodular",loc:["parotis"],feats:[],tags:["malign","metastaz"]},
+{id:16,name:"Karotis cisim tümörü",name_en:"Carotid body tumor",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Normal",ce:"Yoğun",key:"Salt-pepper",key_en:"Salt-and-pepper pattern",loc:["vaskuler","boyun"],feats:["vaskuler","salt_pepper"],tags:["paragangliom"]},
+{id:17,name:"Glomus jugulare",name_en:"Glomus jugulare",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Temporal kemik",key_en:"Temporal bone involvement",loc:["vaskuler"],feats:["vaskuler","salt_pepper","kemik"],tags:["paragangliom"]},
+{id:18,name:"Schwannoma",name_en:"Schwannoma",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Heterojen",key:"Sinir boyunca",key_en:"Extension along nerve",loc:["sinir","boyun"],feats:["sinir_boyunca"],tags:["sinir"]},
+{id:19,name:"Nörofibrom",name_en:"Neurofibroma",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Heterojen",key:"Target sign",key_en:"Target sign",loc:["sinir","boyun"],feats:["target"],tags:["sinir"]},
+{id:20,name:"Laringeal karsinom",name_en:"Laryngeal carcinoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kıkırdak invazyonu",key_en:"Cartilage invasion",loc:["larenks"],feats:["kikirdak"],tags:["malign","scc"]},
+{id:21,name:"Nazofarenks karsinomu",name_en:"Nasopharyngeal carcinoma",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Homojen",key:"Retrofarengeal nod",key_en:"Retropharyngeal node",loc:["nazofarenks"],feats:["retro_nod","nod_met"],tags:["malign","scc"]},
+{id:22,name:"Orofarenks SCC",name_en:"Oropharyngeal SCC",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Tonsil kitle",key_en:"Tonsillar mass",loc:["orofarenks"],feats:["nod_met"],tags:["malign","scc"]},
+{id:23,name:"Hipofarenks SCC",name_en:"Hypopharyngeal SCC",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Piriform sinüs",key_en:"Piriform sinus",loc:["hipofarenks"],feats:[],tags:["malign","scc"]},
+{id:24,name:"Tiroid nodülü (benign)",name_en:"Thyroid nodule (benign)",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Homojen",key:"İyi sınırlı",key_en:"Well-defined margins",loc:["tiroid"],feats:[],tags:["benign","tiroid"]},
+{id:25,name:"Tiroid papiller karsinom",name_en:"Thyroid papillary carcinoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Nod metastazı",key_en:"Nodal metastasis",loc:["tiroid"],feats:["nod_met"],tags:["malign","tiroid"]},
+{id:26,name:"Tiroid medüller karsinom",name_en:"Thyroid medullary carcinoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kalsifikasyon",key_en:"Calcification",loc:["tiroid"],feats:["kalsifikasyon"],tags:["malign","tiroid"]},
+{id:27,name:"Tiroid anaplastik karsinom",name_en:"Thyroid anaplastic carcinoma",t1:"Heterojen",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Hızlı invazyon",key_en:"Rapid invasion",loc:["tiroid"],feats:["hizli_buyume","kemik"],tags:["malign","tiroid"]},
+{id:28,name:"Ranula",name_en:"Ranula",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Sublingual",key_en:"Sublingual",loc:["sublingual"],feats:[],tags:["kist","benign"]},
+{id:29,name:"Plunging ranula",name_en:"Plunging ranula",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yok",key:"Boyuna uzanır",key_en:"Extends into neck",loc:["sublingual","boyun"],feats:[],tags:["kist","benign"]},
+{id:30,name:"Hemanjiyom",name_en:"Hemangioma",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Nodüler",key:"Vasküler",key_en:"Vascular",loc:["boyun","diger"],feats:["vaskuler"],tags:["vaskuler","benign"]},
+{id:31,name:"Venöz malformasyon",name_en:"Venous malformation",t1:"Hipo",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Yavaş",key:"Flebolit",key_en:"Phlebolith",loc:["boyun","diger"],feats:["flebolit","vaskuler"],tags:["vaskuler","benign"]},
+{id:32,name:"Kapiller hemanjiom",name_en:"Capillary hemangioma",t1:"İzointens",t2:"Hiper",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Çocuk",key_en:"Pediatric",loc:["boyun","diger"],feats:["cocuk","vaskuler"],tags:["vaskuler","benign"]},
+{id:33,name:"Lenfanjiyom",name_en:"Lymphangioma",t1:"Hipo",t2:"Çok hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Multikistik",key_en:"Multicystic",loc:["boyun","diger"],feats:["multikistik","cocuk"],tags:["vaskuler","benign","konjenital"]},
+{id:34,name:"Boyun hematomu",name_en:"Neck hematoma",t1:"Hiper",t2:"Değişken",dwi:"Yok",adc:"Normal",ce:"Yok",key:"Travma",key_en:"Trauma",loc:["boyun","diger"],feats:["travma"],tags:["travma"]},
+{id:35,name:"Fibromatozis",name_en:"Fibromatosis",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kas infiltrasyon",key_en:"Muscle infiltration",loc:["boyun","diger"],feats:[],tags:["benign"]},
+{id:36,name:"Rabdomyosarkom",name_en:"Rhabdomyosarcoma",t1:"Hipo",t2:"Hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Çocuk",key_en:"Pediatric",loc:["boyun","diger","orbita","nazofarenks"],feats:["cocuk"],tags:["malign"]},
+{id:37,name:"Osteosarkom",name_en:"Osteosarcoma",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kemik",key_en:"Bone",loc:["boyun","diger"],feats:["kemik"],tags:["malign"]},
+{id:38,name:"Kondrosarkom",name_en:"Chondrosarcoma",t1:"Hipo",t2:"Çok hiper",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kıkırdak",key_en:"Cartilage",loc:["boyun","larenks","diger"],feats:["kikirdak"],tags:["malign"]},
+{id:39,name:"İnverted papilloma",name_en:"Inverted papilloma",t1:"Hipo",t2:"Heterojen",dwi:"Hafif",adc:"Hafif düşük",ce:"Cerebriform",key:"Nazal kavite",key_en:"Nasal cavity",loc:["nazal"],feats:[],tags:["benign","nazal"]},
+{id:40,name:"Sinüs mukoseli",name_en:"Sinus mucocele",t1:"Hiper",t2:"Heterojen",dwi:"Yok",adc:"Yüksek",ce:"Rim",key:"Ekspansiyon",key_en:"Expansion",loc:["nazal"],feats:[],tags:["benign","nazal"]},
+{id:41,name:"Fungal sinüzit",name_en:"Fungal sinusitis",t1:"Hipo",t2:"Çok hipo",dwi:"Yok",adc:"Normal",ce:"Minimal",key:"T2 koyu",key_en:"T2 dark",loc:["nazal"],feats:[],tags:["infeksiyon","nazal"]},
+{id:42,name:"Sinüs absesi",name_en:"Sinus abscess",t1:"Hipo",t2:"Hiper",dwi:"Çok",adc:"Düşük",ce:"Rim",key:"Enfeksiyon",key_en:"Infection",loc:["nazal"],feats:["inflamasyon"],tags:["infeksiyon","nazal"]},
+{id:43,name:"Orbital psödotümör",name_en:"Orbital pseudotumor",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Hafif düşük",ce:"Güçlü",key:"Kas tendon tutulur",key_en:"Muscle-tendon involvement",loc:["orbita"],feats:[],tags:["inflamasyon","orbita"]},
+{id:44,name:"Orbital lenfoma",name_en:"Orbital lymphoma",t1:"Hipo",t2:"İzointens",dwi:"Var",adc:"Düşük",ce:"Homojen",key:"Lakrimal bez",key_en:"Lacrimal gland",loc:["orbita"],feats:[],tags:["malign","orbita"]},
+{id:45,name:"Optik sinir meninjiomu",name_en:"Optic nerve meningioma",t1:"İzointens",t2:"İzointens",dwi:"Yok",adc:"Normal",ce:"Güçlü",key:"Tram-track",key_en:"Tram-track sign",loc:["orbita"],feats:["tram_track"],tags:["benign","orbita"]},
+{id:46,name:"Optik gliom",name_en:"Optic glioma",t1:"İzointens",t2:"Hiper",dwi:"Hafif",adc:"Normal",ce:"Hafif",key:"Sinir geniş",key_en:"Enlarged nerve",loc:["orbita"],feats:["cocuk"],tags:["tümör","orbita"]},
+{id:47,name:"Orbital dermoid",name_en:"Orbital dermoid",t1:"Hiper",t2:"Hiper",dwi:"Yok",adc:"Yüksek",ce:"Minimal",key:"Yağ",key_en:"Fat",loc:["orbita"],feats:["yag"],tags:["kist","orbita"]},
+{id:48,name:"Orbital abse",name_en:"Orbital abscess",t1:"Hipo",t2:"Hiper",dwi:"Çok",adc:"Düşük",ce:"Rim",key:"Selülit",key_en:"Cellulitis",loc:["orbita"],feats:["inflamasyon"],tags:["infeksiyon","orbita"]},
+{id:49,name:"Orbital metastaz",name_en:"Orbital metastasis",t1:"Hipo",t2:"Heterojen",dwi:"Var",adc:"Düşük",ce:"Heterojen",key:"Kemik",key_en:"Bone",loc:["orbita"],feats:["kemik"],tags:["malign","metastaz","orbita"]},
+{id:50,name:"Melanom metastazı",name_en:"Melanoma metastasis",t1:"Hiper",t2:"Hipo",dwi:"Var",adc:"Düşük",ce:"Güçlü",key:"Melanin",key_en:"Melanin",loc:["orbita","diger","boyun"],feats:[],tags:["malign","metastaz"]}
 ];
+
+// Helper: get locale-aware name/key from DB entry
+function dbName(p){ return RV_LOCALE === 'en' ? p.name_en : p.name; }
+function dbKey(p){ return RV_LOCALE === 'en' ? p.key_en : p.key; }
 
 // ===== STEP ORDER =====
 const STEP_ORDER = ['step0','step1','stepSide','stepDims','stepContour','stepInner','step2','step3','step4','step5','step6','step7'];
@@ -420,8 +557,25 @@ let cur = 0;
 let lesions = [];
 const vals = {};
 
+// ===== I18N BOOT =====
+function applyI18n(){
+  // text nodes on elements with data-i18n-tr / data-i18n-en
+  document.querySelectorAll('[data-i18n-tr]').forEach(el=>{
+    el.textContent = RV_LOCALE === 'en'
+      ? (el.getAttribute('data-i18n-en') || el.getAttribute('data-i18n-tr'))
+      : el.getAttribute('data-i18n-tr');
+  });
+  // placeholder attributes
+  const pAttr = RV_LOCALE === 'en' ? 'data-i18n-en-placeholder' : 'data-i18n-tr-placeholder';
+  document.querySelectorAll('[data-i18n-tr-placeholder]').forEach(el=>{
+    const v = el.getAttribute(pAttr) || el.getAttribute('data-i18n-tr-placeholder');
+    if(v) el.setAttribute('placeholder', v);
+  });
+}
+
 // ===== INIT =====
 function init(){
+  applyI18n();
   buildProg(0);
   // radio clicks — covers all radio-grids including new ones
   document.querySelectorAll('.radio-grid').forEach(g=>{
@@ -485,7 +639,7 @@ function goPrev(){if(cur>0)showStep(cur-1)}
 
 // ===== LESION LOOP =====
 function saveLesion(){
-  const label = `Lezyon ${lesions.length+1}`;
+  const label = RV_LOCALE === 'en' ? `Lesion ${lesions.length+1}` : `Lezyon ${lesions.length+1}`;
   lesions.push({
     label,
     data: {
@@ -497,22 +651,22 @@ function saveLesion(){
   const el = document.getElementById('stepAskMore');
   const dimTxt = last.data.dim1!=null ? `${last.data.dim1}${last.data.dim2!=null?' × '+last.data.dim2:''}  mm` : '—';
   el.innerHTML = `
-    <div class="step-title" style="color:var(--green)">✔ ${last.label} Kaydedildi</div>
+    <div class="step-title" style="color:var(--green)">${T.saved_title(last.label)}</div>
     <p style="color:var(--textm);font-size:.88em;margin-bottom:6px">
-      <b>Lokalizasyon:</b> ${last.data.loc||'—'} &nbsp;|&nbsp;
-      <b>Taraf:</b> ${last.data.side||'—'} &nbsp;|&nbsp;
-      <b>Boyut:</b> ${dimTxt} &nbsp;|&nbsp;
-      <b>Kontur:</b> ${last.data.contour||'—'} &nbsp;|&nbsp;
-      <b>İç yapı:</b> ${last.data.inner||'—'}
+      <b>${T.saved_loc}:</b> ${locLabel(last.data.loc)} &nbsp;|&nbsp;
+      <b>${T.saved_side}:</b> ${sideLabel(last.data.side)} &nbsp;|&nbsp;
+      <b>${T.saved_dims}:</b> ${dimTxt} &nbsp;|&nbsp;
+      <b>${T.saved_contour}:</b> ${contourLabel(last.data.contour)||'—'} &nbsp;|&nbsp;
+      <b>${T.saved_inner}:</b> ${innerLabel(last.data.inner)||'—'}
     </p>
-    <p style="color:var(--textd);font-size:.82em;margin-bottom:18px">Toplam <b style="color:var(--text)">${lesions.length}</b> lezyon kayıtlı.</p>
-    <p style="font-size:1rem;margin-bottom:14px">Başka lezyon var mı?</p>
+    <p style="color:var(--textd);font-size:.82em;margin-bottom:18px">${T.saved_total(lesions.length)}</p>
+    <p style="font-size:1rem;margin-bottom:14px">${T.ask_more}</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <button class="btn btn-next" onclick="addAnotherLesion()" style="flex:1;min-width:180px">➕ Evet, Yeni Lezyon Ekle</button>
-      <button class="btn btn-prev" onclick="finalizeLesions()" style="flex:1;min-width:180px;border-color:var(--green);color:var(--green)">📋 Hayır, Raporu Hesapla</button>
+      <button class="btn btn-next" onclick="addAnotherLesion()" style="flex:1;min-width:180px">${T.btn_add}</button>
+      <button class="btn btn-prev" onclick="finalizeLesions()" style="flex:1;min-width:180px;border-color:var(--green);color:var(--green)">${T.btn_finalize}</button>
     </div>
     <div class="btn-row">
-      <button class="btn btn-prev" onclick="editLastLesion()">&#9664; Geri / Düzenle</button>
+      <button class="btn btn-prev" onclick="editLastLesion()">${T.btn_edit}</button>
     </div>
   `;
   showAskMoreStep();
@@ -588,8 +742,8 @@ function calcLesionScores(data){
     let score=0, maxScore=0, details=[];
     maxScore+=3;
     const locMatch = p.loc.includes(loc)||p.loc.includes('diger');
-    if(locMatch){score+=3;details.push({k:'Lokalizasyon',v:'✓',hit:true});}
-    else{details.push({k:'Lokalizasyon',v:'✗',hit:false});}
+    if(locMatch){score+=3;details.push({k:T.label_loc,v:'✓',hit:true});}
+    else{details.push({k:T.label_loc,v:'✗',hit:false});}
     maxScore+=2;
     const t1s=matchSignal(t1,p.t1);
     score+=t1s*2;details.push({k:'T1',v:p.t1,hit:t1s>=0.5});
@@ -604,7 +758,7 @@ function calcLesionScores(data){
     score+=as*2;details.push({k:'ADC',v:p.adc,hit:as>=0.5});
     maxScore+=2;
     const cs=matchSignal(ce,p.ce);
-    score+=cs*2;details.push({k:'Kontrast',v:p.ce,hit:cs>=0.5});
+    score+=cs*2;details.push({k:T.label_contrast,v:p.ce,hit:cs>=0.5});
     let featScore=0,featMax=0;
     if(feats.length>0){
       feats.forEach(f=>{
@@ -624,7 +778,7 @@ function calcLesionScores(data){
 }
 
 function calcResults(){
-  const all = lesions.length>0 ? lesions : [{label:'Lezyon 1', data:{...vals,features:vals.features||[]}}];
+  const all = lesions.length>0 ? lesions : [{label: RV_LOCALE==='en'?'Lesion 1':'Lezyon 1', data:{...vals,features:vals.features||[]}}];
   window._lesionResults = all.map(les=>({
     label: les.label,
     data: les.data,
@@ -644,17 +798,17 @@ function renderAllResults(allRes){
     if(allRes.length>1){
       html+=`<div style="margin:${li>0?'24px':0} 0 10px;padding:8px 14px;background:rgba(155,89,182,.15);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;font-weight:700;color:var(--purplel)">
         🔵 ${les.label}
-        <span style="font-weight:400;font-size:.8em;color:var(--textm);margin-left:10px">${d.loc||''} | ${d.side||''} | ${dimTxt} | Kontur: ${d.contour||'—'} | İç yapı: ${d.inner||'—'}</span>
+        <span style="font-weight:400;font-size:.8em;color:var(--textm);margin-left:10px">${locLabel(d.loc)} | ${sideLabel(d.side)} | ${dimTxt} | ${T.label_contour}: ${contourLabel(d.contour)||'—'} | ${T.label_inner}: ${innerLabel(d.inner)||'—'}</span>
       </div>`;
     } else {
       html+=`<div style="margin-bottom:10px;font-size:.85em;color:var(--textm)">
-        <b>Taraf:</b> ${d.side||'—'} &nbsp;|&nbsp;
-        <b>Boyut:</b> ${dimTxt} &nbsp;|&nbsp;
-        <b>Kontur:</b> ${d.contour||'—'} &nbsp;|&nbsp;
-        <b>İç yapı:</b> ${d.inner||'—'}
+        <b>${T.label_side}:</b> ${sideLabel(d.side)||'—'} &nbsp;|&nbsp;
+        <b>${T.label_dims}:</b> ${dimTxt} &nbsp;|&nbsp;
+        <b>${T.label_contour}:</b> ${contourLabel(d.contour)||'—'} &nbsp;|&nbsp;
+        <b>${T.label_inner}:</b> ${innerLabel(d.inner)||'—'}
       </div>`;
     }
-    if(!res.length){html+=`<p style="color:var(--textm)">Eşleşen patoloji bulunamadı.</p>`;return;}
+    if(!res.length){html+=`<p style="color:var(--textm)">${T.noMatch}</p>`;return;}
     const topScore=res[0].pct;
     html+='<div class="diff-list">';
     res.forEach((r,i)=>{
@@ -665,8 +819,8 @@ function renderAllResults(allRes){
       html+=`<div class="diff-item ${cls}" onclick="showPathDetail(${r.path.id})" style="cursor:pointer">
         <div class="diff-rank">${i+1}</div>
         <div class="diff-body">
-          <div class="diff-name">${r.path.name}</div>
-          <div class="diff-detail">${r.path.key} ${matchTags}</div>
+          <div class="diff-name">${dbName(r.path)}</div>
+          <div class="diff-detail">${dbKey(r.path)} ${matchTags}</div>
         </div>
         <div class="diff-score" style="color:${color}">${r.pct}%</div>
         <div class="diff-bar-wrap"><div class="diff-bar" style="width:${barW}%;background:${color}"></div></div>
@@ -683,15 +837,15 @@ function showPathDetail(id){
   if(!p)return;
   const box=document.getElementById('pathDetailBox');
   box.innerHTML=`<div class="pathology-detail">
-    <h3>${p.name}</h3>
+    <h3>${dbName(p)}</h3>
     <div class="pd-grid">
-      <div class="pd-row"><span class="pd-label">T1:</span><span class="pd-val">${p.t1}</span></div>
-      <div class="pd-row"><span class="pd-label">T2:</span><span class="pd-val">${p.t2}</span></div>
-      <div class="pd-row"><span class="pd-label">DWI:</span><span class="pd-val">${p.dwi}</span></div>
-      <div class="pd-row"><span class="pd-label">ADC:</span><span class="pd-val">${p.adc}</span></div>
-      <div class="pd-row"><span class="pd-label">Kontrast:</span><span class="pd-val">${p.ce}</span></div>
-      <div class="pd-row"><span class="pd-label">Ayırt Edici:</span><span class="pd-val">${p.key}</span></div>
-      <div class="pd-row"><span class="pd-label">Lokalizasyon:</span><span class="pd-val">${p.loc.join(', ')}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_t1}</span><span class="pd-val">${p.t1}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_t2}</span><span class="pd-val">${p.t2}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_dwi}</span><span class="pd-val">${p.dwi}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_adc}</span><span class="pd-val">${p.adc}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_contrast}</span><span class="pd-val">${p.ce}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_key}</span><span class="pd-val">${dbKey(p)}</span></div>
+      <div class="pd-row"><span class="pd-label">${T.label_pd_loc}</span><span class="pd-val">${p.loc.map(v=>locLabel(v)).join(', ')}</span></div>
     </div>
   </div>`;
   box.scrollIntoView({behavior:'smooth'});
@@ -703,10 +857,11 @@ function showReport(){
   const pName=document.getElementById('pName').value||'—';
   const pAge=document.getElementById('pAge').value||'—';
   const pSex=vals.pSex||'—';
-  const now=new Date().toLocaleString('tr-TR');
+  const dateLocale = RV_LOCALE === 'en' ? 'en-US' : 'tr-TR';
+  const now=new Date().toLocaleString(dateLocale);
 
-  let html=`<h2>Baş–Boyun MRI Karar Destek Raporu</h2>
-    <div class="r-sub">${now} | ${pName} | Yaş: ${pAge} | Cinsiyet: ${pSex}</div>`;
+  let html=`<h2>${T.headerTitle}</h2>
+    <div class="r-sub">${now} | ${pName} | ${T.headerSub_age}: ${pAge} | ${T.headerSub_sex}: ${pSex}</div>`;
 
   allRes.forEach((les,li)=>{
     const d=les.data;
@@ -718,37 +873,37 @@ function showReport(){
       html+=`<h3 style="color:#4a0e78;margin:${li>0?'24px':16}px 0 6px;padding:6px 10px;background:#f3eef8;border-radius:4px">🔵 ${les.label}</h3>`;
     }
 
-    html+=`<h3 style="color:#4a0e78;margin:12px 0 6px">Lezyon Özeti</h3>
+    html+=`<h3 style="color:#4a0e78;margin:12px 0 6px">${T.lesionSummary}</h3>
     <table><tbody>
-      <tr><td style="font-weight:600">Lokalizasyon</td><td>${d.loc||'—'}</td></tr>
-      <tr><td style="font-weight:600">Taraf</td><td>${d.side||'—'}</td></tr>
-      <tr><td style="font-weight:600">Boyutlar</td><td>${dimTxt}</td></tr>
-      <tr><td style="font-weight:600">Kontur</td><td>${d.contour||'—'}</td></tr>
-      <tr><td style="font-weight:600">İç Yapı</td><td>${d.inner||'—'}</td></tr>
-      <tr><td style="font-weight:600">T1 Sinyal</td><td>${d.t1||'—'}</td></tr>
-      <tr><td style="font-weight:600">T2 Sinyal</td><td>${d.t2||'—'}</td></tr>
-      <tr><td style="font-weight:600">DWI</td><td>${d.dwi||'—'}</td></tr>
-      <tr><td style="font-weight:600">ADC</td><td>${d.adc||'—'}</td></tr>
-      <tr><td style="font-weight:600">Kontrast</td><td>${d.ce||'—'}</td></tr>
-      <tr><td style="font-weight:600">Ek Özellikler</td><td>${(d.features||[]).join(', ')||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_loc}</td><td>${locLabel(d.loc)}</td></tr>
+      <tr><td style="font-weight:600">${T.label_side}</td><td>${sideLabel(d.side)||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_dims}</td><td>${dimTxt}</td></tr>
+      <tr><td style="font-weight:600">${T.label_contour}</td><td>${contourLabel(d.contour)||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_inner}</td><td>${innerLabel(d.inner)||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_t1}</td><td>${d.t1||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_t2}</td><td>${d.t2||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_dwi}</td><td>${d.dwi||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_adc}</td><td>${d.adc||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_contrast}</td><td>${d.ce||'—'}</td></tr>
+      <tr><td style="font-weight:600">${T.label_features}</td><td>${(d.features||[]).join(', ')||'—'}</td></tr>
     </tbody></table>`;
 
-    const rows=top5.map((r,i)=>`<tr><td style="font-weight:700">${i+1}</td><td>${r.path.name}</td><td>${r.pct}%</td><td>${r.path.key}</td></tr>`).join('');
-    html+=`<h3 style="color:#4a0e78;margin:12px 0 6px">Diferansiyel Tanı Sıralaması</h3>
-    <table><thead><tr><th>#</th><th>Patoloji</th><th>Skor</th><th>Ayırt Edici Bulgu</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const rows=top5.map((r,i)=>`<tr><td style="font-weight:700">${i+1}</td><td>${dbName(r.path)}</td><td>${r.pct}%</td><td>${dbKey(r.path)}</td></tr>`).join('');
+    html+=`<h3 style="color:#4a0e78;margin:12px 0 6px">${T.diffDiag}</h3>
+    <table><thead><tr><th>${T.col_no}</th><th>${T.col_pathology}</th><th>${T.col_score}</th><th>${T.col_key}</th></tr></thead><tbody>${rows}</tbody></table>`;
 
     let yorum='';
     if(leader){
-      const conf=leader.pct>=70?'yüksek':leader.pct>=45?'orta':'düşük';
-      yorum=`${les.label}: MRI sinyal özellikleri ve morfolojik bulguların analizi sonucunda en olası tanı <b>${leader.path.name}</b> olarak değerlendirilmiştir (eşleşme: %${leader.pct}, güvenilirlik: ${conf}). Boyut: ${dimTxt}, kontur: ${d.contour||'—'}, iç yapı: ${d.inner||'—'}. Ayırt edici bulgu: <b>${leader.path.key}</b>.`;
+      const conf=leader.pct>=70?T.confidence_high:leader.pct>=45?T.confidence_mid:T.confidence_low;
+      yorum=T.yorum_sentence(les.label, dbName(leader.path), leader.pct, conf, dimTxt, contourLabel(d.contour)||'—', innerLabel(d.inner)||'—', dbKey(leader.path));
       if(top5.length>1){
-        yorum+=` Diferansiyel tanıda ayrıca ${top5.slice(1).map(r=>r.path.name).join(', ')} düşünülmelidir.`;
+        yorum+=T.yorum_diff(top5.slice(1).map(r=>dbName(r.path)).join(', '));
       }
     }
-    if(yorum) html+=`<div class="yorum"><b>YORUM:</b> ${yorum}</div>`;
+    if(yorum) html+=`<div class="yorum"><b>${T.yorum_prefix}:</b> ${yorum}</div>`;
   });
 
-  html+=`<p style="font-size:.75em;color:#999;margin-top:20px;text-align:center">Bu rapor karar destek amaçlıdır. Kesin tanı için klinik, patolojik ve radyolojik korelasyon gereklidir.</p>`;
+  html+=`<p style="font-size:.75em;color:#999;margin-top:20px;text-align:center">${T.disclaimer}</p>`;
 
   document.getElementById('reportSheet').innerHTML=html;
   document.getElementById('reportOverlay').classList.add('show');
@@ -763,8 +918,8 @@ function copyReport(){
   const sel=window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
-  try{document.execCommand('copy');alert('Rapor panoya kopyalandı!');}
-  catch(e){alert('Kopyalama başarısız.');}
+  try{document.execCommand('copy');alert(T.copy_ok);}
+  catch(e){alert(T.copy_fail);}
   sel.removeAllRanges();
 }
 

@@ -21,93 +21,441 @@
 <script src="/bridge.js"></script>
 </head>
 <body>
-<div id="root" style="color:#fff;padding:40px;font-size:18px;">Yükleniyor...</div>
+<div id="root" data-i18n-tr="Yükleniyor..." data-i18n-en="Loading..."></div>
 <script>
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: "Prostat MR \u2014 PI-RADS v2.1",
+    appSubtitle: "Yap\u0131sal Raporlama Karar Destek Sistemi",
+    loading: "Y\u00FCkleniyor...",
+    steps: [
+      "Hasta Bilgileri",
+      "Prostat Boyutlar\u0131",
+      "Lezyon Tan\u0131mlama",
+      "T2 A\u011F\u0131rl\u0131kl\u0131",
+      "DWI / ADC",
+      "DCE (Dinamik)",
+      "Lezyon Boyut & Morfoloji",
+      "PI-RADS Skor",
+      "Seminal Vezik\u00FCl",
+      "N\u00F6rovask\u00FCler Demet",
+      "Kist De\u011Ferlendirme",
+      "Ek Bulgular",
+      "Rapor"
+    ],
+    zones: [
+      { value: "PZ", label: "Periferal Zon (PZ)" },
+      { value: "TZ", label: "Transizyon Zonu (TZ)" },
+      { value: "CZ", label: "Santral Zon (CZ)" },
+      { value: "AFS", label: "Anterior Fibrom\u00FCs\u00FCler Stroma (AFS)" }
+    ],
+    levels: [
+      { value: "apex", label: "Apeks" },
+      { value: "mid", label: "Orta" },
+      { value: "base", label: "Baz" }
+    ],
+    sides: [
+      { value: "right", label: "Sa\u011F" },
+      { value: "left", label: "Sol" },
+      { value: "midline", label: "Orta hat" },
+      { value: "bilateral", label: "Bilateral" }
+    ],
+    t2PzScores: [
+      { value: 1, label: "1 \u2013 Uniform hiperintens sinyal (normal)" },
+      { value: 2, label: "2 \u2013 Lineer / kama \u015Feklinde hipointensite veya diff\u00FCz hafif hipointensite" },
+      { value: 3, label: "3 \u2013 Heterojen sinyal veya belirgin olmayan, yuvarlak olmayan hipointensite" },
+      { value: 4, label: "4 \u2013 Fokal, belirgin, homojen hipointens, <1.5 cm" },
+      { value: 5, label: "5 \u2013 T2 skoru 4 ile ayn\u0131 \u00F6zellikler, \u22651.5 cm VEYA kesin ekstraprostatatik yay\u0131l\u0131m" }
+    ],
+    t2TzScores: [
+      { value: 1, label: "1 \u2013 Homojen orta sinyal intensitesi (normal)" },
+      { value: 2, label: "2 \u2013 Tamamen kaps\u00FCll\u00FC nod\u00FCl (BPH nod\u00FCl\u00FC)" },
+      { value: 3, label: "3 \u2013 Heterojen sinyal, bulan\u0131k s\u0131n\u0131rl\u0131 nod\u00FCller" },
+      { value: 4, label: "4 \u2013 Lentiform, homojen, orta derecede hipointens, <1.5 cm" },
+      { value: 5, label: "5 \u2013 T2 skoru 4 ile ayn\u0131 \u00F6zellikler, \u22651.5 cm VEYA kesin ekstraprostatatik yay\u0131l\u0131m" }
+    ],
+    dwiScores: [
+      { value: 1, label: "1 \u2013 DWI'da normal sinyal, ADC'de anormallik yok" },
+      { value: 2, label: "2 \u2013 ADC'de lineer/kama \u015Feklinde hipointens veya diff\u00FCz hafif hipointensite" },
+      { value: 3, label: "3 \u2013 DWI hafif/orta hiperintens, ADC'de fokal hipointensite" },
+      { value: 4, label: "4 \u2013 DWI belirgin hiperintens, ADC belirgin hipointens, <1.5 cm" },
+      { value: 5, label: "5 \u2013 DWI skoru 4 ile ayn\u0131 \u00F6zellikler, \u22651.5 cm VEYA kesin ekstraprostatatik yay\u0131l\u0131m" }
+    ],
+    dceOptions: [
+      { value: "negative", label: "Negatif \u2013 Erken veya e\u015F zamanl\u0131 kontrast tutulumu YOK" },
+      { value: "positive", label: "Pozitif \u2013 Fokal, erken kontrast tutulumu VAR (lezyon ile e\u015F zamanl\u0131 veya \u00F6ncesinde)" }
+    ],
+    contourOptions: [
+      { value: "smooth", label: "D\u00FCzg\u00FCn kontur, iyi s\u0131n\u0131rl\u0131" },
+      { value: "irregular", label: "\u0130reg\u00FCler kontur / s\u0131n\u0131rlar\u0131 belirsiz" },
+      { value: "spiculated", label: "Spik\u00FCle g\u00F6r\u00FCn\u00FCm" }
+    ],
+    capsuleOptions: [
+      { value: "intact", label: "Kaps\u00FCl intakt" },
+      { value: "bulging", label: "Kaps\u00FClde bombelenme" },
+      { value: "irregular", label: "Kaps\u00FClde ireg\u00FClarite / d\u00FCzensizlik" },
+      { value: "breach", label: "Kaps\u00FCl bre\u015Fi / ekstraprostatatik yay\u0131l\u0131m (EPE)" }
+    ],
+    fatOptions: [
+      { value: "no", label: "Periprostatatik ya\u011F dokusu invazyonu yok" },
+      { value: "suspicious", label: "\u015E\u00FCpheli ya\u011F dokusu invazyonu" },
+      { value: "definite", label: "Kesin ya\u011F dokusu invazyonu" }
+    ],
+    svOptions: [
+      { value: "normal", label: "Normal seminal vezik\u00FCl" },
+      { value: "suspicious", label: "\u015E\u00FCpheli seminal vezik\u00FCl invazyonu" },
+      { value: "definite", label: "Kesin seminal vezik\u00FCl invazyonu (SVI)" }
+    ],
+    nvbOptions: [
+      { value: "normal", label: "Normal n\u00F6rovask\u00FCler demet" },
+      { value: "suspicious", label: "\u015E\u00FCpheli n\u00F6rovask\u00FCler demet tutulumu" },
+      { value: "definite", label: "Kesin n\u00F6rovask\u00FCler demet tutulumu" }
+    ],
+    piradsTexts: {
+      1: "\u00C7ok d\u00FC\u015F\u00FCk \u2013 Klinik anlaml\u0131 kanser olas\u0131l\u0131\u011F\u0131 \u00E7ok d\u00FC\u015F\u00FCk",
+      2: "D\u00FC\u015F\u00FCk \u2013 Klinik anlaml\u0131 kanser olas\u0131l\u0131\u011F\u0131 d\u00FC\u015F\u00FCk",
+      3: "Orta (Belirsiz) \u2013 Klinik anlaml\u0131 kanser olas\u0131l\u0131\u011F\u0131 belirsiz",
+      4: "Y\u00FCksek \u2013 Klinik anlaml\u0131 kanser olma olas\u0131l\u0131\u011F\u0131 y\u00FCksek",
+      5: "\u00C7ok y\u00FCksek \u2013 Klinik anlaml\u0131 kanser olma olas\u0131l\u0131\u011F\u0131 \u00E7ok y\u00FCksek"
+    },
+    patientName: "Hasta Ad\u0131",
+    patientNamePlaceholder: "Ad Soyad",
+    age: "Ya\u015F",
+    examDate: "Tetkik Tarihi",
+    psaValue: "PSA De\u011Feri (ng/mL)",
+    psaPlaceholder: "\u00F6r. 5.2",
+    protocol: "Protokol",
+    protocolPlaceholder: "mpMRI / bpMRI",
+    clinicalInfo: "Klinik Bilgi",
+    clinicalInfoPlaceholder: "Klinik endikasyon, \u00F6nceki biyopsi bilgileri...",
+    volumeInfo: "\uD83D\uDCD0 Prostat hacmi = AP \u00D7 LR \u00D7 CC \u00D7 0.523 (elipsoid form\u00FCl) ile otomatik hesaplan\u0131r.",
+    calculatedVolume: "Hesaplanan Hacim: ",
+    psaDensity: "PSA Dansitesi: ",
+    lesionInfo: "\uD83C\uDFAF Tan\u0131mlanan her lezyon i\u00E7in ayr\u0131 PI-RADS skorlamas\u0131 yap\u0131l\u0131r. \u0130ndeks lezyon en y\u00FCksek PI-RADS skoruna sahip lezyondur.",
+    addLesion: "+ Yeni Lezyon Ekle",
+    createLesionFirst: "\u00D6nce lezyon olu\u015Fturun (Ad\u0131m 3).",
+    createLesionFirstShort: "\u00D6nce lezyon olu\u015Fturun.",
+    lesion: "Lezyon",
+    zone: "Zon",
+    level: "Seviye",
+    side: "Taraf",
+    t2WeightedScore: "T2 A\u011F\u0131rl\u0131kl\u0131 Skor",
+    t2WeightedImaging: "T2 A\u011F\u0131rl\u0131kl\u0131 G\u00F6r\u00FCnt\u00FCleme",
+    dwiScoring: "DWI / ADC Skorlama",
+    dynamicContrast: "Dinamik Kontrast (DCE)",
+    dceUpgradeNote: "\u26A0\uFE0F Periferal zon lezyonlar\u0131nda DWI skoru 3 ise, DCE pozitifli\u011Fi PI-RADS skorunu 3\u21924'e y\u00FCkseltir.",
+    sizeAndMorphology: "Boyut & Morfoloji",
+    lesionSize: "Lezyon Boyutu (mm)",
+    lesionSizePlaceholder: "En uzun \u00E7ap (mm)",
+    contour: "Kontur",
+    capsuleAssessment: "Kaps\u00FCl De\u011Ferlendirmesi",
+    periprostFat: "Periprostatatik Ya\u011F Dokusu",
+    piradsScore: "Hesaplanan PI-RADS Skoru",
+    upgradeApplied: "\u2191 Upgrade uyguland\u0131",
+    scoringDetail: "Skorlama Detay\u0131",
+    dominantProtocol: "Dominant Protokol",
+    dwiDominant: "DWI (PZ kural\u0131)",
+    t2Dominant: "T2W (TZ kural\u0131)",
+    t2wScore: "T2W Skoru",
+    dwiScore: "DWI Skoru",
+    dce: "DCE",
+    dcePositive: "Pozitif",
+    dceNegative: "Negatif",
+    finalPirads: "Final PI-RADS",
+    saveLesion: "\u2713 Lezyonu Kaydet & Lezyon Listesine D\u00F6n",
+    rightSeminalVesicle: "Sa\u011F Seminal Vezik\u00FCl",
+    leftSeminalVesicle: "Sol Seminal Vezik\u00FCl",
+    rightNVB: "Sa\u011F N\u00F6rovask\u00FCler Demet",
+    leftNVB: "Sol N\u00F6rovask\u00FCler Demet",
+    cyst: "Kist",
+    cystLocation: "Lokalizasyon",
+    cystLocationPlaceholder: "\u00F6r. Utrik\u00FCl, ejek\u00FClat\u00F6r kanal",
+    cystSize: "Boyut (mm)",
+    cystCharacteristics: "\u00D6zellikler",
+    cystCharPlaceholder: "Sinyal, kontrast tutulumu...",
+    addCyst: "+ Kist Ekle",
+    noCystFound: "Kist saptanmad\u0131ysa do\u011Frudan ilerleyebilirsiniz.",
+    delete: "Sil",
+    lymphNodes: "Lenf Nodlar\u0131",
+    lymphNodesPlaceholder: "Pelvik lenf nodlar\u0131 de\u011Ferlendirmesi...",
+    bone: "Kemik",
+    bonePlaceholder: "Kemik ili\u011Fi sinyal de\u011Fi\u015Fiklikleri...",
+    rectum: "Rektum",
+    rectumPlaceholder: "Normal / Bulgu",
+    bladder: "Mesane",
+    bladderPlaceholder: "Normal / Bulgu",
+    otherFindings: "Di\u011Fer Bulgular",
+    otherFindingsPlaceholder: "Ek notlar...",
+    printPdf: "Yazd\u0131r / PDF",
+    copy: "Kopyala",
+    copied: "\u2713 Kopyaland\u0131!",
+    reportTitle: "PROSTAT MRI - PI-RADS v2.1 YAPISAL RAPOR",
+    generatedOn: "Olu\u015Fturulma: ",
+    patientInfo: "Hasta Bilgileri",
+    patient: "Hasta",
+    yearLabel: "ya\u015F",
+    date: "Tarih",
+    psa: "PSA",
+    prostateSize: "Prostat Boyutlar\u0131",
+    volume: "Hacim",
+    psaDensityLabel: "PSA Dansitesi",
+    lesionAssessment: (n) => `Lezyon De\u011Ferlendirmesi (${n} lezyon)`,
+    indexLabel: "\u0130NDEKS",
+    svNvbSection: "Seminal Vezik\u00FCl & N\u00F6rovask\u00FCler Demet",
+    rightSV: "Sa\u011F Seminal Vezik\u00FCl",
+    leftSV: "Sol Seminal Vezik\u00FCl",
+    rightNVBLabel: "Sa\u011F N\u00F6rovask\u00FCler Demet",
+    leftNVBLabel: "Sol N\u00F6rovask\u00FCler Demet",
+    cystAssessment: "Kist De\u011Ferlendirmesi",
+    additionalFindings: "Ek Bulgular",
+    lymphNodesDefault: "Patolojik lenf nodu saptanmad\u0131",
+    boneDefault: "Kemik ili\u011Finde metastaz ile uyumlu sinyal de\u011Fi\u015Fiklikleri saptanmad\u0131",
+    impression: "YORUM",
+    noLesionFound: "Prostat MRI incelemesinde PI-RADS skorlanmas\u0131n\u0131 gerektiren fokal lezyon saptanmam\u0131\u015Ft\u0131r.",
+    lesionsFound: (n) => `Prostat multiparametrik MRI incelemesinde toplam ${n} adet lezyon tan\u0131mlanm\u0131\u015Ft\u0131r.`,
+    indexLesionLabel: (n) => `\u0130ndeks lezyon (Lezyon ${n}):`,
+    pirads4Warning: "\u26A0\uFE0F PI-RADS \u22654 lezyon mevcut. Klinik anlaml\u0131 prostat kanseri a\u00E7\u0131s\u0131ndan biyopsi (tercihen MRI-f\u00FCzyon biyopsi) \u00F6nerilir.",
+    pirads3Warning: "\u26A1 PI-RADS 3 (belirsiz) lezyon mevcut. PSA dansitesi, klinik risk fakt\u00F6rleri ve hasta tercihi g\u00F6z \u00F6n\u00FCne al\u0131narak multidisipliner de\u011Ferlendirme \u00F6nerilir.",
+    svInvolvement: "\u2022 Seminal vezik\u00FCl tutulumu bulgular\u0131 mevcut.",
+    nvbInvolvement: "\u2022 N\u00F6rovask\u00FCler demet tutulumu bulgular\u0131 mevcut.",
+    levelSide: "Seviye / Taraf",
+    size: "Boyut",
+    contourLabel: "Kontur",
+    capsule: "Kaps\u00FCl",
+    fatInvasion: "Ya\u011F \u0130nvazyonu",
+    popupBlocked: "Pop-up engellendi. L\u00FCtfen taray\u0131c\u0131n\u0131zda pop-up'lara izin verin.",
+    printReportTitle: "PI-RADS v2.1 Rapor",
+    back: "\u2190 Geri",
+    next: "\u0130leri \u2192",
+    generateReport: "Rapor Olu\u015Ftur \u2192",
+    footer: "PI-RADS\u00AE v2.1 \u2014 American College of Radiology | Klinik karar destek arac\u0131d\u0131r, tan\u0131 koymaz.",
+    normalLabel: "Normal"
+  },
+  en: {
+    appTitle: "Prostate MRI \u2014 PI-RADS v2.1",
+    appSubtitle: "Structured Reporting Decision Support System",
+    loading: "Loading...",
+    steps: [
+      "Patient Information",
+      "Prostate Dimensions",
+      "Lesion Identification",
+      "T2-Weighted",
+      "DWI / ADC",
+      "DCE (Dynamic)",
+      "Lesion Size & Morphology",
+      "PI-RADS Score",
+      "Seminal Vesicle",
+      "Neurovascular Bundle",
+      "Cyst Assessment",
+      "Additional Findings",
+      "Report"
+    ],
+    zones: [
+      { value: "PZ", label: "Peripheral Zone (PZ)" },
+      { value: "TZ", label: "Transition Zone (TZ)" },
+      { value: "CZ", label: "Central Zone (CZ)" },
+      { value: "AFS", label: "Anterior Fibromuscular Stroma (AFMS)" }
+    ],
+    levels: [
+      { value: "apex", label: "Apex" },
+      { value: "mid", label: "Mid" },
+      { value: "base", label: "Base" }
+    ],
+    sides: [
+      { value: "right", label: "Right" },
+      { value: "left", label: "Left" },
+      { value: "midline", label: "Midline" },
+      { value: "bilateral", label: "Bilateral" }
+    ],
+    t2PzScores: [
+      { value: 1, label: "1 \u2013 Uniform hyperintense signal (normal)" },
+      { value: 2, label: "2 \u2013 Linear / wedge-shaped hypointensity or diffuse mild hypointensity" },
+      { value: 3, label: "3 \u2013 Heterogeneous signal or non-circumscribed, non-rounded hypointensity" },
+      { value: 4, label: "4 \u2013 Focal, marked, homogeneous hypointense, <1.5 cm" },
+      { value: 5, label: "5 \u2013 Same features as score 4, \u22651.5 cm OR definite extraprostatic extension" }
+    ],
+    t2TzScores: [
+      { value: 1, label: "1 \u2013 Homogeneous intermediate signal intensity (normal)" },
+      { value: 2, label: "2 \u2013 Completely encapsulated nodule (BPH nodule)" },
+      { value: 3, label: "3 \u2013 Heterogeneous signal with obscured margin nodules" },
+      { value: 4, label: "4 \u2013 Lenticular, homogeneous, moderately hypointense, <1.5 cm" },
+      { value: 5, label: "5 \u2013 Same features as score 4, \u22651.5 cm OR definite extraprostatic extension" }
+    ],
+    dwiScores: [
+      { value: 1, label: "1 \u2013 Normal signal on DWI, no abnormality on ADC" },
+      { value: 2, label: "2 \u2013 Linear / wedge-shaped hypointense on ADC or diffuse mild hypointensity" },
+      { value: 3, label: "3 \u2013 Mildly / moderately hyperintense on DWI, focal hypointense on ADC" },
+      { value: 4, label: "4 \u2013 Markedly hyperintense on DWI, markedly hypointense on ADC, <1.5 cm" },
+      { value: 5, label: "5 \u2013 Same features as score 4, \u22651.5 cm OR definite extraprostatic extension" }
+    ],
+    dceOptions: [
+      { value: "negative", label: "Negative \u2013 No early or simultaneous enhancement" },
+      { value: "positive", label: "Positive \u2013 Focal early enhancement present (simultaneous with or before lesion)" }
+    ],
+    contourOptions: [
+      { value: "smooth", label: "Smooth contour, well-defined" },
+      { value: "irregular", label: "Irregular contour / ill-defined margins" },
+      { value: "spiculated", label: "Spiculated appearance" }
+    ],
+    capsuleOptions: [
+      { value: "intact", label: "Capsule intact" },
+      { value: "bulging", label: "Capsular bulging" },
+      { value: "irregular", label: "Capsular irregularity" },
+      { value: "breach", label: "Capsular breach / Extraprostatic extension (EPE)" }
+    ],
+    fatOptions: [
+      { value: "no", label: "No periprostatic fat invasion" },
+      { value: "suspicious", label: "Suspicious fat invasion" },
+      { value: "definite", label: "Definite fat invasion" }
+    ],
+    svOptions: [
+      { value: "normal", label: "Normal seminal vesicle" },
+      { value: "suspicious", label: "Suspicious seminal vesicle invasion" },
+      { value: "definite", label: "Definite seminal vesicle invasion (SVI)" }
+    ],
+    nvbOptions: [
+      { value: "normal", label: "Normal neurovascular bundle (NVB)" },
+      { value: "suspicious", label: "Suspicious neurovascular bundle involvement" },
+      { value: "definite", label: "Definite neurovascular bundle involvement" }
+    ],
+    piradsTexts: {
+      1: "Very low \u2013 Very low likelihood of clinically significant cancer",
+      2: "Low \u2013 Low likelihood of clinically significant cancer",
+      3: "Intermediate (Equivocal) \u2013 Equivocal likelihood of clinically significant cancer",
+      4: "High \u2013 High likelihood of clinically significant cancer",
+      5: "Very high \u2013 Very high likelihood of clinically significant cancer"
+    },
+    patientName: "Patient Name",
+    patientNamePlaceholder: "First Last Name",
+    age: "Age",
+    examDate: "Exam Date",
+    psaValue: "PSA Value (ng/mL)",
+    psaPlaceholder: "e.g. 5.2",
+    protocol: "Protocol",
+    protocolPlaceholder: "mpMRI / bpMRI",
+    clinicalInfo: "Clinical Information",
+    clinicalInfoPlaceholder: "Clinical indication, prior biopsy information...",
+    volumeInfo: "\uD83D\uDCD0 Prostate volume = AP \u00D7 LR \u00D7 CC \u00D7 0.523 (ellipsoid formula), auto-calculated.",
+    calculatedVolume: "Calculated Volume: ",
+    psaDensity: "PSA Density: ",
+    lesionInfo: "\uD83C\uDFAF Each identified lesion receives a separate PI-RADS score. The index lesion has the highest PI-RADS score.",
+    addLesion: "+ Add New Lesion",
+    createLesionFirst: "Create a lesion first (Step 3).",
+    createLesionFirstShort: "Create a lesion first.",
+    lesion: "Lesion",
+    zone: "Zone",
+    level: "Level",
+    side: "Side",
+    t2WeightedScore: "T2-Weighted Score",
+    t2WeightedImaging: "T2-Weighted Imaging",
+    dwiScoring: "DWI / ADC Scoring",
+    dynamicContrast: "Dynamic Contrast (DCE)",
+    dceUpgradeNote: "\u26A0\uFE0F In peripheral zone lesions with DWI score 3, DCE positivity upgrades PI-RADS score from 3\u21924.",
+    sizeAndMorphology: "Size & Morphology",
+    lesionSize: "Lesion Size (mm)",
+    lesionSizePlaceholder: "Longest diameter (mm)",
+    contour: "Contour",
+    capsuleAssessment: "Capsule Assessment",
+    periprostFat: "Periprostatic Fat",
+    piradsScore: "Calculated PI-RADS Score",
+    upgradeApplied: "\u2191 Upgrade applied",
+    scoringDetail: "Scoring Detail",
+    dominantProtocol: "Dominant Protocol",
+    dwiDominant: "DWI (PZ rule)",
+    t2Dominant: "T2W (TZ rule)",
+    t2wScore: "T2W Score",
+    dwiScore: "DWI Score",
+    dce: "DCE",
+    dcePositive: "Positive",
+    dceNegative: "Negative",
+    finalPirads: "Final PI-RADS",
+    saveLesion: "\u2713 Save Lesion & Return to Lesion List",
+    rightSeminalVesicle: "Right Seminal Vesicle",
+    leftSeminalVesicle: "Left Seminal Vesicle",
+    rightNVB: "Right Neurovascular Bundle",
+    leftNVB: "Left Neurovascular Bundle",
+    cyst: "Cyst",
+    cystLocation: "Location",
+    cystLocationPlaceholder: "e.g. Utricle, ejaculatory duct",
+    cystSize: "Size (mm)",
+    cystCharacteristics: "Characteristics",
+    cystCharPlaceholder: "Signal, enhancement...",
+    addCyst: "+ Add Cyst",
+    noCystFound: "If no cyst was detected, you may proceed directly.",
+    delete: "Delete",
+    lymphNodes: "Lymph Nodes",
+    lymphNodesPlaceholder: "Pelvic lymph node assessment...",
+    bone: "Bone",
+    bonePlaceholder: "Bone marrow signal changes...",
+    rectum: "Rectum",
+    rectumPlaceholder: "Normal / Finding",
+    bladder: "Bladder",
+    bladderPlaceholder: "Normal / Finding",
+    otherFindings: "Other Findings",
+    otherFindingsPlaceholder: "Additional notes...",
+    printPdf: "Print / PDF",
+    copy: "Copy",
+    copied: "\u2713 Copied!",
+    reportTitle: "PROSTATE MRI - PI-RADS v2.1 STRUCTURED REPORT",
+    generatedOn: "Generated: ",
+    patientInfo: "Patient Information",
+    patient: "Patient",
+    yearLabel: "y/o",
+    date: "Date",
+    psa: "PSA",
+    prostateSize: "Prostate Dimensions",
+    volume: "Volume",
+    psaDensityLabel: "PSA Density",
+    lesionAssessment: (n) => `Lesion Assessment (${n} lesion${n !== 1 ? 's' : ''})`,
+    indexLabel: "INDEX",
+    svNvbSection: "Seminal Vesicle & Neurovascular Bundle",
+    rightSV: "Right Seminal Vesicle",
+    leftSV: "Left Seminal Vesicle",
+    rightNVBLabel: "Right Neurovascular Bundle",
+    leftNVBLabel: "Left Neurovascular Bundle",
+    cystAssessment: "Cyst Assessment",
+    additionalFindings: "Additional Findings",
+    lymphNodesDefault: "No pathological lymph node identified",
+    boneDefault: "No signal change compatible with bone marrow metastasis",
+    impression: "IMPRESSION",
+    noLesionFound: "No focal lesion requiring PI-RADS scoring was identified on prostate MRI.",
+    lesionsFound: (n) => `A total of ${n} lesion${n !== 1 ? 's were' : ' was'} identified on prostate multiparametric MRI.`,
+    indexLesionLabel: (n) => `Index lesion (Lesion ${n}):`,
+    pirads4Warning: "\u26A0\uFE0F PI-RADS \u22654 lesion present. Biopsy (preferably MRI-fusion biopsy) is recommended for clinically significant prostate cancer.",
+    pirads3Warning: "\u26A1 PI-RADS 3 (equivocal) lesion present. Multidisciplinary evaluation considering PSA density, clinical risk factors, and patient preference is recommended.",
+    svInvolvement: "\u2022 Seminal vesicle involvement findings present.",
+    nvbInvolvement: "\u2022 Neurovascular bundle involvement findings present.",
+    levelSide: "Level / Side",
+    size: "Size",
+    contourLabel: "Contour",
+    capsule: "Capsule",
+    fatInvasion: "Fat Invasion",
+    popupBlocked: "Pop-up blocked. Please allow pop-ups in your browser.",
+    printReportTitle: "PI-RADS v2.1 Report",
+    back: "\u2190 Back",
+    next: "Next \u2192",
+    generateReport: "Generate Report \u2192",
+    footer: "PI-RADS\u00AE v2.1 \u2014 American College of Radiology | Clinical decision support tool, does not establish diagnosis.",
+    normalLabel: "Normal"
+  }
+})[RV_LOCALE];
+
 const { useState, useCallback, useMemo, useRef } = React;
-// ─── PI-RADS v2.1 Prostat MR Karar Destek Sistemi ───
-const STEPS = [
-    "Hasta Bilgileri",
-    "Prostat Boyutları",
-    "Lezyon Tanımlama",
-    "T2 Ağırlıklı",
-    "DWI / ADC",
-    "DCE (Dinamik)",
-    "Lezyon Boyut & Morfoloji",
-    "PI-RADS Skor",
-    "Seminal Vezikül",
-    "Nörovasküler Demet",
-    "Kist Değerlendirme",
-    "Ek Bulgular",
-    "Rapor"
-];
-const ZONES = [
-    { value: "PZ", label: "Periferik Zon (PZ)" },
-    { value: "TZ", label: "Transizyonel Zon (TZ)" },
-    { value: "CZ", label: "Santral Zon (CZ)" },
-    { value: "AFS", label: "Anterior Fibromusküler Stroma (AFS)" }
-];
-const LEVELS = [
-    { value: "apex", label: "Apeks" },
-    { value: "mid", label: "Orta" },
-    { value: "base", label: "Baz" }
-];
-const SIDES = [
-    { value: "right", label: "Sağ" },
-    { value: "left", label: "Sol" },
-    { value: "midline", label: "Orta hat" },
-    { value: "bilateral", label: "Bilateral" }
-];
-const T2_PZ_SCORES = [
-    { value: 1, label: "1 – Uniform hiperintens sinyal (normal)" },
-    { value: 2, label: "2 – Lineer / kama şeklinde hipointensite veya diffüz hafif hipointensite" },
-    { value: 3, label: "3 – Heterojen sinyal veya belirgin olmayan, yuvarlak olmayan hipointensite" },
-    { value: 4, label: "4 – Fokal, belirgin, homojen hipointens, <1.5 cm" },
-    { value: 5, label: "5 – T2 skoru 4 ile aynı özellikler, ≥1.5 cm VEYA kesin ekstraprostatatik yayılım" }
-];
-const T2_TZ_SCORES = [
-    { value: 1, label: "1 – Homojen orta sinyal intensitesi (normal)" },
-    { value: 2, label: "2 – Tamamen kapsüllü nodül (BPH nodülü)" },
-    { value: 3, label: "3 – Heterojen sinyal, bulanık sınırlı nodüller" },
-    { value: 4, label: "4 – Lentiform, homojen, orta derecede hipointens, <1.5 cm" },
-    { value: 5, label: "5 – T2 skoru 4 ile aynı özellikler, ≥1.5 cm VEYA kesin ekstraprostatatik yayılım" }
-];
-const DWI_SCORES = [
-    { value: 1, label: "1 – DWI'da normal sinyal, ADC'de anormallik yok" },
-    { value: 2, label: "2 – ADC'de lineer/kama şeklinde hipointens veya diffüz hafif hipointensite" },
-    { value: 3, label: "3 – DWI hafif/orta hiperintens, ADC'de fokal hipointensite" },
-    { value: 4, label: "4 – DWI belirgin hiperintens, ADC belirgin hipointens, <1.5 cm" },
-    { value: 5, label: "5 – DWI skoru 4 ile aynı özellikler, ≥1.5 cm VEYA kesin ekstraprostatatik yayılım" }
-];
-const DCE_OPTIONS = [
-    { value: "negative", label: "Negatif – Erken veya eş zamanlı kontrast tutulumu YOK" },
-    { value: "positive", label: "Pozitif – Fokal, erken kontrast tutulumu VAR (lezyon ile eş zamanlı veya öncesinde)" }
-];
-const CONTOUR_OPTIONS = [
-    { value: "smooth", label: "Düzgün kontur, iyi sınırlı" },
-    { value: "irregular", label: "İrregüler kontur / sınırları belirsiz" },
-    { value: "spiculated", label: "Spiküle görünüm" }
-];
-const CAPSULE_OPTIONS = [
-    { value: "intact", label: "Kapsül intakt" },
-    { value: "bulging", label: "Kapsülde bombelenme" },
-    { value: "irregular", label: "Kapsülde irregülarite / düzensizlik" },
-    { value: "breach", label: "Kapsül breşi / ekstraprostatatik yayılım (EPE)" }
-];
-const FAT_OPTIONS = [
-    { value: "no", label: "Periprostatatik yağ dokusu invazyonu yok" },
-    { value: "suspicious", label: "Şüpheli yağ dokusu invazyonu" },
-    { value: "definite", label: "Kesin yağ dokusu invazyonu" }
-];
-const SV_OPTIONS = [
-    { value: "normal", label: "Normal seminal vezikül" },
-    { value: "suspicious", label: "Şüpheli seminal vezikül invazyonu" },
-    { value: "definite", label: "Kesin seminal vezikül invazyonu (SVI)" }
-];
-const NVB_OPTIONS = [
-    { value: "normal", label: "Normal nörovasküler demet" },
-    { value: "suspicious", label: "Şüpheli nörovasküler demet tutulumu" },
-    { value: "definite", label: "Kesin nörovasküler demet tutulumu" }
-];
+// ─── PI-RADS v2.1 Prostate MRI Decision Support System ───
+const STEPS = T.steps;
+const ZONES = T.zones;
+const LEVELS = T.levels;
+const SIDES = T.sides;
+const T2_PZ_SCORES = T.t2PzScores;
+const T2_TZ_SCORES = T.t2TzScores;
+const DWI_SCORES = T.dwiScores;
+const DCE_OPTIONS = T.dceOptions;
+const CONTOUR_OPTIONS = T.contourOptions;
+const CAPSULE_OPTIONS = T.capsuleOptions;
+const FAT_OPTIONS = T.fatOptions;
+const SV_OPTIONS = T.svOptions;
+const NVB_OPTIONS = T.nvbOptions;
 // ─── STYLE DEFINITIONS ───
 const styles = {
     app: {
@@ -461,14 +809,7 @@ function calcPIRADS(lesion) {
     return Math.min(pirads, 5);
 }
 function piradsText(score) {
-    const texts = {
-        1: "Çok düşük – Klinik anlamlı kanser olasılığı çok düşük",
-        2: "Düşük – Klinik anlamlı kanser olasılığı düşük",
-        3: "Orta (Belirsiz) – Klinik anlamlı kanser olasılığı belirsiz",
-        4: "Yüksek – Klinik anlamlı kanser olma olasılığı yüksek",
-        5: "Çok yüksek – Klinik anlamlı kanser olma olasılığı çok yüksek"
-    };
-    return texts[score] || "";
+    return T.piradsTexts[score] || "";
 }
 function zoneLabel(v) { return ZONES.find(z => z.value === v)?.label || v; }
 function levelLabel(v) { return LEVELS.find(l => l.value === v)?.label || v; }
@@ -557,7 +898,7 @@ function ProstatePIRADS() {
             finalizeLesion();
         }
         if (step === 2 && currentLesionIdx === -1) {
-            setStep(8); // skip lesion loop, go to Seminal Vezikül
+            setStep(8); // skip lesion loop, go to Seminal Vesicle
             return;
         }
         setStep(s => Math.min(s + 1, STEPS.length - 1));
@@ -574,8 +915,8 @@ function ProstatePIRADS() {
         if (!el) return;
         const html = el.innerHTML;
         const w = window.open("", "_blank");
-        if (!w) { alert("Pop-up engellendi. Lütfen tarayıcınızda pop-up'lara izin verin."); return; }
-        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PI-RADS v2.1 Rapor</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;padding:30px 40px;color:#000;font-size:12pt;background:#fff}table{width:100%;border-collapse:collapse;margin-bottom:12px}td{border:1px solid #ccc;padding:6px 10px;font-size:11pt}tr:nth-child(even) td{background:#f5f5f5}b{font-weight:700}div,span{color:#000!important;background:transparent!important}</style></head><body>' + html + '<script>window.onload=function(){window.print()}<\/script></body></html>');
+        if (!w) { alert(T.popupBlocked); return; }
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + T.printReportTitle + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;padding:30px 40px;color:#000;font-size:12pt;background:#fff}table{width:100%;border-collapse:collapse;margin-bottom:12px}td{border:1px solid #ccc;padding:6px 10px;font-size:11pt}tr:nth-child(even) td{background:#f5f5f5}b{font-weight:700}div,span{color:#000!important;background:transparent!important}</style></head><body>' + html + '<script>window.onload=function(){window.print()}<\/script></body></html>');
         w.document.close();
     };
     const handleCopy = () => {
@@ -602,26 +943,26 @@ function ProstatePIRADS() {
     const renderStep0 = () => (React.createElement("div", null,
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(2) },
-                React.createElement("label", { style: styles.label }, "Hasta Ad\u0131"),
-                React.createElement("input", { style: styles.input, value: patient.name, onChange: e => updatePatient("name", e.target.value), placeholder: "Ad Soyad" })),
+                React.createElement("label", { style: styles.label }, T.patientName),
+                React.createElement("input", { style: styles.input, value: patient.name, onChange: e => updatePatient("name", e.target.value), placeholder: T.patientNamePlaceholder })),
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Ya\u015F"),
-                React.createElement("input", { style: styles.input, type: "number", value: patient.age, onChange: e => updatePatient("age", e.target.value), placeholder: "Ya\u015F" }))),
+                React.createElement("label", { style: styles.label }, T.age),
+                React.createElement("input", { style: styles.input, type: "number", value: patient.age, onChange: e => updatePatient("age", e.target.value), placeholder: T.age }))),
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Tetkik Tarihi"),
+                React.createElement("label", { style: styles.label }, T.examDate),
                 React.createElement("input", { style: styles.input, type: "date", value: patient.date, onChange: e => updatePatient("date", e.target.value) })),
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "PSA De\u011Feri (ng/mL)"),
-                React.createElement("input", { style: styles.input, value: patient.psa, onChange: e => updatePatient("psa", e.target.value), placeholder: "\u00F6r. 5.2" }))),
+                React.createElement("label", { style: styles.label }, T.psaValue),
+                React.createElement("input", { style: styles.input, value: patient.psa, onChange: e => updatePatient("psa", e.target.value), placeholder: T.psaPlaceholder }))),
         React.createElement("div", { style: { marginBottom: 14 } },
-            React.createElement("label", { style: styles.label }, "Protokol"),
-            React.createElement("input", { style: styles.input, value: patient.protocol, onChange: e => updatePatient("protocol", e.target.value), placeholder: "mpMRI / bpMRI" })),
+            React.createElement("label", { style: styles.label }, T.protocol),
+            React.createElement("input", { style: styles.input, value: patient.protocol, onChange: e => updatePatient("protocol", e.target.value), placeholder: T.protocolPlaceholder })),
         React.createElement("div", null,
-            React.createElement("label", { style: styles.label }, "Klinik Bilgi"),
-            React.createElement("textarea", { style: { ...styles.input, minHeight: 60, resize: "vertical" }, value: patient.clinicalInfo, onChange: e => updatePatient("clinicalInfo", e.target.value), placeholder: "Klinik endikasyon, \u00F6nceki biyopsi bilgileri..." }))));
+            React.createElement("label", { style: styles.label }, T.clinicalInfo),
+            React.createElement("textarea", { style: { ...styles.input, minHeight: 60, resize: "vertical" }, value: patient.clinicalInfo, onChange: e => updatePatient("clinicalInfo", e.target.value), placeholder: T.clinicalInfoPlaceholder }))));
     const renderStep1 = () => (React.createElement("div", null,
-        React.createElement("div", { style: styles.infoBox }, "\uD83D\uDCD0 Prostat vol\u00FCm\u00FC = AP \u00D7 LR \u00D7 CC \u00D7 0.523 (elipsoid form\u00FCl) ile otomatik hesaplan\u0131r."),
+        React.createElement("div", { style: styles.infoBox }, T.volumeInfo),
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(1) },
                 React.createElement("label", { style: styles.label }, "AP (mm)"),
@@ -633,16 +974,16 @@ function ProstatePIRADS() {
                 React.createElement("label", { style: styles.label }, "CC (mm)"),
                 React.createElement("input", { style: styles.input, type: "number", value: prostate.cc, onChange: e => updateProstate("cc", e.target.value), placeholder: "mm" }))),
         prostate.volume && (React.createElement("div", { style: { textAlign: "center", marginTop: 10, padding: 14, background: "rgba(59,130,246,0.08)", borderRadius: 12, border: "1px solid rgba(59,130,246,0.15)" } },
-            React.createElement("span", { style: { color: "#94a3b8", fontSize: 13 } }, "Hesaplanan Vol\u00FCm: "),
+            React.createElement("span", { style: { color: "#94a3b8", fontSize: 13 } }, T.calculatedVolume),
             React.createElement("span", { style: { color: "#60a5fa", fontSize: 20, fontWeight: 700 } },
                 prostate.volume,
                 " mL"),
             parseFloat(prostate.volume) > 30 && (React.createElement("div", { style: { color: "#fbbf24", fontSize: 12, marginTop: 4 } },
-                "PSA Dansitesi: ",
-                patient.psa ? (parseFloat(patient.psa) / parseFloat(prostate.volume) * 1000).toFixed(3) : "—",
+                T.psaDensity,
+                patient.psa ? (parseFloat(patient.psa) / parseFloat(prostate.volume) * 1000).toFixed(3) : "\u2014",
                 " ng/mL/mL"))))));
     const renderStep2 = () => (React.createElement("div", null,
-        React.createElement("div", { style: styles.infoBox }, "\uD83C\uDFAF Tan\u0131mlanan her lezyon i\u00E7in ayr\u0131 PI-RADS skorlamas\u0131 yap\u0131l\u0131r. \u0130ndeks lezyon en y\u00FCksek PI-RADS skoruna sahip lezyondur."),
+        React.createElement("div", { style: styles.infoBox }, T.lesionInfo),
         lesions.length > 0 && (React.createElement("div", { style: { marginBottom: 16 } }, lesions.map((l, i) => (React.createElement("div", { key: l.id, style: { ...styles.lesionTag, border: currentLesionIdx === i ? "1.5px solid #a78bfa" : undefined }, onClick: () => { setCurrentLesionIdx(i); setStep(3); } },
             React.createElement("span", { style: { fontWeight: 700 } },
                 "L",
@@ -652,157 +993,157 @@ function ProstatePIRADS() {
                 zoneLabel(l.zone)),
             l.pirads && React.createElement("span", { style: { ...styles.piradsBadge(l.pirads), width: 22, height: 22, fontSize: 11, borderRadius: 6 } }, l.pirads),
             React.createElement("span", { style: { color: "#f87171", marginLeft: 4, cursor: "pointer" }, onClick: e => { e.stopPropagation(); removeLesion(i); } }, "\u2715")))))),
-        React.createElement("button", { style: styles.btnSuccess, onClick: addLesion }, "+ Yeni Lezyon Ekle")));
+        React.createElement("button", { style: styles.btnSuccess, onClick: addLesion }, T.addLesion)));
     const renderStep3 = () => {
         if (!currentLesion)
-            return React.createElement("div", { style: { color: "#94a3b8" } }, "\u00D6nce lezyon olu\u015Fturun (Ad\u0131m 3).");
+            return React.createElement("div", { style: { color: "#94a3b8" } }, T.createLesionFirst);
         return (React.createElement("div", null,
             React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: "#a78bfa", marginBottom: 14 } },
-                "Lezyon #",
+                T.lesion + " #",
                 currentLesionIdx + 1,
-                " \u2014 T2 A\u011F\u0131rl\u0131kl\u0131 G\u00F6r\u00FCnt\u00FCleme"),
+                " \u2014 " + T.t2WeightedImaging),
             React.createElement("div", { style: { marginBottom: 14 } },
-                React.createElement("label", { style: styles.label }, "Zon"),
+                React.createElement("label", { style: styles.label }, T.zone),
                 React.createElement(Radio, { options: ZONES, value: currentLesion.zone, onChange: v => updateCurrentLesion("zone", v) })),
             React.createElement("div", { style: styles.row },
                 React.createElement("div", { style: styles.col(1) },
-                    React.createElement("label", { style: styles.label }, "Seviye"),
+                    React.createElement("label", { style: styles.label }, T.level),
                     React.createElement(Radio, { options: LEVELS, value: currentLesion.level, onChange: v => updateCurrentLesion("level", v) })),
                 React.createElement("div", { style: styles.col(1) },
-                    React.createElement("label", { style: styles.label }, "Taraf"),
+                    React.createElement("label", { style: styles.label }, T.side),
                     React.createElement(Radio, { options: SIDES, value: currentLesion.side, onChange: v => updateCurrentLesion("side", v) }))),
             React.createElement("hr", { style: styles.divider }),
-            React.createElement("label", { style: styles.label }, "T2 A\u011F\u0131rl\u0131kl\u0131 Skor"),
+            React.createElement("label", { style: styles.label }, T.t2WeightedScore),
             React.createElement(Radio, { options: (currentLesion.zone === "TZ" || currentLesion.zone === "CZ") ? T2_TZ_SCORES : T2_PZ_SCORES, value: currentLesion.t2Score, onChange: v => updateCurrentLesion("t2Score", v) })));
     };
     const renderStep4 = () => {
         if (!currentLesion)
-            return React.createElement("div", { style: { color: "#94a3b8" } }, "\u00D6nce lezyon olu\u015Fturun.");
+            return React.createElement("div", { style: { color: "#94a3b8" } }, T.createLesionFirstShort);
         return (React.createElement("div", null,
             React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: "#a78bfa", marginBottom: 14 } },
-                "Lezyon #",
+                T.lesion + " #",
                 currentLesionIdx + 1,
-                " \u2014 DWI / ADC Skorlama"),
+                " \u2014 " + T.dwiScoring),
             React.createElement(Radio, { options: DWI_SCORES, value: currentLesion.dwiScore, onChange: v => updateCurrentLesion("dwiScore", v) })));
     };
     const renderStep5 = () => {
         if (!currentLesion)
-            return React.createElement("div", { style: { color: "#94a3b8" } }, "\u00D6nce lezyon olu\u015Fturun.");
+            return React.createElement("div", { style: { color: "#94a3b8" } }, T.createLesionFirstShort);
         const showDCENote = currentLesion.zone === "PZ" && currentLesion.dwiScore === 3;
         return (React.createElement("div", null,
             React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: "#a78bfa", marginBottom: 14 } },
-                "Lezyon #",
+                T.lesion + " #",
                 currentLesionIdx + 1,
-                " \u2014 Dinamik Kontrast (DCE)"),
-            showDCENote && (React.createElement("div", { style: styles.infoBox }, "\u26A0\uFE0F PZ lezyonlar\u0131nda DWI skoru 3 ise, DCE pozitifli\u011Fi PI-RADS skorunu 3\u21924'e y\u00FCkseltir.")),
+                " \u2014 " + T.dynamicContrast),
+            showDCENote && (React.createElement("div", { style: styles.infoBox }, T.dceUpgradeNote)),
             React.createElement(Radio, { options: DCE_OPTIONS, value: currentLesion.dce, onChange: v => updateCurrentLesion("dce", v) })));
     };
     const renderStep6 = () => {
         if (!currentLesion)
-            return React.createElement("div", { style: { color: "#94a3b8" } }, "\u00D6nce lezyon olu\u015Fturun.");
+            return React.createElement("div", { style: { color: "#94a3b8" } }, T.createLesionFirstShort);
         return (React.createElement("div", null,
             React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: "#a78bfa", marginBottom: 14 } },
-                "Lezyon #",
+                T.lesion + " #",
                 currentLesionIdx + 1,
-                " \u2014 Boyut & Morfoloji"),
+                " \u2014 " + T.sizeAndMorphology),
             React.createElement("div", { style: { marginBottom: 14 } },
-                React.createElement("label", { style: styles.label }, "Lezyon Boyutu (mm)"),
-                React.createElement("input", { style: styles.input, value: currentLesion.size, onChange: e => updateCurrentLesion("size", e.target.value), placeholder: "En uzun \u00E7ap (mm)" })),
+                React.createElement("label", { style: styles.label }, T.lesionSize),
+                React.createElement("input", { style: styles.input, value: currentLesion.size, onChange: e => updateCurrentLesion("size", e.target.value), placeholder: T.lesionSizePlaceholder })),
             React.createElement("div", { style: { marginBottom: 14 } },
-                React.createElement("label", { style: styles.label }, "Kontur"),
+                React.createElement("label", { style: styles.label }, T.contour),
                 React.createElement(Radio, { options: CONTOUR_OPTIONS, value: currentLesion.contour, onChange: v => updateCurrentLesion("contour", v) })),
             React.createElement("div", { style: { marginBottom: 14 } },
-                React.createElement("label", { style: styles.label }, "Kaps\u00FCl De\u011Ferlendirmesi"),
+                React.createElement("label", { style: styles.label }, T.capsuleAssessment),
                 React.createElement(Radio, { options: CAPSULE_OPTIONS, value: currentLesion.capsule, onChange: v => updateCurrentLesion("capsule", v) })),
             React.createElement("div", null,
-                React.createElement("label", { style: styles.label }, "Periprostatatik Ya\u011F Dokusu"),
+                React.createElement("label", { style: styles.label }, T.periprostFat),
                 React.createElement(Radio, { options: FAT_OPTIONS, value: currentLesion.fatInvasion, onChange: v => updateCurrentLesion("fatInvasion", v) }))));
     };
     const renderStep7 = () => {
         if (!currentLesion)
-            return React.createElement("div", { style: { color: "#94a3b8" } }, "\u00D6nce lezyon olu\u015Fturun.");
+            return React.createElement("div", { style: { color: "#94a3b8" } }, T.createLesionFirstShort);
         const score = calcPIRADS(currentLesion);
         const isUpgrade = (currentLesion.zone === "PZ" && currentLesion.dwiScore === 3 && currentLesion.dce === "positive") ||
             ((currentLesion.zone === "TZ" || currentLesion.zone === "CZ") && currentLesion.t2Score === 3 && currentLesion.dwiScore >= 5);
         return (React.createElement("div", null,
             React.createElement("div", { style: { textAlign: "center", marginBottom: 20 } },
                 React.createElement("div", { style: { color: "#94a3b8", fontSize: 13, marginBottom: 8 } },
-                    "Lezyon #",
+                    T.lesion + " #",
                     currentLesionIdx + 1,
-                    " \u2014 Hesaplanan PI-RADS Skoru"),
+                    " \u2014 " + T.piradsScore),
                 React.createElement("div", { style: styles.piradsBadge(score) }, score),
                 React.createElement("div", { style: { marginTop: 10, color: "#e2e8f0", fontSize: 14, fontWeight: 500 } }, piradsText(score)),
-                isUpgrade && (React.createElement("div", { style: { marginTop: 8, color: "#fbbf24", fontSize: 12 } }, "\u2191 Upgrade uyguland\u0131"))),
+                isUpgrade && (React.createElement("div", { style: { marginTop: 8, color: "#fbbf24", fontSize: 12 } }, T.upgradeApplied))),
             React.createElement("div", { style: styles.piradsBar(score) },
                 React.createElement("div", { style: styles.piradsBarFill(score) })),
             React.createElement("hr", { style: styles.divider }),
             React.createElement("div", { style: styles.yorumBlock },
-                React.createElement("div", { style: styles.yorumTitle }, "Skorlama Detay\u0131"),
+                React.createElement("div", { style: styles.yorumTitle }, T.scoringDetail),
                 React.createElement("table", { style: styles.zebraTable },
                     React.createElement("tbody", null, [
-                        ["Zon", zoneLabel(currentLesion.zone)],
-                        ["Dominant Protokol", (currentLesion.zone === "PZ" || currentLesion.zone === "AFS") ? "DWI (PZ kuralı)" : "T2W (TZ kuralı)"],
-                        ["T2W Skoru", currentLesion.t2Score ?? "—"],
-                        ["DWI Skoru", currentLesion.dwiScore ?? "—"],
-                        ["DCE", currentLesion.dce === "positive" ? "Pozitif" : currentLesion.dce === "negative" ? "Negatif" : "—"],
-                        ["Final PI-RADS", score]
+                        [T.zone, zoneLabel(currentLesion.zone)],
+                        [T.dominantProtocol, (currentLesion.zone === "PZ" || currentLesion.zone === "AFS") ? T.dwiDominant : T.t2Dominant],
+                        [T.t2wScore, currentLesion.t2Score ?? "\u2014"],
+                        [T.dwiScore, currentLesion.dwiScore ?? "\u2014"],
+                        [T.dce, currentLesion.dce === "positive" ? T.dcePositive : currentLesion.dce === "negative" ? T.dceNegative : "\u2014"],
+                        [T.finalPirads, score]
                     ].map(([k, v], i) => (React.createElement("tr", { key: k, style: styles.zebraRow(i) },
                         React.createElement("td", { style: styles.zebraTdLabel }, k),
                         React.createElement("td", { style: styles.zebraTd }, v))))))),
             React.createElement("div", { style: { ...styles.btnRow, justifyContent: "center" } },
-                React.createElement("button", { style: styles.btnSuccess, onClick: () => { finalizeLesion(); setCurrentLesionIdx(-1); setStep(2); } }, "\u2713 Lezyonu Kaydet & Lezyon Listesine D\u00F6n"))));
+                React.createElement("button", { style: styles.btnSuccess, onClick: () => { finalizeLesion(); setCurrentLesionIdx(-1); setStep(2); } }, T.saveLesion))));
     };
     const renderStep8 = () => (React.createElement("div", null,
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Sa\u011F Seminal Vezik\u00FCl"),
+                React.createElement("label", { style: styles.label }, T.rightSeminalVesicle),
                 React.createElement(Radio, { options: SV_OPTIONS, value: sv.right, onChange: v => setSv(p => ({ ...p, right: v })) })),
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Sol Seminal Vezik\u00FCl"),
+                React.createElement("label", { style: styles.label }, T.leftSeminalVesicle),
                 React.createElement(Radio, { options: SV_OPTIONS, value: sv.left, onChange: v => setSv(p => ({ ...p, left: v })) })))));
     const renderStep9 = () => (React.createElement("div", null,
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Sa\u011F N\u00F6rovask\u00FCler Demet"),
+                React.createElement("label", { style: styles.label }, T.rightNVB),
                 React.createElement(Radio, { options: NVB_OPTIONS, value: nvb.right, onChange: v => setNvb(p => ({ ...p, right: v })) })),
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Sol N\u00F6rovask\u00FCler Demet"),
+                React.createElement("label", { style: styles.label }, T.leftNVB),
                 React.createElement(Radio, { options: NVB_OPTIONS, value: nvb.left, onChange: v => setNvb(p => ({ ...p, left: v })) })))));
     const renderStep10 = () => (React.createElement("div", null,
         cysts.map((c, i) => (React.createElement("div", { key: c.id, style: { ...styles.yorumBlock, marginBottom: 12 } },
             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
                 React.createElement("span", { style: { fontWeight: 600, color: "#a78bfa" } },
-                    "Kist #",
+                    T.cyst + " #",
                     i + 1),
-                React.createElement("button", { style: styles.btnDanger, onClick: () => removeCyst(i) }, "Sil")),
+                React.createElement("button", { style: styles.btnDanger, onClick: () => removeCyst(i) }, T.delete)),
             React.createElement("div", { style: styles.row },
                 React.createElement("div", { style: styles.col(1) },
-                    React.createElement("label", { style: styles.label }, "Lokalizasyon"),
-                    React.createElement("input", { style: styles.input, value: c.location, onChange: e => updateCyst(i, "location", e.target.value), placeholder: "\u00F6r. Utrik\u00FCl, ejek\u00FClator kanal" })),
+                    React.createElement("label", { style: styles.label }, T.cystLocation),
+                    React.createElement("input", { style: styles.input, value: c.location, onChange: e => updateCyst(i, "location", e.target.value), placeholder: T.cystLocationPlaceholder })),
                 React.createElement("div", { style: styles.col(1) },
-                    React.createElement("label", { style: styles.label }, "Boyut (mm)"),
+                    React.createElement("label", { style: styles.label }, T.cystSize),
                     React.createElement("input", { style: styles.input, value: c.size, onChange: e => updateCyst(i, "size", e.target.value), placeholder: "mm" }))),
-            React.createElement("label", { style: styles.label }, "\u00D6zellikler"),
-            React.createElement("input", { style: styles.input, value: c.characteristics, onChange: e => updateCyst(i, "characteristics", e.target.value), placeholder: "Sinyal, kontrast tutulumu..." })))),
-        React.createElement("button", { style: styles.btnSuccess, onClick: addCyst }, "+ Kist Ekle"),
-        cysts.length === 0 && React.createElement("div", { style: { color: "#64748b", fontSize: 13, marginTop: 10 } }, "Kist saptanmad\u0131ysa do\u011Frudan ilerleyebilirsiniz.")));
+            React.createElement("label", { style: styles.label }, T.cystCharacteristics),
+            React.createElement("input", { style: styles.input, value: c.characteristics, onChange: e => updateCyst(i, "characteristics", e.target.value), placeholder: T.cystCharPlaceholder })))),
+        React.createElement("button", { style: styles.btnSuccess, onClick: addCyst }, T.addCyst),
+        cysts.length === 0 && React.createElement("div", { style: { color: "#64748b", fontSize: 13, marginTop: 10 } }, T.noCystFound)));
     const renderStep11 = () => (React.createElement("div", null,
         React.createElement("div", { style: { marginBottom: 14 } },
-            React.createElement("label", { style: styles.label }, "Lenf Nodlar\u0131"),
-            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.lymphNode, onChange: e => setExtras(p => ({ ...p, lymphNode: e.target.value })), placeholder: "Pelvik lenf nodlar\u0131 de\u011Ferlendirmesi..." })),
+            React.createElement("label", { style: styles.label }, T.lymphNodes),
+            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.lymphNode, onChange: e => setExtras(p => ({ ...p, lymphNode: e.target.value })), placeholder: T.lymphNodesPlaceholder })),
         React.createElement("div", { style: { marginBottom: 14 } },
-            React.createElement("label", { style: styles.label }, "Kemik"),
-            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.bone, onChange: e => setExtras(p => ({ ...p, bone: e.target.value })), placeholder: "Kemik ili\u011Fi sinyal de\u011Fi\u015Fiklikleri..." })),
+            React.createElement("label", { style: styles.label }, T.bone),
+            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.bone, onChange: e => setExtras(p => ({ ...p, bone: e.target.value })), placeholder: T.bonePlaceholder })),
         React.createElement("div", { style: styles.row },
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Rektum"),
-                React.createElement("input", { style: styles.input, value: extras.rectum, onChange: e => setExtras(p => ({ ...p, rectum: e.target.value })), placeholder: "Normal / Bulgu" })),
+                React.createElement("label", { style: styles.label }, T.rectum),
+                React.createElement("input", { style: styles.input, value: extras.rectum, onChange: e => setExtras(p => ({ ...p, rectum: e.target.value })), placeholder: T.rectumPlaceholder })),
             React.createElement("div", { style: styles.col(1) },
-                React.createElement("label", { style: styles.label }, "Mesane"),
-                React.createElement("input", { style: styles.input, value: extras.bladder, onChange: e => setExtras(p => ({ ...p, bladder: e.target.value })), placeholder: "Normal / Bulgu" }))),
+                React.createElement("label", { style: styles.label }, T.bladder),
+                React.createElement("input", { style: styles.input, value: extras.bladder, onChange: e => setExtras(p => ({ ...p, bladder: e.target.value })), placeholder: T.bladderPlaceholder }))),
         React.createElement("div", null,
-            React.createElement("label", { style: styles.label }, "Di\u011Fer Bulgular"),
-            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.other, onChange: e => setExtras(p => ({ ...p, other: e.target.value })), placeholder: "Ek notlar..." }))));
+            React.createElement("label", { style: styles.label }, T.otherFindings),
+            React.createElement("textarea", { style: { ...styles.input, minHeight: 50, resize: "vertical" }, value: extras.other, onChange: e => setExtras(p => ({ ...p, other: e.target.value })), placeholder: T.otherFindingsPlaceholder }))));
     // ─── REPORT ───
     const indexLesion = useMemo(() => {
         if (lesions.length === 0)
@@ -817,89 +1158,86 @@ function ProstatePIRADS() {
         const contourLabel = (v) => CONTOUR_OPTIONS.find(o => o.value === v)?.label || v;
         return (React.createElement("div", null,
             React.createElement("div", { style: { ...styles.btnRow, marginBottom: 20, marginTop: 0, justifyContent: "center" } },
-                React.createElement("button", { style: styles.btnPrimary, onClick: handlePrint }, "Yazd\u0131r / PDF"),
-                React.createElement("button", { style: { ...styles.btnSuccess, opacity: copied ? 0.6 : 1 }, onClick: handleCopy }, copied ? "✓ Kopyalandı!" : "Kopyala")),
+                React.createElement("button", { style: styles.btnPrimary, onClick: handlePrint }, T.printPdf),
+                React.createElement("button", { style: { ...styles.btnSuccess, opacity: copied ? 0.6 : 1 }, onClick: handleCopy }, copied ? T.copied : T.copy)),
             React.createElement("div", { ref: reportRef },
                 React.createElement("div", { style: { textAlign: "center", marginBottom: 20 } },
-                    React.createElement("div", { style: { fontSize: 17, fontWeight: 700, color: "#f1f5f9" } }, "PROSTAT MR - PI-RADS v2.1 YAPISAL RAPOR"),
+                    React.createElement("div", { style: { fontSize: 17, fontWeight: 700, color: "#f1f5f9" } }, T.reportTitle),
                     React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 4 } },
-                        "Olu\u015Fturulma: ",
-                        new Date().toLocaleDateString("tr-TR"))),
+                        T.generatedOn,
+                        new Date().toLocaleDateString(RV_LOCALE === 'tr' ? "tr-TR" : "en-GB"))),
                 React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "Hasta Bilgileri"),
+                    React.createElement("div", { style: styles.reportTitle }, T.patientInfo),
                     React.createElement("table", { style: styles.zebraTable },
                         React.createElement("tbody", null, [
-                            ["Hasta", patient.name || "—"],
-                            ["Yaş", patient.age ? `${patient.age} yaş` : "—"],
-                            ["Tarih", patient.date || "—"],
-                            ["PSA", patient.psa ? `${patient.psa} ng/mL` : "—"],
-                            ["Protokol", patient.protocol || "—"],
-                            ["Klinik Bilgi", patient.clinicalInfo || "—"]
+                            [T.patient, patient.name || "\u2014"],
+                            [T.age, patient.age ? `${patient.age} ${T.yearLabel}` : "\u2014"],
+                            [T.date, patient.date || "\u2014"],
+                            [T.psa, patient.psa ? `${patient.psa} ng/mL` : "\u2014"],
+                            [T.protocol, patient.protocol || "\u2014"],
+                            [T.clinicalInfo, patient.clinicalInfo || "\u2014"]
                         ].map(([k, v], i) => (React.createElement("tr", { key: k, style: styles.zebraRow(i) },
                             React.createElement("td", { style: styles.zebraTdLabel }, k),
                             React.createElement("td", { style: styles.zebraTd }, v))))))),
                 React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "Prostat Boyutlar\u0131"),
+                    React.createElement("div", { style: styles.reportTitle }, T.prostateSize),
                     React.createElement("table", { style: styles.zebraTable },
                         React.createElement("tbody", null, [
-                            ["AP × LR × CC", `${prostate.ap || "—"} × ${prostate.lr || "—"} × ${prostate.cc || "—"} mm`],
-                            ["Volüm", prostate.volume ? `${prostate.volume} mL` : "—"],
-                            ["PSA Dansitesi", (patient.psa && prostate.volume) ? `${(parseFloat(patient.psa) / parseFloat(prostate.volume) * 1000).toFixed(3)} ng/mL/mL` : "—"]
+                            ["AP \u00D7 LR \u00D7 CC", `${prostate.ap || "\u2014"} \u00D7 ${prostate.lr || "\u2014"} \u00D7 ${prostate.cc || "\u2014"} mm`],
+                            [T.volume, prostate.volume ? `${prostate.volume} mL` : "\u2014"],
+                            [T.psaDensityLabel, (patient.psa && prostate.volume) ? `${(parseFloat(patient.psa) / parseFloat(prostate.volume) * 1000).toFixed(3)} ng/mL/mL` : "\u2014"]
                         ].map(([k, v], i) => (React.createElement("tr", { key: k, style: styles.zebraRow(i) },
                             React.createElement("td", { style: styles.zebraTdLabel }, k),
                             React.createElement("td", { style: styles.zebraTd }, v))))))),
                 lesions.length > 0 && (React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle },
-                        "Lezyon De\u011Ferlendirmesi (",
-                        lesions.length,
-                        " lezyon)"),
+                    React.createElement("div", { style: styles.reportTitle }, T.lesionAssessment(lesions.length)),
                     lesions.map((l, i) => {
                         const isIndex = indexLesion && indexLesion.idx === i;
                         return (React.createElement("div", { key: l.id, style: { ...styles.yorumBlock, borderColor: isIndex ? "rgba(59,130,246,0.4)" : undefined, marginBottom: 14 } },
                             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
                                 React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
                                     React.createElement("span", { style: { fontWeight: 700, color: "#e2e8f0" } },
-                                        "Lezyon ",
+                                        T.lesion + " ",
                                         i + 1),
-                                    isIndex && React.createElement("span", { style: { background: "rgba(59,130,246,0.2)", color: "#60a5fa", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 } }, "\u0130NDEKS")),
+                                    isIndex && React.createElement("span", { style: { background: "rgba(59,130,246,0.2)", color: "#60a5fa", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 } }, T.indexLabel)),
                                 React.createElement("div", { style: styles.piradsBadge(l.pirads || 1) }, l.pirads || "?")),
                             React.createElement("div", { style: styles.piradsBar(l.pirads || 1) },
                                 React.createElement("div", { style: styles.piradsBarFill(l.pirads || 1) })),
                             React.createElement("div", { style: { fontSize: 12, color: "#94a3b8", marginBottom: 10 } }, piradsText(l.pirads)),
                             React.createElement("table", { style: styles.zebraTable },
                                 React.createElement("tbody", null, [
-                                    ["Zon", zoneLabel(l.zone)],
-                                    ["Seviye / Taraf", `${levelLabel(l.level)} / ${sideLabel(l.side)}`],
-                                    ["Boyut", l.size ? `${l.size} mm` : "—"],
-                                    ["T2W Skoru", l.t2Score ?? "—"],
-                                    ["DWI Skoru", l.dwiScore ?? "—"],
-                                    ["DCE", l.dce === "positive" ? "Pozitif" : l.dce === "negative" ? "Negatif" : "—"],
-                                    ["Kontur", l.contour ? contourLabel(l.contour) : "—"],
-                                    ["Kapsül", l.capsule ? capsuleLabel(l.capsule) : "—"],
-                                    ["Yağ İnvazyonu", l.fatInvasion ? fatLabel(l.fatInvasion) : "—"]
+                                    [T.zone, zoneLabel(l.zone)],
+                                    [T.levelSide, `${levelLabel(l.level)} / ${sideLabel(l.side)}`],
+                                    [T.size, l.size ? `${l.size} mm` : "\u2014"],
+                                    [T.t2wScore, l.t2Score ?? "\u2014"],
+                                    [T.dwiScore, l.dwiScore ?? "\u2014"],
+                                    [T.dce, l.dce === "positive" ? T.dcePositive : l.dce === "negative" ? T.dceNegative : "\u2014"],
+                                    [T.contourLabel, l.contour ? contourLabel(l.contour) : "\u2014"],
+                                    [T.capsule, l.capsule ? capsuleLabel(l.capsule) : "\u2014"],
+                                    [T.fatInvasion, l.fatInvasion ? fatLabel(l.fatInvasion) : "\u2014"]
                                 ].map(([k, v], j) => (React.createElement("tr", { key: k, style: styles.zebraRow(j) },
                                     React.createElement("td", { style: styles.zebraTdLabel }, k),
                                     React.createElement("td", { style: styles.zebraTd }, v))))))));
                     }))),
                 React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "Seminal Vezik\u00FCl & N\u00F6rovask\u00FCler Demet"),
+                    React.createElement("div", { style: styles.reportTitle }, T.svNvbSection),
                     React.createElement("table", { style: styles.zebraTable },
                         React.createElement("tbody", null, [
-                            ["Sağ Seminal Vezikül", svLabel(sv.right)],
-                            ["Sol Seminal Vezikül", svLabel(sv.left)],
-                            ["Sağ Nörovasküler Demet", nvbLabel(nvb.right)],
-                            ["Sol Nörovasküler Demet", nvbLabel(nvb.left)]
+                            [T.rightSV, svLabel(sv.right)],
+                            [T.leftSV, svLabel(sv.left)],
+                            [T.rightNVBLabel, nvbLabel(nvb.right)],
+                            [T.leftNVBLabel, nvbLabel(nvb.left)]
                         ].map(([k, v], i) => (React.createElement("tr", { key: k, style: styles.zebraRow(i) },
                             React.createElement("td", { style: styles.zebraTdLabel }, k),
                             React.createElement("td", { style: styles.zebraTd }, v))))))),
                 cysts.length > 0 && (React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "Kist De\u011Ferlendirmesi"),
+                    React.createElement("div", { style: styles.reportTitle }, T.cystAssessment),
                     cysts.map((c, i) => (React.createElement("div", { key: c.id, style: { marginBottom: 8, padding: "8px 12px", background: "rgba(15,23,42,0.4)", borderRadius: 8 } },
                         React.createElement("span", { style: { fontWeight: 600, color: "#c4b5fd" } },
-                            "Kist ",
+                            T.cyst + " ",
                             i + 1,
                             ": "),
-                        React.createElement("span", { style: { color: "#e2e8f0" } }, c.location || "—"),
+                        React.createElement("span", { style: { color: "#e2e8f0" } }, c.location || "\u2014"),
                         c.size && React.createElement("span", { style: { color: "#94a3b8" } },
                             " \u2022 ",
                             c.size,
@@ -908,29 +1246,25 @@ function ProstatePIRADS() {
                             " \u2022 ",
                             c.characteristics)))))),
                 React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "Ek Bulgular"),
+                    React.createElement("div", { style: styles.reportTitle }, T.additionalFindings),
                     React.createElement("table", { style: styles.zebraTable },
                         React.createElement("tbody", null, [
-                            ["Lenf Nodları", extras.lymphNode || "Patolojik lenf nodu saptanmadı"],
-                            ["Kemik", extras.bone || "Kemik iliğinde metastaz ile uyumlu sinyal değişikliği saptanmadı"],
-                            ["Rektum", extras.rectum || "Normal"],
-                            ["Mesane", extras.bladder || "Normal"],
-                            ["Diğer", extras.other || "—"]
+                            [T.lymphNodes, extras.lymphNode || T.lymphNodesDefault],
+                            [T.bone, extras.bone || T.boneDefault],
+                            [T.rectum, extras.rectum || T.normalLabel],
+                            [T.bladder, extras.bladder || T.normalLabel],
+                            [T.otherFindings, extras.other || "\u2014"]
                         ].map(([k, v], i) => (React.createElement("tr", { key: k, style: styles.zebraRow(i) },
                             React.createElement("td", { style: styles.zebraTdLabel }, k),
                             React.createElement("td", { style: styles.zebraTd }, v))))))),
                 React.createElement("div", { style: styles.reportSection },
-                    React.createElement("div", { style: styles.reportTitle }, "YORUM"),
-                    React.createElement("div", { style: styles.yorumBlock }, lesions.length === 0 ? (React.createElement("div", { style: { color: "#94a3b8" } }, "Prostat MR incelemesinde PI-RADS skorlanmas\u0131n\u0131 gerektiren fokal lezyon saptanmam\u0131\u015Ft\u0131r.")) : (React.createElement("div", null,
+                    React.createElement("div", { style: styles.reportTitle }, T.impression),
+                    React.createElement("div", { style: styles.yorumBlock }, lesions.length === 0 ? (React.createElement("div", { style: { color: "#94a3b8" } }, T.noLesionFound)) : (React.createElement("div", null,
                         React.createElement("div", { style: { marginBottom: 12 } },
-                            "Prostat multiparametrik MR incelemesinde toplam ",
-                            React.createElement("b", { style: { color: "#60a5fa" } }, lesions.length),
-                            " adet lezyon tan\u0131mlanm\u0131\u015Ft\u0131r."),
+                            T.lesionsFound(lesions.length)),
                         indexLesion && (React.createElement("div", { style: { marginBottom: 12 } },
                             React.createElement("b", null,
-                                "\u0130ndeks lezyon (Lezyon ",
-                                indexLesion.idx + 1,
-                                "):"),
+                                T.indexLesionLabel(indexLesion.idx + 1)),
                             " ",
                             zoneLabel(indexLesion.zone),
                             ", ",
@@ -938,12 +1272,12 @@ function ProstatePIRADS() {
                             ", ",
                             sideLabel(indexLesion.side),
                             " ",
-                            indexLesion.size && `— ${indexLesion.size} mm`)),
+                            indexLesion.size && `\u2014 ${indexLesion.size} mm`)),
                         lesions.map((l, i) => (React.createElement("div", { key: l.id, style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 8 } },
                             React.createElement("div", { style: { ...styles.piradsBadge(l.pirads || 1), width: 30, height: 30, fontSize: 14, borderRadius: 8 } }, l.pirads || "?"),
                             React.createElement("div", null,
                                 React.createElement("span", { style: { fontWeight: 600 } },
-                                    "Lezyon ",
+                                    T.lesion + " ",
                                     i + 1,
                                     ": "),
                                 React.createElement("span", null,
@@ -951,10 +1285,10 @@ function ProstatePIRADS() {
                                     l.pirads,
                                     " \u2014 ",
                                     piradsText(l.pirads)))))),
-                        indexLesion && indexLesion.pirads >= 4 && (React.createElement("div", { style: { marginTop: 12, padding: "10px 14px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid rgba(239,68,68,0.15)", color: "#fca5a5", fontSize: 13 } }, "\u26A0\uFE0F PI-RADS \u22654 lezyon mevcut. Klinik anlaml\u0131 prostat kanseri a\u00E7\u0131s\u0131ndan biyopsi (tercihen MR-f\u00FCzyon biyopsi) \u00F6nerilir.")),
-                        indexLesion && indexLesion.pirads === 3 && (React.createElement("div", { style: { marginTop: 12, padding: "10px 14px", background: "rgba(234,179,8,0.08)", borderRadius: 8, border: "1px solid rgba(234,179,8,0.15)", color: "#fde047", fontSize: 13 } }, "\u26A1 PI-RADS 3 (belirsiz) lezyon mevcut. PSA dansitesi, klinik risk fakt\u00F6rleri ve hasta tercihi g\u00F6z \u00F6n\u00FCne al\u0131narak multidisipliner de\u011Ferlendirme \u00F6nerilir.")),
-                        (sv.right !== "normal" || sv.left !== "normal") && (React.createElement("div", { style: { marginTop: 8, color: "#fca5a5", fontSize: 13 } }, "\u2022 Seminal vezik\u00FCl tutulumu bulgular\u0131 mevcut.")),
-                        (nvb.right !== "normal" || nvb.left !== "normal") && (React.createElement("div", { style: { marginTop: 4, color: "#fca5a5", fontSize: 13 } }, "\u2022 N\u00F6rovask\u00FCler demet tutulumu bulgular\u0131 mevcut.")))))))));
+                        indexLesion && indexLesion.pirads >= 4 && (React.createElement("div", { style: { marginTop: 12, padding: "10px 14px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid rgba(239,68,68,0.15)", color: "#fca5a5", fontSize: 13 } }, T.pirads4Warning)),
+                        indexLesion && indexLesion.pirads === 3 && (React.createElement("div", { style: { marginTop: 12, padding: "10px 14px", background: "rgba(234,179,8,0.08)", borderRadius: 8, border: "1px solid rgba(234,179,8,0.15)", color: "#fde047", fontSize: 13 } }, T.pirads3Warning)),
+                        (sv.right !== "normal" || sv.left !== "normal") && (React.createElement("div", { style: { marginTop: 8, color: "#fca5a5", fontSize: 13 } }, T.svInvolvement)),
+                        (nvb.right !== "normal" || nvb.left !== "normal") && (React.createElement("div", { style: { marginTop: 4, color: "#fca5a5", fontSize: 13 } }, T.nvbInvolvement)))))))));
     };
     const stepRenderers = [
         renderStep0, renderStep1, renderStep2, renderStep3,
@@ -964,8 +1298,8 @@ function ProstatePIRADS() {
     ];
     return (React.createElement("div", { style: styles.app },
         React.createElement("div", { style: styles.header },
-            React.createElement("h1", { style: styles.title }, "Prostat MR \u2014 PI-RADS v2.1"),
-            React.createElement("div", { style: styles.subtitle }, "Yap\u0131sal Raporlama Karar Destek Sistemi")),
+            React.createElement("h1", { style: styles.title }, T.appTitle),
+            React.createElement("div", { style: styles.subtitle }, T.appSubtitle)),
         React.createElement("div", { style: styles.progressBar }, STEPS.map((s, i) => (React.createElement("div", { key: i, style: styles.progressDot(i === step, i < step), onClick: () => setStep(i), title: s })))),
         React.createElement("div", { style: styles.card },
             React.createElement("div", { style: styles.stepTitle },
@@ -976,9 +1310,9 @@ function ProstatePIRADS() {
                 React.createElement("span", null, STEPS[step])),
             stepRenderers[step]()),
         step !== 12 && step !== 7 && (React.createElement("div", { style: styles.btnRow },
-            React.createElement("button", { style: styles.btnSecondary, onClick: goPrev, disabled: step === 0 }, "\u2190 Geri"),
-            React.createElement("div", { style: { display: "flex", gap: 8 } }, step < 12 && (React.createElement("button", { style: styles.btnPrimary, onClick: goNext }, step === 11 ? "Rapor Oluştur →" : "İleri →"))))),
-        React.createElement("div", { style: { textAlign: "center", marginTop: 24, fontSize: 11, color: "#475569" } }, "PI-RADS\u00AE v2.1 \u2014 American College of Radiology | Klinik karar destek arac\u0131d\u0131r, tan\u0131 koymaz.")));
+            React.createElement("button", { style: styles.btnSecondary, onClick: goPrev, disabled: step === 0 }, T.back),
+            React.createElement("div", { style: { display: "flex", gap: 8 } }, step < 12 && (React.createElement("button", { style: styles.btnPrimary, onClick: goNext }, step === 11 ? T.generateReport : T.next))))),
+        React.createElement("div", { style: { textAlign: "center", marginTop: 24, fontSize: 11, color: "#475569" } }, T.footer)));
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(ProstatePIRADS));

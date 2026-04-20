@@ -106,40 +106,634 @@ body{background:#fff !important}
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+ tr: {
+  appTitle: "Aort MRI Karar Destek Sistemi",
+  appSubtitle: "Radyoloji Karar Destek",
+  reportTitle: "AORT MRI İNCELEME RAPORU",
+  // Step titles
+  stepPatient: "Hasta Bilgileri",
+  stepKonum: "Aort Konumu",
+  stepKalibrasyon: "Kalibrasyon Ölçümleri",
+  stepEktazi: "Ektazi Detayları",
+  stepTrombus: "Trombüs Değerlendirmesi",
+  stepDuvar: "Duvar Özellikleri",
+  stepFlep: "Flep / Diseksiyon",
+  stepLeak: "Leak Değerlendirmesi",
+  stepCeliac: "Çöliak Arter",
+  stepSma: "SMA",
+  stepRenalR: "Sağ Renal Arter",
+  stepRenalL: "Sol Renal Arter",
+  stepIliakR: "Sağ İliak Arter",
+  stepIliakL: "Sol İliak Arter",
+  stepReport: "Rapor",
+  // Pathology names
+  pathAtero: "Aterosklerotik Stenoz",
+  pathTromboz: "Arteriyel Tromboz",
+  pathDiseksiyon: "Arteriyel Diseksiyon",
+  pathAnevrizma: "Anevrizma",
+  pathPseudo: "Pseudoanevrizma",
+  pathVaskulit: "Vaskülit (Takayasu vb.)",
+  pathAvm: "AVM",
+  pathEmboli: "Emboli",
+  // Pathology table fields
+  patT1: "Duvar kalınlaşması, plak",
+  patT2Atero: "Değişken",
+  patIpOpAtero: "Değişmez",
+  patDwiAtero: "Genelde negatif",
+  patAdcAtero: "Normal",
+  patArtAtero: "Lümen daralması",
+  patVenAtero: "Persistan daralma",
+  patLateAtero: "Aynı",
+  patT1Tromboz: "Subakut dönemde hiperintens",
+  patT2Tromboz: "Heterojen",
+  patIpOpTromboz: "Değişmez",
+  patDwiTromboz: "Restriksiyon olabilir",
+  patAdcTromboz: "Düşük",
+  patArtTromboz: "Dolum defekti",
+  patVenTromboz: "Persistan",
+  patLateTromboz: "Persistan",
+  patT1Dis: "İntramural hematom hiperintens",
+  patT2Dis: "Çift lümen görünümü",
+  patIpOpDis: "Değişmez",
+  patDwiDis: "Değişken",
+  patAdcDis: "Değişken",
+  patArtDis: "İntimal flap",
+  patVenDis: "Çift lümen",
+  patLateDis: "Persistan",
+  patT1Anev: "Trombus varsa hiperintens",
+  patT2Anev: "Heterojen",
+  patIpOpAnev: "Değişmez",
+  patDwiAnev: "Genelde yok",
+  patAdcAnev: "Normal",
+  patArtAnev: "Lümen genişlemesi",
+  patVenAnev: "Kontrast dolumu",
+  patLateAnev: "Persistan",
+  patT1Pseudo: "Heterojen",
+  patT2Pseudo: "Hiperintens",
+  patIpOpPseudo: "Değişmez",
+  patDwiPseudo: "Değişken",
+  patAdcPseudo: "Değişken",
+  patArtPseudo: "Kontrastla dolan kese",
+  patVenPseudo: "Devam",
+  patLatePseudo: "Devam",
+  patT1Vas: "Duvar kalınlaşması",
+  patT2Vas: "Duvar hiperintens",
+  patIpOpVas: "Değişmez",
+  patDwiVas: "İnflamasyon restriksiyonu",
+  patAdcVas: "Düşük",
+  patArtVas: "Duvar kontrastı",
+  patVenVas: "Devam",
+  patLateVas: "Persistan",
+  patT1Avm: "Akım boşluğu",
+  patT2Avm: "Akım boşluğu",
+  patIpOpAvm: "Değişmez",
+  patDwiAvm: "Yok",
+  patAdcAvm: "Normal",
+  patArtAvm: "Erken venöz dolum",
+  patVenAvm: "Dilate venler",
+  patLateAvm: "Persistan",
+  patT1Emb: "Trombüs sinyali",
+  patT2Emb: "Heterojen",
+  patIpOpEmb: "Değişmez",
+  patDwiEmb: "Restriksiyon olabilir",
+  patAdcEmb: "Düşük",
+  patArtEmb: "Ani dolum defekti",
+  patVenEmb: "Persistan",
+  patLateEmb: "Persistan",
+  // Artery names
+  artCeliac: "Çöliak Arter",
+  artSma: "SMA (Superior Mezenterik Arter)",
+  artRenalR: "Sağ Renal Arter",
+  artRenalL: "Sol Renal Arter",
+  artIliakR: "Sağ İliak Arter",
+  artIliakL: "Sol İliak Arter",
+  // Form labels
+  labelPatientName: "Hasta Adı",
+  labelAge: "Yaş",
+  labelGender: "Cinsiyet",
+  labelProtocol: "Protokol",
+  labelMale: "Erkek",
+  labelFemale: "Kadın",
+  labelNormalPosition: "Normal Konum",
+  labelRightSide: "Sağ Yerleşimli",
+  labelDuplicate: "Duplike",
+  labelTortuous: "Tortiyoze",
+  labelCeliacDiameter: "Çöliak kesim çapı (mm)",
+  labelInfrarenalDiameter: "İnfrarenal kesim çapı (mm)",
+  labelBifurkDiameter: "İliak bif. öncesi çapı (mm)",
+  labelEktaziDetected: "Ektazi tespit edildi (>30 mm). Sonraki adımda ektazi detayları sorulacaktır.",
+  labelEktaziStart: "Başlangıç - Sol renal artere göre",
+  labelEktaziEnd: "Bitiş - Sol renal artere göre",
+  labelAbove: "Yukarıda",
+  labelBelow: "Aşağıda",
+  labelDistance: "Mesafe (mm)",
+  labelEktaziDegree: "Aortu kaç derece kapsıyor",
+  labelDegreePlaceholder: "Derece (°)",
+  labelTrombusPresent: "Trombüs var mı?",
+  labelNo: "Yok",
+  labelYes: "Var",
+  labelTrombusDetails: "Trombüs Detayları",
+  labelClockStart: "Saat pozisyonu (başlangıç)",
+  labelClockEnd: "Saat pozisyonu (bitiş)",
+  labelClockPlaceholder: "ör: 2",
+  labelClockPlaceholder2: "ör: 5",
+  labelTrombusLength: "Trombüs uzunluğu (mm)",
+  labelTrombusThickness: "Trombüs kalınlığı (mm)",
+  labelWallProps: "Aort duvar özelliklerini seçiniz (çoklu seçim). Seçilen patolojiler için detay bilgileri aşağıda sorulacaktır.",
+  labelWallRegular: "Düzenli",
+  labelWallCalcified: "Kalsifiye",
+  labelWallUlcerated: "Ülsere",
+  labelWallIrregular: "Düzensiz",
+  labelCalcDetails: "Kalsifikasyon Detayları",
+  labelUlcerDetails: "Ülserasyon Detayları",
+  labelIrrDetails: "Duvar Düzensizliği Detayları",
+  labelSegment: "Segment",
+  labelCalcLength: "Kalsifikasyon uzunluğu (mm)",
+  labelWallThickness: "Duvar kalınlığı (mm)",
+  labelAdditional: "Ek açıklama",
+  labelCalcPlaceholder: "Sirküler / nonsirküler, plak morfolojisi vb.",
+  labelUlcerDiameter: "Ülser çapı (mm)",
+  labelDepth: "Derinlik (mm)",
+  labelUlcerCount: "Ülser sayısı",
+  labelUlcerCountPlaceholder: "Adet",
+  labelUlcerPlaceholder: "Penetran aterosklerotik ülser şüphesi vb.",
+  labelAffectedLength: "Etkilenen uzunluk (mm)",
+  labelIrrPlaceholder: "Plak, intramural hematom, duvar ödemi vb.",
+  labelFlepPresent: "Flep görünümü var mı?",
+  labelFlepDetails: "Flep Lokalizasyonu",
+  labelFlepStart: "Başlangıç - Sol renal artere göre",
+  labelFlepEnd: "Bitiş - Sol renal artere göre",
+  labelLeakPresent: "Leak var mı?",
+  labelLeakDetails: "Leak Detayları",
+  labelLeakAmount: "Leak miktarı / tanımı",
+  labelLeakPlaceholder: "Az miktarda / Belirgin vb.",
+  labelDiameter: "Çap (mm)",
+  labelStenosisPresent: "Darlık var mı?",
+  labelStenosisDetails: "Darlık Detayları",
+  labelStenosisDistance: "Aorttan ayrıldıktan kaç mm sonra",
+  labelStenosisDiameter: "Darlık çapı (mm)",
+  labelStenosisLength: "Darlık uzunluğu (mm)",
+  labelTrombusPresent2: "Trombüs var mı?",
+  labelPatientNamePlaceholder: "Ad Soyad",
+  labelAgePlaceholder: "Yaş",
+  labelProtocolPlaceholder: "MR Anjio / MR Aort vb.",
+  // Buttons
+  btnBack: "Geri",
+  btnNext: "İleri",
+  btnGenerateReport: "Rapor Oluştur",
+  btnEdit: "Düzenle",
+  btnPrint: "Yazdır / PDF",
+  btnCopy: "Kopyala",
+  btnDownloadHTML: "HTML İndir",
+  // Step descs
+  descPatient: "Hasta demografik bilgileri",
+  descKonum: "Aortun anatomik konumunu seçiniz",
+  descKalibrasyon: "Aort çap ölçümlerini giriniz (30 mm üzeri ektazi kabul edilir)",
+  descEktazi: "Ektazi başlangıç/bitiş lokalizasyonu ve kapsama derecesi",
+  descTrombus: "Aort lümeninde trombüs değerlendirmesi",
+  descDuvar: "Aort duvar özelliklerini seçiniz (çoklu seçim). Seçilen patolojiler için detay bilgileri aşağıda sorulacaktır.",
+  descFlep: "İntimal flep / diseksiyon değerlendirmesi",
+  descLeak: "Kontrast leak değerlendirmesi",
+  // Report section headers
+  reportAortGeneral: "Aort Genel Değerlendirme",
+  reportParamHeader: "Parametre",
+  reportValueHeader: "Değer",
+  reportKonum: "Konum",
+  reportCeliacDiam: "Çöliak kesim çapı",
+  reportInfrarenalDiam: "İnfrarenal kesim çapı",
+  reportBifurkDiam: "İliak bifurkasyon öncesi çapı",
+  reportWall: "Duvar",
+  reportWallUnspecified: "Belirtilmedi",
+  reportTrombus: "Trombüs",
+  reportFlep: "Flep",
+  reportLeak: "Leak",
+  reportEktaziDetails: "Ektazi Detayları",
+  reportFlepDetails: "Flep Detayları",
+  reportBranchArteries: "Dal Arterleri",
+  reportArtery: "Arter",
+  reportDiameter: "Çap",
+  reportStenosis: "Darlık",
+  reportStenosisPct: "Stenoz %",
+  reportTrombusCol: "Trombüs",
+  reportImpression: "YORUM",
+  reportEktaziStart: "Başlangıç: Sol renal arterden",
+  reportEktaziEnd: "Bitiş: Sol renal arterden",
+  reportEktaziDegree: "Aortu kapsama derecesi",
+  reportAbove: "yukarıda",
+  reportBelow: "aşağıda",
+  // Alerts
+  copySuccess: "Rapor panoya kopyalandı!",
+  // Segment names
+  segSupraceliac: "Supraçöliak",
+  segCeliacLevel: "Çöliak seviyesi",
+  segInfrarenal: "İnfrarenal",
+  segPreBifurk: "Bifurkasyon öncesi",
+  segDiffuse: "Yaygın",
+  // Report yorum strings
+  yorumAortPosition: "Aort konumu",
+  yorumAnatomicVariant: "anatomik varyant.",
+  yorumCeliacSection: "Çöliak kesim",
+  yorumInfrarenalSection: "İnfrarenal kesim",
+  yorumPreBifurk: "Bifurkasyon öncesi",
+  yorumAneurysmLevel: "anevrizma düzeyinde genişleme.",
+  yorumEctatic: "ektazik.",
+  yorumTrombusFound: "Aort lümeninde trombüs",
+  yorumTrombusLength: "mm uzunluğunda",
+  yorumTrombusThickness: "mm kalınlığında",
+  yorumTrombusClinical: "Emboli riski açısından klinik korelasyon önerilir.",
+  yorumCalcification: "Aort duvarında kalsifikasyon",
+  yorumCalcAtero: "aterosklerotik değişiklikler.",
+  yorumCalcLength: "mm uzunluğunda",
+  yorumCalcWall: "duvar kalınlığı",
+  yorumUlcer: "Aort duvarında ülserasyon",
+  yorumUlcerNote: "penetran aterosklerotik ülser açısından değerlendirilmelidir.",
+  yorumIrregular: "Aort duvarında düzensizlik",
+  yorumIrregularNote: "plak veya duvar patolojisi.",
+  yorumIrregularLength: "mm uzunluğunda etkilenim",
+  yorumFlepFound: "İntimal flep görünümü mevcut - aort diseksiyonu ile uyumlu. Stanford/DeBakey sınıflaması açısından değerlendirilmelidir.",
+  yorumLeakFound: "Kontrast leak tespit edildi",
+  yorumLeakNote: "Aktif kanama veya endoleak açısından değerlendirilmelidir.",
+  yorumLeakUnspecified: "miktar belirtilmedi",
+  yorumStenosisFound: "Darlık mevcut",
+  yorumStenosisApprox: "yaklaşık",
+  yorumStenosisStenoz: "stenoz",
+  yorumTrombusInArtery: "lümeninde trombüs.",
+  yorumNoPathology: "Aort ve dallarında anlamlı patoloji saptanmamıştır.",
+  // Report HTML strings
+  reportHTMLPatientName: "Hasta Adı",
+  reportHTMLAge: "Yaş",
+  reportHTMLGender: "Cinsiyet",
+  reportHTMLProtocol: "Protokol",
+  reportHTMLYorum: "YORUM",
+  reportHTMLSegment: "Segment",
+  reportHTMLLength: "Uzunluk",
+  reportHTMLWallThickness: "Duvar kalınlığı",
+  reportHTMLDiameter: "Çap",
+  reportHTMLDepth: "Derinlik",
+  reportHTMLCount: "Sayı",
+  reportHTMLPresent: "Var",
+  reportHTMLAbsent: "Yok",
+  reportHTMLAmountUnspecified: "miktar belirtilmedi",
+  reportHTMLStenosisPct: "stenoz",
+  reportHTMLApprox: "yaklaşık",
+  reportHTMLTrombusDetail: "saat",
+  reportHTMLLengthUnit: "mm uzunluk",
+  reportHTMLThicknessUnit: "mm kalınlık",
+  // Artery report
+  artDarlikDetail: "mesafe",
+  // Badge labels
+  badgeEktazi: "Ektazi",
+  badgeAnevrizma: "Anevrizma",
+  // Duvar segment labels in report
+  detailSegment: "Segment",
+  detailLength: "Uzunluk",
+  detailWallThick: "Duvar kalınlığı",
+  detailDiameter: "Çap",
+  detailDepth: "Derinlik",
+  detailCount: "Sayı",
+ },
+ en: {
+  appTitle: "Aorta MRI Decision Support System",
+  appSubtitle: "Radiology Decision Support",
+  reportTitle: "AORTA MRI EXAMINATION REPORT",
+  // Step titles
+  stepPatient: "Patient Information",
+  stepKonum: "Aorta Location",
+  stepKalibrasyon: "Calibration Measurements",
+  stepEktazi: "Ectasia Details",
+  stepTrombus: "Thrombus Assessment",
+  stepDuvar: "Wall Characteristics",
+  stepFlep: "Flap / Dissection",
+  stepLeak: "Leak Assessment",
+  stepCeliac: "Celiac Artery",
+  stepSma: "SMA",
+  stepRenalR: "Right Renal Artery",
+  stepRenalL: "Left Renal Artery",
+  stepIliakR: "Right Iliac Artery",
+  stepIliakL: "Left Iliac Artery",
+  stepReport: "Report",
+  // Pathology names
+  pathAtero: "Atherosclerotic Stenosis",
+  pathTromboz: "Arterial Thrombosis",
+  pathDiseksiyon: "Arterial Dissection",
+  pathAnevrizma: "Aneurysm",
+  pathPseudo: "Pseudoaneurysm",
+  pathVaskulit: "Vasculitis (Takayasu, etc.)",
+  pathAvm: "AVM",
+  pathEmboli: "Embolism",
+  // Pathology table fields
+  patT1: "Wall thickening, plaque",
+  patT2Atero: "Variable",
+  patIpOpAtero: "Unchanged",
+  patDwiAtero: "Generally negative",
+  patAdcAtero: "Normal",
+  patArtAtero: "Lumen narrowing",
+  patVenAtero: "Persistent narrowing",
+  patLateAtero: "Same",
+  patT1Tromboz: "Hyperintense in subacute phase",
+  patT2Tromboz: "Heterogeneous",
+  patIpOpTromboz: "Unchanged",
+  patDwiTromboz: "Restricted diffusion possible",
+  patAdcTromboz: "Low",
+  patArtTromboz: "Filling defect",
+  patVenTromboz: "Persistent",
+  patLateTromboz: "Persistent",
+  patT1Dis: "Intramural hematoma hyperintense",
+  patT2Dis: "Double lumen appearance",
+  patIpOpDis: "Unchanged",
+  patDwiDis: "Variable",
+  patAdcDis: "Variable",
+  patArtDis: "Intimal flap",
+  patVenDis: "Double lumen",
+  patLateDis: "Persistent",
+  patT1Anev: "Hyperintense if thrombus present",
+  patT2Anev: "Heterogeneous",
+  patIpOpAnev: "Unchanged",
+  patDwiAnev: "Generally absent",
+  patAdcAnev: "Normal",
+  patArtAnev: "Lumen dilatation",
+  patVenAnev: "Contrast filling",
+  patLateAnev: "Persistent",
+  patT1Pseudo: "Heterogeneous",
+  patT2Pseudo: "Hyperintense",
+  patIpOpPseudo: "Unchanged",
+  patDwiPseudo: "Variable",
+  patAdcPseudo: "Variable",
+  patArtPseudo: "Contrast-filled sac",
+  patVenPseudo: "Continues",
+  patLatePseudo: "Continues",
+  patT1Vas: "Wall thickening",
+  patT2Vas: "Wall hyperintense",
+  patIpOpVas: "Unchanged",
+  patDwiVas: "Inflammation restricted diffusion",
+  patAdcVas: "Low",
+  patArtVas: "Wall enhancement",
+  patVenVas: "Continues",
+  patLateVas: "Persistent",
+  patT1Avm: "Flow void",
+  patT2Avm: "Flow void",
+  patIpOpAvm: "Unchanged",
+  patDwiAvm: "Absent",
+  patAdcAvm: "Normal",
+  patArtAvm: "Early venous filling",
+  patVenAvm: "Dilated veins",
+  patLateAvm: "Persistent",
+  patT1Emb: "Thrombus signal",
+  patT2Emb: "Heterogeneous",
+  patIpOpEmb: "Unchanged",
+  patDwiEmb: "Restricted diffusion possible",
+  patAdcEmb: "Low",
+  patArtEmb: "Sudden filling defect",
+  patVenEmb: "Persistent",
+  patLateEmb: "Persistent",
+  // Artery names
+  artCeliac: "Celiac Artery",
+  artSma: "SMA (Superior Mesenteric Artery)",
+  artRenalR: "Right Renal Artery",
+  artRenalL: "Left Renal Artery",
+  artIliakR: "Right Iliac Artery",
+  artIliakL: "Left Iliac Artery",
+  // Form labels
+  labelPatientName: "Patient Name",
+  labelAge: "Age",
+  labelGender: "Gender",
+  labelProtocol: "Protocol",
+  labelMale: "Male",
+  labelFemale: "Female",
+  labelNormalPosition: "Normal Position",
+  labelRightSide: "Right-sided",
+  labelDuplicate: "Duplicated",
+  labelTortuous: "Tortuous",
+  labelCeliacDiameter: "Celiac segment diameter (mm)",
+  labelInfrarenalDiameter: "Infrarenal segment diameter (mm)",
+  labelBifurkDiameter: "Pre-iliac bifurcation diameter (mm)",
+  labelEktaziDetected: "Ectasia detected (>30 mm). Ectasia details will be requested in the next step.",
+  labelEktaziStart: "Start - relative to left renal artery",
+  labelEktaziEnd: "End - relative to left renal artery",
+  labelAbove: "Above",
+  labelBelow: "Below",
+  labelDistance: "Distance (mm)",
+  labelEktaziDegree: "Degrees of aortic circumference involved",
+  labelDegreePlaceholder: "Degrees (°)",
+  labelTrombusPresent: "Is thrombus present?",
+  labelNo: "Absent",
+  labelYes: "Present",
+  labelTrombusDetails: "Thrombus Details",
+  labelClockStart: "Clock position (start)",
+  labelClockEnd: "Clock position (end)",
+  labelClockPlaceholder: "e.g. 2",
+  labelClockPlaceholder2: "e.g. 5",
+  labelTrombusLength: "Thrombus length (mm)",
+  labelTrombusThickness: "Thrombus thickness (mm)",
+  labelWallProps: "Select aortic wall characteristics (multiple selection). Details for selected pathologies will be requested below.",
+  labelWallRegular: "Regular",
+  labelWallCalcified: "Calcified",
+  labelWallUlcerated: "Ulcerated",
+  labelWallIrregular: "Irregular",
+  labelCalcDetails: "Calcification Details",
+  labelUlcerDetails: "Ulceration Details",
+  labelIrrDetails: "Wall Irregularity Details",
+  labelSegment: "Segment",
+  labelCalcLength: "Calcification length (mm)",
+  labelWallThickness: "Wall thickness (mm)",
+  labelAdditional: "Additional notes",
+  labelCalcPlaceholder: "Circumferential / non-circumferential, plaque morphology, etc.",
+  labelUlcerDiameter: "Ulcer diameter (mm)",
+  labelDepth: "Depth (mm)",
+  labelUlcerCount: "Number of ulcers",
+  labelUlcerCountPlaceholder: "Count",
+  labelUlcerPlaceholder: "Suspected penetrating atherosclerotic ulcer, etc.",
+  labelAffectedLength: "Affected length (mm)",
+  labelIrrPlaceholder: "Plaque, intramural hematoma, wall edema, etc.",
+  labelFlepPresent: "Is flap appearance present?",
+  labelFlepDetails: "Flap Localization",
+  labelFlepStart: "Start - relative to left renal artery",
+  labelFlepEnd: "End - relative to left renal artery",
+  labelLeakPresent: "Is leak present?",
+  labelLeakDetails: "Leak Details",
+  labelLeakAmount: "Leak amount / description",
+  labelLeakPlaceholder: "Small amount / Significant, etc.",
+  labelDiameter: "Diameter (mm)",
+  labelStenosisPresent: "Is stenosis present?",
+  labelStenosisDetails: "Stenosis Details",
+  labelStenosisDistance: "Distance from aortic origin (mm)",
+  labelStenosisDiameter: "Stenosis diameter (mm)",
+  labelStenosisLength: "Stenosis length (mm)",
+  labelTrombusPresent2: "Is thrombus present?",
+  labelPatientNamePlaceholder: "First Last Name",
+  labelAgePlaceholder: "Age",
+  labelProtocolPlaceholder: "MRI Angio / MRI Aorta, etc.",
+  // Buttons
+  btnBack: "Back",
+  btnNext: "Next",
+  btnGenerateReport: "Generate Report",
+  btnEdit: "Edit",
+  btnPrint: "Print / PDF",
+  btnCopy: "Copy",
+  btnDownloadHTML: "Download HTML",
+  // Step descs
+  descPatient: "Patient demographic information",
+  descKonum: "Select the anatomical position of the aorta",
+  descKalibrasyon: "Enter aortic diameter measurements (>30 mm is considered ectasia)",
+  descEktazi: "Ectasia start/end localization and degree of circumferential involvement",
+  descTrombus: "Thrombus assessment in the aortic lumen",
+  descDuvar: "Select aortic wall characteristics (multiple selection). Details for selected pathologies will be requested below.",
+  descFlep: "Intimal flap / dissection assessment",
+  descLeak: "Contrast leak assessment",
+  // Report section headers
+  reportAortGeneral: "Aorta General Assessment",
+  reportParamHeader: "Parameter",
+  reportValueHeader: "Value",
+  reportKonum: "Position",
+  reportCeliacDiam: "Celiac segment diameter",
+  reportInfrarenalDiam: "Infrarenal segment diameter",
+  reportBifurkDiam: "Pre-iliac bifurcation diameter",
+  reportWall: "Wall",
+  reportWallUnspecified: "Not specified",
+  reportTrombus: "Thrombus",
+  reportFlep: "Flap",
+  reportLeak: "Leak",
+  reportEktaziDetails: "Ectasia Details",
+  reportFlepDetails: "Flap Details",
+  reportBranchArteries: "Branch Arteries",
+  reportArtery: "Artery",
+  reportDiameter: "Diameter",
+  reportStenosis: "Stenosis",
+  reportStenosisPct: "Stenosis %",
+  reportTrombusCol: "Thrombus",
+  reportImpression: "IMPRESSION",
+  reportEktaziStart: "Start: from left renal artery",
+  reportEktaziEnd: "End: from left renal artery",
+  reportEktaziDegree: "Degree of aortic circumferential involvement",
+  reportAbove: "above",
+  reportBelow: "below",
+  // Alerts
+  copySuccess: "Report copied to clipboard!",
+  // Segment names
+  segSupraceliac: "Supraceliac",
+  segCeliacLevel: "Celiac level",
+  segInfrarenal: "Infrarenal",
+  segPreBifurk: "Pre-bifurcation",
+  segDiffuse: "Diffuse",
+  // Report yorum strings
+  yorumAortPosition: "Aorta position",
+  yorumAnatomicVariant: "anatomic variant.",
+  yorumCeliacSection: "Celiac segment",
+  yorumInfrarenalSection: "Infrarenal segment",
+  yorumPreBifurk: "Pre-bifurcation",
+  yorumAneurysmLevel: "aneurysm-level dilatation.",
+  yorumEctatic: "ectatic.",
+  yorumTrombusFound: "Thrombus in aortic lumen",
+  yorumTrombusLength: "mm in length",
+  yorumTrombusThickness: "mm in thickness",
+  yorumTrombusClinical: "Clinical correlation recommended regarding embolic risk.",
+  yorumCalcification: "Aortic wall calcification",
+  yorumCalcAtero: "atherosclerotic changes.",
+  yorumCalcLength: "mm in length",
+  yorumCalcWall: "wall thickness",
+  yorumUlcer: "Aortic wall ulceration",
+  yorumUlcerNote: "should be evaluated for penetrating atherosclerotic ulcer.",
+  yorumIrregular: "Aortic wall irregularity",
+  yorumIrregularNote: "plaque or wall pathology.",
+  yorumIrregularLength: "mm length of involvement",
+  yorumFlepFound: "Intimal flap appearance is present — consistent with aortic dissection. Stanford/DeBakey classification should be evaluated.",
+  yorumLeakFound: "Contrast leak detected",
+  yorumLeakNote: "Should be evaluated for active hemorrhage or endoleak.",
+  yorumLeakUnspecified: "amount not specified",
+  yorumStenosisFound: "Stenosis present",
+  yorumStenosisApprox: "approximately",
+  yorumStenosisStenoz: "stenosis",
+  yorumTrombusInArtery: "lumen thrombus.",
+  yorumNoPathology: "No significant pathology identified in the aorta and its branches.",
+  // Report HTML strings
+  reportHTMLPatientName: "Patient Name",
+  reportHTMLAge: "Age",
+  reportHTMLGender: "Gender",
+  reportHTMLProtocol: "Protocol",
+  reportHTMLYorum: "IMPRESSION",
+  reportHTMLSegment: "Segment",
+  reportHTMLLength: "Length",
+  reportHTMLWallThickness: "Wall thickness",
+  reportHTMLDiameter: "Diameter",
+  reportHTMLDepth: "Depth",
+  reportHTMLCount: "Count",
+  reportHTMLPresent: "Present",
+  reportHTMLAbsent: "Absent",
+  reportHTMLAmountUnspecified: "amount not specified",
+  reportHTMLStenosisPct: "stenosis",
+  reportHTMLApprox: "approximately",
+  reportHTMLTrombusDetail: "clock",
+  reportHTMLLengthUnit: "mm length",
+  reportHTMLThicknessUnit: "mm thickness",
+  // Artery report
+  artDarlikDetail: "distance",
+  // Badge labels
+  badgeEktazi: "Ectasia",
+  badgeAnevrizma: "Aneurysm",
+  // Duvar segment labels in report
+  detailSegment: "Segment",
+  detailLength: "Length",
+  detailWallThick: "Wall thickness",
+  detailDiameter: "Diameter",
+  detailDepth: "Depth",
+  detailCount: "Count",
+ }
+})[RV_LOCALE];
+
 const {useState,useCallback,useMemo} = React;
 
 /* ─── Pathology Profiles ─── */
 const PATHOLOGIES=[
-{name:"Aterosklerotik Stenoz",t1:"Duvar kalınlaşması, plak",t2:"Değişken",ip_op:"Değişmez",dwi:"Genelde negatif",adc:"Normal",art:"Lümen daralması",ven:"Persistan daralma",late:"Aynı"},
-{name:"Arteriyel Tromboz",t1:"Subakut dönemde hiperintens",t2:"Heterojen",ip_op:"Değişmez",dwi:"Restriksiyon olabilir",adc:"Düşük",art:"Dolum defekti",ven:"Persistan",late:"Persistan"},
-{name:"Arteriyel Diseksiyon",t1:"İntramural hematom hiperintens",t2:"Çift lümen görünümü",ip_op:"Değişmez",dwi:"Değişken",adc:"Değişken",art:"İntimal flap",ven:"Çift lümen",late:"Persistan"},
-{name:"Anevrizma",t1:"Trombus varsa hiperintens",t2:"Heterojen",ip_op:"Değişmez",dwi:"Genelde yok",adc:"Normal",art:"Lümen genişlemesi",ven:"Kontrast dolumu",late:"Persistan"},
-{name:"Pseudoanevrizma",t1:"Heterojen",t2:"Hiperintens",ip_op:"Değişmez",dwi:"Değişken",adc:"Değişken",art:"Kontrastla dolan kese",ven:"Devam",late:"Devam"},
-{name:"Vaskülit (Takayasu vb.)",t1:"Duvar kalınlaşması",t2:"Duvar hiperintens",ip_op:"Değişmez",dwi:"İnflamasyon restriksiyonu",adc:"Düşük",art:"Duvar kontrastı",ven:"Devam",late:"Persistan"},
-{name:"AVM",t1:"Akım boşluğu",t2:"Akım boşluğu",ip_op:"Değişmez",dwi:"Yok",adc:"Normal",art:"Erken venöz dolum",ven:"Dilate venler",late:"Persistan"},
-{name:"Emboli",t1:"Trombüs sinyali",t2:"Heterojen",ip_op:"Değişmez",dwi:"Restriksiyon olabilir",adc:"Düşük",art:"Ani dolum defekti",ven:"Persistan",late:"Persistan"},
+{name:T.pathAtero,t1:T.patT1,t2:T.patT2Atero,ip_op:T.patIpOpAtero,dwi:T.patDwiAtero,adc:T.patAdcAtero,art:T.patArtAtero,ven:T.patVenAtero,late:T.patLateAtero},
+{name:T.pathTromboz,t1:T.patT1Tromboz,t2:T.patT2Tromboz,ip_op:T.patIpOpTromboz,dwi:T.patDwiTromboz,adc:T.patAdcTromboz,art:T.patArtTromboz,ven:T.patVenTromboz,late:T.patLateTromboz},
+{name:T.pathDiseksiyon,t1:T.patT1Dis,t2:T.patT2Dis,ip_op:T.patIpOpDis,dwi:T.patDwiDis,adc:T.patAdcDis,art:T.patArtDis,ven:T.patVenDis,late:T.patLateDis},
+{name:T.pathAnevrizma,t1:T.patT1Anev,t2:T.patT2Anev,ip_op:T.patIpOpAnev,dwi:T.patDwiAnev,adc:T.patAdcAnev,art:T.patArtAnev,ven:T.patVenAnev,late:T.patLateAnev},
+{name:T.pathPseudo,t1:T.patT1Pseudo,t2:T.patT2Pseudo,ip_op:T.patIpOpPseudo,dwi:T.patDwiPseudo,adc:T.patAdcPseudo,art:T.patArtPseudo,ven:T.patVenPseudo,late:T.patLatePseudo},
+{name:T.pathVaskulit,t1:T.patT1Vas,t2:T.patT2Vas,ip_op:T.patIpOpVas,dwi:T.patDwiVas,adc:T.patAdcVas,art:T.patArtVas,ven:T.patVenVas,late:T.patLateVas},
+{name:T.pathAvm,t1:T.patT1Avm,t2:T.patT2Avm,ip_op:T.patIpOpAvm,dwi:T.patDwiAvm,adc:T.patAdcAvm,art:T.patArtAvm,ven:T.patVenAvm,late:T.patLateAvm},
+{name:T.pathEmboli,t1:T.patT1Emb,t2:T.patT2Emb,ip_op:T.patIpOpEmb,dwi:T.patDwiEmb,adc:T.patAdcEmb,art:T.patArtEmb,ven:T.patVenEmb,late:T.patLateEmb},
 ];
 
 /* ─── Branch detail sub-questions (reusable for arteries) ─── */
-const ARTERY_NAMES = {celiac:"Çöliak Arter",sma:"SMA (Superior Mezenterik Arter)",renalR:"Sağ Renal Arter",renalL:"Sol Renal Arter",iliakR:"Sağ İliak Arter",iliakL:"Sol İliak Arter"};
+const ARTERY_NAMES = {
+ celiac: T.artCeliac,
+ sma: T.artSma,
+ renalR: T.artRenalR,
+ renalL: T.artRenalL,
+ iliakR: T.artIliakR,
+ iliakL: T.artIliakL
+};
 
 /* ─── Steps Definition ─── */
 const STEPS=[
-{id:"patient",title:"Hasta Bilgileri"},
-{id:"konum",title:"Aort Konumu"},
-{id:"kalibrasyon",title:"Kalibrasyon Ölçümleri"},
-{id:"ektazi",title:"Ektazi Detayları",conditional:true},
-{id:"trombus",title:"Trombüs Değerlendirmesi"},
-{id:"duvar",title:"Duvar Özellikleri"},
-{id:"flep",title:"Flep / Diseksiyon"},
-{id:"leak",title:"Leak Değerlendirmesi"},
-{id:"celiac",title:"Çöliak Arter"},
-{id:"sma",title:"SMA"},
-{id:"renalR",title:"Sağ Renal Arter"},
-{id:"renalL",title:"Sol Renal Arter"},
-{id:"iliakR",title:"Sağ İliak Arter"},
-{id:"iliakL",title:"Sol İliak Arter"},
-{id:"report",title:"Rapor"},
+{id:"patient",title:T.stepPatient},
+{id:"konum",title:T.stepKonum},
+{id:"kalibrasyon",title:T.stepKalibrasyon},
+{id:"ektazi",title:T.stepEktazi,conditional:true},
+{id:"trombus",title:T.stepTrombus},
+{id:"duvar",title:T.stepDuvar},
+{id:"flep",title:T.stepFlep},
+{id:"leak",title:T.stepLeak},
+{id:"celiac",title:T.stepCeliac},
+{id:"sma",title:T.stepSma},
+{id:"renalR",title:T.stepRenalR},
+{id:"renalL",title:T.stepRenalL},
+{id:"iliakR",title:T.stepIliakR},
+{id:"iliakL",title:T.stepIliakL},
+{id:"report",title:T.stepReport},
+];
+
+/* ─── Segment options ─── */
+const DUVAR_SEGMENTS=[T.segSupraceliac,T.segCeliacLevel,T.segInfrarenal,T.segPreBifurk,T.segDiffuse];
+
+/* ─── Wall option keys (internal, not displayed) ─── */
+const WALL_OPTS=[
+ {key:"regular",label:T.labelWallRegular},
+ {key:"calcified",label:T.labelWallCalcified},
+ {key:"ulcerated",label:T.labelWallUlcerated},
+ {key:"irregular",label:T.labelWallIrregular},
 ];
 
 /* ─── Helpers ─── */
@@ -154,17 +748,17 @@ function App(){
  const [step,setStep]=useState(0);
  const [data,setData]=useState({
   patientName:"",patientAge:"",patientGender:"",patientProtocol:"",
-  konum:"Normal Konum",
+  konum:"normal",
   capCeliac:"",capInfrarenal:"",capBifurk:"",
   // ektazi
-  ektBasRel:"yukari",ektBasMm:"",ektBitRel:"asagi",ektBitMm:"",ektDerece:"",
+  ektBasRel:"above",ektBasMm:"",ektBitRel:"below",ektBitMm:"",ektDerece:"",
   // trombus
   trombusVar:"yok",tromSaatFrom:"",tromSaatTo:"",tromUzunluk:"",tromKalinlik:"",
-  // duvar
+  // duvar (uses locale-independent keys)
   duvar:[],
   duvarDetay:{},
   // flep
-  flepVar:"yok",flepBasRel:"yukari",flepBasMm:"",flepBitRel:"asagi",flepBitMm:"",
+  flepVar:"yok",flepBasRel:"above",flepBasMm:"",flepBitRel:"below",flepBitMm:"",
   // leak
   leakVar:"yok",leakMiktar:"",
   // arteries (each: cap, darlikVar, darlikMesafe, darlikCap, darlikMm, trombusVar)
@@ -206,42 +800,42 @@ function App(){
  /* ─── Artery Step Renderer ─── */
  const renderArtery=(prefix,label)=>(
   <>
-   <div className="step-desc">{label} değerlendirmesi</div>
+   <div className="step-desc">{label}</div>
    <div className="form-row">
     <div className="form-group">
-     <label>Çap (mm)</label>
+     <label>{T.labelDiameter}</label>
      <input type="number" value={data[prefix+"_cap"]} onChange={e=>set(prefix+"_cap",e.target.value)} placeholder="mm"/>
     </div>
     <div className="form-group">
-     <label>Darlık var mı?</label>
+     <label>{T.labelStenosisPresent}</label>
      <div className="opt-grid">
-      {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_darlik"]===v?" sel":"")} onClick={()=>set(prefix+"_darlik",v)}>{v==="yok"?"Yok":"Var"}</div>)}
+      {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_darlik"]===v?" sel":"")} onClick={()=>set(prefix+"_darlik",v)}>{v==="yok"?T.labelNo:T.labelYes}</div>)}
      </div>
     </div>
    </div>
    {data[prefix+"_darlik"]==="var"&&(
     <div className="cond-box">
-     <div className="cond-title">Darlık Detayları</div>
+     <div className="cond-title">{T.labelStenosisDetails}</div>
      <div className="form-row3">
       <div className="form-group">
-       <label>Aorttan ayrıldıktan kaç mm sonra</label>
+       <label>{T.labelStenosisDistance}</label>
        <input type="number" value={data[prefix+"_mesafe"]} onChange={e=>set(prefix+"_mesafe",e.target.value)} placeholder="mm"/>
       </div>
       <div className="form-group">
-       <label>Darlık çapı (mm)</label>
+       <label>{T.labelStenosisDiameter}</label>
        <input type="number" value={data[prefix+"_darlikCap"]} onChange={e=>set(prefix+"_darlikCap",e.target.value)} placeholder="mm"/>
       </div>
       <div className="form-group">
-       <label>Darlık uzunluğu (mm)</label>
+       <label>{T.labelStenosisLength}</label>
        <input type="number" value={data[prefix+"_darlikMm"]} onChange={e=>set(prefix+"_darlikMm",e.target.value)} placeholder="mm"/>
       </div>
      </div>
     </div>
    )}
    <div className="form-group" style={{marginTop:12}}>
-    <label>Trombüs var mı?</label>
+    <label>{T.labelTrombusPresent2}</label>
     <div className="opt-grid">
-     {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_trombus"]===v?" sel":"")} onClick={()=>set(prefix+"_trombus",v)}>{v==="yok"?"Yok":"Var"}</div>)}
+     {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_trombus"]===v?" sel":"")} onClick={()=>set(prefix+"_trombus",v)}>{v==="yok"?T.labelNo:T.labelYes}</div>)}
     </div>
    </div>
   </>
@@ -257,78 +851,85 @@ function App(){
  /* ─── YORUM Generator ─── */
  const generateYorum=()=>{
   const findings=[];
-  // Konum
-  if(data.konum!=="Normal Konum") findings.push(`Aort konumu: ${data.konum} - anatomik varyant.`);
-  // Ektazi/Anevrizma
-  const caps=[{n:"Çöliak kesim",v:data.capCeliac},{n:"İnfrarenal kesim",v:data.capInfrarenal},{n:"Bifurkasyon öncesi",v:data.capBifurk}];
+  // Position
+  if(data.konum!=="normal"){
+   const konumLabel=data.konum==="right"?T.labelRightSide:data.konum==="duplicate"?T.labelDuplicate:data.konum==="tortuous"?T.labelTortuous:data.konum;
+   findings.push(`${T.yorumAortPosition}: ${konumLabel} - ${T.yorumAnatomicVariant}`);
+  }
+  // Ektazi/Aneurysm
+  const caps=[
+   {n:T.yorumCeliacSection,v:data.capCeliac},
+   {n:T.yorumInfrarenalSection,v:data.capInfrarenal},
+   {n:T.yorumPreBifurk,v:data.capBifurk}
+  ];
   caps.forEach(c=>{const mm=parseFloat(c.v);if(mm>30){
-   findings.push(mm>=50?`${c.n}: ${mm} mm - anevrizma düzeyinde genişleme.`:`${c.n}: ${mm} mm - ektazik.`);
+   findings.push(mm>=50?`${c.n}: ${mm} mm - ${T.yorumAneurysmLevel}`:`${c.n}: ${mm} mm - ${T.yorumEctatic}`);
   }});
-  // Trombus
-  if(data.trombusVar==="var") findings.push(`Aort lümeninde trombüs (${data.tromUzunluk||"?"} mm uzunluğunda, ${data.tromKalinlik||"?"} mm kalınlığında). Emboli riski açısından klinik korelasyon önerilir.`);
-  // Duvar
-  if(data.duvar.includes("Kalsifiye")){
-   const d=data.duvarDetay["Kalsifiye"]||{};
-   let txt="Aort duvarında kalsifikasyon";
-   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
-   if(d.uzunluk) txt+=`, ${d.uzunluk} mm uzunluğunda`;
-   if(d.kalinlik) txt+=`, duvar kalınlığı ${d.kalinlik} mm`;
-   txt+=" - aterosklerotik değişiklikler.";
+  // Thrombus
+  if(data.trombusVar==="var") findings.push(`${T.yorumTrombusFound} (${data.tromUzunluk||"?"} ${T.yorumTrombusLength}, ${data.tromKalinlik||"?"} ${T.yorumTrombusThickness}). ${T.yorumTrombusClinical}`);
+  // Wall
+  if(data.duvar.includes("calcified")){
+   const d=data.duvarDetay["calcified"]||{};
+   let txt=T.yorumCalcification;
+   if(d.segment) txt+=` (${d.segment})`;
+   if(d.uzunluk) txt+=`, ${d.uzunluk} ${T.yorumCalcLength}`;
+   if(d.kalinlik) txt+=`, ${T.yorumCalcWall} ${d.kalinlik} mm`;
+   txt+=` - ${T.yorumCalcAtero}`;
    if(d.ek) txt+=` ${d.ek}.`;
    findings.push(txt);
   }
-  if(data.duvar.includes("Ülsere")){
-   const d=data.duvarDetay["Ülsere"]||{};
-   let txt="Aort duvarında ülserasyon";
-   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
-   if(d.uzunluk) txt+=`, çapı ${d.uzunluk} mm`;
-   if(d.derinlik) txt+=`, derinliği ${d.derinlik} mm`;
-   if(d.kalinlik) txt+=`, ${d.kalinlik} adet`;
-   txt+=" - penetran aterosklerotik ülser açısından değerlendirilmelidir.";
+  if(data.duvar.includes("ulcerated")){
+   const d=data.duvarDetay["ulcerated"]||{};
+   let txt=T.yorumUlcer;
+   if(d.segment) txt+=` (${d.segment})`;
+   if(d.uzunluk) txt+=`, ${T.detailDiameter}: ${d.uzunluk} mm`;
+   if(d.derinlik) txt+=`, ${T.detailDepth}: ${d.derinlik} mm`;
+   if(d.kalinlik) txt+=`, ${d.kalinlik}`;
+   txt+=` - ${T.yorumUlcerNote}`;
    if(d.ek) txt+=` ${d.ek}.`;
    findings.push(txt);
   }
-  if(data.duvar.includes("Düzensiz")){
-   const d=data.duvarDetay["Düzensiz"]||{};
-   let txt="Aort duvarında düzensizlik";
-   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
-   if(d.uzunluk) txt+=`, ${d.uzunluk} mm uzunluğunda etkilenim`;
-   if(d.kalinlik) txt+=`, duvar kalınlığı ${d.kalinlik} mm`;
-   txt+=" - plak veya duvar patolojisi.";
+  if(data.duvar.includes("irregular")){
+   const d=data.duvarDetay["irregular"]||{};
+   let txt=T.yorumIrregular;
+   if(d.segment) txt+=` (${d.segment})`;
+   if(d.uzunluk) txt+=`, ${d.uzunluk} ${T.yorumIrregularLength}`;
+   if(d.kalinlik) txt+=`, ${T.yorumCalcWall} ${d.kalinlik} mm`;
+   txt+=` - ${T.yorumIrregularNote}`;
    if(d.ek) txt+=` ${d.ek}.`;
    findings.push(txt);
   }
-  // Flep
-  if(data.flepVar==="var") findings.push("İntimal flep görünümü mevcut - aort diseksiyonu ile uyumlu. Stanford/DeBakey sınıflaması açısından değerlendirilmelidir.");
+  // Flap
+  if(data.flepVar==="var") findings.push(T.yorumFlepFound);
   // Leak
-  if(data.leakVar==="var") findings.push(`Kontrast leak tespit edildi (${data.leakMiktar||"miktar belirtilmedi"}). Aktif kanama veya endoleak açısından değerlendirilmelidir.`);
+  if(data.leakVar==="var") findings.push(`${T.yorumLeakFound} (${data.leakMiktar||T.yorumLeakUnspecified}). ${T.yorumLeakNote}`);
   // Arteries
   Object.keys(ARTERY_NAMES).forEach(prefix=>{
    if(data[prefix+"_darlik"]==="var"){
     const pct=stenosisPct(data[prefix+"_cap"],data[prefix+"_darlikCap"]);
     const label=ARTERY_NAMES[prefix];
-    findings.push(`${label}: Darlık mevcut${pct!==null?` (yaklaşık %${pct} stenoz)`:""}.`);
+    findings.push(`${label}: ${T.yorumStenosisFound}${pct!==null?` (${T.yorumStenosisApprox} %${pct} ${T.yorumStenosisStenoz})`:""}.`);
    }
-   if(data[prefix+"_trombus"]==="var") findings.push(`${ARTERY_NAMES[prefix]} lümeninde trombüs.`);
+   if(data[prefix+"_trombus"]==="var") findings.push(`${ARTERY_NAMES[prefix]} ${T.yorumTrombusInArtery}`);
   });
-  if(findings.length===0) findings.push("Aort ve dallarında anlamlı patoloji saptanmamıştır.");
+  if(findings.length===0) findings.push(T.yorumNoPathology);
   return findings;
  };
 
  /* ─── Differential suggestion ─── */
  const suggestDifferential=()=>{
   const matches=[];
-  if(data.duvar.includes("Kalsifiye")||data.duvar.includes("Ülsere")||Object.keys(ARTERY_NAMES).some(p=>data[p+"_darlik"]==="var"))
-   matches.push("Aterosklerotik Stenoz");
+  if(data.duvar.includes("calcified")||data.duvar.includes("ulcerated")||Object.keys(ARTERY_NAMES).some(p=>data[p+"_darlik"]==="var"))
+   matches.push(T.pathAtero);
   if(data.trombusVar==="var"||Object.keys(ARTERY_NAMES).some(p=>data[p+"_trombus"]==="var"))
-   matches.push("Arteriyel Tromboz","Emboli");
-  if(data.flepVar==="var") matches.push("Arteriyel Diseksiyon");
+   matches.push(T.pathTromboz,T.pathEmboli);
+  if(data.flepVar==="var") matches.push(T.pathDiseksiyon);
   if(hasEktazi(data)){
    const maxCap=Math.max(parseFloat(data.capCeliac)||0,parseFloat(data.capInfrarenal)||0,parseFloat(data.capBifurk)||0);
-   matches.push(maxCap>=50?"Anevrizma":"Anevrizma (ektazi düzeyinde)");
+   matches.push(maxCap>=50?T.pathAnevrizma:`${T.pathAnevrizma} (${T.badgeEktazi})`);
   }
-  if(data.leakVar==="var") matches.push("Pseudoanevrizma");
-  if(data.duvar.includes("Düzensiz")&&data.duvar.includes("Kalsifiye")) matches.push("Vaskülit (Takayasu vb.)");
+  if(data.leakVar==="var") matches.push(T.pathPseudo);
+  if(data.duvar.includes("irregular")&&data.duvar.includes("calcified")) matches.push(T.pathVaskulit);
   return [...new Set(matches)];
  };
 
@@ -338,78 +939,87 @@ function App(){
   const diffs=suggestDifferential();
   const matchedPat=PATHOLOGIES.filter(p=>diffs.some(d=>d.includes(p.name.split(" ")[0])));
 
+  const wallLabel=(key)=>{
+   if(key==="regular") return T.labelWallRegular;
+   if(key==="calcified") return T.labelWallCalcified;
+   if(key==="ulcerated") return T.labelWallUlcerated;
+   if(key==="irregular") return T.labelWallIrregular;
+   return key;
+  };
+
   let html=`<div style="font-family:'IBM Plex Sans',sans-serif;color:#111;line-height:1.7;font-size:14px">`;
-  html+=`<h2 style="border-bottom:2px solid #6d28d9;padding-bottom:6px">AORT MRI İNCELEME RAPORU</h2>`;
-  // Hasta
-  html+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">Hasta Adı</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">Yaş</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#faf9ff"><td style="padding:4px 10px;font-weight:600">Cinsiyet</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">Protokol</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
-  // Aort genel
-  html+=`<h3 style="color:#6d28d9;margin:14px 0 8px">Aort Genel Değerlendirme</h3>`;
+  html+=`<h2 style="border-bottom:2px solid #6d28d9;padding-bottom:6px">${T.reportTitle}</h2>`;
+  // Patient
+  html+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">${T.reportHTMLPatientName}</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">${T.reportHTMLAge}</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#faf9ff"><td style="padding:4px 10px;font-weight:600">${T.reportHTMLGender}</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">${T.reportHTMLProtocol}</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
+  // Aorta general
+  html+=`<h3 style="color:#6d28d9;margin:14px 0 8px">${T.reportAortGeneral}</h3>`;
   html+=`<table style="width:100%;border-collapse:collapse;margin:8px 0">`;
-  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">Parametre</th><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">Değer</th></tr>`;
+  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">${T.reportParamHeader}</th><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">${T.reportValueHeader}</th></tr>`;
+  const konumDisplay=data.konum==="normal"?T.labelNormalPosition:data.konum==="right"?T.labelRightSide:data.konum==="duplicate"?T.labelDuplicate:data.konum==="tortuous"?T.labelTortuous:data.konum;
   const rows=[
-   ["Konum",data.konum],
-   ["Çöliak kesim çapı",data.capCeliac?data.capCeliac+" mm":"-"],
-   ["İnfrarenal kesim çapı",data.capInfrarenal?data.capInfrarenal+" mm":"-"],
-   ["İliak bifurkasyon öncesi çapı",data.capBifurk?data.capBifurk+" mm":"-"],
-   ["Duvar",data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"],
-   ["Trombüs",data.trombusVar==="var"?`Var (saat ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} mm uzunluk, ${data.tromKalinlik||"?"} mm kalınlık)`:"Yok"],
-   ["Flep",data.flepVar==="var"?"Var":"Yok"],
-   ["Leak",data.leakVar==="var"?`Var (${data.leakMiktar||"miktar belirtilmedi"})`:"Yok"],
+   [T.reportKonum,konumDisplay],
+   [T.reportCeliacDiam,data.capCeliac?data.capCeliac+" mm":"-"],
+   [T.reportInfrarenalDiam,data.capInfrarenal?data.capInfrarenal+" mm":"-"],
+   [T.reportBifurkDiam,data.capBifurk?data.capBifurk+" mm":"-"],
+   [T.reportWall,data.duvar.length>0?data.duvar.map(wallLabel).join(", "):T.reportWallUnspecified],
+   [T.reportTrombus,data.trombusVar==="var"?`${T.reportHTMLPresent} (${T.reportHTMLTrombusDetail} ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} ${T.reportHTMLLengthUnit}, ${data.tromKalinlik||"?"} ${T.reportHTMLThicknessUnit})`:T.reportHTMLAbsent],
+   [T.reportFlep,data.flepVar==="var"?T.reportHTMLPresent:T.reportHTMLAbsent],
+   [T.reportLeak,data.leakVar==="var"?`${T.reportHTMLPresent} (${data.leakMiktar||T.reportHTMLAmountUnspecified})`:T.reportHTMLAbsent],
   ];
   rows.forEach((r,i)=>{html+=`<tr style="background:${i%2===0?"#fff":"#faf9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:13px">${r[0]}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:13px">${r[1]}</td></tr>`;});
-  // Duvar detay satırları
-  data.duvar.filter(d=>d!=="Düzenli").forEach(d=>{
+  // Wall detail rows
+  data.duvar.filter(d=>d!=="regular").forEach(d=>{
    const det=data.duvarDetay[d]||{};
    const parts=[];
-   if(det.segment) parts.push(`Segment: ${det.segment}`);
-   if(d==="Kalsifiye"){
-    if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
-    if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
-   } else if(d==="Ülsere"){
-    if(det.uzunluk) parts.push(`Çap: ${det.uzunluk} mm`);
-    if(det.derinlik) parts.push(`Derinlik: ${det.derinlik} mm`);
-    if(det.kalinlik) parts.push(`Sayı: ${det.kalinlik}`);
-   } else if(d==="Düzensiz"){
-    if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
-    if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+   if(det.segment) parts.push(`${T.reportHTMLSegment}: ${det.segment}`);
+   if(d==="calcified"){
+    if(det.uzunluk) parts.push(`${T.reportHTMLLength}: ${det.uzunluk} mm`);
+    if(det.kalinlik) parts.push(`${T.reportHTMLWallThickness}: ${det.kalinlik} mm`);
+   } else if(d==="ulcerated"){
+    if(det.uzunluk) parts.push(`${T.reportHTMLDiameter}: ${det.uzunluk} mm`);
+    if(det.derinlik) parts.push(`${T.reportHTMLDepth}: ${det.derinlik} mm`);
+    if(det.kalinlik) parts.push(`${T.reportHTMLCount}: ${det.kalinlik}`);
+   } else if(d==="irregular"){
+    if(det.uzunluk) parts.push(`${T.reportHTMLLength}: ${det.uzunluk} mm`);
+    if(det.kalinlik) parts.push(`${T.reportHTMLWallThickness}: ${det.kalinlik} mm`);
    }
    if(det.ek) parts.push(det.ek);
    if(parts.length>0){
-    html+=`<tr style="background:#faf9ff"><td style="padding:4px 10px 4px 24px;border:1px solid #e8e8f0;font-size:12px;color:#666">↳ ${d}</td><td style="padding:4px 10px;border:1px solid #e8e8f0;font-size:12px">${parts.join(" • ")}</td></tr>`;
+    html+=`<tr style="background:#faf9ff"><td style="padding:4px 10px 4px 24px;border:1px solid #e8e8f0;font-size:12px;color:#666">↳ ${wallLabel(d)}</td><td style="padding:4px 10px;border:1px solid #e8e8f0;font-size:12px">${parts.join(" • ")}</td></tr>`;
    }
   });
   html+=`</table>`;
-  // Ektazi detail
+  // Ectasia detail
   if(hasEktazi(data)){
-   html+=`<h3 style="color:#6d28d9">Ektazi Detayları</h3>`;
-   html+=`<p style="font-size:13px">Başlangıç: Sol renal arterden ${data.ektBasMm||"?"} mm ${data.ektBasRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
-   html+=`Bitiş: Sol renal arterden ${data.ektBitMm||"?"} mm ${data.ektBitRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
-   html+=`Aortu kapsama derecesi: ${data.ektDerece||"?"}&deg;</p>`;
+   html+=`<h3 style="color:#6d28d9">${T.reportEktaziDetails}</h3>`;
+   html+=`<p style="font-size:13px">${T.reportEktaziStart} ${data.ektBasMm||"?"} mm ${data.ektBasRel==="above"?T.reportAbove:T.reportBelow}<br>`;
+   html+=`${T.reportEktaziEnd} ${data.ektBitMm||"?"} mm ${data.ektBitRel==="above"?T.reportAbove:T.reportBelow}<br>`;
+   html+=`${T.reportEktaziDegree}: ${data.ektDerece||"?"}&deg;</p>`;
   }
-  // Flep detail
+  // Flap detail
   if(data.flepVar==="var"){
-   html+=`<h3 style="color:#6d28d9">Flep Detayları</h3>`;
-   html+=`<p style="font-size:13px">Başlangıç: Sol renal arterden ${data.flepBasMm||"?"} mm ${data.flepBasRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
-   html+=`Bitiş: Sol renal arterden ${data.flepBitMm||"?"} mm ${data.flepBitRel==="yukari"?"yukarıda":"aşağıda"}</p>`;
+   html+=`<h3 style="color:#6d28d9">${T.reportFlepDetails}</h3>`;
+   html+=`<p style="font-size:13px">${T.reportEktaziStart} ${data.flepBasMm||"?"} mm ${data.flepBasRel==="above"?T.reportAbove:T.reportBelow}<br>`;
+   html+=`${T.reportEktaziEnd} ${data.flepBitMm||"?"} mm ${data.flepBitRel==="above"?T.reportAbove:T.reportBelow}</p>`;
   }
   // Arteries
-  html+=`<h3 style="color:#6d28d9">Dal Arterleri</h3>`;
+  html+=`<h3 style="color:#6d28d9">${T.reportBranchArteries}</h3>`;
   html+=`<table style="width:100%;border-collapse:collapse;margin:8px 0">`;
-  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:12px">Arter</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Çap</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Darlık</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Stenoz %</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Trombüs</th></tr>`;
+  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:12px">${T.reportArtery}</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">${T.reportDiameter}</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">${T.reportStenosis}</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">${T.reportStenosisPct}</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">${T.reportTrombusCol}</th></tr>`;
   Object.keys(ARTERY_NAMES).forEach((p,i)=>{
    const pct=stenosisPct(data[p+"_cap"],data[p+"_darlikCap"]);
    html+=`<tr style="background:${i%2===0?"#fff":"#faf9ff"}">`;
    html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:12px">${ARTERY_NAMES[p]}</td>`;
    html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_cap"]?data[p+"_cap"]+" mm":"-"}</td>`;
-   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_darlik"]==="var"?"Var":"Yok"}</td>`;
-   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${pct!==null?"%"+pct:"-"}</td>`;
-   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_trombus"]==="var"?"Var":"Yok"}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_darlik"]==="var"?T.reportHTMLPresent:T.reportHTMLAbsent}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${pct!==null?`${T.reportHTMLApprox} %${pct} ${T.reportHTMLStenosisPct}`:"-"}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_trombus"]==="var"?T.reportHTMLPresent:T.reportHTMLAbsent}</td>`;
    html+=`</tr>`;
   });
   html+=`</table>`;
-  // YORUM
+  // Impression
   html+=`<div style="background:#f6f3ff;border-left:4px solid #6d28d9;padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0">`;
-  html+=`<div style="font-weight:700;color:#6d28d9;font-size:14px;margin-bottom:8px">YORUM</div>`;
+  html+=`<div style="font-weight:700;color:#6d28d9;font-size:14px;margin-bottom:8px">${T.reportHTMLYorum}</div>`;
   yorumlar.forEach(y=>{html+=`<p style="font-size:13px;color:#333;margin:4px 0">• ${y}</p>`;});
   html+=`</div>`;
 
@@ -428,7 +1038,7 @@ function App(){
   sel.removeAllRanges();sel.addRange(range);
   document.execCommand("copy");
   sel.removeAllRanges();
-  alert("Rapor panoya kopyalandı!");
+  alert(T.copySuccess);
  };
  const handleHTML=()=>{
   const html=buildReportHTML();
@@ -442,7 +1052,6 @@ function App(){
  };
 
  /* ─── Duvar Detay helpers ─── */
- const DUVAR_SEGMENTS=["Supraçöliak","Çöliak seviyesi","İnfrarenal","Bifurkasyon öncesi","Yaygın"];
  const setDetay=(typ,field,val)=>{
   setData(p=>{
    const dd={...p.duvarDetay};
@@ -461,74 +1070,74 @@ function App(){
   switch(curStep.id){
    case "patient": return(
     <>
-     <div className="step-desc">Hasta demografik bilgileri</div>
+     <div className="step-desc">{T.descPatient}</div>
      <div className="form-row">
-      <div className="form-group"><label>Hasta Adı</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder="Ad Soyad"/></div>
-      <div className="form-group"><label>Yaş</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder="Yaş"/></div>
+      <div className="form-group"><label>{T.labelPatientName}</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder={T.labelPatientNamePlaceholder}/></div>
+      <div className="form-group"><label>{T.labelAge}</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder={T.labelAgePlaceholder}/></div>
      </div>
      <div className="form-row">
-      <div className="form-group"><label>Cinsiyet</label>
-       <div className="opt-grid">{["Erkek","Kadın"].map(v=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{v}</div>)}</div>
+      <div className="form-group"><label>{T.labelGender}</label>
+       <div className="opt-grid">{[["male",T.labelMale],["female",T.labelFemale]].map(([v,l])=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{l}</div>)}</div>
       </div>
-      <div className="form-group"><label>Protokol</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder="MR Anjio / MR Aort vb."/></div>
+      <div className="form-group"><label>{T.labelProtocol}</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder={T.labelProtocolPlaceholder}/></div>
      </div>
     </>
    );
    case "konum": return(
     <>
-     <div className="step-desc">Aortun anatomik konumunu seçiniz</div>
+     <div className="step-desc">{T.descKonum}</div>
      <div className="opt-grid">
-      {["Normal Konum","Sağ Yerleşimli","Duplike","Tortiyoze"].map(v=>
-       <div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{v}</div>
+      {[["normal",T.labelNormalPosition],["right",T.labelRightSide],["duplicate",T.labelDuplicate],["tortuous",T.labelTortuous]].map(([v,l])=>
+       <div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{l}</div>
       )}
      </div>
     </>
    );
    case "kalibrasyon": return(
     <>
-     <div className="step-desc">Aort çap ölçümlerini giriniz (30 mm üzeri ektazi kabul edilir)</div>
+     <div className="step-desc">{T.descKalibrasyon}</div>
      <div className="form-row3">
-      <div className="form-group"><label>Çöliak kesim çapı (mm)</label><input type="number" value={data.capCeliac} onChange={e=>set("capCeliac",e.target.value)} placeholder="mm"/></div>
-      <div className="form-group"><label>İnfrarenal kesim çapı (mm)</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
-      <div className="form-group"><label>İliak bif. öncesi çapı (mm)</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelCeliacDiameter}</label><input type="number" value={data.capCeliac} onChange={e=>set("capCeliac",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelInfrarenalDiameter}</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelBifurkDiameter}</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
      </div>
-     {hasEktazi(data)&&<div className="alert-info">Ektazi tespit edildi (&gt;30 mm). Sonraki adımda ektazi detayları sorulacaktır.</div>}
+     {hasEktazi(data)&&<div className="alert-info">{T.labelEktaziDetected}</div>}
     </>
    );
    case "ektazi": return(
     <>
-     <div className="step-desc">Ektazi başlangıç/bitiş lokalizasyonu ve kapsama derecesi</div>
+     <div className="step-desc">{T.descEktazi}</div>
      <div className="form-row">
-      <div className="form-group"><label>Başlangıç - Sol renal artere göre</label>
-       <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBasRel===v?" sel":"")} onClick={()=>set("ektBasRel",v)}>{l}</div>)}</div>
+      <div className="form-group"><label>{T.labelEktaziStart}</label>
+       <div className="opt-grid">{[["above",T.labelAbove],["below",T.labelBelow]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBasRel===v?" sel":"")} onClick={()=>set("ektBasRel",v)}>{l}</div>)}</div>
       </div>
-      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.ektBasMm} onChange={e=>set("ektBasMm",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelDistance}</label><input type="number" value={data.ektBasMm} onChange={e=>set("ektBasMm",e.target.value)} placeholder="mm"/></div>
      </div>
      <div className="form-row">
-      <div className="form-group"><label>Bitiş - Sol renal artere göre</label>
-       <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBitRel===v?" sel":"")} onClick={()=>set("ektBitRel",v)}>{l}</div>)}</div>
+      <div className="form-group"><label>{T.labelEktaziEnd}</label>
+       <div className="opt-grid">{[["above",T.labelAbove],["below",T.labelBelow]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBitRel===v?" sel":"")} onClick={()=>set("ektBitRel",v)}>{l}</div>)}</div>
       </div>
-      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.ektBitMm} onChange={e=>set("ektBitMm",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>{T.labelDistance}</label><input type="number" value={data.ektBitMm} onChange={e=>set("ektBitMm",e.target.value)} placeholder="mm"/></div>
      </div>
-     <div className="form-group"><label>Aortu kaç derece kapsıyor</label><input type="number" value={data.ektDerece} onChange={e=>set("ektDerece",e.target.value)} placeholder="Derece (°)"/></div>
+     <div className="form-group"><label>{T.labelEktaziDegree}</label><input type="number" value={data.ektDerece} onChange={e=>set("ektDerece",e.target.value)} placeholder={T.labelDegreePlaceholder}/></div>
     </>
    );
    case "trombus": return(
     <>
-     <div className="step-desc">Aort lümeninde trombüs değerlendirmesi</div>
-     <div className="form-group"><label>Trombüs var mı?</label>
-      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.trombusVar===v?" sel":"")} onClick={()=>set("trombusVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     <div className="step-desc">{T.descTrombus}</div>
+     <div className="form-group"><label>{T.labelTrombusPresent}</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.trombusVar===v?" sel":"")} onClick={()=>set("trombusVar",v)}>{v==="yok"?T.labelNo:T.labelYes}</div>)}</div>
      </div>
      {data.trombusVar==="var"&&(
       <div className="cond-box">
-       <div className="cond-title">Trombüs Detayları</div>
+       <div className="cond-title">{T.labelTrombusDetails}</div>
        <div className="form-row">
-        <div className="form-group"><label>Saat pozisyonu (başlangıç)</label><input type="text" value={data.tromSaatFrom} onChange={e=>set("tromSaatFrom",e.target.value)} placeholder="ör: 2"/></div>
-        <div className="form-group"><label>Saat pozisyonu (bitiş)</label><input type="text" value={data.tromSaatTo} onChange={e=>set("tromSaatTo",e.target.value)} placeholder="ör: 5"/></div>
+        <div className="form-group"><label>{T.labelClockStart}</label><input type="text" value={data.tromSaatFrom} onChange={e=>set("tromSaatFrom",e.target.value)} placeholder={T.labelClockPlaceholder}/></div>
+        <div className="form-group"><label>{T.labelClockEnd}</label><input type="text" value={data.tromSaatTo} onChange={e=>set("tromSaatTo",e.target.value)} placeholder={T.labelClockPlaceholder2}/></div>
        </div>
        <div className="form-row">
-        <div className="form-group"><label>Trombüs uzunluğu (mm)</label><input type="number" value={data.tromUzunluk} onChange={e=>set("tromUzunluk",e.target.value)} placeholder="mm"/></div>
-        <div className="form-group"><label>Trombüs kalınlığı (mm)</label><input type="number" value={data.tromKalinlik} onChange={e=>set("tromKalinlik",e.target.value)} placeholder="mm"/></div>
+        <div className="form-group"><label>{T.labelTrombusLength}</label><input type="number" value={data.tromUzunluk} onChange={e=>set("tromUzunluk",e.target.value)} placeholder="mm"/></div>
+        <div className="form-group"><label>{T.labelTrombusThickness}</label><input type="number" value={data.tromKalinlik} onChange={e=>set("tromKalinlik",e.target.value)} placeholder="mm"/></div>
        </div>
       </div>
      )}
@@ -536,93 +1145,93 @@ function App(){
    );
    case "duvar": return(
     <>
-     <div className="step-desc">Aort duvar özelliklerini seçiniz (çoklu seçim). Seçilen patolojiler için detay bilgileri aşağıda sorulacaktır.</div>
+     <div className="step-desc">{T.descDuvar}</div>
      <div className="chk-grid">
-      {["Düzenli","Kalsifiye","Ülsere","Düzensiz"].map(v=>{
-       const sel=data.duvar.includes(v);
-       return <div key={v} className={"chk-btn"+(sel?" sel":"")} onClick={()=>{
-        set("duvar",sel?data.duvar.filter(x=>x!==v):[...data.duvar,v]);
-       }}>{v}</div>;
+      {WALL_OPTS.map(({key,label})=>{
+       const sel=data.duvar.includes(key);
+       return <div key={key} className={"chk-btn"+(sel?" sel":"")} onClick={()=>{
+        set("duvar",sel?data.duvar.filter(x=>x!==key):[...data.duvar,key]);
+       }}>{label}</div>;
       })}
      </div>
-     {data.duvar.includes("Kalsifiye")&&(
+     {data.duvar.includes("calcified")&&(
       <div className="cond-box" style={{marginTop:14}}>
-       <div className="cond-title">Kalsifikasyon Detayları</div>
-       <div className="form-group"><label>Segment</label>
+       <div className="cond-title">{T.labelCalcDetails}</div>
+       <div className="form-group"><label>{T.labelSegment}</label>
         <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
-         const isSel=getDetay("Kalsifiye","segment").split(", ").filter(Boolean).includes(s);
+         const isSel=getDetay("calcified","segment").split(", ").filter(Boolean).includes(s);
          return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
-          const cur=getDetay("Kalsifiye","segment").split(", ").filter(Boolean);
+          const cur=getDetay("calcified","segment").split(", ").filter(Boolean);
           const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
-          setDetay("Kalsifiye","segment",nv.join(", "));
+          setDetay("calcified","segment",nv.join(", "));
          }}>{s}</div>;
         })}</div>
        </div>
        <div className="form-row" style={{marginTop:8}}>
-        <div className="form-group"><label>Kalsifikasyon uzunluğu (mm)</label>
-         <input type="number" value={getDetay("Kalsifiye","uzunluk")} onChange={e=>setDetay("Kalsifiye","uzunluk",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelCalcLength}</label>
+         <input type="number" value={getDetay("calcified","uzunluk")} onChange={e=>setDetay("calcified","uzunluk",e.target.value)} placeholder="mm"/>
         </div>
-        <div className="form-group"><label>Duvar kalınlığı (mm)</label>
-         <input type="number" value={getDetay("Kalsifiye","kalinlik")} onChange={e=>setDetay("Kalsifiye","kalinlik",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelWallThickness}</label>
+         <input type="number" value={getDetay("calcified","kalinlik")} onChange={e=>setDetay("calcified","kalinlik",e.target.value)} placeholder="mm"/>
         </div>
        </div>
-       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
-        <input type="text" value={getDetay("Kalsifiye","ek")} onChange={e=>setDetay("Kalsifiye","ek",e.target.value)} placeholder="Sirküler / nonsirküler, plak morfolojisi vb."/>
+       <div className="form-group" style={{marginTop:8}}><label>{T.labelAdditional}</label>
+        <input type="text" value={getDetay("calcified","ek")} onChange={e=>setDetay("calcified","ek",e.target.value)} placeholder={T.labelCalcPlaceholder}/>
        </div>
       </div>
      )}
-     {data.duvar.includes("Ülsere")&&(
+     {data.duvar.includes("ulcerated")&&(
       <div className="cond-box" style={{marginTop:14}}>
-       <div className="cond-title">Ülserasyon Detayları</div>
-       <div className="form-group"><label>Segment</label>
+       <div className="cond-title">{T.labelUlcerDetails}</div>
+       <div className="form-group"><label>{T.labelSegment}</label>
         <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
-         const isSel=getDetay("Ülsere","segment").split(", ").filter(Boolean).includes(s);
+         const isSel=getDetay("ulcerated","segment").split(", ").filter(Boolean).includes(s);
          return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
-          const cur=getDetay("Ülsere","segment").split(", ").filter(Boolean);
+          const cur=getDetay("ulcerated","segment").split(", ").filter(Boolean);
           const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
-          setDetay("Ülsere","segment",nv.join(", "));
+          setDetay("ulcerated","segment",nv.join(", "));
          }}>{s}</div>;
         })}</div>
        </div>
        <div className="form-row3" style={{marginTop:8}}>
-        <div className="form-group"><label>Ülser çapı (mm)</label>
-         <input type="number" value={getDetay("Ülsere","uzunluk")} onChange={e=>setDetay("Ülsere","uzunluk",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelUlcerDiameter}</label>
+         <input type="number" value={getDetay("ulcerated","uzunluk")} onChange={e=>setDetay("ulcerated","uzunluk",e.target.value)} placeholder="mm"/>
         </div>
-        <div className="form-group"><label>Derinlik (mm)</label>
-         <input type="number" value={getDetay("Ülsere","derinlik")} onChange={e=>setDetay("Ülsere","derinlik",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelDepth}</label>
+         <input type="number" value={getDetay("ulcerated","derinlik")} onChange={e=>setDetay("ulcerated","derinlik",e.target.value)} placeholder="mm"/>
         </div>
-        <div className="form-group"><label>Ülser sayısı</label>
-         <input type="number" value={getDetay("Ülsere","kalinlik")} onChange={e=>setDetay("Ülsere","kalinlik",e.target.value)} placeholder="Adet"/>
+        <div className="form-group"><label>{T.labelUlcerCount}</label>
+         <input type="number" value={getDetay("ulcerated","kalinlik")} onChange={e=>setDetay("ulcerated","kalinlik",e.target.value)} placeholder={T.labelUlcerCountPlaceholder}/>
         </div>
        </div>
-       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
-        <input type="text" value={getDetay("Ülsere","ek")} onChange={e=>setDetay("Ülsere","ek",e.target.value)} placeholder="Penetran aterosklerotik ülser şüphesi vb."/>
+       <div className="form-group" style={{marginTop:8}}><label>{T.labelAdditional}</label>
+        <input type="text" value={getDetay("ulcerated","ek")} onChange={e=>setDetay("ulcerated","ek",e.target.value)} placeholder={T.labelUlcerPlaceholder}/>
        </div>
       </div>
      )}
-     {data.duvar.includes("Düzensiz")&&(
+     {data.duvar.includes("irregular")&&(
       <div className="cond-box" style={{marginTop:14}}>
-       <div className="cond-title">Duvar Düzensizliği Detayları</div>
-       <div className="form-group"><label>Segment</label>
+       <div className="cond-title">{T.labelIrrDetails}</div>
+       <div className="form-group"><label>{T.labelSegment}</label>
         <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
-         const isSel=getDetay("Düzensiz","segment").split(", ").filter(Boolean).includes(s);
+         const isSel=getDetay("irregular","segment").split(", ").filter(Boolean).includes(s);
          return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
-          const cur=getDetay("Düzensiz","segment").split(", ").filter(Boolean);
+          const cur=getDetay("irregular","segment").split(", ").filter(Boolean);
           const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
-          setDetay("Düzensiz","segment",nv.join(", "));
+          setDetay("irregular","segment",nv.join(", "));
          }}>{s}</div>;
         })}</div>
        </div>
        <div className="form-row" style={{marginTop:8}}>
-        <div className="form-group"><label>Etkilenen uzunluk (mm)</label>
-         <input type="number" value={getDetay("Düzensiz","uzunluk")} onChange={e=>setDetay("Düzensiz","uzunluk",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelAffectedLength}</label>
+         <input type="number" value={getDetay("irregular","uzunluk")} onChange={e=>setDetay("irregular","uzunluk",e.target.value)} placeholder="mm"/>
         </div>
-        <div className="form-group"><label>Duvar kalınlığı (mm)</label>
-         <input type="number" value={getDetay("Düzensiz","kalinlik")} onChange={e=>setDetay("Düzensiz","kalinlik",e.target.value)} placeholder="mm"/>
+        <div className="form-group"><label>{T.labelWallThickness}</label>
+         <input type="number" value={getDetay("irregular","kalinlik")} onChange={e=>setDetay("irregular","kalinlik",e.target.value)} placeholder="mm"/>
         </div>
        </div>
-       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
-        <input type="text" value={getDetay("Düzensiz","ek")} onChange={e=>setDetay("Düzensiz","ek",e.target.value)} placeholder="Plak, intramural hematom, duvar ödemi vb."/>
+       <div className="form-group" style={{marginTop:8}}><label>{T.labelAdditional}</label>
+        <input type="text" value={getDetay("irregular","ek")} onChange={e=>setDetay("irregular","ek",e.target.value)} placeholder={T.labelIrrPlaceholder}/>
        </div>
       </div>
      )}
@@ -630,24 +1239,24 @@ function App(){
    );
    case "flep": return(
     <>
-     <div className="step-desc">İntimal flep / diseksiyon değerlendirmesi</div>
-     <div className="form-group"><label>Flep görünümü var mı?</label>
-      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.flepVar===v?" sel":"")} onClick={()=>set("flepVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     <div className="step-desc">{T.descFlep}</div>
+     <div className="form-group"><label>{T.labelFlepPresent}</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.flepVar===v?" sel":"")} onClick={()=>set("flepVar",v)}>{v==="yok"?T.labelNo:T.labelYes}</div>)}</div>
      </div>
      {data.flepVar==="var"&&(
       <div className="cond-box">
-       <div className="cond-title">Flep Lokalizasyonu</div>
+       <div className="cond-title">{T.labelFlepDetails}</div>
        <div className="form-row">
-        <div className="form-group"><label>Başlangıç - Sol renal artere göre</label>
-         <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBasRel===v?" sel":"")} onClick={()=>set("flepBasRel",v)}>{l}</div>)}</div>
+        <div className="form-group"><label>{T.labelFlepStart}</label>
+         <div className="opt-grid">{[["above",T.labelAbove],["below",T.labelBelow]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBasRel===v?" sel":"")} onClick={()=>set("flepBasRel",v)}>{l}</div>)}</div>
         </div>
-        <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.flepBasMm} onChange={e=>set("flepBasMm",e.target.value)} placeholder="mm"/></div>
+        <div className="form-group"><label>{T.labelDistance}</label><input type="number" value={data.flepBasMm} onChange={e=>set("flepBasMm",e.target.value)} placeholder="mm"/></div>
        </div>
        <div className="form-row">
-        <div className="form-group"><label>Bitiş - Sol renal artere göre</label>
-         <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBitRel===v?" sel":"")} onClick={()=>set("flepBitRel",v)}>{l}</div>)}</div>
+        <div className="form-group"><label>{T.labelFlepEnd}</label>
+         <div className="opt-grid">{[["above",T.labelAbove],["below",T.labelBelow]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBitRel===v?" sel":"")} onClick={()=>set("flepBitRel",v)}>{l}</div>)}</div>
         </div>
-        <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.flepBitMm} onChange={e=>set("flepBitMm",e.target.value)} placeholder="mm"/></div>
+        <div className="form-group"><label>{T.labelDistance}</label><input type="number" value={data.flepBitMm} onChange={e=>set("flepBitMm",e.target.value)} placeholder="mm"/></div>
        </div>
       </div>
      )}
@@ -655,108 +1264,116 @@ function App(){
    );
    case "leak": return(
     <>
-     <div className="step-desc">Kontrast leak değerlendirmesi</div>
-     <div className="form-group"><label>Leak var mı?</label>
-      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.leakVar===v?" sel":"")} onClick={()=>set("leakVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     <div className="step-desc">{T.descLeak}</div>
+     <div className="form-group"><label>{T.labelLeakPresent}</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.leakVar===v?" sel":"")} onClick={()=>set("leakVar",v)}>{v==="yok"?T.labelNo:T.labelYes}</div>)}</div>
      </div>
      {data.leakVar==="var"&&(
       <div className="cond-box">
-       <div className="cond-title">Leak Detayları</div>
-       <div className="form-group"><label>Leak miktarı / tanımı</label>
-        <input type="text" value={data.leakMiktar} onChange={e=>set("leakMiktar",e.target.value)} placeholder="Az miktarda / Belirgin vb."/>
+       <div className="cond-title">{T.labelLeakDetails}</div>
+       <div className="form-group"><label>{T.labelLeakAmount}</label>
+        <input type="text" value={data.leakMiktar} onChange={e=>set("leakMiktar",e.target.value)} placeholder={T.labelLeakPlaceholder}/>
        </div>
       </div>
      )}
     </>
    );
-   case "celiac": return renderArtery("celiac","Çöliak Arter");
-   case "sma": return renderArtery("sma","SMA (Superior Mezenterik Arter)");
-   case "renalR": return renderArtery("renalR","Sağ Renal Arter");
-   case "renalL": return renderArtery("renalL","Sol Renal Arter");
-   case "iliakR": return renderArtery("iliakR","Sağ İliak Arter");
-   case "iliakL": return renderArtery("iliakL","Sol İliak Arter");
+   case "celiac": return renderArtery("celiac",T.artCeliac);
+   case "sma": return renderArtery("sma",T.artSma);
+   case "renalR": return renderArtery("renalR",T.artRenalR);
+   case "renalL": return renderArtery("renalL",T.artRenalL);
+   case "iliakR": return renderArtery("iliakR",T.artIliakR);
+   case "iliakL": return renderArtery("iliakL",T.artIliakL);
    case "report": {
     const yorumlar=generateYorum();
     const diffs=suggestDifferential();
     const matchedPat=PATHOLOGIES.filter(p=>diffs.some(d=>d.includes(p.name.split(" ")[0])));
+    const wallLabel=(key)=>{
+     if(key==="regular") return T.labelWallRegular;
+     if(key==="calcified") return T.labelWallCalcified;
+     if(key==="ulcerated") return T.labelWallUlcerated;
+     if(key==="irregular") return T.labelWallIrregular;
+     return key;
+    };
+    const konumDisplay=data.konum==="normal"?T.labelNormalPosition:data.konum==="right"?T.labelRightSide:data.konum==="duplicate"?T.labelDuplicate:data.konum==="tortuous"?T.labelTortuous:data.konum;
     return(
      <>
       <div className="export-row" style={{marginBottom:16}}>
-       <button className="export-btn export-print" onClick={handlePrint}>Yazdır / PDF</button>
-       <button className="export-btn export-copy" onClick={handleCopy}>Kopyala</button>
-       <button className="export-btn export-html" onClick={handleHTML}>HTML İndir</button>
+       <button className="export-btn export-print" onClick={handlePrint}>{T.btnPrint}</button>
+       <button className="export-btn export-copy" onClick={handleCopy}>{T.btnCopy}</button>
+       <button className="export-btn export-html" onClick={handleHTML}>{T.btnDownloadHTML}</button>
       </div>
       <div className="report-wrap" id="report-content">
-       <h2>AORT MRI İNCELEME RAPORU</h2>
+       <h2>{T.reportTitle}</h2>
        <table className="report-table">
         <tbody>
-         <tr><td style={{fontWeight:600,width:150}}>Hasta Adı</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>Yaş</td><td>{data.patientAge||"-"}</td></tr>
-         <tr><td style={{fontWeight:600}}>Cinsiyet</td><td>{data.patientGender||"-"}</td><td style={{fontWeight:600}}>Protokol</td><td>{data.patientProtocol||"-"}</td></tr>
+         <tr><td style={{fontWeight:600,width:150}}>{T.reportHTMLPatientName}</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>{T.reportHTMLAge}</td><td>{data.patientAge||"-"}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportHTMLGender}</td><td>{data.patientGender==="male"?T.labelMale:data.patientGender==="female"?T.labelFemale:data.patientGender||"-"}</td><td style={{fontWeight:600}}>{T.reportHTMLProtocol}</td><td>{data.patientProtocol||"-"}</td></tr>
         </tbody>
        </table>
-       <h3>Aort Genel Değerlendirme</h3>
+       <h3>{T.reportAortGeneral}</h3>
        <table className="report-table">
-        <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+        <thead><tr><th>{T.reportParamHeader}</th><th>{T.reportValueHeader}</th></tr></thead>
         <tbody>
-         <tr><td style={{fontWeight:600}}>Konum</td><td>{data.konum}</td></tr>
-         <tr><td style={{fontWeight:600}}>Çöliak kesim çapı</td><td>{data.capCeliac?data.capCeliac+" mm":"-"}{parseFloat(data.capCeliac)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capCeliac)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-         <tr><td style={{fontWeight:600}}>İnfrarenal kesim çapı</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-         <tr><td style={{fontWeight:600}}>İliak bif. öncesi çapı</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
-         <tr><td style={{fontWeight:600}}>Duvar</td><td>{data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"}</td></tr>
-         {data.duvar.filter(d=>d!=="Düzenli").map(d=>{
+         <tr><td style={{fontWeight:600}}>{T.reportKonum}</td><td>{konumDisplay}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportCeliacDiam}</td><td>{data.capCeliac?data.capCeliac+" mm":"-"}{parseFloat(data.capCeliac)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capCeliac)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportInfrarenalDiam}</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportBifurkDiam}</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">{T.badgeEktazi}</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">{T.badgeAnevrizma}</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportWall}</td><td>{data.duvar.length>0?data.duvar.map(wallLabel).join(", "):T.reportWallUnspecified}</td></tr>
+         {data.duvar.filter(d=>d!=="regular").map(d=>{
           const det=data.duvarDetay[d]||{};
           const parts=[];
-          if(det.segment) parts.push(`Segment: ${det.segment}`);
-          if(d==="Kalsifiye"){
-           if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
-           if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
-          } else if(d==="Ülsere"){
-           if(det.uzunluk) parts.push(`Çap: ${det.uzunluk} mm`);
-           if(det.derinlik) parts.push(`Derinlik: ${det.derinlik} mm`);
-           if(det.kalinlik) parts.push(`Sayı: ${det.kalinlik}`);
-          } else if(d==="Düzensiz"){
-           if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
-           if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+          if(det.segment) parts.push(`${T.detailSegment}: ${det.segment}`);
+          if(d==="calcified"){
+           if(det.uzunluk) parts.push(`${T.detailLength}: ${det.uzunluk} mm`);
+           if(det.kalinlik) parts.push(`${T.detailWallThick}: ${det.kalinlik} mm`);
+          } else if(d==="ulcerated"){
+           if(det.uzunluk) parts.push(`${T.detailDiameter}: ${det.uzunluk} mm`);
+           if(det.derinlik) parts.push(`${T.detailDepth}: ${det.derinlik} mm`);
+           if(det.kalinlik) parts.push(`${T.detailCount}: ${det.kalinlik}`);
+          } else if(d==="irregular"){
+           if(det.uzunluk) parts.push(`${T.detailLength}: ${det.uzunluk} mm`);
+           if(det.kalinlik) parts.push(`${T.detailWallThick}: ${det.kalinlik} mm`);
           }
           if(det.ek) parts.push(det.ek);
-          return parts.length>0?<tr key={d}><td style={{fontWeight:600,paddingLeft:24,fontSize:".78rem",color:"#666"}}>↳ {d}</td><td style={{fontSize:".82rem"}}>{parts.join(" • ")}</td></tr>:null;
+          return parts.length>0?<tr key={d}><td style={{fontWeight:600,paddingLeft:24,fontSize:".78rem",color:"#666"}}>↳ {wallLabel(d)}</td><td style={{fontSize:".82rem"}}>{parts.join(" • ")}</td></tr>:null;
          })}
-         <tr><td style={{fontWeight:600}}>Trombüs</td><td>{data.trombusVar==="var"?`Var (saat ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} mm uzunluk, ${data.tromKalinlik||"?"} mm kalınlık)`:"Yok"}</td></tr>
-         <tr><td style={{fontWeight:600}}>Flep</td><td>{data.flepVar==="var"?"Var":"Yok"}</td></tr>
-         <tr><td style={{fontWeight:600}}>Leak</td><td>{data.leakVar==="var"?`Var (${data.leakMiktar||"miktar belirtilmedi"})`:"Yok"}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportTrombus}</td><td>{data.trombusVar==="var"?`${T.reportHTMLPresent} (${T.reportHTMLTrombusDetail} ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} ${T.reportHTMLLengthUnit}, ${data.tromKalinlik||"?"} ${T.reportHTMLThicknessUnit})`:T.reportHTMLAbsent}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportFlep}</td><td>{data.flepVar==="var"?T.reportHTMLPresent:T.reportHTMLAbsent}</td></tr>
+         <tr><td style={{fontWeight:600}}>{T.reportLeak}</td><td>{data.leakVar==="var"?`${T.reportHTMLPresent} (${data.leakMiktar||T.reportHTMLAmountUnspecified})`:T.reportHTMLAbsent}</td></tr>
         </tbody>
        </table>
        {hasEktazi(data)&&<>
-        <h3>Ektazi Detayları</h3>
-        <p style={{fontSize:".85rem"}}>Başlangıç: Sol renal arterden {data.ektBasMm||"?"} mm {data.ektBasRel==="yukari"?"yukarıda":"aşağıda"}<br/>
-        Bitiş: Sol renal arterden {data.ektBitMm||"?"} mm {data.ektBitRel==="yukari"?"yukarıda":"aşağıda"}<br/>
-        Aortu kapsama derecesi: {data.ektDerece||"?"}&deg;</p>
+        <h3>{T.reportEktaziDetails}</h3>
+        <p style={{fontSize:".85rem"}}>{T.reportEktaziStart} {data.ektBasMm||"?"} mm {data.ektBasRel==="above"?T.reportAbove:T.reportBelow}<br/>
+        {T.reportEktaziEnd} {data.ektBitMm||"?"} mm {data.ektBitRel==="above"?T.reportAbove:T.reportBelow}<br/>
+        {T.reportEktaziDegree}: {data.ektDerece||"?"}&deg;</p>
        </>}
        {data.flepVar==="var"&&<>
-        <h3>Flep Detayları</h3>
-        <p style={{fontSize:".85rem"}}>Başlangıç: Sol renal arterden {data.flepBasMm||"?"} mm {data.flepBasRel==="yukari"?"yukarıda":"aşağıda"}<br/>
-        Bitiş: Sol renal arterden {data.flepBitMm||"?"} mm {data.flepBitRel==="yukari"?"yukarıda":"aşağıda"}</p>
+        <h3>{T.reportFlepDetails}</h3>
+        <p style={{fontSize:".85rem"}}>{T.reportEktaziStart} {data.flepBasMm||"?"} mm {data.flepBasRel==="above"?T.reportAbove:T.reportBelow}<br/>
+        {T.reportEktaziEnd} {data.flepBitMm||"?"} mm {data.flepBitRel==="above"?T.reportAbove:T.reportBelow}</p>
        </>}
-       <h3>Dal Arterleri</h3>
+       <h3>{T.reportBranchArteries}</h3>
        <div className="scroll-x">
         <table className="report-table">
-         <thead><tr><th>Arter</th><th style={{textAlign:"center"}}>Çap</th><th style={{textAlign:"center"}}>Darlık</th><th style={{textAlign:"center"}}>Stenoz %</th><th style={{textAlign:"center"}}>Trombüs</th></tr></thead>
+         <thead><tr><th>{T.reportArtery}</th><th style={{textAlign:"center"}}>{T.reportDiameter}</th><th style={{textAlign:"center"}}>{T.reportStenosis}</th><th style={{textAlign:"center"}}>{T.reportStenosisPct}</th><th style={{textAlign:"center"}}>{T.reportTrombusCol}</th></tr></thead>
          <tbody>
           {Object.keys(ARTERY_NAMES).map(p=>{
            const pct=stenosisPct(data[p+"_cap"],data[p+"_darlikCap"]);
            return <tr key={p}>
             <td style={{fontWeight:600}}>{ARTERY_NAMES[p]}</td>
             <td style={{textAlign:"center"}}>{data[p+"_cap"]?data[p+"_cap"]+" mm":"-"}</td>
-            <td style={{textAlign:"center"}}>{data[p+"_darlik"]==="var"?<><span style={{color:"#dc2626"}}>Var</span>{data[p+"_mesafe"]&&<span style={{fontSize:".75rem",color:"#666"}}> ({data[p+"_mesafe"]} mm)</span>}</>:"Yok"}</td>
+            <td style={{textAlign:"center"}}>{data[p+"_darlik"]==="var"?<><span style={{color:"#dc2626"}}>{T.reportHTMLPresent}</span>{data[p+"_mesafe"]&&<span style={{fontSize:".75rem",color:"#666"}}> ({data[p+"_mesafe"]} mm)</span>}</>:T.reportHTMLAbsent}</td>
             <td style={{textAlign:"center"}}>{pct!==null?<span style={{color:pct>70?"#dc2626":pct>50?"#d97706":"#16a34a",fontWeight:600}}>%{pct}</span>:"-"}</td>
-            <td style={{textAlign:"center"}}>{data[p+"_trombus"]==="var"?<span style={{color:"#dc2626"}}>Var</span>:"Yok"}</td>
+            <td style={{textAlign:"center"}}>{data[p+"_trombus"]==="var"?<span style={{color:"#dc2626"}}>{T.reportHTMLPresent}</span>:T.reportHTMLAbsent}</td>
            </tr>;
           })}
          </tbody>
         </table>
        </div>
        <div className="yorum-box">
-        <div className="yorum-title">YORUM</div>
+        <div className="yorum-title">{T.reportImpression}</div>
         {yorumlar.map((y,i)=><p key={i}>• {y}</p>)}
        </div>
 
@@ -771,8 +1388,8 @@ function App(){
  return(
   <div className="app-wrap">
    <div className="header">
-    <h1>Aort MRI Karar Destek Sistemi</h1>
-    <p style={{color:"var(--text3)",fontSize:".78rem",marginTop:4}}>Radyoloji Karar Destek</p>
+    <h1 data-i18n-tr="Aort MRI Karar Destek Sistemi" data-i18n-en="Aorta MRI Decision Support System">{T.appTitle}</h1>
+    <p style={{color:"var(--text3)",fontSize:".78rem",marginTop:4}} data-i18n-tr="Radyoloji Karar Destek" data-i18n-en="Radiology Decision Support">{T.appSubtitle}</p>
    </div>
    <div className="progress-bar">
     {effectiveSteps.map((s,i)=><div key={s.id} className={"progress-seg"+(i<step?" done":"")+(i===step?" active":"")}/>)}
@@ -787,13 +1404,13 @@ function App(){
     {renderStep()}
     {curStep&&curStep.id!=="report"&&(
      <div className="btn-row">
-      <button className="btn btn-prev" onClick={goPrev} disabled={step===0}>Geri</button>
-      <button className="btn btn-next" onClick={goNext}>{step===totalSteps-2?"Rapor Oluştur":"İleri"}</button>
+      <button className="btn btn-prev" onClick={goPrev} disabled={step===0}>{T.btnBack}</button>
+      <button className="btn btn-next" onClick={goNext}>{step===totalSteps-2?T.btnGenerateReport:T.btnNext}</button>
      </div>
     )}
     {curStep&&curStep.id==="report"&&(
      <div className="btn-row">
-      <button className="btn btn-prev" onClick={goPrev}>Düzenle</button>
+      <button className="btn btn-prev" onClick={goPrev}>{T.btnEdit}</button>
      </div>
     )}
    </div>

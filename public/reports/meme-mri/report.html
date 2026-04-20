@@ -26,90 +26,452 @@ body{background:#0f0e17;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-seri
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // ── Option labels ──────────────────────────────────────────────────────────
+    FGT_OPT: [
+      {v:'a',l:'a – Neredeyse tamamen yağ'},
+      {v:'b',l:'b – Dağınık fibroglandüler doku'},
+      {v:'c',l:'c – Heterojen fibroglandüler doku'},
+      {v:'d',l:'d – Belirgin fibroglandüler doku'},
+    ],
+    BPE_OPT: [
+      {v:'minimal',l:'Minimal'},
+      {v:'mild',l:'Hafif (Mild)'},
+      {v:'moderate',l:'Orta (Moderate)'},
+      {v:'marked',l:'Belirgin (Marked)'},
+    ],
+    SIMETRI_OPT: [{v:'simetrik',l:'Simetrik'},{v:'asimetrik',l:'Asimetrik'}],
+    TIP_OPT: [
+      {v:'kitle',l:'Kitle (Mass)'},
+      {v:'nme',l:'Kitle Dışı Tutulum (NME)'},
+      {v:'focus',l:'Odak / Focus (<5 mm)'},
+    ],
+    KADRAN_OPT: [
+      {v:'USK',l:'Üst dış kadran (USK)'},
+      {v:'UIK',l:'Üst iç kadran (UİK)'},
+      {v:'ASK',l:'Alt dış kadran (ASK)'},
+      {v:'AIK',l:'Alt iç kadran (AİK)'},
+      {v:'retroareolar',l:'Retroareolar'},
+      {v:'santral',l:'Santral'},
+      {v:'aksiller',l:'Aksiller kuyruk'},
+      {v:'diffuz',l:'Diffüz / yaygın'},
+    ],
+    DERINLIK_OPT: [
+      {v:'anterior',l:'Anterior 1/3'},
+      {v:'orta',l:'Orta 1/3'},
+      {v:'posterior',l:'Posterior 1/3'},
+    ],
+    SEKIL_OPT: [
+      {v:'oval',l:'Oval'},
+      {v:'yuvarlak',l:'Yuvarlak'},
+      {v:'duzensiz',l:'Düzensiz'},
+    ],
+    KENAR_OPT: [
+      {v:'duzgun',l:'Düzgün (Circumscribed)'},
+      {v:'duzensiz',l:'Düzensiz (Irregular)'},
+      {v:'spikule',l:'Spiküler'},
+    ],
+    IC_YAPI_OPT: [
+      {v:'homojen',l:'Homojen'},
+      {v:'heterojen',l:'Heterojen'},
+      {v:'rim',l:'Rim tutulumu'},
+      {v:'darkSeptae',l:'Karanlık internal septalar'},
+      {v:'rimDark',l:'Rim + Karanlık septalar'},
+    ],
+    DAGILIM_OPT: [
+      {v:'fokal',l:'Fokal'},
+      {v:'lineer',l:'Lineer'},
+      {v:'segmental',l:'Segmental'},
+      {v:'bolgesel',l:'Bölgesel (Regional)'},
+      {v:'multiBolge',l:'Birden fazla bölge'},
+      {v:'diffuz',l:'Diffüz'},
+    ],
+    IC_PATERN_OPT: [
+      {v:'homojen',l:'Homojen'},
+      {v:'heterojen',l:'Heterojen'},
+      {v:'clumped',l:'Clumped'},
+      {v:'clusteredRing',l:'Clustered ring'},
+    ],
+    KIN_INIT_OPT: [
+      {v:'yavas',l:'Yavaş (<50%)'},
+      {v:'orta',l:'Orta (50–100%)'},
+      {v:'hizli',l:'Hızlı (>100%)'},
+    ],
+    KIN_DEL_OPT: [
+      {v:'persistan',l:'Persistan (artış devam)'},
+      {v:'plato',l:'Plato'},
+      {v:'washout',l:'Wash-out (azalma)'},
+    ],
+    LN_OPT: [
+      {v:'normal',l:'Normal'},
+      {v:'suphelı',l:'Şüpheli (korteks kalınlaşması)'},
+      {v:'patolojik',l:'Patolojik'},
+      {v:'goruntulenemiyor',l:'Görüntülenemedi'},
+    ],
+    BIOV: [{v:'',l:'Otomatik'},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},
+      {v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'},{v:'6',l:'6'}],
+    // ── BI-RADS text ───────────────────────────────────────────────────────────
+    biradsLabels: ['','BI-RADS 1 – Negatif','BI-RADS 2 – Benign bulgu',
+      'BI-RADS 3 – Muhtemelen benign (≤2%)',
+      'BI-RADS 4 – Şüpheli (>2–95%)',
+      'BI-RADS 5 – Malignite açısından çok şüpheli (≥95%)',
+      'BI-RADS 6 – Biyopsi kanıtlı malignite'],
+    // ── Takip önerisi ──────────────────────────────────────────────────────────
+    takip: [
+      'Her iki meme negatif. Rutin tarama programına devam.',
+      'Benign bulgular. Rutin tarama önerilir.',
+      '6 aylık kısa aralıklı MRI takibi önerilir.',
+      'Biyopsi endikasyonu mevcuttur. Girişimsel yaklaşım planlanmalıdır.',
+      'Yüksek malignite şüphesi. Biyopsi + multidisipliner onkoloji değerlendirmesi.',
+    ],
+    // ── formatLezyon strings ───────────────────────────────────────────────────
+    lezLabel: (idx) => `Lezyon ${idx+1}`,
+    tipMap: {kitle:'Kitle', nme:'NME', focus:'Odak'},
+    lokPrefix: 'Lokalizasyon',
+    morfoLabel: 'Morfoloji',
+    kenarSuffix: 'kenar',
+    icYapiSuffix: 'iç yapı',
+    kinetikLabel: 'Kinetik',
+    ilkFaz: 'İlk faz',
+    gecFaz: 'Geç faz',
+    dagilimLabel: 'Dağılım',
+    icPaternLabel: 'İç patern',
+    notLabel: 'Not',
+    // ── generateReport strings ─────────────────────────────────────────────────
+    reportTitle: 'MEME MRI RAPORU',
+    klinikBilgi: 'KLİNİK BİLGİ',
+    yasLabel: 'Yaş',
+    endikasyonLabel: 'Endikasyon',
+    oncekiLabel: 'Önceki tedavi/biyopsi',
+    parankimalBaslik: 'PARANKİMAL DEĞERLENDİRME',
+    fgtLabel: 'FGT',
+    bpeLabel: 'BPE',
+    sagMeme: 'SAĞ MEME',
+    solMeme: 'SOL MEME',
+    sagNolezyon: 'Sağ memede kontrastlanan patolojik lezyon saptanmadı.',
+    solNolezyon: 'Sol memede kontrastlanan patolojik lezyon saptanmadı.',
+    ekLabel: 'Ek',
+    aksilerBaslik: 'AKSİLLER DEĞERLENDİRME',
+    sagAksilla: 'Sağ aksilla',
+    solAksilla: 'Sol aksilla',
+    sonucBaslik: 'SONUÇ',
+    sagMemeLabel: 'Sağ meme',
+    solMemeLabel: 'Sol meme',
+    takipBaslik: 'TAKİP ÖNERİSİ',
+    notBaslik: 'NOT',
+    // ── STEP_TITLES ───────────────────────────────────────────────────────────
+    stepTitles: [
+      'Klinik Bilgi','Fibroglandüler Doku (FGT)','BPE – Arka Plan Parankimal Tutulum',
+      'Sağ Meme – Lezyon Listesi',
+      'Sağ – Lezyon Tipi','Sağ – Lokalizasyon','Sağ – Morfoloji','Sağ – Kinetik',
+      'Sağ Meme – Ek Bulgular',
+      'Sol Meme – Lezyon Listesi',
+      'Sol – Lezyon Tipi','Sol – Lokalizasyon','Sol – Morfoloji','Sol – Kinetik',
+      'Sol Meme – Ek Bulgular',
+      'Aksiller Lenf Nodları',
+      'Sonuç & BI-RADS',
+    ],
+    // ── sectionOf ─────────────────────────────────────────────────────────────
+    sections: {genel:'Genel', sag:'Sağ Meme', sol:'Sol Meme', aksilla:'Aksilla', sonuc:'Sonuç'},
+    // ── UI labels ─────────────────────────────────────────────────────────────
+    yas: 'Yaş',
+    yasph: 'Örn: 52',
+    endikasyon: 'Endikasyon',
+    endikasyonph: 'Tarama / şüpheli kitle / neoadjuvan takip / biyopsi öncesi değerlendirme...',
+    oncekiTedavi: 'Önceki tedavi / biyopsi (opsiyonel)',
+    oncekiph: 'Örn: 2022 yılı sol meme segmentektomi',
+    fgtTitle: 'Fibroglandüler Doku',
+    fgtHint: 'ACR BI-RADS MRI – FGT kategorisi',
+    bpeTitle: 'BPE Derecesi',
+    bpeHint: 'Arka Plan Parankimal Enhancement',
+    bpeSimetri: 'BPE Simetrisi',
+    kadran: 'Kadran',
+    derinlik: 'Derinlik',
+    boyut: 'Boyut – uzun aks (mm)',
+    boyutph: 'mm',
+    notOps: 'Not (opsiyonel)',
+    notph: 'Ek açıklama...',
+    sekil: 'Şekil',
+    kenar: 'Kenar',
+    icYapi: 'İç Yapı Tutulumu',
+    nmeDagilim: 'NME – Dağılım',
+    nmeIcPatern: 'NME – İç Patern',
+    kinIlk: 'Kinetik – İlk Faz',
+    kinGec: 'Kinetik – Geç Faz',
+    memeBasi: 'Meme Başı',
+    retraksiyon: 'Retraksiyon / involüsyon',
+    cilt: 'Cilt',
+    ciltKalinlasma: 'Cilt kalınlaşması',
+    lokalizasyonph: 'Lokalizasyon',
+    diger: 'Diğer',
+    implant: 'Meme implantı mevcut',
+    sagAksillerLN: 'Sağ Aksiller Lenf Nodu',
+    solAksillerLN: 'Sol Aksiller Lenf Nodu',
+    manuelDuzelt: 'Manuel düzelt:',
+    otomatik: 'Otomatik:',
+    takipOneriLabel: 'TAKİP ÖNERİSİ',
+    genelNot: 'Genel Not (opsiyonel)',
+    genelNotph: 'Karşılaştırma, klinik ek not...',
+    lezTipiHint: (side) => `${side} meme – lezyon karakterizasyonu`,
+    sagSide: 'Sağ',
+    solSide: 'Sol',
+    // ── Buttons & misc ────────────────────────────────────────────────────────
+    raporGoster: 'Raporu Göster',
+    panoyaKopyala: 'Panoya Kopyala',
+    htmlIndir: 'HTML İndir',
+    yazdir: 'Yazdır',
+    kopyala: 'Kopyala',
+    kopyalandi: 'Kopyalandı ✓',
+    lezEkle: '+ Lezyon Ekle',
+    sil: 'Sil',
+    geri: '← Geri',
+    ileri: 'İleri →',
+    sagLoopMsg: 'Sağ meme – lezyon girişi devam ediyor',
+    solLoopMsg: 'Sol meme – lezyon girişi devam ediyor',
+    sagNoLezMsg: 'Sağ memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.',
+    sagHasLezMsg: (n) => `${n} lezyon eklendi. Yeni lezyon ekleyebilir veya İleri ile devam edebilirsiniz.`,
+    solNoLezMsg: 'Sol memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.',
+    solHasLezMsg: (n) => `${n} lezyon eklendi.`,
+    headerTitle: 'Meme MRI Değerlendirme',
+    headerSubtitle: 'ACR BI-RADS MRI Lexicon 2013',
+    modalTitle: 'Meme MRI Raporu',
+    dlTitle: 'Meme MRI Raporu',
+    dlFilename: 'meme_mri_raporu.html',
+  },
+  en: {
+    // ── Option labels ──────────────────────────────────────────────────────────
+    FGT_OPT: [
+      {v:'a',l:'a – Almost entirely fat'},
+      {v:'b',l:'b – Scattered fibroglandular tissue'},
+      {v:'c',l:'c – Heterogeneous fibroglandular tissue'},
+      {v:'d',l:'d – Extreme fibroglandular tissue'},
+    ],
+    BPE_OPT: [
+      {v:'minimal',l:'Minimal'},
+      {v:'mild',l:'Mild'},
+      {v:'moderate',l:'Moderate'},
+      {v:'marked',l:'Marked'},
+    ],
+    SIMETRI_OPT: [{v:'simetrik',l:'Symmetric'},{v:'asimetrik',l:'Asymmetric'}],
+    TIP_OPT: [
+      {v:'kitle',l:'Mass'},
+      {v:'nme',l:'Non-mass enhancement (NME)'},
+      {v:'focus',l:'Focus (<5 mm)'},
+    ],
+    KADRAN_OPT: [
+      {v:'USK',l:'Upper outer quadrant (UOQ)'},
+      {v:'UIK',l:'Upper inner quadrant (UIQ)'},
+      {v:'ASK',l:'Lower outer quadrant (LOQ)'},
+      {v:'AIK',l:'Lower inner quadrant (LIQ)'},
+      {v:'retroareolar',l:'Retroareolar'},
+      {v:'santral',l:'Central'},
+      {v:'aksiller',l:'Axillary tail'},
+      {v:'diffuz',l:'Diffuse'},
+    ],
+    DERINLIK_OPT: [
+      {v:'anterior',l:'Anterior 1/3'},
+      {v:'orta',l:'Middle 1/3'},
+      {v:'posterior',l:'Posterior 1/3'},
+    ],
+    SEKIL_OPT: [
+      {v:'oval',l:'Oval'},
+      {v:'yuvarlak',l:'Round'},
+      {v:'duzensiz',l:'Irregular'},
+    ],
+    KENAR_OPT: [
+      {v:'duzgun',l:'Circumscribed'},
+      {v:'duzensiz',l:'Irregular'},
+      {v:'spikule',l:'Spiculated'},
+    ],
+    IC_YAPI_OPT: [
+      {v:'homojen',l:'Homogeneous'},
+      {v:'heterojen',l:'Heterogeneous'},
+      {v:'rim',l:'Rim enhancement'},
+      {v:'darkSeptae',l:'Dark internal septae'},
+      {v:'rimDark',l:'Rim + Dark septae'},
+    ],
+    DAGILIM_OPT: [
+      {v:'fokal',l:'Focal'},
+      {v:'lineer',l:'Linear'},
+      {v:'segmental',l:'Segmental'},
+      {v:'bolgesel',l:'Regional'},
+      {v:'multiBolge',l:'Multiple regions'},
+      {v:'diffuz',l:'Diffuse'},
+    ],
+    IC_PATERN_OPT: [
+      {v:'homojen',l:'Homogeneous'},
+      {v:'heterojen',l:'Heterogeneous'},
+      {v:'clumped',l:'Clumped'},
+      {v:'clusteredRing',l:'Clustered ring'},
+    ],
+    KIN_INIT_OPT: [
+      {v:'yavas',l:'Slow (<50%)'},
+      {v:'orta',l:'Medium (50–100%)'},
+      {v:'hizli',l:'Rapid (>100%)'},
+    ],
+    KIN_DEL_OPT: [
+      {v:'persistan',l:'Persistent'},
+      {v:'plato',l:'Plateau'},
+      {v:'washout',l:'Washout'},
+    ],
+    LN_OPT: [
+      {v:'normal',l:'Normal'},
+      {v:'suphelı',l:'Suspicious (cortical thickening)'},
+      {v:'patolojik',l:'Pathological'},
+      {v:'goruntulenemiyor',l:'Not visualized'},
+    ],
+    BIOV: [{v:'',l:'Automatic'},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},
+      {v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'},{v:'6',l:'6'}],
+    // ── BI-RADS text ───────────────────────────────────────────────────────────
+    biradsLabels: ['','BI-RADS 1 – Negative','BI-RADS 2 – Benign finding',
+      'BI-RADS 3 – Probably benign (≤2%)',
+      'BI-RADS 4 – Suspicious (>2–95%)',
+      'BI-RADS 5 – Highly suggestive of malignancy (≥95%)',
+      'BI-RADS 6 – Known biopsy-proven malignancy'],
+    // ── Takip önerisi ──────────────────────────────────────────────────────────
+    takip: [
+      'Both breasts negative. Continue routine screening program.',
+      'Benign findings. Routine screening recommended.',
+      'Short-interval MRI follow-up in 6 months is recommended.',
+      'Biopsy is indicated. Interventional approach should be planned.',
+      'High suspicion of malignancy. Biopsy + multidisciplinary oncology evaluation.',
+    ],
+    // ── formatLezyon strings ───────────────────────────────────────────────────
+    lezLabel: (idx) => `Lesion ${idx+1}`,
+    tipMap: {kitle:'Mass', nme:'NME', focus:'Focus'},
+    lokPrefix: 'Location',
+    morfoLabel: 'Morphology',
+    kenarSuffix: 'margin',
+    icYapiSuffix: 'internal architecture',
+    kinetikLabel: 'Kinetics',
+    ilkFaz: 'Initial phase',
+    gecFaz: 'Delayed phase',
+    dagilimLabel: 'Distribution',
+    icPaternLabel: 'Internal pattern',
+    notLabel: 'Note',
+    // ── generateReport strings ─────────────────────────────────────────────────
+    reportTitle: 'BREAST MRI REPORT',
+    klinikBilgi: 'CLINICAL INFORMATION',
+    yasLabel: 'Age',
+    endikasyonLabel: 'Indication',
+    oncekiLabel: 'Prior treatment/biopsy',
+    parankimalBaslik: 'PARENCHYMAL ASSESSMENT',
+    fgtLabel: 'FGT',
+    bpeLabel: 'BPE',
+    sagMeme: 'RIGHT BREAST',
+    solMeme: 'LEFT BREAST',
+    sagNolezyon: 'No enhancing pathological lesion detected in the right breast.',
+    solNolezyon: 'No enhancing pathological lesion detected in the left breast.',
+    ekLabel: 'Additional',
+    aksilerBaslik: 'AXILLARY ASSESSMENT',
+    sagAksilla: 'Right axilla',
+    solAksilla: 'Left axilla',
+    sonucBaslik: 'CONCLUSION',
+    sagMemeLabel: 'Right breast',
+    solMemeLabel: 'Left breast',
+    takipBaslik: 'FOLLOW-UP RECOMMENDATION',
+    notBaslik: 'NOTE',
+    // ── STEP_TITLES ───────────────────────────────────────────────────────────
+    stepTitles: [
+      'Clinical Information','Fibroglandular Tissue (FGT)','BPE – Background Parenchymal Enhancement',
+      'Right Breast – Lesion List',
+      'Right – Lesion Type','Right – Location','Right – Morphology','Right – Kinetics',
+      'Right Breast – Additional Findings',
+      'Left Breast – Lesion List',
+      'Left – Lesion Type','Left – Location','Left – Morphology','Left – Kinetics',
+      'Left Breast – Additional Findings',
+      'Axillary Lymph Nodes',
+      'Conclusion & BI-RADS',
+    ],
+    // ── sectionOf ─────────────────────────────────────────────────────────────
+    sections: {genel:'General', sag:'Right Breast', sol:'Left Breast', aksilla:'Axilla', sonuc:'Conclusion'},
+    // ── UI labels ─────────────────────────────────────────────────────────────
+    yas: 'Age',
+    yasph: 'e.g. 52',
+    endikasyon: 'Indication',
+    endikasyonph: 'Screening / suspicious mass / neoadjuvant follow-up / pre-biopsy evaluation...',
+    oncekiTedavi: 'Prior treatment / biopsy (optional)',
+    oncekiph: 'e.g. Left breast segmentectomy 2022',
+    fgtTitle: 'Fibroglandular Tissue',
+    fgtHint: 'ACR BI-RADS MRI – FGT category',
+    bpeTitle: 'BPE Degree',
+    bpeHint: 'Background Parenchymal Enhancement',
+    bpeSimetri: 'BPE Symmetry',
+    kadran: 'Quadrant',
+    derinlik: 'Depth',
+    boyut: 'Size – long axis (mm)',
+    boyutph: 'mm',
+    notOps: 'Note (optional)',
+    notph: 'Additional note...',
+    sekil: 'Shape',
+    kenar: 'Margin',
+    icYapi: 'Internal Architecture',
+    nmeDagilim: 'NME – Distribution',
+    nmeIcPatern: 'NME – Internal Pattern',
+    kinIlk: 'Kinetics – Initial Phase',
+    kinGec: 'Kinetics – Delayed Phase',
+    memeBasi: 'Nipple',
+    retraksiyon: 'Retraction / involution',
+    cilt: 'Skin',
+    ciltKalinlasma: 'Skin thickening',
+    lokalizasyonph: 'Location',
+    diger: 'Other',
+    implant: 'Breast implant present',
+    sagAksillerLN: 'Right Axillary Lymph Node',
+    solAksillerLN: 'Left Axillary Lymph Node',
+    manuelDuzelt: 'Manual override:',
+    otomatik: 'Automatic:',
+    takipOneriLabel: 'FOLLOW-UP RECOMMENDATION',
+    genelNot: 'General Note (optional)',
+    genelNotph: 'Comparison, additional clinical note...',
+    lezTipiHint: (side) => `${side} breast – lesion characterization`,
+    sagSide: 'Right',
+    solSide: 'Left',
+    // ── Buttons & misc ────────────────────────────────────────────────────────
+    raporGoster: 'Show Report',
+    panoyaKopyala: 'Copy to Clipboard',
+    htmlIndir: 'Download HTML',
+    yazdir: 'Print',
+    kopyala: 'Copy',
+    kopyalandi: 'Copied ✓',
+    lezEkle: '+ Add Lesion',
+    sil: 'Delete',
+    geri: '← Back',
+    ileri: 'Next →',
+    sagLoopMsg: 'Right breast – lesion entry in progress',
+    solLoopMsg: 'Left breast – lesion entry in progress',
+    sagNoLezMsg: 'If an enhancing lesion was detected in the right breast, add it. Otherwise press "Next".',
+    sagHasLezMsg: (n) => `${n} lesion(s) added. You may add another or continue with Next.`,
+    solNoLezMsg: 'If an enhancing lesion was detected in the left breast, add it. Otherwise press "Next".',
+    solHasLezMsg: (n) => `${n} lesion(s) added.`,
+    headerTitle: 'Breast MRI Assessment',
+    headerSubtitle: 'ACR BI-RADS MRI Lexicon 2013',
+    modalTitle: 'Breast MRI Report',
+    dlTitle: 'Breast MRI Report',
+    dlFilename: 'breast_mri_report.html',
+  },
+})[RV_LOCALE];
+
 const { useState, useCallback } = React;
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const FGT_OPT = [
-  {v:'a',l:'a – Neredeyse tamamen yağ'},
-  {v:'b',l:'b – Dağınık fibroglandüler doku'},
-  {v:'c',l:'c – Heterojen fibroglandüler doku'},
-  {v:'d',l:'d – Belirgin fibroglandüler doku'},
-];
-const BPE_OPT = [
-  {v:'minimal',l:'Minimal'},
-  {v:'mild',l:'Hafif (Mild)'},
-  {v:'moderate',l:'Orta (Moderate)'},
-  {v:'marked',l:'Belirgin (Marked)'},
-];
-const SIMETRI_OPT = [{v:'simetrik',l:'Simetrik'},{v:'asimetrik',l:'Asimetrik'}];
-const TIP_OPT = [
-  {v:'kitle',l:'Kitle (Mass)'},
-  {v:'nme',l:'Kitle Dışı Tutulum (NME)'},
-  {v:'focus',l:'Odak / Focus (<5 mm)'},
-];
-const KADRAN_OPT = [
-  {v:'USK',l:'Üst dış kadran (USK)'},
-  {v:'UIK',l:'Üst iç kadran (UİK)'},
-  {v:'ASK',l:'Alt dış kadran (ASK)'},
-  {v:'AIK',l:'Alt iç kadran (AİK)'},
-  {v:'retroareolar',l:'Retroareolar'},
-  {v:'santral',l:'Santral'},
-  {v:'aksiller',l:'Aksiller kuyruk'},
-  {v:'diffuz',l:'Diffüz / yaygın'},
-];
-const DERINLIK_OPT = [
-  {v:'anterior',l:'Anterior 1/3'},
-  {v:'orta',l:'Orta 1/3'},
-  {v:'posterior',l:'Posterior 1/3'},
-];
-const SEKIL_OPT = [
-  {v:'oval',l:'Oval'},
-  {v:'yuvarlak',l:'Yuvarlak'},
-  {v:'duzensiz',l:'Düzensiz'},
-];
-const KENAR_OPT = [
-  {v:'duzgun',l:'Düzgün (Circumscribed)'},
-  {v:'duzensiz',l:'Düzensiz (Irregular)'},
-  {v:'spikule',l:'Spiküler'},
-];
-const IC_YAPI_OPT = [
-  {v:'homojen',l:'Homojen'},
-  {v:'heterojen',l:'Heterojen'},
-  {v:'rim',l:'Rim tutulumu'},
-  {v:'darkSeptae',l:'Karanlık internal septalar'},
-  {v:'rimDark',l:'Rim + Karanlık septalar'},
-];
-const DAGILIM_OPT = [
-  {v:'fokal',l:'Fokal'},
-  {v:'lineer',l:'Lineer'},
-  {v:'segmental',l:'Segmental'},
-  {v:'bolgesel',l:'Bölgesel (Regional)'},
-  {v:'multiBolge',l:'Birden fazla bölge'},
-  {v:'diffuz',l:'Diffüz'},
-];
-const IC_PATERN_OPT = [
-  {v:'homojen',l:'Homojen'},
-  {v:'heterojen',l:'Heterojen'},
-  {v:'clumped',l:'Clumped'},
-  {v:'clusteredRing',l:'Clustered ring'},
-];
-const KIN_INIT_OPT = [
-  {v:'yavas',l:'Yavaş (<50%)'},
-  {v:'orta',l:'Orta (50–100%)'},
-  {v:'hizli',l:'Hızlı (>100%)'},
-];
-const KIN_DEL_OPT = [
-  {v:'persistan',l:'Persistan (artış devam)'},
-  {v:'plato',l:'Plato'},
-  {v:'washout',l:'Wash-out (azalma)'},
-];
-const LN_OPT = [
-  {v:'normal',l:'Normal'},
-  {v:'suphelı',l:'Şüpheli (korteks kalınlaşması)'},
-  {v:'patolojik',l:'Patolojik'},
-  {v:'goruntulenemiyor',l:'Görüntülenemedi'},
-];
+const FGT_OPT = T.FGT_OPT;
+const BPE_OPT = T.BPE_OPT;
+const SIMETRI_OPT = T.SIMETRI_OPT;
+const TIP_OPT = T.TIP_OPT;
+const KADRAN_OPT = T.KADRAN_OPT;
+const DERINLIK_OPT = T.DERINLIK_OPT;
+const SEKIL_OPT = T.SEKIL_OPT;
+const KENAR_OPT = T.KENAR_OPT;
+const IC_YAPI_OPT = T.IC_YAPI_OPT;
+const DAGILIM_OPT = T.DAGILIM_OPT;
+const IC_PATERN_OPT = T.IC_PATERN_OPT;
+const KIN_INIT_OPT = T.KIN_INIT_OPT;
+const KIN_DEL_OPT = T.KIN_DEL_OPT;
+const LN_OPT = T.LN_OPT;
 
 function lbl(opts, v) { return opts.find(o => o.v === v)?.l || v || '—'; }
 
@@ -141,11 +503,7 @@ function autoBIRADS(lezyonlar) {
 }
 
 function biradsTxt(n) {
-  return ['','BI-RADS 1 – Negatif','BI-RADS 2 – Benign bulgu',
-    'BI-RADS 3 – Muhtemelen benign (≤2%)',
-    'BI-RADS 4 – Şüpheli (>2–95%)',
-    'BI-RADS 5 – Malignite açısından çok şüpheli (≥95%)',
-    'BI-RADS 6 – Biyopsi kanıtlı malignite'][n] || `BI-RADS ${n}`;
+  return T.biradsLabels[n] || `BI-RADS ${n}`;
 }
 
 function biradsColor(n) {
@@ -157,32 +515,32 @@ function biradsColor(n) {
 
 function takipOneri(sag, sol) {
   const m = Math.max(sag, sol);
-  if (m <= 1) return 'Her iki meme negatif. Rutin tarama programına devam.';
-  if (m === 2) return 'Benign bulgular. Rutin tarama önerilir.';
-  if (m === 3) return '6 aylık kısa aralıklı MRI takibi önerilir.';
-  if (m === 4) return 'Biyopsi endikasyonu mevcuttur. Girişimsel yaklaşım planlanmalıdır.';
-  if (m === 5) return 'Yüksek malignite şüphesi. Biyopsi + multidisipliner onkoloji değerlendirmesi.';
+  if (m <= 1) return T.takip[0];
+  if (m === 2) return T.takip[1];
+  if (m === 3) return T.takip[2];
+  if (m === 4) return T.takip[3];
+  if (m === 5) return T.takip[4];
   return '';
 }
 
 // ── REPORT ────────────────────────────────────────────────────────────────────
 
 function formatLezyon(l, idx) {
-  const tip = {kitle:'Kitle',nme:'NME',focus:'Odak'}[l.tip] || l.tip;
-  let parts = [`Lezyon ${idx+1} [${tip}]`];
+  const tip = T.tipMap[l.tip] || l.tip;
+  let parts = [`${T.lezLabel(idx)} [${tip}]`];
   const k = lbl(KADRAN_OPT, l.kadran);
   if (l.tip === 'focus') {
-    parts.push(`Lokalizasyon: ${k}`);
+    parts.push(`${T.lokPrefix}: ${k}`);
   } else if (l.tip === 'kitle') {
-    parts.push(`Lokalizasyon: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}${l.boyut ? ', ' + l.boyut + ' mm' : ''}`);
-    parts.push(`Morfoloji: ${lbl(SEKIL_OPT,l.sekil)}, ${lbl(KENAR_OPT,l.kenar)} kenar, ${lbl(IC_YAPI_OPT,l.icYapi)} iç yapı`);
-    parts.push(`Kinetik: İlk faz ${lbl(KIN_INIT_OPT,l.kinetikInitial)} – Geç faz ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
+    parts.push(`${T.lokPrefix}: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}${l.boyut ? ', ' + l.boyut + ' mm' : ''}`);
+    parts.push(`${T.morfoLabel}: ${lbl(SEKIL_OPT,l.sekil)}, ${lbl(KENAR_OPT,l.kenar)} ${T.kenarSuffix}, ${lbl(IC_YAPI_OPT,l.icYapi)} ${T.icYapiSuffix}`);
+    parts.push(`${T.kinetikLabel}: ${T.ilkFaz} ${lbl(KIN_INIT_OPT,l.kinetikInitial)} – ${T.gecFaz} ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
   } else if (l.tip === 'nme') {
-    parts.push(`Lokalizasyon: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}`);
-    parts.push(`Dağılım: ${lbl(DAGILIM_OPT,l.dagilim)}, İç patern: ${lbl(IC_PATERN_OPT,l.icPatern)}`);
-    parts.push(`Kinetik: Geç faz ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
+    parts.push(`${T.lokPrefix}: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}`);
+    parts.push(`${T.dagilimLabel}: ${lbl(DAGILIM_OPT,l.dagilim)}, ${T.icPaternLabel}: ${lbl(IC_PATERN_OPT,l.icPatern)}`);
+    parts.push(`${T.kinetikLabel}: ${T.gecFaz} ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
   }
-  if (l.not) parts.push(`Not: ${l.not}`);
+  if (l.not) parts.push(`${T.notLabel}: ${l.not}`);
   return parts.join('\n   ');
 }
 
@@ -190,55 +548,55 @@ function generateReport(d) {
   const sagFinal = d.sagBiradsOvr ? parseInt(d.sagBiradsOvr) : autoBIRADS(d.sagLezyonlar);
   const solFinal = d.solBiradsOvr ? parseInt(d.solBiradsOvr) : autoBIRADS(d.solLezyonlar);
   const lines = [];
-  lines.push('MEME MRI RAPORU');
+  lines.push(T.reportTitle);
   lines.push('─'.repeat(50));
   lines.push('');
-  lines.push('KLİNİK BİLGİ');
-  lines.push(`Yaş: ${d.yas || '—'}`);
-  lines.push(`Endikasyon: ${d.endikasyon || '—'}`);
-  if (d.oncekiTedavi) lines.push(`Önceki tedavi/biyopsi: ${d.oncekiTedavi}`);
+  lines.push(T.klinikBilgi);
+  lines.push(`${T.yasLabel}: ${d.yas || '—'}`);
+  lines.push(`${T.endikasyonLabel}: ${d.endikasyon || '—'}`);
+  if (d.oncekiTedavi) lines.push(`${T.oncekiLabel}: ${d.oncekiTedavi}`);
   lines.push('');
-  lines.push('PARANKİMAL DEĞERLENDİRME');
-  lines.push(`FGT: ${lbl(FGT_OPT,d.fgt)}`);
-  lines.push(`BPE: ${lbl(BPE_OPT,d.bpe)}${d.bpeSimetri ? ' – ' + d.bpeSimetri : ''}`);
+  lines.push(T.parankimalBaslik);
+  lines.push(`${T.fgtLabel}: ${lbl(FGT_OPT,d.fgt)}`);
+  lines.push(`${T.bpeLabel}: ${lbl(BPE_OPT,d.bpe)}${d.bpeSimetri ? ' – ' + d.bpeSimetri : ''}`);
   lines.push('');
-  lines.push('SAĞ MEME');
+  lines.push(T.sagMeme);
   if (d.sagLezyonlar.length === 0) {
-    lines.push('Sağ memede kontrastlanan patolojik lezyon saptanmadı.');
+    lines.push(T.sagNolezyon);
   } else {
     d.sagLezyonlar.forEach((l,i) => lines.push(formatLezyon(l,i)));
   }
   const sagEk = [];
-  if (d.sagMemeBasiRetraksiyon) sagEk.push('Meme başı retraksiyonu');
-  if (d.sagCiltKalinlasma) sagEk.push('Cilt kalınlaşması' + (d.sagCiltLok ? ' (' + d.sagCiltLok + ')' : ''));
-  if (d.sagImplant) sagEk.push('Meme implantı');
-  if (sagEk.length) lines.push('Ek: ' + sagEk.join(' | '));
+  if (d.sagMemeBasiRetraksiyon) sagEk.push(T.retraksiyon);
+  if (d.sagCiltKalinlasma) sagEk.push(T.ciltKalinlasma + (d.sagCiltLok ? ' (' + d.sagCiltLok + ')' : ''));
+  if (d.sagImplant) sagEk.push(T.implant);
+  if (sagEk.length) lines.push(`${T.ekLabel}: ` + sagEk.join(' | '));
   lines.push('');
-  lines.push('SOL MEME');
+  lines.push(T.solMeme);
   if (d.solLezyonlar.length === 0) {
-    lines.push('Sol memede kontrastlanan patolojik lezyon saptanmadı.');
+    lines.push(T.solNolezyon);
   } else {
     d.solLezyonlar.forEach((l,i) => lines.push(formatLezyon(l,i)));
   }
   const solEk = [];
-  if (d.solMemeBasiRetraksiyon) solEk.push('Meme başı retraksiyonu');
-  if (d.solCiltKalinlasma) solEk.push('Cilt kalınlaşması' + (d.solCiltLok ? ' (' + d.solCiltLok + ')' : ''));
-  if (d.solImplant) solEk.push('Meme implantı');
-  if (solEk.length) lines.push('Ek: ' + solEk.join(' | '));
+  if (d.solMemeBasiRetraksiyon) solEk.push(T.retraksiyon);
+  if (d.solCiltKalinlasma) solEk.push(T.ciltKalinlasma + (d.solCiltLok ? ' (' + d.solCiltLok + ')' : ''));
+  if (d.solImplant) solEk.push(T.implant);
+  if (solEk.length) lines.push(`${T.ekLabel}: ` + solEk.join(' | '));
   lines.push('');
   if (d.sagAksillerLN || d.solAksillerLN) {
-    lines.push('AKSİLLER DEĞERLENDİRME');
-    if (d.sagAksillerLN) lines.push(`Sağ aksilla: ${lbl(LN_OPT,d.sagAksillerLN)}`);
-    if (d.solAksillerLN) lines.push(`Sol aksilla: ${lbl(LN_OPT,d.solAksillerLN)}`);
+    lines.push(T.aksilerBaslik);
+    if (d.sagAksillerLN) lines.push(`${T.sagAksilla}: ${lbl(LN_OPT,d.sagAksillerLN)}`);
+    if (d.solAksillerLN) lines.push(`${T.solAksilla}: ${lbl(LN_OPT,d.solAksillerLN)}`);
     lines.push('');
   }
-  lines.push('SONUÇ');
-  lines.push(`Sağ meme: ${biradsTxt(sagFinal)}`);
-  lines.push(`Sol meme: ${biradsTxt(solFinal)}`);
+  lines.push(T.sonucBaslik);
+  lines.push(`${T.sagMemeLabel}: ${biradsTxt(sagFinal)}`);
+  lines.push(`${T.solMemeLabel}: ${biradsTxt(solFinal)}`);
   lines.push('');
-  lines.push('TAKİP ÖNERİSİ');
+  lines.push(T.takipBaslik);
   lines.push(takipOneri(sagFinal, solFinal));
-  if (d.genelNot) { lines.push(''); lines.push('NOT: ' + d.genelNot); }
+  if (d.genelNot) { lines.push(''); lines.push(`${T.notBaslik}: ` + d.genelNot); }
   return lines.join('\n');
 }
 
@@ -300,7 +658,7 @@ function Q({title,children,hint}) {
 }
 
 function LezCard({l,idx,onDelete}) {
-  const tip = {kitle:'Kitle',nme:'NME',focus:'Odak'}[l.tip]||l.tip;
+  const tip = T.tipMap[l.tip] || l.tip;
   const k = lbl(KADRAN_OPT,l.kadran);
   let detail = k;
   if(l.tip==='kitle') detail += (l.boyut?' · '+l.boyut+' mm':'') + (l.sekil?' · '+lbl(SEKIL_OPT,l.sekil):'');
@@ -311,14 +669,14 @@ function LezCard({l,idx,onDelete}) {
       alignItems:'flex-start',gap:12,marginBottom:8}}>
       <div>
         <div style={{color:ACCENT,fontWeight:600,fontSize:13,marginBottom:3}}>
-          Lezyon {idx+1} – {tip}
+          {T.lezLabel(idx)} – {tip}
         </div>
         <div style={{color:'#666880',fontSize:12}}>{detail}</div>
       </div>
       <button onClick={()=>onDelete(idx)} style={{
         background:'rgba(248,113,113,0.08)',border:'1px solid #f87171',color:'#f87171',
         borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontFamily:'inherit',flexShrink:0
-      }}>Sil</button>
+      }}>{T.sil}</button>
     </div>
   );
 }
@@ -332,20 +690,9 @@ const SAG_PRE=3,SAG_LS=4,SAG_LE=7,SAG_POST=8;
 const SOL_PRE=9,SOL_LS=10,SOL_LE=13,SOL_POST=14;
 const TOTAL=17;
 
-const STEP_TITLES=[
-  'Klinik Bilgi','Fibroglandüler Doku (FGT)','BPE – Arka Plan Parankimal Tutulum',
-  'Sağ Meme – Lezyon Listesi',
-  'Sağ – Lezyon Tipi','Sağ – Lokalizasyon','Sağ – Morfoloji','Sağ – Kinetik',
-  'Sağ Meme – Ek Bulgular',
-  'Sol Meme – Lezyon Listesi',
-  'Sol – Lezyon Tipi','Sol – Lokalizasyon','Sol – Morfoloji','Sol – Kinetik',
-  'Sol Meme – Ek Bulgular',
-  'Aksiller Lenf Nodları',
-  'Sonuç & BI-RADS',
-];
+const STEP_TITLES = T.stepTitles;
 
-const BIOV=[{v:'',l:'Otomatik'},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},
-  {v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'},{v:'6',l:'6'}];
+const BIOV = T.BIOV;
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 
@@ -484,31 +831,31 @@ function App() {
 
   function copyReport(){
     const txt=generateReport(d);
-    navigator.clipboard.writeText(txt).then(()=>{setCopyMsg('Kopyalandı ✓');setTimeout(()=>setCopyMsg(''),2200);});
+    navigator.clipboard.writeText(txt).then(()=>{setCopyMsg(T.kopyalandi);setTimeout(()=>setCopyMsg(''),2200);});
   }
   function dlHTML(){
     const txt=generateReport(d);
     const sagF=d.sagBiradsOvr?parseInt(d.sagBiradsOvr):autoBIRADS(d.sagLezyonlar);
     const solF=d.solBiradsOvr?parseInt(d.solBiradsOvr):autoBIRADS(d.solLezyonlar);
-    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Meme MRI Raporu</title>
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${T.dlTitle}</title>
 <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;padding:20px;color:#222;}
 h1{color:#c2185b;border-bottom:2px solid #c2185b;padding-bottom:8px;margin-bottom:20px;}
 pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
-</head><body><h1>Meme MRI Raporu</h1><pre>${txt}</pre></body></html>`;
+</head><body><h1>${T.dlTitle}</h1><pre>${txt}</pre></body></html>`;
     const blob=new Blob([html],{type:'text/html'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='meme_mri_raporu.html';
+    a.download=T.dlFilename;
     a.click();
   }
 
   const progress=Math.round((step/(TOTAL-1))*100);
   const sectionOf=()=>{
-    if(step<=2)return'Genel';
-    if(step<=SAG_POST)return'Sağ Meme';
-    if(step<=SOL_POST)return'Sol Meme';
-    if(step===15)return'Aksilla';
-    return'Sonuç';
+    if(step<=2)return T.sections.genel;
+    if(step<=SAG_POST)return T.sections.sag;
+    if(step<=SOL_POST)return T.sections.sol;
+    if(step===15)return T.sections.aksilla;
+    return T.sections.sonuc;
   };
 
   // ── render steps ──
@@ -517,22 +864,22 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
     switch(step){
       case 0: return(
         <div>
-          <Q title="Yaş"><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph="Örn: 52" type="number"/></Q>
-          <Q title="Endikasyon"><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph="Tarama / şüpheli kitle / neoadjuvan takip / biyopsi öncesi değerlendirme..."/></Q>
-          <Q title="Önceki tedavi / biyopsi (opsiyonel)"><TxtIn val={d.oncekiTedavi} onChange={v=>set('oncekiTedavi',v)} ph="Örn: 2022 yılı sol meme segmentektomi"/></Q>
+          <Q title={T.yas}><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph={T.yasph} type="number"/></Q>
+          <Q title={T.endikasyon}><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph={T.endikasyonph}/></Q>
+          <Q title={T.oncekiTedavi}><TxtIn val={d.oncekiTedavi} onChange={v=>set('oncekiTedavi',v)} ph={T.oncekiph}/></Q>
         </div>
       );
       case 1: return(
-        <Q title="Fibroglandüler Doku" hint="ACR BI-RADS MRI – FGT kategorisi">
+        <Q title={T.fgtTitle} hint={T.fgtHint}>
           <Chips opts={FGT_OPT} val={d.fgt} onChange={v=>set('fgt',v)}/>
         </Q>
       );
       case 2: return(
         <div>
-          <Q title="BPE Derecesi" hint="Arka Plan Parankimal Enhancement">
+          <Q title={T.bpeTitle} hint={T.bpeHint}>
             <Chips opts={BPE_OPT} val={d.bpe} onChange={v=>set('bpe',v)}/>
           </Q>
-          <Q title="BPE Simetrisi">
+          <Q title={T.bpeSimetri}>
             <Chips opts={SIMETRI_OPT} val={d.bpeSimetri} onChange={v=>set('bpeSimetri',v)}/>
           </Q>
         </div>
@@ -541,8 +888,8 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
         <div>
           <p style={{color:'#666880',fontSize:13,marginBottom:16}}>
             {d.sagLezyonlar.length===0
-              ? 'Sağ memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.'
-              : `${d.sagLezyonlar.length} lezyon eklendi. Yeni lezyon ekleyebilir veya İleri ile devam edebilirsiniz.`}
+              ? T.sagNoLezMsg
+              : T.sagHasLezMsg(d.sagLezyonlar.length)}
           </p>
           {d.sagLezyonlar.map((l,i)=>(
             <LezCard key={i} l={l} idx={i} onDelete={idx=>setD(p=>({...p,sagLezyonlar:p.sagLezyonlar.filter((_,j)=>j!==idx)}))}/>
@@ -551,57 +898,57 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
             width:'100%',padding:'12px',borderRadius:10,
             border:`2px dashed ${ACCENT}`,background:'rgba(232,121,160,0.04)',
             color:ACCENT,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
-          }}>+ Lezyon Ekle</button>
+          }}>{T.lezEkle}</button>
         </div>
       );
       case 4: return(
-        <Q title="Lezyon Tipi" hint="Sağ meme – lezyon karakterizasyonu">
+        <Q title={T.stepTitles[4]} hint={T.lezTipiHint(T.sagSide)}>
           <Chips opts={TIP_OPT} val={d.sagTip} onChange={v=>set('sagTip',v)}/>
         </Q>
       );
       case 5: return(
         <div>
-          <Q title="Kadran"><Chips opts={KADRAN_OPT} val={d.sagKadran} onChange={v=>set('sagKadran',v)}/></Q>
+          <Q title={T.kadran}><Chips opts={KADRAN_OPT} val={d.sagKadran} onChange={v=>set('sagKadran',v)}/></Q>
           {d.sagTip!=='focus'&&(
-            <Q title="Derinlik"><Chips opts={DERINLIK_OPT} val={d.sagDerinlik} onChange={v=>set('sagDerinlik',v)}/></Q>
+            <Q title={T.derinlik}><Chips opts={DERINLIK_OPT} val={d.sagDerinlik} onChange={v=>set('sagDerinlik',v)}/></Q>
           )}
           {d.sagTip==='kitle'&&(
-            <Q title="Boyut – uzun aks (mm)"><TxtIn val={d.sagBoyut} onChange={v=>set('sagBoyut',v)} ph="mm" type="number"/></Q>
+            <Q title={T.boyut}><TxtIn val={d.sagBoyut} onChange={v=>set('sagBoyut',v)} ph={T.boyutph} type="number"/></Q>
           )}
-          <Q title="Not (opsiyonel)"><TxtIn val={d.sagLezNot} onChange={v=>set('sagLezNot',v)} ph="Ek açıklama..."/></Q>
+          <Q title={T.notOps}><TxtIn val={d.sagLezNot} onChange={v=>set('sagLezNot',v)} ph={T.notph}/></Q>
         </div>
       );
       case 6: return d.sagTip==='kitle'?(
         <div>
-          <Q title="Şekil"><Chips opts={SEKIL_OPT} val={d.sagSekil} onChange={v=>set('sagSekil',v)}/></Q>
-          <Q title="Kenar"><Chips opts={KENAR_OPT} val={d.sagKenar} onChange={v=>set('sagKenar',v)}/></Q>
-          <Q title="İç Yapı Tutulumu"><Chips opts={IC_YAPI_OPT} val={d.sagIcYapi} onChange={v=>set('sagIcYapi',v)}/></Q>
+          <Q title={T.sekil}><Chips opts={SEKIL_OPT} val={d.sagSekil} onChange={v=>set('sagSekil',v)}/></Q>
+          <Q title={T.kenar}><Chips opts={KENAR_OPT} val={d.sagKenar} onChange={v=>set('sagKenar',v)}/></Q>
+          <Q title={T.icYapi}><Chips opts={IC_YAPI_OPT} val={d.sagIcYapi} onChange={v=>set('sagIcYapi',v)}/></Q>
         </div>
       ):(
         <div>
-          <Q title="NME – Dağılım"><Chips opts={DAGILIM_OPT} val={d.sagDagilim} onChange={v=>set('sagDagilim',v)}/></Q>
-          <Q title="NME – İç Patern"><Chips opts={IC_PATERN_OPT} val={d.sagIcPatern} onChange={v=>set('sagIcPatern',v)}/></Q>
+          <Q title={T.nmeDagilim}><Chips opts={DAGILIM_OPT} val={d.sagDagilim} onChange={v=>set('sagDagilim',v)}/></Q>
+          <Q title={T.nmeIcPatern}><Chips opts={IC_PATERN_OPT} val={d.sagIcPatern} onChange={v=>set('sagIcPatern',v)}/></Q>
         </div>
       );
       case 7: return(
         <div>
           {d.sagTip==='kitle'&&(
-            <Q title="Kinetik – İlk Faz"><Chips opts={KIN_INIT_OPT} val={d.sagKinInit} onChange={v=>set('sagKinInit',v)}/></Q>
+            <Q title={T.kinIlk}><Chips opts={KIN_INIT_OPT} val={d.sagKinInit} onChange={v=>set('sagKinInit',v)}/></Q>
           )}
-          <Q title="Kinetik – Geç Faz"><Chips opts={KIN_DEL_OPT} val={d.sagKinDel} onChange={v=>set('sagKinDel',v)}/></Q>
+          <Q title={T.kinGec}><Chips opts={KIN_DEL_OPT} val={d.sagKinDel} onChange={v=>set('sagKinDel',v)}/></Q>
         </div>
       );
       case 8: return(
         <div>
-          <Q title="Meme Başı">
-            <Chk label="Retraksiyon / involüsyon" checked={d.sagMemeBasiRetraksiyon} onChange={v=>set('sagMemeBasiRetraksiyon',v)}/>
+          <Q title={T.memeBasi}>
+            <Chk label={T.retraksiyon} checked={d.sagMemeBasiRetraksiyon} onChange={v=>set('sagMemeBasiRetraksiyon',v)}/>
           </Q>
-          <Q title="Cilt">
-            <Chk label="Cilt kalınlaşması" checked={d.sagCiltKalinlasma} onChange={v=>set('sagCiltKalinlasma',v)}/>
-            {d.sagCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.sagCiltLok} onChange={v=>set('sagCiltLok',v)} ph="Lokalizasyon"/></div>}
+          <Q title={T.cilt}>
+            <Chk label={T.ciltKalinlasma} checked={d.sagCiltKalinlasma} onChange={v=>set('sagCiltKalinlasma',v)}/>
+            {d.sagCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.sagCiltLok} onChange={v=>set('sagCiltLok',v)} ph={T.lokalizasyonph}/></div>}
           </Q>
-          <Q title="Diğer">
-            <Chk label="Meme implantı mevcut" checked={d.sagImplant} onChange={v=>set('sagImplant',v)}/>
+          <Q title={T.diger}>
+            <Chk label={T.implant} checked={d.sagImplant} onChange={v=>set('sagImplant',v)}/>
           </Q>
         </div>
       );
@@ -609,8 +956,8 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
         <div>
           <p style={{color:'#666880',fontSize:13,marginBottom:16}}>
             {d.solLezyonlar.length===0
-              ? 'Sol memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.'
-              : `${d.solLezyonlar.length} lezyon eklendi.`}
+              ? T.solNoLezMsg
+              : T.solHasLezMsg(d.solLezyonlar.length)}
           </p>
           {d.solLezyonlar.map((l,i)=>(
             <LezCard key={i} l={l} idx={i} onDelete={idx=>setD(p=>({...p,solLezyonlar:p.solLezyonlar.filter((_,j)=>j!==idx)}))}/>
@@ -619,64 +966,64 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
             width:'100%',padding:'12px',borderRadius:10,
             border:`2px dashed ${ACCENT}`,background:'rgba(232,121,160,0.04)',
             color:ACCENT,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
-          }}>+ Lezyon Ekle</button>
+          }}>{T.lezEkle}</button>
         </div>
       );
       case 10: return(
-        <Q title="Lezyon Tipi" hint="Sol meme – lezyon karakterizasyonu">
+        <Q title={T.stepTitles[10]} hint={T.lezTipiHint(T.solSide)}>
           <Chips opts={TIP_OPT} val={d.solTip} onChange={v=>set('solTip',v)}/>
         </Q>
       );
       case 11: return(
         <div>
-          <Q title="Kadran"><Chips opts={KADRAN_OPT} val={d.solKadran} onChange={v=>set('solKadran',v)}/></Q>
+          <Q title={T.kadran}><Chips opts={KADRAN_OPT} val={d.solKadran} onChange={v=>set('solKadran',v)}/></Q>
           {d.solTip!=='focus'&&(
-            <Q title="Derinlik"><Chips opts={DERINLIK_OPT} val={d.solDerinlik} onChange={v=>set('solDerinlik',v)}/></Q>
+            <Q title={T.derinlik}><Chips opts={DERINLIK_OPT} val={d.solDerinlik} onChange={v=>set('solDerinlik',v)}/></Q>
           )}
           {d.solTip==='kitle'&&(
-            <Q title="Boyut – uzun aks (mm)"><TxtIn val={d.solBoyut} onChange={v=>set('solBoyut',v)} ph="mm" type="number"/></Q>
+            <Q title={T.boyut}><TxtIn val={d.solBoyut} onChange={v=>set('solBoyut',v)} ph={T.boyutph} type="number"/></Q>
           )}
-          <Q title="Not (opsiyonel)"><TxtIn val={d.solLezNot} onChange={v=>set('solLezNot',v)} ph="Ek açıklama..."/></Q>
+          <Q title={T.notOps}><TxtIn val={d.solLezNot} onChange={v=>set('solLezNot',v)} ph={T.notph}/></Q>
         </div>
       );
       case 12: return d.solTip==='kitle'?(
         <div>
-          <Q title="Şekil"><Chips opts={SEKIL_OPT} val={d.solSekil} onChange={v=>set('solSekil',v)}/></Q>
-          <Q title="Kenar"><Chips opts={KENAR_OPT} val={d.solKenar} onChange={v=>set('solKenar',v)}/></Q>
-          <Q title="İç Yapı Tutulumu"><Chips opts={IC_YAPI_OPT} val={d.solIcYapi} onChange={v=>set('solIcYapi',v)}/></Q>
+          <Q title={T.sekil}><Chips opts={SEKIL_OPT} val={d.solSekil} onChange={v=>set('solSekil',v)}/></Q>
+          <Q title={T.kenar}><Chips opts={KENAR_OPT} val={d.solKenar} onChange={v=>set('solKenar',v)}/></Q>
+          <Q title={T.icYapi}><Chips opts={IC_YAPI_OPT} val={d.solIcYapi} onChange={v=>set('solIcYapi',v)}/></Q>
         </div>
       ):(
         <div>
-          <Q title="NME – Dağılım"><Chips opts={DAGILIM_OPT} val={d.solDagilim} onChange={v=>set('solDagilim',v)}/></Q>
-          <Q title="NME – İç Patern"><Chips opts={IC_PATERN_OPT} val={d.solIcPatern} onChange={v=>set('solIcPatern',v)}/></Q>
+          <Q title={T.nmeDagilim}><Chips opts={DAGILIM_OPT} val={d.solDagilim} onChange={v=>set('solDagilim',v)}/></Q>
+          <Q title={T.nmeIcPatern}><Chips opts={IC_PATERN_OPT} val={d.solIcPatern} onChange={v=>set('solIcPatern',v)}/></Q>
         </div>
       );
       case 13: return(
         <div>
           {d.solTip==='kitle'&&(
-            <Q title="Kinetik – İlk Faz"><Chips opts={KIN_INIT_OPT} val={d.solKinInit} onChange={v=>set('solKinInit',v)}/></Q>
+            <Q title={T.kinIlk}><Chips opts={KIN_INIT_OPT} val={d.solKinInit} onChange={v=>set('solKinInit',v)}/></Q>
           )}
-          <Q title="Kinetik – Geç Faz"><Chips opts={KIN_DEL_OPT} val={d.solKinDel} onChange={v=>set('solKinDel',v)}/></Q>
+          <Q title={T.kinGec}><Chips opts={KIN_DEL_OPT} val={d.solKinDel} onChange={v=>set('solKinDel',v)}/></Q>
         </div>
       );
       case 14: return(
         <div>
-          <Q title="Meme Başı">
-            <Chk label="Retraksiyon / involüsyon" checked={d.solMemeBasiRetraksiyon} onChange={v=>set('solMemeBasiRetraksiyon',v)}/>
+          <Q title={T.memeBasi}>
+            <Chk label={T.retraksiyon} checked={d.solMemeBasiRetraksiyon} onChange={v=>set('solMemeBasiRetraksiyon',v)}/>
           </Q>
-          <Q title="Cilt">
-            <Chk label="Cilt kalınlaşması" checked={d.solCiltKalinlasma} onChange={v=>set('solCiltKalinlasma',v)}/>
-            {d.solCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.solCiltLok} onChange={v=>set('solCiltLok',v)} ph="Lokalizasyon"/></div>}
+          <Q title={T.cilt}>
+            <Chk label={T.ciltKalinlasma} checked={d.solCiltKalinlasma} onChange={v=>set('solCiltKalinlasma',v)}/>
+            {d.solCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.solCiltLok} onChange={v=>set('solCiltLok',v)} ph={T.lokalizasyonph}/></div>}
           </Q>
-          <Q title="Diğer">
-            <Chk label="Meme implantı mevcut" checked={d.solImplant} onChange={v=>set('solImplant',v)}/>
+          <Q title={T.diger}>
+            <Chk label={T.implant} checked={d.solImplant} onChange={v=>set('solImplant',v)}/>
           </Q>
         </div>
       );
       case 15: return(
         <div>
-          <Q title="Sağ Aksiller Lenf Nodu"><Chips opts={LN_OPT} val={d.sagAksillerLN} onChange={v=>set('sagAksillerLN',v)}/></Q>
-          <Q title="Sol Aksiller Lenf Nodu"><Chips opts={LN_OPT} val={d.solAksillerLN} onChange={v=>set('solAksillerLN',v)}/></Q>
+          <Q title={T.sagAksillerLN}><Chips opts={LN_OPT} val={d.sagAksillerLN} onChange={v=>set('sagAksillerLN',v)}/></Q>
+          <Q title={T.solAksillerLN}><Chips opts={LN_OPT} val={d.solAksillerLN} onChange={v=>set('solAksillerLN',v)}/></Q>
         </div>
       );
       case 16: {
@@ -687,30 +1034,30 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
         return(
           <div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:22}}>
-              {[['Sağ Meme',sagF,sagAuto,'sagBiradsOvr'],['Sol Meme',solF,solAuto,'solBiradsOvr']].map(([label,sc,auto,k])=>(
+              {[[T.sagMemeLabel,sagF,sagAuto,'sagBiradsOvr'],[T.solMemeLabel,solF,solAuto,'solBiradsOvr']].map(([label,sc,auto,k])=>(
                 <div key={k} style={{background:'#1a1826',borderRadius:12,padding:16,border:'1px solid #2a2838'}}>
                   <div style={{color:'#666880',fontSize:11,marginBottom:8}}>{label}</div>
                   <div style={{fontSize:30,fontWeight:700,color:biradsColor(sc),marginBottom:2}}>BI-RADS {sc}</div>
-                  <div style={{color:'#444458',fontSize:10,marginBottom:12}}>Otomatik: {auto}</div>
-                  <div style={{color:'#666880',fontSize:11,marginBottom:6}}>Manuel düzelt:</div>
+                  <div style={{color:'#444458',fontSize:10,marginBottom:12}}>{T.otomatik} {auto}</div>
+                  <div style={{color:'#666880',fontSize:11,marginBottom:6}}>{T.manuelDuzelt}</div>
                   <Chips opts={BIOV} val={d[k]} onChange={v=>set(k,v)}/>
                 </div>
               ))}
             </div>
             <div style={{padding:'12px 16px',background:'#0d1f0d',borderRadius:10,
               borderLeft:'3px solid #4ade80',marginBottom:20}}>
-              <div style={{color:'#4ade80',fontSize:11,marginBottom:5}}>TAKİP ÖNERİSİ</div>
+              <div style={{color:'#4ade80',fontSize:11,marginBottom:5}}>{T.takipOneriLabel}</div>
               <div style={{color:'#c0e0c0',fontSize:13}}>{takipOneri(sagF,solF)}</div>
             </div>
-            <Q title="Genel Not (opsiyonel)">
-              <TxtIn val={d.genelNot} onChange={v=>set('genelNot',v)} ph="Karşılaştırma, klinik ek not..."/>
+            <Q title={T.genelNot}>
+              <TxtIn val={d.genelNot} onChange={v=>set('genelNot',v)} ph={T.genelNotph}/>
             </Q>
             <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:8}}>
               {[
-                ['Raporu Göster',()=>setShowRep(true),'#e879a0'],
-                [copyMsg||'Panoya Kopyala',copyReport,'#4ade80'],
-                ['HTML İndir',dlHTML,'#60a5fa'],
-                ['Yazdır',()=>window.print(),'#a78bfa'],
+                [T.raporGoster,()=>setShowRep(true),'#e879a0'],
+                [copyMsg||T.panoyaKopyala,copyReport,'#4ade80'],
+                [T.htmlIndir,dlHTML,'#60a5fa'],
+                [T.yazdir,()=>window.print(),'#a78bfa'],
               ].map(([label,fn,c])=>(
                 <button key={label} onClick={fn} style={{
                   padding:'10px 18px',borderRadius:8,border:`2px solid ${c}`,
@@ -736,15 +1083,15 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
         <div style={{background:'#fff',color:'#111',borderRadius:14,
           maxWidth:760,width:'100%',maxHeight:'88vh',overflow:'auto',padding:32}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
-            <h2 style={{margin:0,color:'#c2185b',fontSize:19}}>Meme MRI Raporu</h2>
+            <h2 style={{margin:0,color:'#c2185b',fontSize:19}}>{T.modalTitle}</h2>
             <button onClick={()=>setShowRep(false)} style={{background:'none',border:'none',
               cursor:'pointer',fontSize:22,color:'#888',lineHeight:1}}>×</button>
           </div>
           <pre className="report-content" style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.9,fontFamily:'monospace'}}>{rpt}</pre>
           <div style={{display:'flex',gap:10,marginTop:20,flexWrap:'wrap'}}>
-            <button onClick={copyReport} style={{padding:'8px 18px',background:'#c2185b',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||'Kopyala'}</button>
-            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>Yazdır</button>
-            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>HTML İndir</button>
+            <button onClick={copyReport} style={{padding:'8px 18px',background:'#c2185b',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||T.kopyala}</button>
+            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{T.yazdir}</button>
+            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{T.htmlIndir}</button>
           </div>
         </div>
       </div>
@@ -765,8 +1112,8 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:16,flexShrink:0}}>✦</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:15,fontWeight:700,color:'#f0e6f0'}}>Meme MRI Değerlendirme</div>
-              <div style={{fontSize:11,color:ACCENT}}>ACR BI-RADS MRI Lexicon 2013</div>
+              <div style={{fontSize:15,fontWeight:700,color:'#f0e6f0'}}>{T.headerTitle}</div>
+              <div style={{fontSize:11,color:ACCENT}}>{T.headerSubtitle}</div>
             </div>
             <div style={{fontSize:11,color:'#444458',textAlign:'right'}}>
               <div>{sectionOf()}</div>
@@ -788,8 +1135,8 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
           <div style={{fontSize:18,fontWeight:600,color:'#f0d0e8',marginBottom:3}}>
             {STEP_TITLES[step]}
           </div>
-          {inSagLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>Sağ meme – lezyon girişi devam ediyor</div>}
-          {inSolLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>Sol meme – lezyon girişi devam ediyor</div>}
+          {inSagLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>{T.sagLoopMsg}</div>}
+          {inSolLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>{T.solLoopMsg}</div>}
         </div>
         <div style={{animation:'fadeIn 0.22s ease'}}>
           {renderStep()}
@@ -802,13 +1149,13 @@ pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
             background:step===0?'#0f0e17':'#1a1826',
             color:step===0?'#2a2838':'#7070a0',
             cursor:step===0?'default':'pointer',fontSize:13,fontFamily:'inherit',
-          }}>← Geri</button>
+          }}>{T.geri}</button>
           {step<TOTAL-1&&(
             <button onClick={goNext} style={{
               padding:'10px 26px',borderRadius:8,border:'none',
               background:'linear-gradient(135deg,#c2185b,#e879a0)',
               color:'#fff',cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:600,
-            }}>İleri →</button>
+            }}>{T.ileri}</button>
           )}
         </div>
       </div>

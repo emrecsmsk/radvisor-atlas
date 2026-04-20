@@ -136,8 +136,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <div class="app-header">
   <div class="icon">🧠</div>
   <div>
-    <h1>Metabolik Beyin MRI — Karar Destek</h1>
-    <p>Metabolik / Toksik Ensefalopati ve Leukodistrofi Ayırıcı Tanısı</p>
+    <h1 data-i18n-tr="Metabolik Beyin MRI — Karar Destek" data-i18n-en="Metabolic Brain MRI — Decision Support"></h1>
+    <p data-i18n-tr="Metabolik / Toksik Ensefalopati ve Leukodistrofi Ayırıcı Tanısı" data-i18n-en="Metabolic / Toxic Encephalopathy and Leukodystrophy Differential Diagnosis"></p>
   </div>
 </div>
 
@@ -149,33 +149,397 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- Print Overlay -->
 <div id="printOverlay">
   <div class="overlay-toolbar">
-    <button class="overlay-btn copy" onclick="copyReport()">📋 Kopyala (Word)</button>
-    <button class="overlay-btn print" onclick="window.print()">🖨️ Yazdır</button>
-    <button class="overlay-btn close" onclick="closePrint()">✕ Kapat</button>
+    <button class="overlay-btn copy" onclick="copyReport()">📋 <span data-i18n-tr="Kopyala (Word)" data-i18n-en="Copy (Word)"></span></button>
+    <button class="overlay-btn print" onclick="window.print()">🖨️ <span data-i18n-tr="Yazdır" data-i18n-en="Print"></span></button>
+    <button class="overlay-btn close" onclick="closePrint()">✕ <span data-i18n-tr="Kapat" data-i18n-en="Close"></span></button>
   </div>
   <div id="printSheet"></div>
 </div>
 
 <script>
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    steps: [
+      'Klinik Bağlam',
+      'T1 Sinyali',
+      'T2/FLAIR',
+      'Lokalizasyon',
+      'DWI/ADC',
+      'Kontrast',
+      'Ek Özellikler',
+      'Sonuç'
+    ],
+    // Disease names
+    hie_akut_name: 'Hipoksik-iskemik Ensefalopati (Akut)',
+    hie_kronik_name: 'Hipoksik-iskemik Ensefalopati (Kronik)',
+    hipoglisemik_name: 'Hipoglisemik Ensefalopati',
+    hepatik_name: 'Hepatik Ensefalopati',
+    uremik_name: 'Üremik Ensefalopati',
+    menkes_wilson_name: 'Menkes / Wilson Hastalığı',
+    msud_name: 'Akçaağaç Şurubu İdrar Hastalığı (MSUD)',
+    leigh_name: 'Leigh Sendromu',
+    methylmalonic_name: 'Methylmalonic / Propionic Asidemi',
+    canavan_name: 'Canavan Hastalığı',
+    krabbe_name: 'Krabbe Hastalığı',
+    xald_name: 'Adrenoleukodistrofi (X-ALD)',
+    melas_name: 'MELAS (Mitokondriyal Ensefalomiyopati)',
+    hie_neonatal_name: 'Hipoksik-iskemik Ensefalopati (Neonatal)',
+    // Disease categories
+    cat_metabolik_vaskuler: 'Metabolik/Vasküler',
+    cat_metabolik_toksik: 'Metabolik/Toksik',
+    cat_metal: 'Metal Metabolizma Bozukluğu',
+    cat_organik: 'Organik Asidemi / Aminoasidopati',
+    cat_organik2: 'Organik Asidemi',
+    cat_mitokondriyal: 'Mitokondriyal Hastalık',
+    cat_leukodistrofi: 'Leukodistrofi',
+    cat_peroksizom: 'Peroksizom Hastalığı',
+    // Disease comments
+    hie_akut_yorum: 'Akut hipoksik-iskemik ensefalopati paterni ile uyumludur. Perirolandik korteks, bazal ganglia ve talamus tutulumu karakteristiktir. DWI erken dönemde (ilk 24-72 saat) tanıyı destekler; ADC normalizasyonu 7-10. günde görülebilir. Acil nöroloji konsültasyonu önerilir.',
+    hie_kronik_yorum: 'Kronik hipoksik-iskemik hasar ile uyumlu bulgular. Kortikal-subkortikal atrofi ve periventriküler glioz alanları eski anoksik hasarı göstermektedir. Aktif diffüzyon kısıtlaması beklenmez. Klinik hikaye ile korelasyon gereklidir.',
+    hipoglisemik_yorum: 'Hipoglisemik ensefalopati paterni ile uyumludur. Posterior beyaz cevher ve bazal ganglia tutulumu, internal capsule/posterior limb tutulumu karakteristiktir. Kan şekeri değerleri ile klinik korelasyon şarttır. Erken tedavi ile kısmi geri dönüşüm mümkündür.',
+    hepatik_yorum: 'Hepatik ensefalopati ile uyumlu bulgular. Globus pallidus T1 hiperintensitesi kronik karaciğer hastalığında mangan birikiminin karakteristik MRI bulgusudur. Karaciğer fonksiyon testleri ve serum amonyak düzeyi ile korelasyon önerilir. Hepatoloji konsültasyonu gereklidir.',
+    uremik_yorum: 'Üremik ensefalopati ile uyumlu bulgular. Diffüz T2/FLAIR hiperintens korteks ve subkorteks, serebral ödem üremik nörolojik komplikasyonla uyumludur. Serum kreatinin, BUN ve böbrek fonksiyonları ile korelasyon gereklidir. Diyaliz tedavisi ile görünüm düzelme gösterebilir.',
+    menkes_wilson_yorum: 'Menkes/Wilson hastalığı ile uyumlu bazal ganglia tutulumu izlenmektedir. Bilateral putamen ve globus pallidus T2 hiperintensitesi ve T1 sinyal değişiklikleri bakır metabolizması bozukluklarında görülür. Serum seruloplazmin, 24 saatlik idrar bakır ve göz muayenesi (Kayser-Fleischer halkaları) önerilir.',
+    msud_yorum: 'MSUD (Maple Syrup Urine Disease / Akçaağaç Şurubu İdrar Hastalığı) ile uyumlu bulgular. Myelinated beyaz cevher tutulumu — özellikle beyin sapı, serebellum, internal capsule posterior limbi — bu hastalığın karakteristiğidir. Yenidoğan/süt çocuğunda akut tablo + DWI kısıtlaması + karakteristik idrar kokusu ile birlikte düşünülmelidir. Plazma aminoasit analizi acilen yapılmalıdır.',
+    leigh_yorum: 'Leigh sendromu (Subakut nekrotizan ensefalomiyopati) ile uyumlu bulgular. Bilateral simetrik putamen ve beyin sapı tegmentum tutulumu mitokondriyal hastalığın karakteristik görünümüdür. Serum ve BOS laktat, pirüvat düzeyleri ile mitokondriyal DNA analizi önerilir. Genetik konsültasyon gereklidir.',
+    methylmalonic_yorum: 'Methylmalonic/Propionic asidemi ile uyumlu bulgular. Bilateral globus pallidus ve periventriküler beyaz cevher tutulumu organik asidemi için karakteristiktir. Serum ve idrar organik asit profili, plazma aminoasitleri ile korelasyon gereklidir. Diyetetisyen ve metabolizma uzmanı konsültasyonu önerilir.',
+    canavan_yorum: 'Canavan hastalığı ile uyumlu bulgular. Diffüz beyaz cevher tutulumu ile çok belirgin T2 hiperintensitesi spongiform dejenerasyonu yansıtır. MR spektroskopide N-asetil aspartat (NAA) belirgin artışı tanı koydurucudur. ASPA gen mutasyon analizi önerilir. Tanıyı desteklemek için idrar N-asetilaspartat ölçümü yapılabilir.',
+    krabbe_yorum: 'Krabbe hastalığı (Globoid hücreli leukodistrofi) ile uyumlu bulgular. Periventriküler beyaz cevher ve corticospinal tract tutulumu galaktosilseramid lipidozunda görülür. Lökosit ve kuru kan lekesi galaktosilserebrozidaz enzim aktivitesi ölçümü tanı için gereklidir. GALC gen analizi önerilir.',
+    xald_yorum: 'X-bağlı adrenoleukodistrofi (X-ALD) ile uyumlu bulgular. Posterior parieto-oksipital beyaz cevherde başlayan ve ilerleyen tutulum, erkek çocukta karakteristik görünümdür. Aktif lezyon kenarında kontrast tutulumu enflamatuar aktiviteyi gösterir. Plazma çok uzun zincirli yağ asitleri (VLCFA) analizi tanıyı doğrular. Adrenal yetmezlik açısından değerlendirme gereklidir.',
+    melas_yorum: 'MELAS (Mitokondriyal Ensefalomiyopati, Laktik Asidoz, Stroke-like epizodlar) ile uyumlu bulgular. Vasküler teritori ile uyumsuz stroke-like kortikal lezyonlar, posterior temporal-oksipital bölge tutulumu ve epizodik klinik tablo bu sendromun karakteristiğidir. Serum ve BOS laktat, pirüvat, mitokondriyal DNA mutasyon analizi (m.3243A>G en sık) önerilir.',
+    hie_neonatal_yorum: 'Neonatal hipoksik-iskemik ensefalopati (HIE) ile uyumlu bulgular. Derin gri cevher (bazal ganglia-talamus) ve perirolandik korteks tutulumu parsiyel-prolonged asfiksi paternini; diffüz kortikal tutulum profund akut asfiksiyi gösterir. MR termometri/spektroskopi, DWI kinetiği ve klinik SARNAT skoru ile korelasyon gereklidir. Terapötik hipoterminin ilk 6 saatte başlatılması kritiktir.',
+    // Step 0 - Clinical Context
+    step0_h2: 'Klinik Bağlam',
+    step0_subtitle: 'Hasta yaş grubu ve klinik gidişi belirtin',
+    yas_label: 'Yaş Grubu',
+    yas_neonatal: 'Neonatal (0–28 gün)',
+    yas_sut_cocugu: 'Süt çocuğu (1 ay–2 yıl)',
+    yas_cocuk: 'Çocuk (2–12 yıl)',
+    yas_adolesan: 'Adölesan (12–18 yıl)',
+    yas_yetiskin: 'Yetişkin (>18 yıl)',
+    klinik_label: 'Klinik Gidiş',
+    klinik_akut: 'Akut (<72 saat)',
+    klinik_subakut: 'Subakut (3 gün–3 hafta)',
+    klinik_kronik: 'Kronik / Progresif',
+    klinik_epizodik: 'Epizodik / Ataklar halinde',
+    // Step 1 - T1
+    step1_h2: 'T1 Sinyal Özellikleri',
+    step1_subtitle: 'Lezyonların T1 ağırlıklı görüntülerdeki baskın sinyali',
+    t1_label: 'Baskın T1 Sinyali',
+    t1_izointens: 'İzointens',
+    t1_hafif_hipointens: 'Hafif hipointens',
+    t1_belirgin_hipointens: 'Belirgin hipointens',
+    t1_atrofi: 'Atrofi / Volüm kaybı',
+    t1_ozel: 'Özel Bulgu',
+    gp_t1_hiper: 'Globus pallidus T1 hiperintens (Mn birikimi?)',
+    // Step 2 - T2/FLAIR
+    step2_h2: 'T2 / FLAIR Sinyal Özellikleri',
+    step2_subtitle: 'Lezyonların T2 ve FLAIR sekanslarındaki baskın sinyali',
+    t2_label: 'T2/FLAIR Sinyali',
+    t2_normal: 'Normal',
+    t2_hafif_hiperintens: 'Hafif hiperintens',
+    t2_hiperintens: 'Belirgin hiperintens',
+    t2_cok_hiperintens: 'Çok belirgin hiperintens (spongiform?)',
+    // Step 3 - Localization
+    step3_h2: 'Lezyon Lokalizasyonu',
+    step3_subtitle: 'Tutulum gösteren anatomik bölgeleri işaretleyin (çoklu seçim)',
+    sublabel_derin: '🔷 Derin Gri Cevher / Bazal Ganglia',
+    sublabel_beyaz: '🔶 Beyaz Cevher',
+    sublabel_korteks: '🔹 Korteks ve Diğer',
+    loc_putamen: 'Putamen',
+    loc_basal_gp: 'Globus pallidus',
+    loc_thalamus: 'Talamus',
+    loc_periventrikular: 'Periventriküler beyaz cevher',
+    loc_posterior_beyaz: 'Posterior parieto-oksipital beyaz cevher',
+    loc_myelinated: 'Myelinated beyaz cevher (BS / serebellum)',
+    loc_diffuz_beyaz: 'Diffüz beyaz cevher tutulumu',
+    loc_internal_capsule: 'Internal capsule / Corticospinal tract',
+    loc_korteks: 'Korteks / Subkorteks',
+    loc_beyin_sapi: 'Beyin sapı / Tegmentum',
+    loc_serebellum: 'Serebellum',
+    // Step 4 - DWI
+    step4_h2: 'Difüzyon (DWI / ADC)',
+    step4_subtitle: 'Difüzyon ağırlıklı görüntüleme bulguları',
+    dwi_label: 'Difüzyon Kısıtlaması',
+    dwi_yok: 'Kısıtlama yok (ADC normal)',
+    dwi_olabilir: 'Şüpheli / olabilir (ADC hafif düşük)',
+    dwi_var: 'Belirgin kısıtlama (ADC düşük — akut)',
+    // Step 5 - Contrast
+    step5_h2: 'Kontrast Tutulumu',
+    step5_subtitle: 'Gadolinyum tutulumu (IV kontrast verilmişse)',
+    kontrast_label: 'Kontrast Tutulumu',
+    kontrast_yok: 'Tutulum yok',
+    kontrast_minimal: 'Minimal / hafif tutulum',
+    kontrast_var: 'Belirgin tutulum',
+    kontrast_yapilmadi: 'Kontrast yapılmadı',
+    // Step 6 - Additional
+    step6_h2: 'Ek Özellikler',
+    step6_subtitle: 'Ek MRI bulgu ve klinik özellikler (çoklu seçim)',
+    ek_bilateral: 'Bilateral simetrik lezyonlar',
+    ek_odem: 'Diffüz serebral ödem',
+    ek_stroke_like: 'Stroke-like lezyonlar (vasküler teritori dışı)',
+    ek_korteks_ribbon: 'Kortikal "ribbon" işareti',
+    // Step 7 - Results
+    step7_h2: '🔬 Differential Tanı Sonuçları',
+    uyum_label: 'Uyum',
+    yorum_tag: (n) => `YORUM ${n}`,
+    yeni_inceleme: '↺ Yeni İnceleme',
+    rapor_yazdir: '🖨️ Rapor / Yazdır',
+    kopyala: '📋 Kopyala',
+    ileri: 'İleri →',
+    geri: '← Geri',
+    sonuclari_gor: 'Sonuçları Gör →',
+    // Print labels
+    print_title: '⚕ Metabolik Beyin MRI — Karar Destek Raporu',
+    print_tarih: 'Tarih',
+    print_kurum: 'Kurum',
+    print_kurum_val: 'Gülhane Eğitim ve Araştırma Hastanesi, Ankara',
+    print_klinik_bilgi: '📋 Klinik Bilgi',
+    print_mri_bulgulari: '🔬 MRI Bulguları',
+    print_diff_tani: '🧬 Differential Tanı (Ağırlıklı Skorlama)',
+    print_param: 'Parametre',
+    print_deger: 'Değer',
+    print_sekans: 'Sekans',
+    print_bulgu: 'Bulgu',
+    print_tani: 'Tanı',
+    print_kategori: 'Kategori',
+    print_lokalizasyon: 'Lokalizasyon',
+    print_ek: 'Ek özellikler',
+    print_belirtilmemis: 'Belirtilmemiş',
+    print_not: 'Not',
+    print_not_val: 'Bu rapor klinik karar destek amaçlıdır; tanısal kesinlik taşımaz. Klinik, laboratuvar ve diğer görüntüleme verileri ile birlikte değerlendirilmelidir.',
+    print_footer: 'Metabolik Beyin MRI Karar Destek Sistemi • Gülhane Eğitim ve Araştırma Hastanesi Radyoloji ABD',
+    // Label maps
+    yas_labels: {neonatal:'Neonatal (0–28 gün)',sut_cocugu:'Süt çocuğu (1 ay–2 yıl)',cocuk:'Çocuk (2–12 yıl)',adolesan:'Adölesan (12–18 yıl)',yetiskin:'Yetişkin (>18 yıl)'},
+    klinik_labels: {akut:'Akut (<72 saat)',subakut:'Subakut (3 gün–3 hafta)',kronik:'Kronik/Progresif',epizodik:'Epizodik/Ataklar'},
+    t1_labels: {izointens:'İzointens',hafif_hipointens:'Hafif hipointens',belirgin_hipointens:'Belirgin hipointens',atrofi:'Atrofi'},
+    t2_labels: {normal:'Normal',hafif_hiperintens:'Hafif hiperintens',hiperintens:'Belirgin hiperintens',cok_hiperintens:'Çok belirgin hiperintens'},
+    dwi_labels: {yok:'Kısıtlama yok',olabilir:'Şüpheli',var:'Belirgin kısıtlama (ADC düşük)'},
+    kontrast_labels: {yok:'Yok',minimal:'Minimal',var:'Belirgin',yapilmadi:'Yapılmadı'},
+    // Lokalization labels for print
+    lok_putamen: 'Putamen',
+    lok_basal_gp: 'Globus pallidus',
+    lok_thalamus: 'Talamus',
+    lok_periventrikular: 'Periventriküler beyaz cevher',
+    lok_posterior_beyaz: 'Posterior beyaz cevher (parieto-oksipital)',
+    lok_myelinated: 'Myelinated beyaz cevher (BS/serebellum)',
+    lok_diffuz_beyaz: 'Diffüz beyaz cevher',
+    lok_internal_capsule: 'Internal capsule/corticospinal tract',
+    lok_korteks: 'Korteks/subkorteks',
+    lok_beyin_sapi: 'Beyin sapı/tegmentum',
+    lok_serebellum: 'Serebellum',
+    // Extra features for print
+    extra_bilateral: 'Bilateral simetrik lezyonlar',
+    extra_odem: 'Diffüz serebral ödem',
+    extra_stroke_like: 'Stroke-like lezyonlar',
+    extra_korteks_ribbon: 'Kortikal ribbon işareti',
+    extra_gp_t1_hiper: 'Globus pallidus T1 hiperintensitesi',
+    // Copy/alert
+    copy_success: 'Rapor panoya kopyalandı. Word\'e yapıştırabilirsiniz.',
+    copy_fail: 'Kopyalama başarısız. Lütfen manuel seçim yapın.',
+    // Date locale
+    date_locale: 'tr-TR',
+  },
+  en: {
+    steps: [
+      'Clinical Context',
+      'T1 Signal',
+      'T2/FLAIR',
+      'Localization',
+      'DWI/ADC',
+      'Contrast',
+      'Additional Features',
+      'Results'
+    ],
+    // Disease names
+    hie_akut_name: 'Hypoxic-ischemic Encephalopathy (Acute)',
+    hie_kronik_name: 'Hypoxic-ischemic Encephalopathy (Chronic)',
+    hipoglisemik_name: 'Hypoglycemic Encephalopathy',
+    hepatik_name: 'Hepatic Encephalopathy',
+    uremik_name: 'Uremic Encephalopathy',
+    menkes_wilson_name: 'Menkes / Wilson Disease',
+    msud_name: 'Maple Syrup Urine Disease (MSUD)',
+    leigh_name: 'Leigh Syndrome',
+    methylmalonic_name: 'Methylmalonic / Propionic Acidemia',
+    canavan_name: 'Canavan Disease',
+    krabbe_name: 'Krabbe Disease',
+    xald_name: 'Adrenoleukodystrophy (X-ALD)',
+    melas_name: 'MELAS (Mitochondrial Encephalomyopathy)',
+    hie_neonatal_name: 'Hypoxic-ischemic Encephalopathy (Neonatal)',
+    // Disease categories
+    cat_metabolik_vaskuler: 'Metabolic/Vascular',
+    cat_metabolik_toksik: 'Metabolic/Toxic',
+    cat_metal: 'Metal Metabolism Disorder',
+    cat_organik: 'Organic Acidemia / Aminoacidopathy',
+    cat_organik2: 'Organic Acidemia',
+    cat_mitokondriyal: 'Mitochondrial Disease',
+    cat_leukodistrofi: 'Leukodystrophy',
+    cat_peroksizom: 'Peroxisomal Disease',
+    // Disease comments
+    hie_akut_yorum: 'Findings are consistent with acute hypoxic-ischemic encephalopathy pattern. Perirolandic cortex, basal ganglia, and thalamus involvement is characteristic. DWI supports the diagnosis in the early period (first 24–72 hours); ADC normalization may be seen on days 7–10. Emergency neurology consultation is recommended.',
+    hie_kronik_yorum: 'Findings are consistent with chronic hypoxic-ischemic injury. Cortical-subcortical atrophy and periventricular gliosis areas reflect old anoxic damage. Active restricted diffusion is not expected. Correlation with clinical history is required.',
+    hipoglisemik_yorum: 'Findings are consistent with hypoglycemic encephalopathy pattern. Posterior white matter and basal ganglia involvement, and internal capsule/posterior limb involvement are characteristic. Clinical correlation with blood glucose values is mandatory. Partial recovery is possible with early treatment.',
+    hepatik_yorum: 'Findings are consistent with hepatic encephalopathy. T1 hyperintensity of the globus pallidus is the characteristic MRI finding of manganese deposition in chronic liver disease. Correlation with liver function tests and serum ammonia level is recommended. Hepatology consultation is required.',
+    uremik_yorum: 'Findings are consistent with uremic encephalopathy. Diffuse T2/FLAIR hyperintense cortex and subcortex, and cerebral edema are consistent with uremic neurological complication. Correlation with serum creatinine, BUN, and kidney function is required. Findings may improve with dialysis treatment.',
+    menkes_wilson_yorum: 'Basal ganglia involvement consistent with Menkes/Wilson disease is observed. Bilateral putamen and globus pallidus T2 hyperintensity and T1 signal changes are seen in copper metabolism disorders. Serum ceruloplasmin, 24-hour urinary copper, and ophthalmologic examination (Kayser-Fleischer rings) are recommended.',
+    msud_yorum: 'Findings are consistent with MSUD (Maple Syrup Urine Disease). Myelinated white matter involvement — especially brainstem, cerebellum, internal capsule posterior limb — is characteristic of this disease. In newborn/infant with acute presentation + DWI restricted diffusion + characteristic urine odor should be considered. Plasma amino acid analysis should be performed urgently.',
+    leigh_yorum: 'Findings are consistent with Leigh syndrome (Subacute necrotizing encephalomyelopathy). Bilateral symmetric putamen and brainstem tegmentum involvement is the characteristic appearance of mitochondrial disease. Serum and CSF lactate, pyruvate levels and mitochondrial DNA analysis are recommended. Genetic consultation is required.',
+    methylmalonic_yorum: 'Findings are consistent with methylmalonic/propionic acidemia. Bilateral globus pallidus and periventricular white matter involvement is characteristic for organic acidemia. Correlation with serum and urine organic acid profile, plasma amino acids is required. Dietitian and metabolism specialist consultation is recommended.',
+    canavan_yorum: 'Findings are consistent with Canavan disease. Diffuse white matter involvement with markedly increased T2 hyperintensity reflects spongiform degeneration. Marked elevation of N-acetyl aspartate (NAA) in MR spectroscopy is diagnostic. ASPA gene mutation analysis is recommended. Urinary N-acetylaspartate measurement can be done to support the diagnosis.',
+    krabbe_yorum: 'Findings are consistent with Krabbe disease (Globoid cell leukodystrophy). Periventricular white matter and corticospinal tract involvement is seen in galactosylceramide lipidosis. Leukocyte and dried blood spot galactosylcerebrosidase enzyme activity measurement is required for diagnosis. GALC gene analysis is recommended.',
+    xald_yorum: 'Findings are consistent with X-linked adrenoleukodystrophy (X-ALD). Progressive involvement starting from posterior parieto-occipital white matter is characteristic in male children. Enhancement at the active lesion edge reflects inflammatory activity. Plasma very long-chain fatty acids (VLCFA) analysis confirms the diagnosis. Evaluation for adrenal insufficiency is required.',
+    melas_yorum: 'Findings are consistent with MELAS (Mitochondrial Encephalomyopathy, Lactic Acidosis, Stroke-like episodes). Stroke-like cortical lesions not conforming to vascular territory, posterior temporal-occipital involvement, and episodic clinical course are characteristic of this syndrome. Serum and CSF lactate, pyruvate, mitochondrial DNA mutation analysis (m.3243A>G most common) are recommended.',
+    hie_neonatal_yorum: 'Findings are consistent with neonatal hypoxic-ischemic encephalopathy (HIE). Deep gray matter (basal ganglia-thalamus) and perirolandic cortex involvement represents the partial-prolonged asphyxia pattern; diffuse cortical involvement reflects profound acute asphyxia. Correlation with MR thermometry/spectroscopy, DWI kinetics, and clinical SARNAT score is required. Initiation of therapeutic hypothermia within the first 6 hours is critical.',
+    // Step 0 - Clinical Context
+    step0_h2: 'Clinical Context',
+    step0_subtitle: 'Specify patient age group and clinical course',
+    yas_label: 'Age Group',
+    yas_neonatal: 'Neonatal (0–28 days)',
+    yas_sut_cocugu: 'Infant (1 month–2 years)',
+    yas_cocuk: 'Child (2–12 years)',
+    yas_adolesan: 'Adolescent (12–18 years)',
+    yas_yetiskin: 'Adult (>18 years)',
+    klinik_label: 'Clinical Course',
+    klinik_akut: 'Acute (<72 hours)',
+    klinik_subakut: 'Subacute (3 days–3 weeks)',
+    klinik_kronik: 'Chronic / Progressive',
+    klinik_epizodik: 'Episodic / Attacks',
+    // Step 1 - T1
+    step1_h2: 'T1 Signal Characteristics',
+    step1_subtitle: 'Dominant signal of lesions on T1-weighted images',
+    t1_label: 'Dominant T1 Signal',
+    t1_izointens: 'Isointense',
+    t1_hafif_hipointens: 'Mildly hypointense',
+    t1_belirgin_hipointens: 'Markedly hypointense',
+    t1_atrofi: 'Atrophy / Volume loss',
+    t1_ozel: 'Special Finding',
+    gp_t1_hiper: 'Globus pallidus T1 hyperintense (Mn deposition?)',
+    // Step 2 - T2/FLAIR
+    step2_h2: 'T2 / FLAIR Signal Characteristics',
+    step2_subtitle: 'Dominant signal of lesions on T2 and FLAIR sequences',
+    t2_label: 'T2/FLAIR Signal',
+    t2_normal: 'Normal',
+    t2_hafif_hiperintens: 'Mildly hyperintense',
+    t2_hiperintens: 'Markedly hyperintense',
+    t2_cok_hiperintens: 'Very markedly hyperintense (spongiform?)',
+    // Step 3 - Localization
+    step3_h2: 'Lesion Localization',
+    step3_subtitle: 'Mark anatomical regions with involvement (multiple selection)',
+    sublabel_derin: '🔷 Deep Gray Matter / Basal Ganglia',
+    sublabel_beyaz: '🔶 White Matter',
+    sublabel_korteks: '🔹 Cortex and Other',
+    loc_putamen: 'Putamen',
+    loc_basal_gp: 'Globus pallidus',
+    loc_thalamus: 'Thalamus',
+    loc_periventrikular: 'Periventricular white matter',
+    loc_posterior_beyaz: 'Posterior parieto-occipital white matter',
+    loc_myelinated: 'Myelinated white matter (BS / cerebellum)',
+    loc_diffuz_beyaz: 'Diffuse white matter involvement',
+    loc_internal_capsule: 'Internal capsule / Corticospinal tract',
+    loc_korteks: 'Cortex / Subcortex',
+    loc_beyin_sapi: 'Brainstem / Tegmentum',
+    loc_serebellum: 'Cerebellum',
+    // Step 4 - DWI
+    step4_h2: 'Diffusion (DWI / ADC)',
+    step4_subtitle: 'Diffusion weighted imaging findings',
+    dwi_label: 'Restricted Diffusion',
+    dwi_yok: 'No restriction (ADC normal)',
+    dwi_olabilir: 'Suspected / possible (ADC mildly low)',
+    dwi_var: 'Marked restriction (ADC low — acute)',
+    // Step 5 - Contrast
+    step5_h2: 'Enhancement',
+    step5_subtitle: 'Gadolinium enhancement (if IV contrast was given)',
+    kontrast_label: 'Enhancement',
+    kontrast_yok: 'No enhancement',
+    kontrast_minimal: 'Minimal / mild enhancement',
+    kontrast_var: 'Marked enhancement',
+    kontrast_yapilmadi: 'Contrast not given',
+    // Step 6 - Additional
+    step6_h2: 'Additional Features',
+    step6_subtitle: 'Additional MRI findings and clinical features (multiple selection)',
+    ek_bilateral: 'Bilateral symmetric lesions',
+    ek_odem: 'Diffuse cerebral edema',
+    ek_stroke_like: 'Stroke-like lesions (outside vascular territory)',
+    ek_korteks_ribbon: 'Cortical "ribbon" sign',
+    // Step 7 - Results
+    step7_h2: '🔬 Differential Diagnosis Results',
+    uyum_label: 'Match',
+    yorum_tag: (n) => `IMPRESSION ${n}`,
+    yeni_inceleme: '↺ New Examination',
+    rapor_yazdir: '🖨️ Report / Print',
+    kopyala: '📋 Copy',
+    ileri: 'Next →',
+    geri: '← Back',
+    sonuclari_gor: 'See Results →',
+    // Print labels
+    print_title: '⚕ Metabolic Brain MRI — Decision Support Report',
+    print_tarih: 'Date',
+    print_kurum: 'Institution',
+    print_kurum_val: 'Gulhane Training and Research Hospital, Ankara',
+    print_klinik_bilgi: '📋 Clinical Information',
+    print_mri_bulgulari: '🔬 MRI Findings',
+    print_diff_tani: '🧬 Differential Diagnosis (Weighted Scoring)',
+    print_param: 'Parameter',
+    print_deger: 'Value',
+    print_sekans: 'Sequence',
+    print_bulgu: 'Finding',
+    print_tani: 'Diagnosis',
+    print_kategori: 'Category',
+    print_lokalizasyon: 'Localization',
+    print_ek: 'Additional features',
+    print_belirtilmemis: 'Not specified',
+    print_not: 'Note',
+    print_not_val: 'This report is intended for clinical decision support purposes only; it does not carry diagnostic certainty. It should be evaluated together with clinical, laboratory, and other imaging data.',
+    print_footer: 'Metabolic Brain MRI Decision Support System • Gulhane Training and Research Hospital Radiology Department',
+    // Label maps
+    yas_labels: {neonatal:'Neonatal (0–28 days)',sut_cocugu:'Infant (1 month–2 years)',cocuk:'Child (2–12 years)',adolesan:'Adolescent (12–18 years)',yetiskin:'Adult (>18 years)'},
+    klinik_labels: {akut:'Acute (<72 hours)',subakut:'Subacute (3 days–3 weeks)',kronik:'Chronic/Progressive',epizodik:'Episodic/Attacks'},
+    t1_labels: {izointens:'Isointense',hafif_hipointens:'Mildly hypointense',belirgin_hipointens:'Markedly hypointense',atrofi:'Atrophy'},
+    t2_labels: {normal:'Normal',hafif_hiperintens:'Mildly hyperintense',hiperintens:'Markedly hyperintense',cok_hiperintens:'Very markedly hyperintense'},
+    dwi_labels: {yok:'No restriction',olabilir:'Suspected',var:'Marked restriction (ADC low)'},
+    kontrast_labels: {yok:'None',minimal:'Minimal',var:'Marked',yapilmadi:'Not given'},
+    // Lokalization labels for print
+    lok_putamen: 'Putamen',
+    lok_basal_gp: 'Globus pallidus',
+    lok_thalamus: 'Thalamus',
+    lok_periventrikular: 'Periventricular white matter',
+    lok_posterior_beyaz: 'Posterior white matter (parieto-occipital)',
+    lok_myelinated: 'Myelinated white matter (BS/cerebellum)',
+    lok_diffuz_beyaz: 'Diffuse white matter',
+    lok_internal_capsule: 'Internal capsule/corticospinal tract',
+    lok_korteks: 'Cortex/subcortex',
+    lok_beyin_sapi: 'Brainstem/tegmentum',
+    lok_serebellum: 'Cerebellum',
+    // Extra features for print
+    extra_bilateral: 'Bilateral symmetric lesions',
+    extra_odem: 'Diffuse cerebral edema',
+    extra_stroke_like: 'Stroke-like lesions',
+    extra_korteks_ribbon: 'Cortical ribbon sign',
+    extra_gp_t1_hiper: 'Globus pallidus T1 hyperintensity',
+    // Copy/alert
+    copy_success: 'Report copied to clipboard. You can paste into Word.',
+    copy_fail: 'Copy failed. Please select manually.',
+    // Date locale
+    date_locale: 'en-GB',
+  }
+})[RV_LOCALE];
+
+// Apply i18n to static elements
+document.querySelectorAll('[data-i18n-tr]').forEach(el => {
+  el.textContent = RV_LOCALE === 'en' ? el.getAttribute('data-i18n-en') : el.getAttribute('data-i18n-tr');
+});
+
 // ─────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────
-const STEPS = [
-  'Klinik Bağlam',
-  'T1 Sinyali',
-  'T2/FLAIR',
-  'Lokalizasyon',
-  'DWI/ADC',
-  'Kontrast',
-  'Ek Özellikler',
-  'Sonuç'
-];
+const STEPS = T.steps;
 
 const diseases = [
   {
     id: 'hie_akut',
-    name: 'Hipoksik-iskemik Ensefalopati (Akut)',
-    category: 'Metabolik/Vasküler',
+    name: T.hie_akut_name,
+    category: T.cat_metabolik_vaskuler,
     criteria: [
       {f:'klinik', v:['akut','subakut'], w:2},
       {f:'yas', v:['yetiskin','cocuk','adolesan'], w:1},
@@ -188,12 +552,12 @@ const diseases = [
       {f:'bilateral', v:true, w:1},
       {f:'odem', v:true, w:2},
     ],
-    yorum: 'Akut hipoksik-iskemik ensefalopati paterni ile uyumludur. Perirolandik korteks, bazal ganglia ve talamus tutulumu karakteristiktir. DWI erken dönemde (ilk 24-72 saat) tanıyı destekler; ADC normalizasyonu 7-10. günde görülebilir. Acil nöroloji konsültasyonu önerilir.'
+    yorum: T.hie_akut_yorum
   },
   {
     id: 'hie_kronik',
-    name: 'Hipoksik-iskemik Ensefalopati (Kronik)',
-    category: 'Metabolik/Vasküler',
+    name: T.hie_kronik_name,
+    category: T.cat_metabolik_vaskuler,
     criteria: [
       {f:'t1', v:['atrofi'], w:3},
       {f:'t2', v:['hafif_hiperintens','hiperintens'], w:2},
@@ -202,12 +566,12 @@ const diseases = [
       {f:'dwi', v:['yok'], w:1},
       {f:'klinik', v:['kronik'], w:2},
     ],
-    yorum: 'Kronik hipoksik-iskemik hasar ile uyumlu bulgular. Kortikal-subkortikal atrofi ve periventriküler glioz alanları eski anoksik hasarı göstermektedir. Aktif diffüzyon kısıtlaması beklenmez. Klinik hikaye ile korelasyon gereklidir.'
+    yorum: T.hie_kronik_yorum
   },
   {
     id: 'hipoglisemik',
-    name: 'Hipoglisemik Ensefalopati',
-    category: 'Metabolik/Toksik',
+    name: T.hipoglisemik_name,
+    category: T.cat_metabolik_toksik,
     criteria: [
       {f:'t1', v:['izointens','hafif_hipointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -217,12 +581,12 @@ const diseases = [
       {f:'dwi', v:['var','olabilir'], w:2},
       {f:'klinik', v:['akut','subakut'], w:1},
     ],
-    yorum: 'Hipoglisemik ensefalopati paterni ile uyumludur. Posterior beyaz cevher ve bazal ganglia tutulumu, internal capsule/posterior limb tutulumu karakteristiktir. Kan şekeri değerleri ile klinik korelasyon şarttır. Erken tedavi ile kısmi geri dönüşüm mümkündür.'
+    yorum: T.hipoglisemik_yorum
   },
   {
     id: 'hepatik',
-    name: 'Hepatik Ensefalopati',
-    category: 'Metabolik/Toksik',
+    name: T.hepatik_name,
+    category: T.cat_metabolik_toksik,
     criteria: [
       {f:'gp_t1_hiper', v:true, w:5},
       {f:'t2', v:['hafif_hiperintens'], w:1},
@@ -231,12 +595,12 @@ const diseases = [
       {f:'kontrast', v:['yok','minimal'], w:1},
       {f:'klinik', v:['kronik','subakut'], w:1},
     ],
-    yorum: 'Hepatik ensefalopati ile uyumlu bulgular. Globus pallidus T1 hiperintensitesi kronik karaciğer hastalığında mangan birikiminin karakteristik MRI bulgusudur. Karaciğer fonksiyon testleri ve serum amonyak düzeyi ile korelasyon önerilir. Hepatoloji konsültasyonu gereklidir.'
+    yorum: T.hepatik_yorum
   },
   {
     id: 'uremik',
-    name: 'Üremik Ensefalopati',
-    category: 'Metabolik/Toksik',
+    name: T.uremik_name,
+    category: T.cat_metabolik_toksik,
     criteria: [
       {f:'t1', v:['izointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -244,12 +608,12 @@ const diseases = [
       {f:'odem', v:true, w:2},
       {f:'klinik', v:['akut','subakut'], w:1},
     ],
-    yorum: 'Üremik ensefalopati ile uyumlu bulgular. Diffüz T2/FLAIR hiperintens korteks ve subkorteks, serebral ödem üremik nörolojik komplikasyonla uyumludur. Serum kreatinin, BUN ve böbrek fonksiyonları ile korelasyon gereklidir. Diyaliz tedavisi ile görünüm düzelme gösterebilir.'
+    yorum: T.uremik_yorum
   },
   {
     id: 'menkes_wilson',
-    name: 'Menkes / Wilson Hastalığı',
-    category: 'Metal Metabolizma Bozukluğu',
+    name: T.menkes_wilson_name,
+    category: T.cat_metal,
     criteria: [
       {f:'t1', v:['hafif_hipointens','izointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -258,12 +622,12 @@ const diseases = [
       {f:'bilateral', v:true, w:2},
       {f:'yas', v:['cocuk','adolesan','yetiskin'], w:1},
     ],
-    yorum: 'Menkes/Wilson hastalığı ile uyumlu bazal ganglia tutulumu izlenmektedir. Bilateral putamen ve globus pallidus T2 hiperintensitesi ve T1 sinyal değişiklikleri bakır metabolizması bozukluklarında görülür. Serum seruloplazmin, 24 saatlik idrar bakır ve göz muayenesi (Kayser-Fleischer halkaları) önerilir.'
+    yorum: T.menkes_wilson_yorum
   },
   {
     id: 'msud',
-    name: 'Akçaağaç Şurubu İdrar Hastalığı (MSUD)',
-    category: 'Organik Asidemi / Aminoasidopati',
+    name: T.msud_name,
+    category: T.cat_organik,
     criteria: [
       {f:'yas', v:['neonatal','sut_cocugu'], w:3},
       {f:'t1', v:['belirgin_hipointens'], w:2},
@@ -274,12 +638,12 @@ const diseases = [
       {f:'dwi', v:['var'], w:3},
       {f:'klinik', v:['akut','subakut'], w:2},
     ],
-    yorum: 'MSUD (Maple Syrup Urine Disease / Akçaağaç Şurubu İdrar Hastalığı) ile uyumlu bulgular. Myelinated beyaz cevher tutulumu — özellikle beyin sapı, serebellum, internal capsule posterior limbi — bu hastalığın karakteristiğidir. Yenidoğan/süt çocuğunda akut tablo + DWI kısıtlaması + karakteristik idrar kokusu ile birlikte düşünülmelidir. Plazma aminoasit analizi acilen yapılmalıdır.'
+    yorum: T.msud_yorum
   },
   {
     id: 'leigh',
-    name: 'Leigh Sendromu',
-    category: 'Mitokondriyal Hastalık',
+    name: T.leigh_name,
+    category: T.cat_mitokondriyal,
     criteria: [
       {f:'t1', v:['izointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -289,12 +653,12 @@ const diseases = [
       {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
       {f:'kontrast', v:['yok','minimal'], w:1},
     ],
-    yorum: 'Leigh sendromu (Subakut nekrotizan ensefalomiyopati) ile uyumlu bulgular. Bilateral simetrik putamen ve beyin sapı tegmentum tutulumu mitokondriyal hastalığın karakteristik görünümüdür. Serum ve BOS laktat, pirüvat düzeyleri ile mitokondriyal DNA analizi önerilir. Genetik konsültasyon gereklidir.'
+    yorum: T.leigh_yorum
   },
   {
     id: 'methylmalonic',
-    name: 'Methylmalonic / Propionic Asidemi',
-    category: 'Organik Asidemi',
+    name: T.methylmalonic_name,
+    category: T.cat_organik2,
     criteria: [
       {f:'t1', v:['izointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -304,12 +668,12 @@ const diseases = [
       {f:'dwi', v:['var','olabilir'], w:1},
       {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
     ],
-    yorum: 'Methylmalonic/Propionic asidemi ile uyumlu bulgular. Bilateral globus pallidus ve periventriküler beyaz cevher tutulumu organik asidemi için karakteristiktir. Serum ve idrar organik asit profili, plazma aminoasitleri ile korelasyon gereklidir. Diyetetisyen ve metabolizma uzmanı konsültasyonu önerilir.'
+    yorum: T.methylmalonic_yorum
   },
   {
     id: 'canavan',
-    name: 'Canavan Hastalığı',
-    category: 'Leukodistrofi',
+    name: T.canavan_name,
+    category: T.cat_leukodistrofi,
     criteria: [
       {f:'t1', v:['belirgin_hipointens'], w:2},
       {f:'t2', v:['cok_hiperintens'], w:3},
@@ -318,12 +682,12 @@ const diseases = [
       {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
       {f:'klinik', v:['kronik'], w:1},
     ],
-    yorum: 'Canavan hastalığı ile uyumlu bulgular. Diffüz beyaz cevher tutulumu ile çok belirgin T2 hiperintensitesi spongiform dejenerasyonu yansıtır. MR spektroskopide N-asetil aspartat (NAA) belirgin artışı tanı koydurucudur. ASPA gen mutasyon analizi önerilir. Tanıyı desteklemek için idrar N-asetilaspartat ölçümü yapılabilir.'
+    yorum: T.canavan_yorum
   },
   {
     id: 'krabbe',
-    name: 'Krabbe Hastalığı',
-    category: 'Leukodistrofi',
+    name: T.krabbe_name,
+    category: T.cat_leukodistrofi,
     criteria: [
       {f:'t1', v:['belirgin_hipointens'], w:2},
       {f:'t2', v:['hiperintens'], w:2},
@@ -332,12 +696,12 @@ const diseases = [
       {f:'bilateral', v:true, w:2},
       {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
     ],
-    yorum: 'Krabbe hastalığı (Globoid hücreli leukodistrofi) ile uyumlu bulgular. Periventriküler beyaz cevher ve corticospinal tract tutulumu galaktosilseramid lipidozunda görülür. Lökosit ve kuru kan lekesi galaktosilserebrozidaz enzim aktivitesi ölçümü tanı için gereklidir. GALC gen analizi önerilir.'
+    yorum: T.krabbe_yorum
   },
   {
     id: 'xald',
-    name: 'Adrenoleukodistrofi (X-ALD)',
-    category: 'Peroksizom Hastalığı',
+    name: T.xald_name,
+    category: T.cat_peroksizom,
     criteria: [
       {f:'t1', v:['belirgin_hipointens'], w:2},
       {f:'t2', v:['hiperintens'], w:2},
@@ -346,12 +710,12 @@ const diseases = [
       {f:'yas', v:['cocuk','adolesan'], w:3},
       {f:'kontrast', v:['minimal','var'], w:2},
     ],
-    yorum: 'X-bağlı adrenoleukodistrofi (X-ALD) ile uyumlu bulgular. Posterior parieto-oksipital beyaz cevherde başlayan ve ilerleyen tutulum, erkek çocukta karakteristik görünümdür. Aktif lezyon kenarında kontrast tutulumu enflamatuar aktiviteyi gösterir. Plazma çok uzun zincirli yağ asitleri (VLCFA) analizi tanıyı doğrular. Adrenal yetmezlik açısından değerlendirme gereklidir.'
+    yorum: T.xald_yorum
   },
   {
     id: 'melas',
-    name: 'MELAS (Mitokondriyal Ensefalomiyopati)',
-    category: 'Mitokondriyal Hastalık',
+    name: T.melas_name,
+    category: T.cat_mitokondriyal,
     criteria: [
       {f:'t1', v:['izointens','hafif_hipointens'], w:1},
       {f:'t2', v:['hiperintens'], w:2},
@@ -361,12 +725,12 @@ const diseases = [
       {f:'klinik', v:['epizodik'], w:3},
       {f:'yas', v:['cocuk','adolesan','yetiskin'], w:1},
     ],
-    yorum: 'MELAS (Mitokondriyal Ensefalomiyopati, Laktik Asidoz, Stroke-like epizodlar) ile uyumlu bulgular. Vasküler teritori ile uyumsuz stroke-like kortikal lezyonlar, posterior temporal-oksipital bölge tutulumu ve epizodik klinik tablo bu sendromun karakteristiğidir. Serum ve BOS laktat, pirüvat, mitokondriyal DNA mutasyon analizi (m.3243A>G en sık) önerilir.'
+    yorum: T.melas_yorum
   },
   {
     id: 'hie_neonatal',
-    name: 'Hipoksik-iskemik Ensefalopati (Neonatal)',
-    category: 'Metabolik/Vasküler',
+    name: T.hie_neonatal_name,
+    category: T.cat_metabolik_vaskuler,
     criteria: [
       {f:'yas', v:['neonatal'], w:4},
       {f:'t1', v:['belirgin_hipointens'], w:2},
@@ -377,7 +741,7 @@ const diseases = [
       {f:'dwi', v:['var'], w:3},
       {f:'klinik', v:['akut','subakut'], w:2},
     ],
-    yorum: 'Neonatal hipoksik-iskemik ensefalopati (HIE) ile uyumlu bulgular. Derin gri cevher (bazal ganglia-talamus) ve perirolandik korteks tutulumu parsiyel-prolonged asfiksi paternini; diffüz kortikal tutulum profund akut asfiksiyi gösterir. MR termometri/spektroskopi, DWI kinetiği ve klinik SARNAT skoru ile korelasyon gereklidir. Terapötik hipoterminin ilk 6 saatte başlatılması kritiktir.'
+    yorum: T.hie_neonatal_yorum
   },
 ];
 
@@ -479,143 +843,143 @@ function renderStep() {
 
   if (state.step === 0) {
     html = `
-    <h2>Klinik Bağlam</h2>
-    <p class="subtitle">Hasta yaş grubu ve klinik gidişi belirtin</p>
+    <h2>${T.step0_h2}</h2>
+    <p class="subtitle">${T.step0_subtitle}</p>
     <div class="field-group">
-      <label class="field-label">Yaş Grubu <span>*</span></label>
+      <label class="field-label">${T.yas_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('yas','neonatal','Neonatal (0–28 gün)')}
-        ${radio('yas','sut_cocugu','Süt çocuğu (1 ay–2 yıl)')}
-        ${radio('yas','cocuk','Çocuk (2–12 yıl)')}
-        ${radio('yas','adolesan','Adölesan (12–18 yıl)')}
-        ${radio('yas','yetiskin','Yetişkin (>18 yıl)')}
+        ${radio('yas','neonatal',T.yas_neonatal)}
+        ${radio('yas','sut_cocugu',T.yas_sut_cocugu)}
+        ${radio('yas','cocuk',T.yas_cocuk)}
+        ${radio('yas','adolesan',T.yas_adolesan)}
+        ${radio('yas','yetiskin',T.yas_yetiskin)}
       </div>
     </div>
     <div class="field-group">
-      <label class="field-label">Klinik Gidiş <span>*</span></label>
+      <label class="field-label">${T.klinik_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('klinik','akut','Akut (<72 saat)')}
-        ${radio('klinik','subakut','Subakut (3 gün–3 hafta)')}
-        ${radio('klinik','kronik','Kronik / Progresif')}
-        ${radio('klinik','epizodik','Epizodik / Ataklar halinde')}
+        ${radio('klinik','akut',T.klinik_akut)}
+        ${radio('klinik','subakut',T.klinik_subakut)}
+        ${radio('klinik','kronik',T.klinik_kronik)}
+        ${radio('klinik','epizodik',T.klinik_epizodik)}
       </div>
     </div>`;
   }
 
   else if (state.step === 1) {
     html = `
-    <h2>T1 Sinyal Özellikleri</h2>
-    <p class="subtitle">Lezyonların T1 ağırlıklı görüntülerdeki baskın sinyali</p>
+    <h2>${T.step1_h2}</h2>
+    <p class="subtitle">${T.step1_subtitle}</p>
     <div class="field-group">
-      <label class="field-label">Baskın T1 Sinyali <span>*</span></label>
+      <label class="field-label">${T.t1_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('t1','izointens','İzointens')}
-        ${radio('t1','hafif_hipointens','Hafif hipointens')}
-        ${radio('t1','belirgin_hipointens','Belirgin hipointens')}
-        ${radio('t1','atrofi','Atrofi / Volüm kaybı')}
+        ${radio('t1','izointens',T.t1_izointens)}
+        ${radio('t1','hafif_hipointens',T.t1_hafif_hipointens)}
+        ${radio('t1','belirgin_hipointens',T.t1_belirgin_hipointens)}
+        ${radio('t1','atrofi',T.t1_atrofi)}
       </div>
     </div>
     <div class="field-group">
-      <label class="field-label">Özel Bulgu</label>
+      <label class="field-label">${T.t1_ozel}</label>
       <div class="option-grid">
-        ${chk('gp_t1_hiper','Globus pallidus T1 hiperintens (Mn birikimi?)')}
+        ${chk('gp_t1_hiper',T.gp_t1_hiper)}
       </div>
     </div>`;
   }
 
   else if (state.step === 2) {
     html = `
-    <h2>T2 / FLAIR Sinyal Özellikleri</h2>
-    <p class="subtitle">Lezyonların T2 ve FLAIR sekanslarındaki baskın sinyali</p>
+    <h2>${T.step2_h2}</h2>
+    <p class="subtitle">${T.step2_subtitle}</p>
     <div class="field-group">
-      <label class="field-label">T2/FLAIR Sinyali <span>*</span></label>
+      <label class="field-label">${T.t2_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('t2','normal','Normal')}
-        ${radio('t2','hafif_hiperintens','Hafif hiperintens')}
-        ${radio('t2','hiperintens','Belirgin hiperintens')}
-        ${radio('t2','cok_hiperintens','Çok belirgin hiperintens (spongiform?)')}
+        ${radio('t2','normal',T.t2_normal)}
+        ${radio('t2','hafif_hiperintens',T.t2_hafif_hiperintens)}
+        ${radio('t2','hiperintens',T.t2_hiperintens)}
+        ${radio('t2','cok_hiperintens',T.t2_cok_hiperintens)}
       </div>
     </div>`;
   }
 
   else if (state.step === 3) {
     html = `
-    <h2>Lezyon Lokalizasyonu</h2>
-    <p class="subtitle">Tutulum gösteren anatomik bölgeleri işaretleyin (çoklu seçim)</p>
+    <h2>${T.step3_h2}</h2>
+    <p class="subtitle">${T.step3_subtitle}</p>
 
     <div class="field-group">
-      <div class="sublabel">🔷 Derin Gri Cevher / Bazal Ganglia</div>
+      <div class="sublabel">${T.sublabel_derin}</div>
       <div class="option-grid">
-        ${chk('putamen','Putamen')}
-        ${chk('basal_gp','Globus pallidus')}
-        ${chk('thalamus','Talamus')}
+        ${chk('putamen',T.loc_putamen)}
+        ${chk('basal_gp',T.loc_basal_gp)}
+        ${chk('thalamus',T.loc_thalamus)}
       </div>
     </div>
 
     <div class="divider"></div>
 
     <div class="field-group">
-      <div class="sublabel">🔶 Beyaz Cevher</div>
+      <div class="sublabel">${T.sublabel_beyaz}</div>
       <div class="option-grid">
-        ${chk('periventrikular','Periventriküler beyaz cevher')}
-        ${chk('posterior_beyaz','Posterior parieto-oksipital beyaz cevher')}
-        ${chk('myelinated','Myelinated beyaz cevher (BS / serebellum)')}
-        ${chk('diffuz_beyaz','Diffüz beyaz cevher tutulumu')}
-        ${chk('internal_capsule','Internal capsule / Corticospinal tract')}
+        ${chk('periventrikular',T.loc_periventrikular)}
+        ${chk('posterior_beyaz',T.loc_posterior_beyaz)}
+        ${chk('myelinated',T.loc_myelinated)}
+        ${chk('diffuz_beyaz',T.loc_diffuz_beyaz)}
+        ${chk('internal_capsule',T.loc_internal_capsule)}
       </div>
     </div>
 
     <div class="divider"></div>
 
     <div class="field-group">
-      <div class="sublabel">🔹 Korteks ve Diğer</div>
+      <div class="sublabel">${T.sublabel_korteks}</div>
       <div class="option-grid">
-        ${chk('korteks','Korteks / Subkorteks')}
-        ${chk('beyin_sapi','Beyin sapı / Tegmentum')}
-        ${chk('serebellum','Serebellum')}
+        ${chk('korteks',T.loc_korteks)}
+        ${chk('beyin_sapi',T.loc_beyin_sapi)}
+        ${chk('serebellum',T.loc_serebellum)}
       </div>
     </div>`;
   }
 
   else if (state.step === 4) {
     html = `
-    <h2>Difüzyon (DWI / ADC)</h2>
-    <p class="subtitle">Difüzyon ağırlıklı görüntüleme bulguları</p>
+    <h2>${T.step4_h2}</h2>
+    <p class="subtitle">${T.step4_subtitle}</p>
     <div class="field-group">
-      <label class="field-label">Difüzyon Kısıtlaması <span>*</span></label>
+      <label class="field-label">${T.dwi_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('dwi','yok','Kısıtlama yok (ADC normal)')}
-        ${radio('dwi','olabilir','Şüpheli / olabilir (ADC hafif düşük)')}
-        ${radio('dwi','var','Belirgin kısıtlama (ADC düşük — akut)')}
+        ${radio('dwi','yok',T.dwi_yok)}
+        ${radio('dwi','olabilir',T.dwi_olabilir)}
+        ${radio('dwi','var',T.dwi_var)}
       </div>
     </div>`;
   }
 
   else if (state.step === 5) {
     html = `
-    <h2>Kontrast Tutulumu</h2>
-    <p class="subtitle">Gadolinyum tutulumu (IV kontrast verilmişse)</p>
+    <h2>${T.step5_h2}</h2>
+    <p class="subtitle">${T.step5_subtitle}</p>
     <div class="field-group">
-      <label class="field-label">Kontrast Tutulumu <span>*</span></label>
+      <label class="field-label">${T.kontrast_label} <span>*</span></label>
       <div class="option-grid">
-        ${radio('kontrast','yok','Tutulum yok')}
-        ${radio('kontrast','minimal','Minimal / hafif tutulum')}
-        ${radio('kontrast','var','Belirgin tutulum')}
-        ${radio('kontrast','yapilmadi','Kontrast yapılmadı')}
+        ${radio('kontrast','yok',T.kontrast_yok)}
+        ${radio('kontrast','minimal',T.kontrast_minimal)}
+        ${radio('kontrast','var',T.kontrast_var)}
+        ${radio('kontrast','yapilmadi',T.kontrast_yapilmadi)}
       </div>
     </div>`;
   }
 
   else if (state.step === 6) {
     html = `
-    <h2>Ek Özellikler</h2>
-    <p class="subtitle">Ek MRI bulgu ve klinik özellikler (çoklu seçim)</p>
+    <h2>${T.step6_h2}</h2>
+    <p class="subtitle">${T.step6_subtitle}</p>
     <div class="field-group">
       <div class="option-grid">
-        ${chk('bilateral','Bilateral simetrik lezyonlar')}
-        ${chk('odem','Diffüz serebral ödem')}
-        ${chk('stroke_like','Stroke-like lezyonlar (vasküler teritori dışı)')}
-        ${chk('korteks_ribbon','Kortikal "ribbon" işareti')}
+        ${chk('bilateral',T.ek_bilateral)}
+        ${chk('odem',T.ek_odem)}
+        ${chk('stroke_like',T.ek_stroke_like)}
+        ${chk('korteks_ribbon',T.ek_korteks_ribbon)}
       </div>
     </div>`;
   }
@@ -630,7 +994,7 @@ function renderStep() {
         <div class="dx-rank ${rankClass[i]}">${i+1}</div>
         <div class="dx-name">${d.name}<br><span style="font-size:.72rem;color:var(--text-muted);font-weight:400">${d.category}</span></div>
         <div class="dx-bar-wrap">
-          <div class="dx-score-label">Uyum</div>
+          <div class="dx-score-label">${T.uyum_label}</div>
           <div class="dx-bar"><div class="dx-bar-fill" style="width:${d.pct}%"></div></div>
           <div class="dx-pct">%${d.pct}</div>
         </div>
@@ -638,37 +1002,37 @@ function renderStep() {
 
     let yorumHtml = scores.slice(0,3).filter(d=>d.pct>10).map((d,i)=>`
       <div class="yorum-card">
-        <div class="ytag">YORUM ${i+1}</div>
-        <div class="yname">${d.name} <span style="color:var(--text-muted);font-size:.78rem">— %${d.pct} uyum</span></div>
+        <div class="ytag">${T.yorum_tag(i+1)}</div>
+        <div class="yname">${d.name} <span style="color:var(--text-muted);font-size:.78rem">— %${d.pct} ${T.uyum_label}</span></div>
         <div class="ytext">${d.yorum}</div>
       </div>`).join('');
 
     // Findings summary for report
     const lokList = [
-      state.putamen && 'Putamen',
-      state.basal_gp && 'Globus pallidus',
-      state.thalamus && 'Talamus',
-      state.periventrikular && 'Periventriküler beyaz cevher',
-      state.posterior_beyaz && 'Posterior beyaz cevher (parieto-oksipital)',
-      state.myelinated && 'Myelinated beyaz cevher (BS/serebellum)',
-      state.diffuz_beyaz && 'Diffüz beyaz cevher',
-      state.internal_capsule && 'Internal capsule/corticospinal tract',
-      state.korteks && 'Korteks/subkorteks',
-      state.beyin_sapi && 'Beyin sapı/tegmentum',
-      state.serebellum && 'Serebellum',
+      state.putamen && T.lok_putamen,
+      state.basal_gp && T.lok_basal_gp,
+      state.thalamus && T.lok_thalamus,
+      state.periventrikular && T.lok_periventrikular,
+      state.posterior_beyaz && T.lok_posterior_beyaz,
+      state.myelinated && T.lok_myelinated,
+      state.diffuz_beyaz && T.lok_diffuz_beyaz,
+      state.internal_capsule && T.lok_internal_capsule,
+      state.korteks && T.lok_korteks,
+      state.beyin_sapi && T.lok_beyin_sapi,
+      state.serebellum && T.lok_serebellum,
     ].filter(Boolean);
 
     html = `
     <div class="result-header">
-      <h2>🔬 Differential Tanı Sonuçları</h2>
+      <h2>${T.step7_h2}</h2>
     </div>
     <div class="dx-list">${dxHtml}</div>
     ${yorumHtml}
     <div class="divider"></div>
     <div class="btn-row" style="justify-content:flex-start;flex-wrap:wrap;gap:8px;margin-top:0">
-      <button class="reset-btn" onclick="resetAll()">↺ Yeni İnceleme</button>
-      <button class="btn btn-primary" onclick="showPrint()">🖨️ Rapor / Yazdır</button>
-      <button class="btn btn-outline" onclick="copyReport()">📋 Kopyala</button>
+      <button class="reset-btn" onclick="resetAll()">↺ ${T.yeni_inceleme.replace('↺ ','')}</button>
+      <button class="btn btn-primary" onclick="showPrint()">${T.rapor_yazdir}</button>
+      <button class="btn btn-outline" onclick="copyReport()">${T.kopyala}</button>
     </div>`;
 
     // Store for print
@@ -679,14 +1043,14 @@ function renderStep() {
   if (state.step < 7) {
     const canNext = canProceed();
     html += `<div class="btn-row">
-      ${state.step > 0 ? '<button class="btn btn-secondary" onclick="prevStep()">← Geri</button>' : ''}
+      ${state.step > 0 ? `<button class="btn btn-secondary" onclick="prevStep()">${T.geri}</button>` : ''}
       <button class="btn btn-primary" onclick="nextStep()" ${canNext?'':'disabled style="opacity:.5;cursor:not-allowed"'}>
-        ${state.step===6?'Sonuçları Gör →':'İleri →'}
+        ${state.step===6?T.sonuclari_gor:T.ileri}
       </button>
     </div>`;
   } else {
     html += `<div class="btn-row">
-      <button class="btn btn-secondary" onclick="prevStep()">← Geri</button>
+      <button class="btn btn-secondary" onclick="prevStep()">${T.geri}</button>
     </div>`;
   }
 
@@ -729,40 +1093,34 @@ function resetAll() {
 // PRINT / EXPORT
 // ─────────────────────────────────────────────
 function getYasLabel(v) {
-  const m={neonatal:'Neonatal (0–28 gün)',sut_cocugu:'Süt çocuğu (1 ay–2 yıl)',cocuk:'Çocuk (2–12 yıl)',adolesan:'Adölesan (12–18 yıl)',yetiskin:'Yetişkin (>18 yıl)'};
-  return m[v]||v||'—';
+  return T.yas_labels[v]||v||'—';
 }
 function getKlinikLabel(v) {
-  const m={akut:'Akut (<72 saat)',subakut:'Subakut (3 gün–3 hafta)',kronik:'Kronik/Progresif',epizodik:'Epizodik/Ataklar'};
-  return m[v]||v||'—';
+  return T.klinik_labels[v]||v||'—';
 }
 function getT1Label(v) {
-  const m={izointens:'İzointens',hafif_hipointens:'Hafif hipointens',belirgin_hipointens:'Belirgin hipointens',atrofi:'Atrofi'};
-  return m[v]||v||'—';
+  return T.t1_labels[v]||v||'—';
 }
 function getT2Label(v) {
-  const m={normal:'Normal',hafif_hiperintens:'Hafif hiperintens',hiperintens:'Belirgin hiperintens',cok_hiperintens:'Çok belirgin hiperintens'};
-  return m[v]||v||'—';
+  return T.t2_labels[v]||v||'—';
 }
 function getDWILabel(v) {
-  const m={yok:'Kısıtlama yok',olabilir:'Şüpheli',var:'Belirgin kısıtlama (ADC düşük)'};
-  return m[v]||v||'—';
+  return T.dwi_labels[v]||v||'—';
 }
 function getKontrastLabel(v) {
-  const m={yok:'Yok',minimal:'Minimal',var:'Belirgin',yapilmadi:'Yapılmadı'};
-  return m[v]||v||'—';
+  return T.kontrast_labels[v]||v||'—';
 }
 
 function buildReportHTML() {
   const {scores, lokList} = window._printData||{scores:[],lokList:[]};
-  const now = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
+  const now = new Date().toLocaleDateString(T.date_locale,{day:'2-digit',month:'long',year:'numeric'});
 
   const extraList = [
-    state.bilateral && 'Bilateral simetrik lezyonlar',
-    state.odem && 'Diffüz serebral ödem',
-    state.stroke_like && 'Stroke-like lezyonlar',
-    state.korteks_ribbon && 'Kortikal ribbon işareti',
-    state.gp_t1_hiper && 'Globus pallidus T1 hiperintensitesi',
+    state.bilateral && T.extra_bilateral,
+    state.odem && T.extra_odem,
+    state.stroke_like && T.extra_stroke_like,
+    state.korteks_ribbon && T.extra_korteks_ribbon,
+    state.gp_t1_hiper && T.extra_gp_t1_hiper,
   ].filter(Boolean);
 
   const dxRows = scores.slice(0,5).map((d,i)=>`
@@ -778,37 +1136,37 @@ function buildReportHTML() {
     </div>`).join('');
 
   return `
-    <h1>⚕ Metabolik Beyin MRI — Karar Destek Raporu</h1>
-    <p><strong>Tarih:</strong> ${now} &nbsp;|&nbsp; <strong>Kurum:</strong> Gülhane Eğitim ve Araştırma Hastanesi, Ankara</p>
+    <h1>${T.print_title}</h1>
+    <p><strong>${T.print_tarih}:</strong> ${now} &nbsp;|&nbsp; <strong>${T.print_kurum}:</strong> ${T.print_kurum_val}</p>
 
-    <h2>📋 Klinik Bilgi</h2>
+    <h2>${T.print_klinik_bilgi}</h2>
     <table>
-      <tr><th>Parametre</th><th>Değer</th></tr>
-      <tr><td>Yaş grubu</td><td>${getYasLabel(state.yas)}</td></tr>
-      <tr><td>Klinik gidiş</td><td>${getKlinikLabel(state.klinik)}</td></tr>
+      <tr><th>${T.print_param}</th><th>${T.print_deger}</th></tr>
+      <tr><td>${T.yas_label}</td><td>${getYasLabel(state.yas)}</td></tr>
+      <tr><td>${T.klinik_label}</td><td>${getKlinikLabel(state.klinik)}</td></tr>
     </table>
 
-    <h2>🔬 MRI Bulguları</h2>
+    <h2>${T.print_mri_bulgulari}</h2>
     <table>
-      <tr><th>Sekans</th><th>Bulgu</th></tr>
-      <tr><td>T1</td><td>${getT1Label(state.t1)}${state.gp_t1_hiper?' + Globus pallidus T1 hiperintens':''}</td></tr>
+      <tr><th>${T.print_sekans}</th><th>${T.print_bulgu}</th></tr>
+      <tr><td>T1</td><td>${getT1Label(state.t1)}${state.gp_t1_hiper?' + '+T.extra_gp_t1_hiper:''}</td></tr>
       <tr><td>T2/FLAIR</td><td>${getT2Label(state.t2)}</td></tr>
       <tr><td>DWI/ADC</td><td>${getDWILabel(state.dwi)}</td></tr>
-      <tr><td>Kontrast</td><td>${getKontrastLabel(state.kontrast)}</td></tr>
-      <tr><td>Lokalizasyon</td><td>${lokList.length?lokList.join(', '):'Belirtilmemiş'}</td></tr>
-      <tr><td>Ek özellikler</td><td>${extraList.length?extraList.join(', '):'—'}</td></tr>
+      <tr><td>${T.kontrast_label}</td><td>${getKontrastLabel(state.kontrast)}</td></tr>
+      <tr><td>${T.print_lokalizasyon}</td><td>${lokList.length?lokList.join(', '):T.print_belirtilmemis}</td></tr>
+      <tr><td>${T.print_ek}</td><td>${extraList.length?extraList.join(', '):'—'}</td></tr>
     </table>
 
-    <h2>🧬 Differential Tanı (Ağırlıklı Skorlama)</h2>
+    <h2>${T.print_diff_tani}</h2>
     <table>
-      <tr><th>Tanı</th><th>Kategori</th><th>Uyum</th></tr>
+      <tr><th>${T.print_tani}</th><th>${T.print_kategori}</th><th>${T.uyum_label}</th></tr>
       ${dxRows}
     </table>
 
     ${yorumBlocks}
 
-    <p style="margin-top:14px;font-size:11px;color:#374151"><strong>Not:</strong> Bu rapor klinik karar destek amaçlıdır; tanısal kesinlik taşımaz. Klinik, laboratuvar ve diğer görüntüleme verileri ile birlikte değerlendirilmelidir.</p>
-    <div class="footer">Metabolik Beyin MRI Karar Destek Sistemi • Gülhane Eğitim ve Araştırma Hastanesi Radyoloji ABD</div>`;
+    <p style="margin-top:14px;font-size:11px;color:#374151"><strong>${T.print_not}:</strong> ${T.print_not_val}</p>
+    <div class="footer">${T.print_footer}</div>`;
 }
 
 function showPrint() {
@@ -834,9 +1192,9 @@ function copyReport() {
     sel.addRange(range);
     document.execCommand('copy');
     sel.removeAllRanges();
-    alert('Rapor panoya kopyalandı. Word\'e yapıştırabilirsiniz.');
+    alert(T.copy_success);
   } catch(e) {
-    alert('Kopyalama başarısız. Lütfen manuel seçim yapın.');
+    alert(T.copy_fail);
   }
 }
 

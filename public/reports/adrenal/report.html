@@ -20,6 +20,299 @@
   <script type="text/babel">
     const { useState, useCallback, useMemo, useRef, useEffect } = React;
 
+    // ═══ i18n ═══
+    const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+
+    const T = {
+      tr: {
+        startTitle: "Adrenal Gland Dinamik MR",
+        startSub: "Karar Destek Sistemi",
+        startSequences: "Kullanılan Sekanslar:",
+        startBtn: "İncelemeye Başla →",
+        backBtn: "← Geri",
+        confirmBtn: "Onayla →",
+        continueBtn: "Devam →",
+        copyBtn: "📋 Raporu Kopyala",
+        copiedBtn: "✓ Kopyalandı!",
+        pdfBtn: "📄 PDF Rapor",
+        newBtn: "↺ Yeni İnceleme",
+        closeBtn: "✕ Kapat",
+        rightAdrenal: "SAĞ ADRENAL",
+        leftAdrenal: "SOL ADRENAL",
+        rightAdrenalFull: "Sağ Adrenal Gland",
+        leftAdrenalFull: "Sol Adrenal Gland",
+        rightAdrenalShort: "SAĞ ADRENAL GLAND",
+        leftAdrenalShort: "SOL ADRENAL GLAND",
+        rightAdrenalCard: "Sağ Adrenal",
+        leftAdrenalCard: "Sol Adrenal",
+        lesion: "Lezyon",
+        lesionFindings: "Bulgular",
+        glandFindings: "Gland Bulguları",
+        normal: "Normal",
+        absent: "İzlenmedi",
+        lesionCount: function(n) { return n + " Lezyon"; },
+        absentLong: "İzlenmedi (Opere? / Agenezi?)",
+        absentLongText: "İzlenmedi (Opere?/Agenezi?)",
+        normalText: "Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.",
+        paramCount: function(n) { return n + " parametre"; },
+        commentary: "★ YORUM — Lezyon ",
+        commentaryShort: "YORUM",
+        cannotCalc: "Hesaplanamadi",
+        reportTitle: "Karar Destek Raporu",
+        reportSub: "Radyoloji Karar Destek Sistemi",
+        reportBadge: "ADRENAL GLAND DİNAMİK MR",
+        genHeader: "ADRENAL GLAND DINAMIK MR - KARAR DESTEK RAPORU\n",
+        genDate: "Tarih: ",
+        genResult: "\nSonuc: Normal yapi ve sinyal intensitede adrenal gland.\n\n",
+        pdfFooter: "Adrenal Gland Dinamik MR — Karar Destek Sistemi — Bu rapor otomatik olarak oluşturulmuştur.",
+        pdfBadge: "ADRENAL GLAND DİNAMİK MR",
+        pdfTitle: "Karar Destek Raporu",
+        pdfSub: "Radyoloji Karar Destek Sistemi",
+        pdfTableGland: "Gland Bulguları",
+        pdfTableLesion: function(i, n) { return "Lezyon " + i + " — Bulgular (" + n + " parametre)"; },
+        pdfCommentary: function(i) { return "★ YORUM — Lezyon " + i; },
+        pdfNormal: "✓ Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.",
+        pdfAbsent: "İzlenmedi (Opere? / Agenezi?)",
+        dateLocale: "tr-TR",
+        lesionOP: "Lezyon OP: ",
+        lesionIP: "Lezyon IP: ",
+        spleenOP: "Dalak OP: ",
+        spleenIP: "Dalak IP: ",
+        csiFormula: "(Lezyon OP / Dalak OP) / (Lezyon IP / Dalak IP)",
+        siFormula: "((Lezyon IP - Lezyon OP) / Lezyon IP) x 100",
+        signalPlaceholder: "Sinyal değeri",
+      },
+      en: {
+        startTitle: "Adrenal Gland Dynamic MRI",
+        startSub: "Decision Support System",
+        startSequences: "Sequences Used:",
+        startBtn: "Start Assessment →",
+        backBtn: "← Back",
+        confirmBtn: "Confirm →",
+        continueBtn: "Continue →",
+        copyBtn: "📋 Copy Report",
+        copiedBtn: "✓ Copied!",
+        pdfBtn: "📄 PDF Report",
+        newBtn: "↺ New Assessment",
+        closeBtn: "✕ Close",
+        rightAdrenal: "RIGHT ADRENAL",
+        leftAdrenal: "LEFT ADRENAL",
+        rightAdrenalFull: "Right Adrenal Gland",
+        leftAdrenalFull: "Left Adrenal Gland",
+        rightAdrenalShort: "RIGHT ADRENAL GLAND",
+        leftAdrenalShort: "LEFT ADRENAL GLAND",
+        rightAdrenalCard: "Right Adrenal",
+        leftAdrenalCard: "Left Adrenal",
+        lesion: "Lesion",
+        lesionFindings: "Findings",
+        glandFindings: "Gland Findings",
+        normal: "Normal",
+        absent: "Not visualized",
+        lesionCount: function(n) { return n + " Lesion(s)"; },
+        absentLong: "Not visualized (Post-op? / Agenesis?)",
+        absentLongText: "Not visualized (Post-op?/Agenesis?)",
+        normalText: "Adrenal gland with normal morphology and signal intensity.",
+        paramCount: function(n) { return n + " parameter(s)"; },
+        commentary: "★ ASSESSMENT — Lesion ",
+        commentaryShort: "ASSESSMENT",
+        cannotCalc: "Cannot calculate",
+        reportTitle: "Decision Support Report",
+        reportSub: "Radiology Decision Support System",
+        reportBadge: "ADRENAL GLAND DYNAMIC MRI",
+        genHeader: "ADRENAL GLAND DYNAMIC MRI - DECISION SUPPORT REPORT\n",
+        genDate: "Date: ",
+        genResult: "\nResult: Adrenal gland with normal morphology and signal intensity.\n\n",
+        pdfFooter: "Adrenal Gland Dynamic MRI — Decision Support System — This report was generated automatically.",
+        pdfBadge: "ADRENAL GLAND DYNAMIC MRI",
+        pdfTitle: "Decision Support Report",
+        pdfSub: "Radiology Decision Support System",
+        pdfTableGland: "Gland Findings",
+        pdfTableLesion: function(i, n) { return "Lesion " + i + " — Findings (" + n + " parameter(s))"; },
+        pdfCommentary: function(i) { return "★ ASSESSMENT — Lesion " + i; },
+        pdfNormal: "✓ Adrenal gland with normal morphology and signal intensity.",
+        pdfAbsent: "Not visualized (Post-op? / Agenesis?)",
+        dateLocale: "en-US",
+        lesionOP: "Lesion OP: ",
+        lesionIP: "Lesion IP: ",
+        spleenOP: "Spleen OP: ",
+        spleenIP: "Spleen IP: ",
+        csiFormula: "(Lesion OP / Spleen OP) / (Lesion IP / Spleen IP)",
+        siFormula: "((Lesion IP - Lesion OP) / Lesion IP) x 100",
+        signalPlaceholder: "Signal value",
+      }
+    }[RV_LOCALE];
+
+    // Option display translation — INTERNAL values stay Turkish for evalDiag logic.
+    const OPT_EN = {
+      "Evet": "Yes",
+      "Hayır": "No",
+      "Var": "Present",
+      "Yok": "Absent",
+      "İzlenmedi (Opere?/Agenezi?)": "Not visualized (Post-op?/Agenesis?)",
+      "Farklı konumda izleniyor": "Observed at different position",
+      "Anterior yerleşimli": "Anterior location",
+      "Posterior yerleşimli": "Posterior location",
+      "Süperior yerleşimli": "Superior location",
+      "İnferior yerleşimli": "Inferior location",
+      "Karaciğerle izointens": "Isointense to liver",
+      "Dalakla izointens": "Isointense to spleen",
+      "Homojen": "Homogeneous",
+      "Heterojen": "Heterogeneous",
+      "Homojen izointens": "Homogeneous isointense",
+      "Homojen hiperintens": "Homogeneous hyperintense",
+      "Homojen hipointens": "Homogeneous hypointense",
+      "Sinyalsiz": "Signal void",
+      "Heterojen izointens": "Heterogeneous isointense",
+      "Heterojen hiperintens": "Heterogeneous hyperintense",
+      "Heterojen hipointens": "Heterogeneous hypointense",
+      "Rim kontrastlanma": "Rim enhancement",
+      "Kistik": "Cystic",
+      "Solid": "Solid",
+      "Korpus": "Body",
+      "Medial Krus": "Medial crus",
+      "Lateral Krus": "Lateral crus",
+      "Hafif Hipointens": "Mildly hypointense",
+      "Hipointens": "Hypointense",
+      "İzointens": "Isointense",
+      "Hafif hiperintens": "Mildly hyperintense",
+      "Hiperintens": "Hyperintense",
+      "Orta hiperintens": "Moderately hyperintense",
+      "Hafif Hiperintens": "Mildly hyperintense",
+      "Hafif Erken kontrastlanma": "Mild early enhancement",
+      "Erken heterojen hiperintens": "Early heterogeneous hyperintense",
+      "Güçlü heterojen hiperintens": "Strong heterogeneous hyperintense",
+      "Güçlü washout": "Rapid washout",
+      "Yavaş washout": "Slow washout",
+      "Orta derecede washout": "Moderate washout",
+      "Washout yok": "No washout",
+      "Silik": "Indistinct",
+      "Düzenli": "Regular",
+      "Düzensiz": "Irregular",
+      "Lobüle": "Lobulated",
+    };
+    var L = function(v) { return RV_LOCALE === 'en' ? (OPT_EN[v] || v) : v; };
+
+    // Translate question text
+    const Q_EN = {
+      "Sağ adrenal gland normal lokalizasyonda izleniyor mu?": "Is the right adrenal gland in normal location?",
+      "Lokalizasyon nedir?": "What is the location?",
+      "Farklı konum (çoklu seçilebilir):": "Different position (multiple selection):",
+      "Adrenal gland intensitesi?": "Adrenal gland signal intensity?",
+      "İntensite dağılımı?": "Intensity distribution?",
+      "Adrenal gland kontrastlanma sonrası görünüm?": "Adrenal gland post-contrast appearance?",
+      "Lezyon var mı?": "Is there a lesion?",
+      "Lezyon yapısı?": "Lesion structure?",
+      "Lezyon lokalizasyonu:": "Lesion location:",
+      "Boyut (a × b mm):": "Size (a × b mm):",
+      "T1 görünüm?": "T1 appearance?",
+      "T2 görünüm?": "T2 appearance?",
+      "T2-FS görünüm?": "T2-FS appearance?",
+      "DWI görünüm?": "DWI appearance?",
+      "ADC görünüm?": "ADC appearance?",
+      "Lezyon Out Phase sinyal değeri:": "Lesion Out-of-Phase signal value:",
+      "Lezyon In Phase sinyal değeri:": "Lesion In-Phase signal value:",
+      "Dalak Out Phase sinyal değeri:": "Spleen Out-of-Phase signal value:",
+      "Dalak In Phase sinyal değeri:": "Spleen In-Phase signal value:",
+      "CSI Oranı (Otomatik Hesaplama)": "CSI Ratio (Auto Calculation)",
+      "SI İndeks (Otomatik Hesaplama)": "SI Index (Auto Calculation)",
+      "Konturlar?": "Contours?",
+      "Lezyon kontrastlanma sonrası görünüm?": "Lesion post-contrast appearance?",
+      "Washout?": "Washout?",
+      "Washout var mı?": "Is there washout?",
+      "Aynı tarafta (sağ) başka lezyon var mı?": "Is there another lesion on the same side (right)?",
+      "Sol adrenal gland normal lokalizasyonda izleniyor mu?": "Is the left adrenal gland in normal location?",
+      "Aynı tarafta (sol) başka lezyon var mı?": "Is there another lesion on the same side (left)?",
+    };
+    var Qtrans = function(q) { return RV_LOCALE === 'en' ? (Q_EN[q] || q) : q; };
+
+    // Translate report labels
+    const RL_EN = {
+      "Lokalizasyon": "Location",
+      "Lokalizasyon durumu": "Location status",
+      "Konum detayı": "Position detail",
+      "İntensite": "Intensity",
+      "İntensite dağılımı": "Intensity distribution",
+      "Kontrastlanma": "Enhancement",
+      "Lezyon": "Lesion",
+      "Yapı": "Structure",
+      "Boyut": "Size",
+      "T1 Sinyal": "T1 Signal",
+      "T2 Sinyal": "T2 Signal",
+      "T2-FS Sinyal": "T2-FS Signal",
+      "DWI Sinyal": "DWI Signal",
+      "ADC Sinyal": "ADC Signal",
+      "Lezyon Out Phase": "Lesion Out-of-Phase",
+      "Lezyon In Phase": "Lesion In-Phase",
+      "Dalak Out Phase": "Spleen Out-of-Phase",
+      "Dalak In Phase": "Spleen In-Phase",
+      "CSI Oranı": "CSI Ratio",
+      "SI İndeks": "SI Index",
+      "Konturlar": "Contours",
+      "Washout": "Washout",
+    };
+    var RLtrans = function(rl) { return RV_LOCALE === 'en' ? (RL_EN[rl] || rl) : rl; };
+
+    // Translate diagnostic criteria display
+    const CR_EN = {
+      "T1 İzointens/Hafif hipointens": "T1 Isointense/Mildly hypointense",
+      "T2 Hafif hiperintens": "T2 Mildly hyperintense",
+      "DWI İzointens": "DWI Isointense",
+      "ADC Hiperintens": "ADC Hyperintense",
+      "Hafif Erken kontrastlanma": "Mild early enhancement",
+      "Güçlü washout": "Rapid washout",
+      "CSI < 0.71": "CSI < 0.71",
+      "SII > %16.5": "SII > 16.5%",
+      "T1 İzointens": "T1 Isointense",
+      "DWI Hafif hiperintens": "DWI Mildly hyperintense",
+      "ADC Orta hiperintens": "ADC Moderately hyperintense",
+      "Hiperintens kontrastlanma": "Hyperintense enhancement",
+      "Washout var": "Washout present",
+      "T1 Hiperintens": "T1 Hyperintense",
+      "T2 Heterojen hiperintens": "T2 Heterogeneous hyperintense",
+      "Out/In eşit ±%10": "Out/In equal ±10%",
+      "DWI Hiperintens": "DWI Hyperintense",
+      "ADC Hipointens": "ADC Hypointense",
+      "Güçlü heterojen kontrastlanma": "Strong heterogeneous enhancement",
+      "Zayıf washout": "Weak washout",
+      "T2 Orta hiperintens": "T2 Moderately hyperintense",
+      "Heterojen kontrastlanma": "Heterogeneous enhancement",
+      "T1 İzointens/Hafif hiperintens": "T1 Isointense/Mildly hyperintense",
+      "T2 Hiperintens": "T2 Hyperintense",
+      "ADC Orta/Hafif hipointens": "ADC Moderate/Mildly hypointense",
+      "Güçlü erken kontrastlanma": "Strong early enhancement",
+      "Washout yok": "No washout",
+      "Out phase < In phase": "Out phase < In phase",
+      "Hafif erken kontrastlanma": "Mild early enhancement",
+      "Yavaş washout": "Slow washout",
+      "T1 Hipointens": "T1 Hypointense",
+      "T2 Güçlü hiperintens": "T2 Strongly hyperintense",
+      "Kontrastlanma yok": "No enhancement",
+      "Rim kontrastlanma": "Rim enhancement",
+      "ADC Hafif/Orta hipointens": "ADC Mildly/Moderately hypointense",
+      "ADC Orta hipointens": "ADC Moderately hypointense",
+      "DWI Güçlü hiperintens": "DWI Strongly hyperintense",
+      "ADC Düşük hipointens": "ADC Markedly hypointense",
+      "Homojen kontrastlanma": "Homogeneous enhancement",
+      "T2 İzointens": "T2 Isointense",
+    };
+    var CRtrans = function(cr) { return RV_LOCALE === 'en' ? (CR_EN[cr] || cr) : cr; };
+
+    // Translate diagnosis names
+    const DIAG_EN = {
+      "Adrenal Adenoma (Lipid-rich)": "Adrenal Adenoma (Lipid-rich)",
+      "Adrenal Adenoma (Lipid-poor)": "Adrenal Adenoma (Lipid-poor)",
+      "Adrenokortikal Karsinom": "Adrenocortical Carcinoma",
+      "Metastaz": "Metastasis",
+      "Feokromositoma": "Pheochromocytoma",
+      "Adrenal Miyelolipoma": "Adrenal Myelolipoma",
+      "Adrenal Basit Kist": "Simple Adrenal Cyst",
+      "Adrenal Psödokist": "Adrenal Pseudocyst",
+      "Adrenal Hematom": "Adrenal Hematoma",
+      "Adrenal Ganglionöroma": "Adrenal Ganglioneuroma",
+      "Adrenal Ganglionöroblastoma": "Adrenal Ganglioneuroblastoma",
+    };
+    var Dtrans = function(name) { return RV_LOCALE === 'en' ? (DIAG_EN[name] || name) : name; };
+
     const C = {
       bg: "#0c0e1a", card: "#141728", cardAlt: "#181c34",
       accent: "#4fc3f7", accentDk: "#0288d1", glow: "rgba(79,195,247,0.12)",
@@ -34,60 +327,62 @@
       fontFamily: "'Segoe UI',sans-serif", transition: "all 0.2s"
     };
 
+    // NOTE: opts values are kept in Turkish — evalDiag uses Turkish substring matching.
+    // Only the displayed label is translated via L(o) at render time.
     const RIGHT_STEPS = [
-      { id: "RS1", label: "S1", q: "Sağ adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: a => a === "Evet" ? "RS3" : "RS2", rp: true, sec: "gland", rl: "Lokalizasyon" },
-      { id: "RS2", label: "S2", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: a => a === "İzlenmedi (Opere?/Agenezi?)" ? "RIGHT_END_ABSENT" : "RS2b", rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
-      { id: "RS2b", label: "S2b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: () => "RS3", rp: true, sec: "gland", rl: "Konum detayı" },
-      { id: "RS3", label: "S3", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: () => "RS4", rp: true, sec: "gland", rl: "İntensite" },
-      { id: "RS4", label: "S4", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: () => "RS5", rp: true, sec: "gland", rl: "İntensite dağılımı" },
-      { id: "RS5", label: "S5", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: () => "RS6", rp: true, sec: "gland", rl: "Kontrastlanma" },
-      { id: "RS6", label: "S6", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "RS7" : "RIGHT_END_NORMAL", rp: true, sec: "gland", rl: "Lezyon" },
-      { id: "RS7", label: "S7", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: () => "RS8", rp: true, sec: "les", rl: "Yapı" },
-      { id: "RS8", label: "S8", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: () => "RS9", rp: true, sec: "les", rl: "Lokalizasyon" },
-      { id: "RS9", label: "S9", q: "Boyut (a × b mm):", type: "size", nx: () => "RS10", rp: true, sec: "les", rl: "Boyut" },
-      { id: "RS10", label: "S10", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS11", rp: true, sec: "les", rl: "T1 Sinyal" },
-      { id: "RS11", label: "S11", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS12", rp: true, sec: "les", rl: "T2 Sinyal" },
-      { id: "RS12", label: "S12", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "RS13", rp: true, sec: "les", rl: "T2-FS Sinyal" },
-      { id: "RS13", label: "S13", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS14", rp: true, sec: "les", rl: "DWI Sinyal" },
-      { id: "RS14", label: "S14", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "RS15", rp: true, sec: "les", rl: "ADC Sinyal" },
-      { id: "RS15", label: "S15", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS16", rp: true, sec: "les", rl: "Lezyon Out Phase" },
-      { id: "RS16", label: "S16", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS17", rp: true, sec: "les", rl: "Lezyon In Phase" },
-      { id: "RS17", label: "S17", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS18", rp: true, sec: "les", rl: "Dalak Out Phase" },
-      { id: "RS18", label: "S18", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS19", rp: true, sec: "les", rl: "Dalak In Phase" },
-      { id: "RS19", label: "S19", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: () => "RS20", rp: true, sec: "les", rl: "CSI Oranı" },
-      { id: "RS20", label: "S20", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: () => "RS21", rp: true, sec: "les", rl: "SI İndeks" },
-      { id: "RS21", label: "S21", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: () => "RS22", rp: true, sec: "les", rl: "Konturlar" },
-      { id: "RS22", label: "S22", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: () => "RS23", rp: true, sec: "les", rl: "Kontrastlanma" },
-      { id: "RS23", label: "S23", q: "Washout?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: () => "RS24", rp: true, sec: "les", rl: "Washout" },
-      { id: "RS24", label: "S24", q: "Aynı tarafta (sağ) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "RS7" : "GO_LEFT", rp: false, sec: "les" }
+      { id: "RS1", label: "S1", q: "Sağ adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: function(a) { return a === "Evet" ? "RS3" : "RS2"; }, rp: true, sec: "gland", rl: "Lokalizasyon" },
+      { id: "RS2", label: "S2", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: function(a) { return a === "İzlenmedi (Opere?/Agenezi?)" ? "RIGHT_END_ABSENT" : "RS2b"; }, rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
+      { id: "RS2b", label: "S2b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: function() { return "RS3"; }, rp: true, sec: "gland", rl: "Konum detayı" },
+      { id: "RS3", label: "S3", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: function() { return "RS4"; }, rp: true, sec: "gland", rl: "İntensite" },
+      { id: "RS4", label: "S4", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: function() { return "RS5"; }, rp: true, sec: "gland", rl: "İntensite dağılımı" },
+      { id: "RS5", label: "S5", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: function() { return "RS6"; }, rp: true, sec: "gland", rl: "Kontrastlanma" },
+      { id: "RS6", label: "S6", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: function(a) { return a === "Var" ? "RS7" : "RIGHT_END_NORMAL"; }, rp: true, sec: "gland", rl: "Lezyon" },
+      { id: "RS7", label: "S7", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: function() { return "RS8"; }, rp: true, sec: "les", rl: "Yapı" },
+      { id: "RS8", label: "S8", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: function() { return "RS9"; }, rp: true, sec: "les", rl: "Lokalizasyon" },
+      { id: "RS9", label: "S9", q: "Boyut (a × b mm):", type: "size", nx: function() { return "RS10"; }, rp: true, sec: "les", rl: "Boyut" },
+      { id: "RS10", label: "S10", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "RS11"; }, rp: true, sec: "les", rl: "T1 Sinyal" },
+      { id: "RS11", label: "S11", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "RS12"; }, rp: true, sec: "les", rl: "T2 Sinyal" },
+      { id: "RS12", label: "S12", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: function() { return "RS13"; }, rp: true, sec: "les", rl: "T2-FS Sinyal" },
+      { id: "RS13", label: "S13", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "RS14"; }, rp: true, sec: "les", rl: "DWI Sinyal" },
+      { id: "RS14", label: "S14", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: function() { return "RS15"; }, rp: true, sec: "les", rl: "ADC Sinyal" },
+      { id: "RS15", label: "S15", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "RS16"; }, rp: true, sec: "les", rl: "Lezyon Out Phase" },
+      { id: "RS16", label: "S16", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "RS17"; }, rp: true, sec: "les", rl: "Lezyon In Phase" },
+      { id: "RS17", label: "S17", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "RS18"; }, rp: true, sec: "les", rl: "Dalak Out Phase" },
+      { id: "RS18", label: "S18", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "RS19"; }, rp: true, sec: "les", rl: "Dalak In Phase" },
+      { id: "RS19", label: "S19", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: function() { return "RS20"; }, rp: true, sec: "les", rl: "CSI Oranı" },
+      { id: "RS20", label: "S20", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: function() { return "RS21"; }, rp: true, sec: "les", rl: "SI İndeks" },
+      { id: "RS21", label: "S21", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: function() { return "RS22"; }, rp: true, sec: "les", rl: "Konturlar" },
+      { id: "RS22", label: "S22", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: function() { return "RS23"; }, rp: true, sec: "les", rl: "Kontrastlanma" },
+      { id: "RS23", label: "S23", q: "Washout?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: function() { return "RS24"; }, rp: true, sec: "les", rl: "Washout" },
+      { id: "RS24", label: "S24", q: "Aynı tarafta (sağ) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: function(a) { return a === "Var" ? "RS7" : "GO_LEFT"; }, rp: false, sec: "les" }
     ];
 
     const LEFT_STEPS = [
-      { id: "LS1", label: "S24", q: "Sol adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: a => a === "Evet" ? "LS3" : "LS2", rp: true, sec: "gland", rl: "Lokalizasyon" },
-      { id: "LS2", label: "S25", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: a => a === "İzlenmedi (Opere?/Agenezi?)" ? "LEFT_END_ABSENT" : "LS2b", rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
-      { id: "LS2b", label: "S25b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: () => "LS3", rp: true, sec: "gland", rl: "Konum detayı" },
-      { id: "LS3", label: "S26", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: () => "LS4", rp: true, sec: "gland", rl: "İntensite" },
-      { id: "LS4", label: "S27", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: () => "LS5", rp: true, sec: "gland", rl: "İntensite dağılımı" },
-      { id: "LS5", label: "S28", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: () => "LS6", rp: true, sec: "gland", rl: "Kontrastlanma" },
-      { id: "LS6", label: "S29", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "LS7" : "LEFT_END_NORMAL", rp: true, sec: "gland", rl: "Lezyon" },
-      { id: "LS7", label: "S30", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: () => "LS8", rp: true, sec: "les", rl: "Yapı" },
-      { id: "LS8", label: "S31", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: () => "LS9", rp: true, sec: "les", rl: "Lokalizasyon" },
-      { id: "LS9", label: "S32", q: "Boyut (a × b mm):", type: "size", nx: () => "LS10", rp: true, sec: "les", rl: "Boyut" },
-      { id: "LS10", label: "S33", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS11", rp: true, sec: "les", rl: "T1 Sinyal" },
-      { id: "LS11", label: "S34", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS12", rp: true, sec: "les", rl: "T2 Sinyal" },
-      { id: "LS12", label: "S35", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "LS13", rp: true, sec: "les", rl: "T2-FS Sinyal" },
-      { id: "LS13", label: "S36", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS14", rp: true, sec: "les", rl: "DWI Sinyal" },
-      { id: "LS14", label: "S37", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "LS15", rp: true, sec: "les", rl: "ADC Sinyal" },
-      { id: "LS15", label: "S39", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS16", rp: true, sec: "les", rl: "Lezyon Out Phase" },
-      { id: "LS16", label: "S40", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS17", rp: true, sec: "les", rl: "Lezyon In Phase" },
-      { id: "LS17", label: "S41", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS18", rp: true, sec: "les", rl: "Dalak Out Phase" },
-      { id: "LS18", label: "S42", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS19", rp: true, sec: "les", rl: "Dalak In Phase" },
-      { id: "LS19", label: "S43", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: () => "LS20", rp: true, sec: "les", rl: "CSI Oranı" },
-      { id: "LS20", label: "S44", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: () => "LS21", rp: true, sec: "les", rl: "SI İndeks" },
-      { id: "LS21", label: "S45", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: () => "LS22", rp: true, sec: "les", rl: "Konturlar" },
-      { id: "LS22", label: "S46", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: () => "LS23", rp: true, sec: "les", rl: "Kontrastlanma" },
-      { id: "LS23", label: "S47", q: "Washout var mı?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: () => "LS24", rp: true, sec: "les", rl: "Washout" },
-      { id: "LS24", label: "S48", q: "Aynı tarafta (sol) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "LS7" : "FINISH", rp: false, sec: "les" }
+      { id: "LS1", label: "S24", q: "Sol adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: function(a) { return a === "Evet" ? "LS3" : "LS2"; }, rp: true, sec: "gland", rl: "Lokalizasyon" },
+      { id: "LS2", label: "S25", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: function(a) { return a === "İzlenmedi (Opere?/Agenezi?)" ? "LEFT_END_ABSENT" : "LS2b"; }, rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
+      { id: "LS2b", label: "S25b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: function() { return "LS3"; }, rp: true, sec: "gland", rl: "Konum detayı" },
+      { id: "LS3", label: "S26", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: function() { return "LS4"; }, rp: true, sec: "gland", rl: "İntensite" },
+      { id: "LS4", label: "S27", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: function() { return "LS5"; }, rp: true, sec: "gland", rl: "İntensite dağılımı" },
+      { id: "LS5", label: "S28", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: function() { return "LS6"; }, rp: true, sec: "gland", rl: "Kontrastlanma" },
+      { id: "LS6", label: "S29", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: function(a) { return a === "Var" ? "LS7" : "LEFT_END_NORMAL"; }, rp: true, sec: "gland", rl: "Lezyon" },
+      { id: "LS7", label: "S30", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: function() { return "LS8"; }, rp: true, sec: "les", rl: "Yapı" },
+      { id: "LS8", label: "S31", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: function() { return "LS9"; }, rp: true, sec: "les", rl: "Lokalizasyon" },
+      { id: "LS9", label: "S32", q: "Boyut (a × b mm):", type: "size", nx: function() { return "LS10"; }, rp: true, sec: "les", rl: "Boyut" },
+      { id: "LS10", label: "S33", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "LS11"; }, rp: true, sec: "les", rl: "T1 Sinyal" },
+      { id: "LS11", label: "S34", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "LS12"; }, rp: true, sec: "les", rl: "T2 Sinyal" },
+      { id: "LS12", label: "S35", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: function() { return "LS13"; }, rp: true, sec: "les", rl: "T2-FS Sinyal" },
+      { id: "LS13", label: "S36", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: function() { return "LS14"; }, rp: true, sec: "les", rl: "DWI Sinyal" },
+      { id: "LS14", label: "S37", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: function() { return "LS15"; }, rp: true, sec: "les", rl: "ADC Sinyal" },
+      { id: "LS15", label: "S39", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "LS16"; }, rp: true, sec: "les", rl: "Lezyon Out Phase" },
+      { id: "LS16", label: "S40", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "LS17"; }, rp: true, sec: "les", rl: "Lezyon In Phase" },
+      { id: "LS17", label: "S41", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "LS18"; }, rp: true, sec: "les", rl: "Dalak Out Phase" },
+      { id: "LS18", label: "S42", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: function() { return "LS19"; }, rp: true, sec: "les", rl: "Dalak In Phase" },
+      { id: "LS19", label: "S43", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: function() { return "LS20"; }, rp: true, sec: "les", rl: "CSI Oranı" },
+      { id: "LS20", label: "S44", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: function() { return "LS21"; }, rp: true, sec: "les", rl: "SI İndeks" },
+      { id: "LS21", label: "S45", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: function() { return "LS22"; }, rp: true, sec: "les", rl: "Konturlar" },
+      { id: "LS22", label: "S46", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: function() { return "LS23"; }, rp: true, sec: "les", rl: "Kontrastlanma" },
+      { id: "LS23", label: "S47", q: "Washout var mı?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: function() { return "LS24"; }, rp: true, sec: "les", rl: "Washout" },
+      { id: "LS24", label: "S48", q: "Aynı tarafta (sol) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: function(a) { return a === "Var" ? "LS7" : "FINISH"; }, rp: false, sec: "les" }
     ];
 
     function calcCSI(lOP, lIP, sOP, sIP) {
@@ -232,7 +527,7 @@
     function fmtVal(step, val, les) {
       if (val == null || val === "") return null;
       if (step.type === "size" && typeof val === "object") return val.a + " x " + val.b + " mm";
-      if (step.type === "multi" && Array.isArray(val)) return val.join(", ");
+      if (step.type === "multi" && Array.isArray(val)) return val.map(L).join(", ");
       if (step.type === "calc_csi") {
         var pr = step.id.charAt(0) === "R" ? "R" : "L";
         var v = calcCSI(
@@ -241,7 +536,7 @@
           parseFloat((les || {})[pr + "S17"] || (les || {})[pr + "S41"]) || 0,
           parseFloat((les || {})[pr + "S18"] || (les || {})[pr + "S42"]) || 0
         );
-        return v !== null ? v.toFixed(4) : "Hesaplanamadi";
+        return v !== null ? v.toFixed(4) : T.cannotCalc;
       }
       if (step.type === "calc_si") {
         var pr2 = step.id.charAt(0) === "R" ? "R" : "L";
@@ -249,9 +544,9 @@
           parseFloat((les || {})[pr2 + "S16"] || (les || {})[pr2 + "S40"]) || 0,
           parseFloat((les || {})[pr2 + "S15"] || (les || {})[pr2 + "S39"]) || 0
         );
-        return v2 !== null ? "%" + v2.toFixed(2) : "Hesaplanamadi";
+        return v2 !== null ? "%" + v2.toFixed(2) : T.cannotCalc;
       }
-      return String(val);
+      return L(String(val));
     }
 
     const GLAND_IDS = ["RS1","RS2","RS2b","RS3","RS4","RS5","RS6","LS1","LS2","LS2b","LS3","LS4","LS5","LS6"];
@@ -285,7 +580,7 @@
             borderBottom: "1px solid " + C.accent + "18"
           }}>
             <span style={{ color: C.accent, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px" }}>
-              {"★ YORUM — Lezyon " + lesIdx}
+              {T.commentary + lesIdx}
             </span>
           </div>
           <div style={{ padding: 16 }}>
@@ -299,7 +594,7 @@
                   borderBottom: di < diagnoses.length - 1 ? "1px solid " + C.div : "none"
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{(di + 1) + ". " + d.name}</span>
+                    <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{(di + 1) + ". " + Dtrans(d.name)}</span>
                     <span style={{ color: bc, fontSize: 14, fontWeight: 800 }}>
                       {d.score + "/" + d.max + " (" + pct + "%)"}
                     </span>
@@ -314,7 +609,7 @@
                           <span style={{ color: d.met[ci] ? C.ok : C.muted, fontSize: 13, fontWeight: 700, width: 16 }}>
                             {d.met[ci] ? "✓" : "✗"}
                           </span>
-                          <span style={{ color: d.met[ci] ? C.text : C.muted }}>{cr}</span>
+                          <span style={{ color: d.met[ci] ? C.text : C.muted }}>{CRtrans(cr)}</span>
                         </div>
                       );
                     })}
@@ -434,38 +729,38 @@
 
       // ═══ COPY/PRINT ═══
       var genText = function() {
-        var r = "ADRENAL GLAND DINAMIK MR - KARAR DESTEK RAPORU\n";
-        r += "Tarih: " + new Date().toLocaleDateString("tr-TR") + "\n\n";
+        var r = T.genHeader;
+        r += T.genDate + new Date().toLocaleDateString(T.dateLocale) + "\n\n";
         var addSide = function(lb, gl, les, en, ST, sd) {
           r += "--- " + lb + " ---\n\n";
-          if (en === "absent") { r += "Izlenmedi (Opere?/Agenezi?)\n\n"; return; }
+          if (en === "absent") { r += T.absentLongText + "\n\n"; return; }
           ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
             var a = gl[s.id];
-            if (a) r += (s.rl || s.q) + " -> " + (Array.isArray(a) ? a.join(", ") : typeof a === "object" ? a.a + "x" + a.b + " mm" : a) + "\n";
+            if (a) r += (RLtrans(s.rl) || Qtrans(s.q)) + " -> " + (Array.isArray(a) ? a.map(L).join(", ") : typeof a === "object" ? a.a + "x" + a.b + " mm" : L(a)) + "\n";
           });
-          if (en === "normal") { r += "\nSonuc: Normal yapi ve sinyal intensitede adrenal gland.\n\n"; return; }
+          if (en === "normal") { r += T.genResult; return; }
           les.forEach(function(l, i) {
-            r += "\nLezyon " + (i + 1) + ":\n";
+            r += "\n" + T.lesion + " " + (i + 1) + ":\n";
             ST.filter(function(s) { return s.rp && s.sec === "les"; }).forEach(function(s) {
               var a = l[s.id];
               if (a != null && a !== "") {
                 var f = fmtVal(s, a, l);
-                if (f) r += "  " + (s.rl || s.q) + " -> " + f + "\n";
+                if (f) r += "  " + (RLtrans(s.rl) || Qtrans(s.q)) + " -> " + f + "\n";
               }
             });
             var d = evalDiag(l, sd);
             if (d.length) {
-              r += "\n  YORUM:\n";
+              r += "\n  " + T.commentaryShort + ":\n";
               d.forEach(function(dx, di) {
-                r += "    " + (di + 1) + ". " + dx.name + " (" + dx.score + "/" + dx.max + ")\n";
-                dx.criteria.forEach(function(cr, ci) { r += "       " + (dx.met[ci] ? "V" : "X") + " " + cr + "\n"; });
+                r += "    " + (di + 1) + ". " + Dtrans(dx.name) + " (" + dx.score + "/" + dx.max + ")\n";
+                dx.criteria.forEach(function(cr, ci) { r += "       " + (dx.met[ci] ? "V" : "X") + " " + CRtrans(cr) + "\n"; });
               });
             }
           });
           r += "\n";
         };
-        addSide("SAG ADRENAL GLAND", rGl, rLes, rEnd, RIGHT_STEPS, "right");
-        addSide("SOL ADRENAL GLAND", lGl, lLes, lEnd, LEFT_STEPS, "left");
+        addSide(T.rightAdrenalShort, rGl, rLes, rEnd, RIGHT_STEPS, "right");
+        addSide(T.leftAdrenalShort, lGl, lLes, lEnd, LEFT_STEPS, "left");
         return r;
       };
 
@@ -487,7 +782,7 @@
       };
 
       var genPdfHtml = function() {
-        var date = new Date().toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        var date = new Date().toLocaleDateString(T.dateLocale, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
         var css = [
           "* { margin:0; padding:0; box-sizing:border-box; }",
           "body { font-family:'Segoe UI',Tahoma,sans-serif; color:#1a1a2e; padding:0; background:#fff; }",
@@ -556,7 +851,7 @@
           html += '<div class="section">';
           html += '<div class="sec-title"><div class="sec-icon ' + iconCls + '">' + (iconCls === "r" ? "R" : "L") + '</div>' + title + '</div>';
           if (en === "absent") {
-            html += '<div class="absent-box">İzlenmedi (Opere? / Agenezi?)</div>';
+            html += '<div class="absent-box">' + T.pdfAbsent + '</div>';
             html += '</div>';
             return;
           }
@@ -564,11 +859,11 @@
           ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
             var a = gl[s.id];
             if (a != null) {
-              gRows.push({ label: s.rl || s.q, value: fmtVal(s, a, null) || String(a), type: s.type });
+              gRows.push({ label: RLtrans(s.rl) || Qtrans(s.q), value: fmtVal(s, a, null) || L(String(a)), type: s.type });
             }
           });
           if (gRows.length > 0) {
-            html += '<table class="tbl"><tr class="tbl-head"><td colspan="2">Gland Bulguları</td></tr>';
+            html += '<table class="tbl"><tr class="tbl-head"><td colspan="2">' + T.pdfTableGland + '</td></tr>';
             gRows.forEach(function(r) {
               var hlCls = (r.type === "calc_csi" || r.type === "calc_si") ? " hl" : "";
               html += '<tr><td class="lbl">' + r.label + '</td><td class="val' + hlCls + '">' + r.value + '</td></tr>';
@@ -576,7 +871,7 @@
             html += '</table>';
           }
           if (en === "normal") {
-            html += '<div class="normal-box">✓ Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</div>';
+            html += '<div class="normal-box">' + T.pdfNormal + '</div>';
             html += '</div>';
             return;
           }
@@ -586,10 +881,10 @@
               var a = l[s.id];
               if (a != null && a !== "") {
                 var f = fmtVal(s, a, l);
-                if (f) rows.push({ label: s.rl || s.q, value: f, type: s.type });
+                if (f) rows.push({ label: RLtrans(s.rl) || Qtrans(s.q), value: f, type: s.type });
               }
             });
-            html += '<table class="tbl"><tr class="tbl-head les"><td colspan="2">Lezyon ' + (i + 1) + ' — Bulgular (' + rows.length + ' parametre)</td></tr>';
+            html += '<table class="tbl"><tr class="tbl-head les"><td colspan="2">' + T.pdfTableLesion(i + 1, rows.length) + '</td></tr>';
             rows.forEach(function(r) {
               var hlCls = (r.type === "calc_csi" || r.type === "calc_si") ? " hl" : "";
               html += '<tr><td class="lbl">' + r.label + '</td><td class="val' + hlCls + '">' + r.value + '</td></tr>';
@@ -597,17 +892,17 @@
             html += '</table>';
             var diags = evalDiag(l, sd);
             if (diags.length > 0) {
-              html += '<div class="diag-box"><div class="diag-head">★ YORUM — Lezyon ' + (i + 1) + '</div><div class="diag-body">';
+              html += '<div class="diag-box"><div class="diag-head">' + T.pdfCommentary(i + 1) + '</div><div class="diag-body">';
               diags.forEach(function(d, di) {
                 var pct = Math.round(d.score / d.max * 100);
                 var lvl = pct >= 75 ? "high" : pct >= 50 ? "mid" : "low";
                 html += '<div class="diag-item">';
-                html += '<div class="diag-name"><span>' + (di + 1) + '. ' + d.name + '</span><span class="diag-score ' + lvl + '">' + d.score + '/' + d.max + ' (' + pct + '%)</span></div>';
+                html += '<div class="diag-name"><span>' + (di + 1) + '. ' + Dtrans(d.name) + '</span><span class="diag-score ' + lvl + '">' + d.score + '/' + d.max + ' (' + pct + '%)</span></div>';
                 html += '<div class="bar"><div class="bar-fill ' + lvl + '" style="width:' + pct + '%"></div></div>';
                 html += '<div class="crit-grid">';
                 d.criteria.forEach(function(cr, ci) {
                   var yn = d.met[ci] ? "y" : "n";
-                  html += '<div class="crit-item"><span class="ck ' + yn + '">' + (d.met[ci] ? "✓" : "✗") + '</span><span class="ct ' + yn + '">' + cr + '</span></div>';
+                  html += '<div class="crit-item"><span class="ck ' + yn + '">' + (d.met[ci] ? "✓" : "✗") + '</span><span class="ct ' + yn + '">' + CRtrans(cr) + '</span></div>';
                 });
                 html += '</div></div>';
               });
@@ -619,32 +914,32 @@
 
         var rStatus = rEnd === "absent" ? "absent" : rEnd === "normal" ? "normal" : "lesion";
         var lStatus = lEnd === "absent" ? "absent" : lEnd === "normal" ? "normal" : "lesion";
-        var rText = rEnd === "absent" ? "İzlenmedi" : rEnd === "normal" ? "Normal" : rLes.length + " Lezyon";
-        var lText = lEnd === "absent" ? "İzlenmedi" : lEnd === "normal" ? "Normal" : lLes.length + " Lezyon";
+        var rText = rEnd === "absent" ? T.absent : rEnd === "normal" ? T.normal : T.lesionCount(rLes.length);
+        var lText = lEnd === "absent" ? T.absent : lEnd === "normal" ? T.normal : T.lesionCount(lLes.length);
 
         var page = '<div class="page">';
         page += '<div class="header">';
-        page += '<div class="badge">ADRENAL GLAND DİNAMİK MR</div>';
-        page += '<h1>Karar Destek Raporu</h1>';
-        page += '<div class="sub">Radyoloji Karar Destek Sistemi</div>';
+        page += '<div class="badge">' + T.pdfBadge + '</div>';
+        page += '<h1>' + T.pdfTitle + '</h1>';
+        page += '<div class="sub">' + T.pdfSub + '</div>';
         page += '<div class="date">' + date + '</div>';
         page += '</div>';
         page += '<div class="overview">';
-        page += '<div class="ov-card right"><div class="ov-label">Sağ Adrenal</div><div class="ov-val ' + rStatus + '">' + rText + '</div></div>';
-        page += '<div class="ov-card left"><div class="ov-label">Sol Adrenal</div><div class="ov-val ' + lStatus + '">' + lText + '</div></div>';
+        page += '<div class="ov-card right"><div class="ov-label">' + T.rightAdrenalCard + '</div><div class="ov-val ' + rStatus + '">' + rText + '</div></div>';
+        page += '<div class="ov-card left"><div class="ov-label">' + T.leftAdrenalCard + '</div><div class="ov-val ' + lStatus + '">' + lText + '</div></div>';
         page += '</div>';
 
         html = "";
-        addSideHtml("Sağ Adrenal Gland", "r", rGl, rLes, rEnd, RIGHT_STEPS, "right");
+        addSideHtml(T.rightAdrenalFull, "r", rGl, rLes, rEnd, RIGHT_STEPS, "right");
         page += html;
         page += '<div class="divider"></div>';
         html = "";
-        addSideHtml("Sol Adrenal Gland", "l", lGl, lLes, lEnd, LEFT_STEPS, "left");
+        addSideHtml(T.leftAdrenalFull, "l", lGl, lLes, lEnd, LEFT_STEPS, "left");
         page += html;
-        page += '<div class="footer">Adrenal Gland Dinamik MR — Karar Destek Sistemi — Bu rapor otomatik olarak oluşturulmuştur.</div>';
+        page += '<div class="footer">' + T.pdfFooter + '</div>';
         page += '</div>';
 
-        return '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Adrenal MR Raporu</title><style>' + css + '</style></head><body>' + page + '</body></html>';
+        return '<!DOCTYPE html><html lang="' + RV_LOCALE + '"><head><meta charset="UTF-8"><title>Adrenal MR Raporu</title><style>' + css + '</style></head><body>' + page + '</body></html>';
       };
 
       var printReport = function() {
@@ -672,7 +967,7 @@
             <style dangerouslySetInnerHTML={{ __html: pStyle + "\n@media screen { .no-print-btn { display:block; } } @media print { .no-print-btn { display:none !important; } }" }} />
             <div className="no-print-btn" style={{ position: "fixed", top: 12, right: 12, zIndex: 9999 }}>
               <button onClick={function() { setPrintMode(false); }} style={Object.assign({}, B, { background: "#e53935", color: "#fff", padding: "8px 20px", borderRadius: 8, fontSize: 13 })}>
-                ✕ Kapat
+                {T.closeBtn}
               </button>
             </div>
             <div dangerouslySetInnerHTML={{ __html: pBody }} />
@@ -687,14 +982,14 @@
             <div style={{ textAlign: "center", maxWidth: 540, animation: "fu .7s ease" }}>
               <div style={{ width: 80, height: 80, margin: "0 auto 20px", borderRadius: "50%", background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 50px " + C.glow }}>
               </div>
-              <h1 style={{ color: C.text, fontSize: 26, marginBottom: 6, fontWeight: 700 }}>Adrenal Gland Dinamik MR</h1>
-              <p style={{ color: C.dim, fontSize: 14, marginBottom: 28 }}>Karar Destek Sistemi</p>
+              <h1 style={{ color: C.text, fontSize: 26, marginBottom: 6, fontWeight: 700 }}>{T.startTitle}</h1>
+              <p style={{ color: C.dim, fontSize: 14, marginBottom: 28 }}>{T.startSub}</p>
               <div style={{ color: C.muted, fontSize: 11, marginBottom: 28, lineHeight: 1.6, background: C.card, borderRadius: 12, padding: "14px 18px", border: "1px solid " + C.bdr, textAlign: "left" }}>
-                <span style={{ color: C.accent, fontWeight: 600, fontSize: 12 }}>Kullanılan Sekanslar:</span><br />
+                <span style={{ color: C.accent, fontWeight: 600, fontSize: 12 }}>{T.startSequences}</span><br />
                 T1 (IP/OOP) · T2 (HASTE ± fat-sat) · DWI/ADC · T1-FS Dinamik · T2-FS/STIR
               </div>
               <button onClick={goStart} style={Object.assign({}, B, { background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", color: "#fff", fontSize: 16, padding: "14px 44px", borderRadius: 12, boxShadow: "0 4px 24px " + C.glow })}>
-                İncelemeye Başla →
+                {T.startBtn}
               </button>
             </div>
             <style>{"@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}"}</style>
@@ -710,7 +1005,7 @@
           ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
             var a = gl[s.id];
             if (a != null) {
-              gr.push({ label: s.rl || s.q, value: fmtVal(s, a, null) || String(a), type: s.type });
+              gr.push({ label: RLtrans(s.rl) || Qtrans(s.q), value: fmtVal(s, a, null) || L(String(a)), type: s.type });
             }
           });
           if (en === "normal") return { status: "normal", gr: gr, lb: [] };
@@ -720,7 +1015,7 @@
               var a = l[s.id];
               if (a != null && a !== "") {
                 var f = fmtVal(s, a, l);
-                if (f) rows.push({ label: s.rl || s.q, value: f, type: s.type });
+                if (f) rows.push({ label: RLtrans(s.rl) || Qtrans(s.q), value: f, type: s.type });
               }
             });
             return { idx: i + 1, rows: rows, diag: evalDiag(l, sd) };
@@ -740,7 +1035,7 @@
               </div>
               {data.status === "absent" && (
                 <div style={{ background: C.card, borderRadius: 10, padding: "16px 20px", border: "1px solid " + C.bdr, color: C.dim, fontSize: 14 }}>
-                  İzlenmedi (Opere? / Agenezi?)
+                  {T.absentLong}
                 </div>
               )}
               {data.status === "normal" && (
@@ -748,14 +1043,14 @@
                   {data.gr.length > 0 && (
                     <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden", marginBottom: 12 }}>
                       <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr }}>
-                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>Gland Bulguları</span>
+                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>{T.glandFindings}</span>
                       </div>
                       {data.gr.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={r.type === "calc_csi" || r.type === "calc_si"} />; })}
                     </div>
                   )}
                   <div style={{ background: C.ok + "10", borderRadius: 10, padding: "14px 20px", border: "1px solid " + C.ok + "30", display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ color: C.ok, fontSize: 18 }}>✓</span>
-                    <span style={{ color: C.ok, fontSize: 14, fontWeight: 600 }}>Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</span>
+                    <span style={{ color: C.ok, fontSize: 14, fontWeight: 600 }}>{T.normalText}</span>
                   </div>
                 </div>
               )}
@@ -764,7 +1059,7 @@
                   {data.gr.length > 0 && (
                     <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden", marginBottom: 16 }}>
                       <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr }}>
-                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>Gland Bulguları</span>
+                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>{T.glandFindings}</span>
                       </div>
                       {data.gr.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={false} />; })}
                     </div>
@@ -774,8 +1069,8 @@
                       <div key={lb.idx} style={{ marginBottom: 24 }}>
                         <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden" }}>
                           <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ color: C.warn, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>{"Lezyon " + lb.idx + " — Bulgular"}</span>
-                            <span style={{ color: C.muted, fontSize: 11 }}>{lb.rows.length + " parametre"}</span>
+                            <span style={{ color: C.warn, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>{T.lesion + " " + lb.idx + " — " + T.lesionFindings}</span>
+                            <span style={{ color: C.muted, fontSize: 11 }}>{T.paramCount(lb.rows.length)}</span>
                           </div>
                           {lb.rows.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={r.type === "calc_csi" || r.type === "calc_si"} />; })}
                         </div>
@@ -794,39 +1089,39 @@
             <div style={{ maxWidth: 780, margin: "0 auto" }}>
               <div style={{ textAlign: "center", marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid " + C.bdr }}>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: C.card, borderRadius: 40, padding: "8px 20px", border: "1px solid " + C.bdr, marginBottom: 16 }}>
-                  <span style={{ color: C.dim, fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>ADRENAL GLAND DİNAMİK MR</span>
+                  <span style={{ color: C.dim, fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>{T.reportBadge}</span>
                 </div>
-                <h1 style={{ color: C.text, fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.5px" }}>Karar Destek Raporu</h1>
+                <h1 style={{ color: C.text, fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.5px" }}>{T.reportTitle}</h1>
                 <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-                  {new Date().toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                  {new Date().toLocaleDateString(T.dateLocale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                 </p>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
                 <div style={{ background: C.card, borderRadius: 10, padding: "14px 18px", border: "1px solid " + C.bdr, borderLeft: "3px solid " + C.accent }}>
-                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>SAĞ ADRENAL</div>
+                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>{T.rightAdrenal}</div>
                   <div style={{ color: rEnd === "normal" ? C.ok : rEnd === "absent" ? C.dim : C.warn, fontSize: 14, fontWeight: 700 }}>
-                    {rEnd === "absent" ? "İzlenmedi" : rEnd === "normal" ? "Normal" : rLes.length + " Lezyon"}
+                    {rEnd === "absent" ? T.absent : rEnd === "normal" ? T.normal : T.lesionCount(rLes.length)}
                   </div>
                 </div>
                 <div style={{ background: C.card, borderRadius: 10, padding: "14px 18px", border: "1px solid " + C.bdr, borderLeft: "3px solid " + C.ok }}>
-                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>SOL ADRENAL</div>
+                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>{T.leftAdrenal}</div>
                   <div style={{ color: lEnd === "normal" ? C.ok : lEnd === "absent" ? C.dim : C.warn, fontSize: 14, fontWeight: 700 }}>
-                    {lEnd === "absent" ? "İzlenmedi" : lEnd === "normal" ? "Normal" : lLes.length + " Lezyon"}
+                    {lEnd === "absent" ? T.absent : lEnd === "normal" ? T.normal : T.lesionCount(lLes.length)}
                   </div>
                 </div>
               </div>
-              {renderSide("Sağ Adrenal Gland", "▶", rR, C.accent)}
+              {renderSide(T.rightAdrenalFull, "▶", rR, C.accent)}
               <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + C.bdr + ", transparent)", margin: "8px 0 32px" }} />
-              {renderSide("Sol Adrenal Gland", "◀", lR, C.ok)}
+              {renderSide(T.leftAdrenalFull, "◀", lR, C.ok)}
               <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", paddingTop: 16, borderTop: "1px solid " + C.bdr, marginTop: 8 }}>
                 <button onClick={copyReport} style={Object.assign({}, B, { background: copied ? C.ok : C.accent, color: "#0c0e1a", minWidth: 160 })}>
-                  {copied ? "✓ Kopyalandı!" : "📋 Raporu Kopyala"}
+                  {copied ? T.copiedBtn : T.copyBtn}
                 </button>
                 <button onClick={printReport} style={Object.assign({}, B, { background: "transparent", color: C.accent, border: "1px solid " + C.accent })}>
-                  📄 PDF Rapor
+                  {T.pdfBtn}
                 </button>
                 <button onClick={function() { setPhase("start"); }} style={Object.assign({}, B, { background: "transparent", color: C.dim, border: "1px solid " + C.bdr })}>
-                  ↺ Yeni İnceleme
+                  {T.newBtn}
                 </button>
               </div>
             </div>
@@ -835,7 +1130,7 @@
       }
 
       // ═══ QUESTION SCREEN ═══
-      var sLbl = phase === "right" ? "SAĞ ADRENAL" : "SOL ADRENAL";
+      var sLbl = phase === "right" ? T.rightAdrenal : T.leftAdrenal;
       var lNum = (phase === "right" ? rLes.length : lLes.length) + 1;
       var inL = st && !isGl(sid) && sid !== "RS24" && sid !== "LS24";
 
@@ -851,7 +1146,7 @@
                     style={Object.assign({}, B, { background: C.card, color: C.text, border: "1px solid " + C.bdr, textAlign: "left", padding: "12px 16px", borderRadius: 10, fontWeight: 400, fontSize: 14 })}
                     onMouseEnter={function(e) { e.currentTarget.style.background = C.cardAlt; e.currentTarget.style.borderColor = C.accent; }}
                     onMouseLeave={function(e) { e.currentTarget.style.background = C.card; e.currentTarget.style.borderColor = C.bdr; }}>
-                    {o}
+                    {L(o)}
                   </button>
                 );
               })}
@@ -867,13 +1162,13 @@
                 return (
                   <button key={i} onClick={function() { setMl(function(p) { return sel ? p.filter(function(x) { return x !== o; }) : p.concat([o]); }); }}
                     style={Object.assign({}, B, { background: sel ? C.glow : C.card, color: sel ? C.accent : C.text, border: "1px solid " + (sel ? C.accent : C.bdr), textAlign: "left", padding: "12px 16px", borderRadius: 10, fontWeight: sel ? 600 : 400, fontSize: 14 })}>
-                    {(sel ? "☑ " : "☐ ") + o}
+                    {(sel ? "☑ " : "☐ ") + L(o)}
                   </button>
                 );
               })}
               <button onClick={function() { if (ml.length) doAnswer(ml); }} disabled={!ml.length}
                 style={Object.assign({}, B, { background: ml.length ? "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")" : C.trk, color: ml.length ? "#fff" : C.muted, marginTop: 6, borderRadius: 10, padding: "12px 24px" })}>
-                Onayla →
+                {T.confirmBtn}
               </button>
             </div>
           );
@@ -882,7 +1177,7 @@
         if (st.type === "number") {
           return (
             <div style={{ display: "flex", gap: 10 }}>
-              <input type="number" placeholder={st.placeholder || "Değer"} value={tmp.v || ""}
+              <input type="number" placeholder={T.signalPlaceholder} value={tmp.v || ""}
                 onChange={function(e) { setTmp({ v: e.target.value }); }}
                 onKeyDown={function(e) { if (e.key === "Enter" && tmp.v) doAnswer(tmp.v); }}
                 style={{ flex: 1, padding: "12px 16px", borderRadius: 10, background: C.card, border: "1px solid " + C.bdr, color: C.text, fontSize: 16, outline: "none", fontFamily: "'Segoe UI', sans-serif" }}
@@ -925,14 +1220,14 @@
           return (
             <div style={{ background: C.card, borderRadius: 12, padding: 20, border: "1px solid " + C.accent + "30" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14, fontSize: 12 }}>
-                <div style={{ color: C.dim }}>{"Lezyon OP: "}<span style={{ color: C.text }}>{s.lOP || "—"}</span></div>
-                <div style={{ color: C.dim }}>{"Lezyon IP: "}<span style={{ color: C.text }}>{s.lIP || "—"}</span></div>
-                <div style={{ color: C.dim }}>{"Dalak OP: "}<span style={{ color: C.text }}>{s.sOP || "—"}</span></div>
-                <div style={{ color: C.dim }}>{"Dalak IP: "}<span style={{ color: C.text }}>{s.sIP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{T.lesionOP}<span style={{ color: C.text }}>{s.lOP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{T.lesionIP}<span style={{ color: C.text }}>{s.lIP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{T.spleenOP}<span style={{ color: C.text }}>{s.sOP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{T.spleenIP}<span style={{ color: C.text }}>{s.sIP || "—"}</span></div>
               </div>
               <div style={{ textAlign: "center", marginBottom: 4 }}>
                 <div style={{ color: C.muted, fontSize: 11, marginBottom: 4 }}>
-                  {isCSI ? "(Lezyon OP / Dalak OP) / (Lezyon IP / Dalak IP)" : "((Lezyon IP - Lezyon OP) / Lezyon IP) x 100"}
+                  {isCSI ? T.csiFormula : T.siFormula}
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: C.accent, textShadow: "0 0 20px " + C.glow }}>{autoV}</div>
               </div>
@@ -943,7 +1238,7 @@
                 setCur(store);
                 doAnswer(autoV);
               }} style={Object.assign({}, B, { background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", color: "#fff", width: "100%", marginTop: 12, borderRadius: 10 })}>
-                Devam →
+                {T.continueBtn}
               </button>
             </div>
           );
@@ -963,7 +1258,7 @@
                   color: phase === "right" ? C.accent : C.ok,
                   fontSize: 12, fontWeight: 700
                 }}>{sLbl}</div>
-                {inL && <div style={{ padding: "4px 10px", borderRadius: 20, background: C.warn + "18", color: C.warn, fontSize: 11, fontWeight: 600 }}>{"Lezyon " + lNum}</div>}
+                {inL && <div style={{ padding: "4px 10px", borderRadius: 20, background: C.warn + "18", color: C.warn, fontSize: 11, fontWeight: 600 }}>{T.lesion + " " + lNum}</div>}
               </div>
               <div style={{ color: C.muted, fontSize: 12 }}>{st ? st.label : ""}</div>
             </div>
@@ -971,7 +1266,7 @@
               <div style={{ height: "100%", width: prog + "%", background: "linear-gradient(90deg, " + C.accent + ", " + C.accentDk + ")", borderRadius: 2, transition: "width .4s ease" }} />
             </div>
             <div key={sid} style={{ background: C.card, borderRadius: 14, padding: "24px 20px", border: "1px solid " + C.bdr, marginBottom: 14, boxShadow: "0 8px 32px rgba(0,0,0,.3)" }}>
-              <h3 style={{ color: C.text, fontSize: 15, fontWeight: 600, marginBottom: 18, lineHeight: 1.5 }}>{st ? st.q : ""}</h3>
+              <h3 style={{ color: C.text, fontSize: 15, fontWeight: 600, marginBottom: 18, lineHeight: 1.5 }}>{st ? Qtrans(st.q) : ""}</h3>
               {renderInput()}
             </div>
             {hist.length > 0 && (
@@ -979,7 +1274,7 @@
                 style={Object.assign({}, B, { background: "transparent", color: C.muted, border: "1px solid " + C.bdr, width: "100%", borderRadius: 10 })}
                 onMouseEnter={function(e) { e.currentTarget.style.color = C.accent; e.currentTarget.style.borderColor = C.accent; }}
                 onMouseLeave={function(e) { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.bdr; }}>
-                ← Geri
+                {T.backBtn}
               </button>
             )}
           </div>

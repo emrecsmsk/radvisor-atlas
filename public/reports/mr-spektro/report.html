@@ -135,54 +135,371 @@ body{background:#fff;color:#000}
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Beyin MR Spektroskopi Karar Destek',
+    appSub: 'Metabolit Analizi & Ayırıcı Tanı',
+    reportTitle: 'Beyin MR Spektroskopi Raporu',
+    reportDate: 'Tarih',
+    tabAna: 'Ana Metabolitler',
+    tabEk: 'Ek Metabolitler',
+    tabRatios: 'Oranlar',
+    tabReport: 'Rapor',
+    pickStatus: 'Her metabolit için pik durumunu seçiniz.',
+    ratiosTitle: 'Metabolit Oranları',
+    ratiosDesc: 'Hesaplanan metabolit oranlarını giriniz. Otomatik olarak sınıflandırılacaktır.',
+    optNone: 'Pik Yok',
+    optNormal: 'Normal',
+    optLow: 'Düşük',
+    optHigh: 'Yüksek',
+    metProfile: 'Metabolit Profili',
+    metRatios: 'Metabolit Oranları',
+    colMetabolite: 'Metabolit',
+    colStatus: 'Durum',
+    colRatio: 'Oran',
+    colValue: 'Değer',
+    commentary: 'YORUM',
+    suspicion: 'Şüphe',
+    ddxTitle: 'Ayırıcı Tanı',
+    colPathology: 'Patoloji',
+    colMatch: 'Uyum',
+    colLak: 'Lak',
+    colLip: 'Lip',
+    colTypical: 'Tipik Özellik',
+    refTable: 'Metabolit Referans Tablosu',
+    colClinical: 'Klinik Anlam',
+    ddxTips: 'Ayırıcı Tanı İpuçları',
+    colPattern: 'Patern',
+    colDiag: 'Olası Tanı',
+    btnPrint: 'PDF Yazdır',
+    btnCopy: 'HTML Kopyala',
+    btnEdit: 'Düzenle',
+    btnReset: 'Sıfırla',
+    btnNext: 'İleri →',
+    btnBack: '← Geri',
+    btnGenReport: 'Rapor Oluştur ✓',
+    copyAlert: 'Rapor HTML olarak panoya kopyalandı!',
+    resetConfirm: 'Tüm verileri sıfırlamak istediğinize emin misiniz?',
+    statDecreased: 'Azalmış',
+    statIncreased: 'Artmış',
+    statNormal: 'Normal',
+    /* metabolite names */
+    metNaa: 'NAA',
+    metCho: 'Kolin (Cho)',
+    metCr: 'Kreatin (Cr)',
+    metLaktat: 'Laktat',
+    metLipit: 'Lipidler',
+    metMi: 'Myoinositol',
+    metAlanin: 'Alanin',
+    metAsetat: 'Asetat',
+    metGlx: 'Glutamin / Glutamat',
+    metGaba: 'GABA',
+    metSuksinat: 'Süksinat',
+    metHg2: '2-Hidroksiglutarat',
+    metSitrat: 'Sitrat',
+    metAspartat: 'Aspartat',
+    metTaurin: 'Taurin',
+    metVal: 'Valin / Lösin / İzolösin',
+    /* metabolite descs */
+    descNaa: 'N-Asetil Aspartat',
+    descCho: 'Kolin',
+    descCr: 'Kreatin',
+    descLaktat: 'Laktat (dublet)',
+    descLipit: 'Lipid',
+    descMi: 'Myoinositol',
+    descAlanin: 'Alanin',
+    descAsetat: 'Asetat',
+    descGlx: 'Glx',
+    descGaba: 'GABA',
+    descSuksinat: 'Süksinat',
+    descHg2: '2-HG',
+    descSitrat: 'Sitrat',
+    descAspartat: 'Aspartat',
+    descTaurin: 'Taurin',
+    descVal: 'Dallı zincirli aminoasitler',
+    /* DDX names */
+    ddxLowGradeGlioma: 'Düşük grade glioma',
+    ddxHighGradeGlioma: 'Yüksek grade glioma',
+    ddxGlioblastoma: 'Glioblastoma',
+    ddxMetastasis: 'Metastaz',
+    ddxLymphoma: 'Primer SSS Lenfoma',
+    ddxAbse: 'Abse',
+    ddxTuberkuloma: 'Tüberküloma',
+    ddxMs: 'Multiple Skleroz (aktif plak)',
+    ddxRadNecrosis: 'Radyasyon Nekrozu',
+    ddxMeningioma: 'Menenjioma',
+    /* DDX extra */
+    extraLowGradeGlioma: 'Cho/NAA oranı artar',
+    extraHighGradeGlioma: 'Çok yüksek Cho, nekroz alanında lipit',
+    extraGlioblastoma: 'Lipit ve laktat pikleri belirgin',
+    extraMetastasis: 'Peritümöral alanda NAA korunur',
+    extraLymphoma: 'Çok yüksek kolin',
+    extraAbse: 'Aminoasit, asetat ve süksinat pikleri',
+    extraTuberkuloma: 'Lipit piki karakteristik',
+    extraMs: 'Demiyelinizasyona bağlı Cho artışı',
+    extraRadNecrosis: 'Kolin düşük, lipit yüksek',
+    extraMeningioma: 'Alanin piki tipiktir',
+    /* ref table clinical meanings */
+    refNaa: 'Nöronal bütünlüğü gösterir (tümör ve hasarda azalır)',
+    refCho: 'Hücre membranı dönüşümü ve proliferasyon (tümörlerde artar)',
+    refCr: 'Enerji metabolizması (referans metabolit)',
+    refLaktat: 'Anaerobik metabolizma, nekroz veya hipoksi',
+    refLipit: 'Nekroz, yüksek dereceli tümör veya enfeksiyon',
+    /* DDX tips */
+    tip1Pattern: 'Cho ↑ + NAA ↓ + Cho/NAA > 2',
+    tip1Diag: 'Malignite (high-grade gliom)',
+    tip2Pattern: 'Lipit ↑ + Laktat ↑',
+    tip2Diag: 'Nekroz veya enfeksiyon',
+    tip3Pattern: 'NAA yok + Cho yok + Cr yok + Aminoasit/Asetat/Süksinat',
+    tip3Diag: 'Abse',
+    tip4Pattern: 'Alanin piki',
+    tip4Diag: 'Menenjioma',
+    tip5Pattern: 'Cho ↑ + NAA ↓ + Lipit yok',
+    tip5Diag: 'Multiple Skleroz (aktif plak)',
+    tip6Pattern: 'Cho ↓ + NAA ↓ + Lipit ↑↑',
+    tip6Diag: 'Radyasyon Nekrozu',
+    tip7Pattern: '2-HG piki',
+    tip7Diag: 'IDH-mutant gliom',
+    tip8Pattern: 'Cho/NAA > 2',
+    tip8Diag: 'Malignite düşündürür',
+    tip9Pattern: 'Cho/Cr ↑',
+    tip9Diag: 'Tümör proliferasyonu',
+    tip10Pattern: 'NAA/Cr ↓',
+    tip10Diag: 'Nöronal kayıp',
+    /* severity commentary */
+    sevHigh: (f) => `Yüksek şüpheli metabolik profil: ${f.join('; ')}. Tümöral/nekrotik süreç ön planda.`,
+    sevMed: (f) => `Orta düzeyde anormal metabolik bulgular: ${f.join('; ')}. Klinik korelasyon ve takip önerilir.`,
+    sevLow: (f) => `Hafif metabolik değişiklikler: ${f.join('; ')}. Benign/nonspesifik bulgular.`,
+    sevNone: 'Normal metabolik profil. Belirgin patolojik metabolik değişiklik saptanmadı.',
+    /* severity finding fragments */
+    fNaaLow: 'NAA azalmış (nöronal kayıp)',
+    fNaaNone: 'NAA piki yok',
+    fChoHigh: 'Kolin artmış (hücre proliferasyonu)',
+    fChoNone: 'Kolin piki yok (ekstraaksiyel/abse)',
+    fLaktatHigh: 'Laktat yüksek (anaerobik metabolizma)',
+    fLipitHigh: 'Lipit yüksek (nekroz)',
+    fAlaninHigh: 'Alanin piki (menenjioma)',
+    fAbsePattern: 'Asetat + süksinat (abse paterni)',
+    fHg2High: '2-HG piki (IDH mutant gliom)',
+    fNaaCrLow: (v) => `NAA/Cr=${v} (azalmış)`,
+    fChoNaaLow: (v) => `NAA/Cho=${v} (azalmış → tümöral)`,
+    fChoCrHigh: (v) => `Cho/Cr=${v} (artmış → proliferasyon)`,
+    normNaaCr: 'Normal ≈ 2.0',
+    normChoNaa: 'Normal ≈ 1.6',
+    normChoCr: 'Normal ≈ 1.2',
+  },
+  en: {
+    appTitle: 'Brain MR Spectroscopy Decision Support',
+    appSub: 'Metabolite Analysis & Differential Diagnosis',
+    reportTitle: 'Brain MR Spectroscopy Report',
+    reportDate: 'Date',
+    tabAna: 'Main Metabolites',
+    tabEk: 'Additional Metabolites',
+    tabRatios: 'Ratios',
+    tabReport: 'Report',
+    pickStatus: 'Select the peak status for each metabolite.',
+    ratiosTitle: 'Metabolite Ratios',
+    ratiosDesc: 'Enter the calculated metabolite ratios. They will be classified automatically.',
+    optNone: 'No Peak',
+    optNormal: 'Normal',
+    optLow: 'Low',
+    optHigh: 'High',
+    metProfile: 'Metabolite Profile',
+    metRatios: 'Metabolite Ratios',
+    colMetabolite: 'Metabolite',
+    colStatus: 'Status',
+    colRatio: 'Ratio',
+    colValue: 'Value',
+    commentary: 'COMMENTARY',
+    suspicion: 'Suspicion',
+    ddxTitle: 'Differential Diagnosis',
+    colPathology: 'Pathology',
+    colMatch: 'Match',
+    colLak: 'Lac',
+    colLip: 'Lip',
+    colTypical: 'Typical Feature',
+    refTable: 'Metabolite Reference Table',
+    colClinical: 'Clinical Significance',
+    ddxTips: 'Differential Diagnosis Tips',
+    colPattern: 'Pattern',
+    colDiag: 'Possible Diagnosis',
+    btnPrint: 'Print PDF',
+    btnCopy: 'Copy HTML',
+    btnEdit: 'Edit',
+    btnReset: 'Reset',
+    btnNext: 'Next →',
+    btnBack: '← Back',
+    btnGenReport: 'Generate Report ✓',
+    copyAlert: 'Report copied to clipboard as HTML!',
+    resetConfirm: 'Are you sure you want to reset all data?',
+    statDecreased: 'Decreased',
+    statIncreased: 'Increased',
+    statNormal: 'Normal',
+    /* metabolite names */
+    metNaa: 'NAA',
+    metCho: 'Choline (Cho)',
+    metCr: 'Creatine (Cr)',
+    metLaktat: 'Lactate',
+    metLipit: 'Lipids',
+    metMi: 'Myoinositol',
+    metAlanin: 'Alanine',
+    metAsetat: 'Acetate',
+    metGlx: 'Glutamine / Glutamate',
+    metGaba: 'GABA',
+    metSuksinat: 'Succinate',
+    metHg2: '2-Hydroxyglutarate',
+    metSitrat: 'Citrate',
+    metAspartat: 'Aspartate',
+    metTaurin: 'Taurine',
+    metVal: 'Valine / Leucine / Isoleucine',
+    /* metabolite descs */
+    descNaa: 'N-acetyl aspartate',
+    descCho: 'Choline',
+    descCr: 'Creatine',
+    descLaktat: 'Lactate (doublet)',
+    descLipit: 'Lipid',
+    descMi: 'Myoinositol',
+    descAlanin: 'Alanine',
+    descAsetat: 'Acetate',
+    descGlx: 'Glx',
+    descGaba: 'GABA',
+    descSuksinat: 'Succinate',
+    descHg2: '2-HG',
+    descSitrat: 'Citrate',
+    descAspartat: 'Aspartate',
+    descTaurin: 'Taurine',
+    descVal: 'Branched-chain amino acids',
+    /* DDX names */
+    ddxLowGradeGlioma: 'Low-grade glioma',
+    ddxHighGradeGlioma: 'High-grade glioma',
+    ddxGlioblastoma: 'Glioblastoma',
+    ddxMetastasis: 'Metastasis',
+    ddxLymphoma: 'Primary CNS Lymphoma',
+    ddxAbse: 'Abscess',
+    ddxTuberkuloma: 'Tuberculoma',
+    ddxMs: 'Multiple Sclerosis (active plaque)',
+    ddxRadNecrosis: 'Radiation Necrosis',
+    ddxMeningioma: 'Meningioma',
+    /* DDX extra */
+    extraLowGradeGlioma: 'Cho/NAA ratio increases',
+    extraHighGradeGlioma: 'Very high Cho, lipid in necrotic areas',
+    extraGlioblastoma: 'Prominent lipid and lactate peaks',
+    extraMetastasis: 'NAA preserved in peritumoral area',
+    extraLymphoma: 'Very high choline',
+    extraAbse: 'Amino acid, acetate and succinate peaks',
+    extraTuberkuloma: 'Lipid peak is characteristic',
+    extraMs: 'Cho elevation due to demyelination',
+    extraRadNecrosis: 'Low choline, high lipid',
+    extraMeningioma: 'Alanine peak is typical',
+    /* ref table clinical meanings */
+    refNaa: 'Indicates neuronal integrity (decreased in tumors and injury)',
+    refCho: 'Cell membrane turnover and proliferation (elevated in tumors)',
+    refCr: 'Energy metabolism (reference metabolite)',
+    refLaktat: 'Anaerobic metabolism, necrosis or hypoxia',
+    refLipit: 'Necrosis, high-grade tumor or infection',
+    /* DDX tips */
+    tip1Pattern: 'Cho ↑ + NAA ↓ + Cho/NAA > 2',
+    tip1Diag: 'Malignancy (high-grade glioma)',
+    tip2Pattern: 'Lipid ↑ + Lactate ↑',
+    tip2Diag: 'Necrosis or infection',
+    tip3Pattern: 'No NAA + No Cho + No Cr + Amino acid/Acetate/Succinate',
+    tip3Diag: 'Abscess',
+    tip4Pattern: 'Alanine peak',
+    tip4Diag: 'Meningioma',
+    tip5Pattern: 'Cho ↑ + NAA ↓ + No Lipid',
+    tip5Diag: 'Multiple Sclerosis (active plaque)',
+    tip6Pattern: 'Cho ↓ + NAA ↓ + Lipid ↑↑',
+    tip6Diag: 'Radiation Necrosis',
+    tip7Pattern: '2-HG peak',
+    tip7Diag: 'IDH-mutant glioma',
+    tip8Pattern: 'Cho/NAA > 2',
+    tip8Diag: 'Suggests malignancy',
+    tip9Pattern: 'Cho/Cr ↑',
+    tip9Diag: 'Tumor proliferation',
+    tip10Pattern: 'NAA/Cr ↓',
+    tip10Diag: 'Neuronal loss',
+    /* severity commentary */
+    sevHigh: (f) => `Highly suspicious metabolic profile: ${f.join('; ')}. Tumoral/necrotic process is in the foreground.`,
+    sevMed: (f) => `Moderately abnormal metabolic findings: ${f.join('; ')}. Clinical correlation and follow-up recommended.`,
+    sevLow: (f) => `Mild metabolic changes: ${f.join('; ')}. Benign/nonspecific findings.`,
+    sevNone: 'Normal metabolic profile. No significant pathological metabolic changes detected.',
+    /* severity finding fragments */
+    fNaaLow: 'NAA decreased (neuronal loss)',
+    fNaaNone: 'No NAA peak',
+    fChoHigh: 'Choline elevated (cell proliferation)',
+    fChoNone: 'No choline peak (extra-axial/abscess)',
+    fLaktatHigh: 'Lactate elevated (anaerobic metabolism)',
+    fLipitHigh: 'Lipid elevated (necrosis)',
+    fAlaninHigh: 'Alanine peak (meningioma)',
+    fAbsePattern: 'Acetate + succinate (abscess pattern)',
+    fHg2High: '2-HG peak (IDH-mutant glioma)',
+    fNaaCrLow: (v) => `NAA/Cr=${v} (decreased)`,
+    fChoNaaLow: (v) => `NAA/Cho=${v} (decreased → tumoral)`,
+    fChoCrHigh: (v) => `Cho/Cr=${v} (elevated → proliferation)`,
+    normNaaCr: 'Normal ≈ 2.0',
+    normChoNaa: 'Normal ≈ 1.6',
+    normChoCr: 'Normal ≈ 1.2',
+  },
+})[RV_LOCALE];
+
 const {useState,useMemo,useRef} = React;
 
 /* ══════════ METABOLITE DEFINITIONS ══════════ */
 const METABOLITES = [
-  {key:'naa',name:'NAA',ppm:'2.0 ppm',group:'ana',desc:'N-Asetil Aspartat'},
-  {key:'cho',name:'Kolin (Cho)',ppm:'3.2 ppm',group:'ana',desc:'Kolin'},
-  {key:'cr',name:'Kreatin (Cr)',ppm:'3.0 ppm',group:'ana',desc:'Kreatin'},
-  {key:'laktat',name:'Laktat',ppm:'1.33 ppm',group:'ana',desc:'Laktat (dublet)'},
-  {key:'lipit',name:'Lipidler',ppm:'1.3 ppm',group:'ana',desc:'Lipid'},
-  {key:'mi',name:'Myoinositol',ppm:'3.5 & 4.06 ppm',group:'ana',desc:'Myoinositol'},
-  {key:'alanin',name:'Alanin',ppm:'1.48 ppm',group:'ek',desc:'Alanin'},
-  {key:'asetat',name:'Asetat',ppm:'1.9 ppm',group:'ek',desc:'Asetat'},
-  {key:'glx',name:'Glutamin / Glutamat',ppm:'2.2–2.4 ppm',group:'ek',desc:'Glx'},
-  {key:'gaba',name:'GABA',ppm:'2.2–2.4 ppm',group:'ek',desc:'GABA'},
-  {key:'suksinat',name:'Süksinat',ppm:'2.4 ppm',group:'ek',desc:'Süksinat'},
-  {key:'hg2',name:'2-Hidroksiglutarat',ppm:'2.25 ppm',group:'ek',desc:'2-HG'},
-  {key:'sitrat',name:'Sitrat',ppm:'2.6 ppm',group:'ek',desc:'Sitrat'},
-  {key:'aspartat',name:'Aspartat',ppm:'2.6 ppm',group:'ek',desc:'Aspartat'},
-  {key:'taurin',name:'Taurin',ppm:'3.4 ppm',group:'ek',desc:'Taurin'},
-  {key:'val',name:'Valin / Lösin / İzolösin',ppm:'0.9 ppm',group:'ek',desc:'Dallı zincirli aminoasitler'},
+  {key:'naa',  nameKey:'metNaa',  ppm:'2.0 ppm', group:'ana', descKey:'descNaa'},
+  {key:'cho',  nameKey:'metCho',  ppm:'3.2 ppm', group:'ana', descKey:'descCho'},
+  {key:'cr',   nameKey:'metCr',   ppm:'3.0 ppm', group:'ana', descKey:'descCr'},
+  {key:'laktat',nameKey:'metLaktat',ppm:'1.33 ppm',group:'ana',descKey:'descLaktat'},
+  {key:'lipit',nameKey:'metLipit',ppm:'1.3 ppm', group:'ana', descKey:'descLipit'},
+  {key:'mi',   nameKey:'metMi',   ppm:'3.5 & 4.06 ppm',group:'ana',descKey:'descMi'},
+  {key:'alanin',nameKey:'metAlanin',ppm:'1.48 ppm',group:'ek',descKey:'descAlanin'},
+  {key:'asetat',nameKey:'metAsetat',ppm:'1.9 ppm', group:'ek',descKey:'descAsetat'},
+  {key:'glx',  nameKey:'metGlx', ppm:'2.2–2.4 ppm',group:'ek',descKey:'descGlx'},
+  {key:'gaba', nameKey:'metGaba', ppm:'2.2–2.4 ppm',group:'ek',descKey:'descGaba'},
+  {key:'suksinat',nameKey:'metSuksinat',ppm:'2.4 ppm',group:'ek',descKey:'descSuksinat'},
+  {key:'hg2',  nameKey:'metHg2', ppm:'2.25 ppm', group:'ek', descKey:'descHg2'},
+  {key:'sitrat',nameKey:'metSitrat',ppm:'2.6 ppm',group:'ek',descKey:'descSitrat'},
+  {key:'aspartat',nameKey:'metAspartat',ppm:'2.6 ppm',group:'ek',descKey:'descAspartat'},
+  {key:'taurin',nameKey:'metTaurin',ppm:'3.4 ppm',group:'ek',descKey:'descTaurin'},
+  {key:'val',  nameKey:'metVal', ppm:'0.9 ppm',  group:'ek', descKey:'descVal'},
 ];
 
-const MET_OPTS = ['Pik Yok','Normal','Düşük','Yüksek'];
-const optClass = (v)=>v==='Pik Yok'?'on-yok':v==='Normal'?'on-n':v==='Düşük'?'on-d':v==='Yüksek'?'on-y':'';
-const badgeClass = (v)=>v==='Yüksek'?'badge-up':v==='Düşük'?'badge-dn':v==='Normal'?'badge-nm':'badge-no';
+/* Internal keys (used in logic) — always TR to keep scoring stable */
+const OPT_NONE   = 'Pik Yok';
+const OPT_NORMAL = 'Normal';
+const OPT_LOW    = 'Düşük';
+const OPT_HIGH   = 'Yüksek';
+
+const MET_OPTS = [OPT_NONE, OPT_NORMAL, OPT_LOW, OPT_HIGH];
+/* Display label for an internal option key */
+const optLabel = (v) =>
+  v===OPT_NONE?T.optNone:v===OPT_NORMAL?T.optNormal:v===OPT_LOW?T.optLow:v===OPT_HIGH?T.optHigh:v;
+const optClass = (v)=>v===OPT_NONE?'on-yok':v===OPT_NORMAL?'on-n':v===OPT_LOW?'on-d':v===OPT_HIGH?'on-y':'';
+const badgeClass = (v)=>v===OPT_HIGH?'badge-up':v===OPT_LOW?'badge-dn':v===OPT_NORMAL?'badge-nm':'badge-no';
 
 /* ══════════ DIFFERENTIAL DIAGNOSIS ══════════ */
 const DDX = [
-  {name:"Düşük grade glioma",naa:'↓',cho:'↑',cr:'↓/N',lak:'−',lip:'−',extra:"Cho/NAA oranı artar",
-   match:{naa:'Düşük',cho:'Yüksek',laktat:'Pik Yok',lipit:'Pik Yok'}},
-  {name:"Yüksek grade glioma",naa:'↓↓↓',cho:'↑↑↑',cr:'↓',lak:'+',lip:'+',extra:"Çok yüksek Cho, nekroz alanında lipit",
-   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
-  {name:"Glioblastoma",naa:'↓↓↓',cho:'↑↑↑',cr:'↓',lak:'+',lip:'+++',extra:"Lipit ve laktat pikleri belirgin",
-   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
-  {name:"Metastaz",naa:'↓',cho:'↑',cr:'↓',lak:'+',lip:'++',extra:"Peritümöral alanda NAA korunur",
-   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
-  {name:"Primer SSS Lenfoma",naa:'↓↓',cho:'↑↑',cr:'↓',lak:'+',lip:'++',extra:"Çok yüksek kolin",
-   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
-  {name:"Abse",naa:'Yok',cho:'Yok',cr:'Yok',lak:'+',lip:'+',extra:"Aminoasit, asetat ve süksinat pikleri",
-   match:{naa:'Pik Yok',cho:'Pik Yok',cr:'Pik Yok',laktat:'Yüksek',asetat:'Yüksek',suksinat:'Yüksek',val:'Yüksek'}},
-  {name:"Tüberküloma",naa:'↓',cho:'N/↑',cr:'↓',lak:'+',lip:'++',extra:"Lipit piki karakteristik",
-   match:{naa:'Düşük',lipit:'Yüksek',laktat:'Yüksek'}},
-  {name:"Multiple Skleroz (aktif plak)",naa:'↓',cho:'↑',cr:'↓',lak:'±',lip:'−',extra:"Demiyelinizasyona bağlı Cho artışı",
-   match:{naa:'Düşük',cho:'Yüksek',lipit:'Pik Yok'}},
-  {name:"Radyasyon Nekrozu",naa:'↓',cho:'↓',cr:'↓',lak:'+',lip:'++',extra:"Kolin düşük, lipit yüksek",
-   match:{naa:'Düşük',cho:'Düşük',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
-  {name:"Menenjioma",naa:'Yok',cho:'↑↑',cr:'↓',lak:'−',lip:'±',extra:"Alanin piki tipiktir",
-   match:{naa:'Pik Yok',cho:'Yüksek',alanin:'Yüksek'}},
+  {nameKey:'ddxLowGradeGlioma', naa:'↓',   cho:'↑',    cr:'↓/N', lak:'−', lip:'−',  extraKey:'extraLowGradeGlioma',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,laktat:OPT_NONE,lipit:OPT_NONE}},
+  {nameKey:'ddxHighGradeGlioma',naa:'↓↓↓', cho:'↑↑↑', cr:'↓',   lak:'+', lip:'+',  extraKey:'extraHighGradeGlioma',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,cr:OPT_LOW,laktat:OPT_HIGH,lipit:OPT_HIGH}},
+  {nameKey:'ddxGlioblastoma',   naa:'↓↓↓', cho:'↑↑↑', cr:'↓',   lak:'+', lip:'+++',extraKey:'extraGlioblastoma',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,cr:OPT_LOW,laktat:OPT_HIGH,lipit:OPT_HIGH}},
+  {nameKey:'ddxMetastasis',     naa:'↓',   cho:'↑',    cr:'↓',   lak:'+', lip:'++', extraKey:'extraMetastasis',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,cr:OPT_LOW,laktat:OPT_HIGH,lipit:OPT_HIGH}},
+  {nameKey:'ddxLymphoma',       naa:'↓↓',  cho:'↑↑',  cr:'↓',   lak:'+', lip:'++', extraKey:'extraLymphoma',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,cr:OPT_LOW,laktat:OPT_HIGH,lipit:OPT_HIGH}},
+  {nameKey:'ddxAbse',           naa:'Yok', cho:'Yok',  cr:'Yok', lak:'+', lip:'+',  extraKey:'extraAbse',
+   match:{naa:OPT_NONE,cho:OPT_NONE,cr:OPT_NONE,laktat:OPT_HIGH,asetat:OPT_HIGH,suksinat:OPT_HIGH,val:OPT_HIGH}},
+  {nameKey:'ddxTuberkuloma',    naa:'↓',   cho:'N/↑',  cr:'↓',   lak:'+', lip:'++', extraKey:'extraTuberkuloma',
+   match:{naa:OPT_LOW,lipit:OPT_HIGH,laktat:OPT_HIGH}},
+  {nameKey:'ddxMs',             naa:'↓',   cho:'↑',    cr:'↓',   lak:'±', lip:'−',  extraKey:'extraMs',
+   match:{naa:OPT_LOW,cho:OPT_HIGH,lipit:OPT_NONE}},
+  {nameKey:'ddxRadNecrosis',    naa:'↓',   cho:'↓',    cr:'↓',   lak:'+', lip:'++', extraKey:'extraRadNecrosis',
+   match:{naa:OPT_LOW,cho:OPT_LOW,cr:OPT_LOW,laktat:OPT_HIGH,lipit:OPT_HIGH}},
+  {nameKey:'ddxMeningioma',     naa:'Yok', cho:'↑↑',   cr:'↓',   lak:'−', lip:'±',  extraKey:'extraMeningioma',
+   match:{naa:OPT_NONE,cho:OPT_HIGH,alanin:OPT_HIGH}},
 ];
 
 /* ══════════ SCORING ══════════ */
@@ -195,20 +512,19 @@ function scoreDDX(mets,ratios){
       t+=w;
       if(mets[k]===m[k]) s+=w;
       else if(mets[k]&&m[k]){
-        // partial: Düşük vs Pik Yok = half credit
-        if((mets[k]==='Düşük'&&m[k]==='Pik Yok')||(mets[k]==='Pik Yok'&&m[k]==='Düşük')) s+=w*0.5;
-        // Yüksek partially matching Normal
-        if((mets[k]==='Normal'&&m[k]==='Yüksek')||(mets[k]==='Yüksek'&&m[k]==='Normal')) s+=w*0.25;
+        if((mets[k]===OPT_LOW&&m[k]===OPT_NONE)||(mets[k]===OPT_NONE&&m[k]===OPT_LOW)) s+=w*0.5;
+        if((mets[k]===OPT_NORMAL&&m[k]===OPT_HIGH)||(mets[k]===OPT_HIGH&&m[k]===OPT_NORMAL)) s+=w*0.25;
       }
     });
     // Ratio bonuses
+    const dname=T[d.nameKey]||d.nameKey;
     if(ratios.choCr){
       t+=2;
       const v=parseFloat(ratios.choCr);
       if(!isNaN(v)){
-        if(d.name.includes('glioma')||d.name.includes('Glioblastoma')||d.name.includes('Lenfoma')||d.name==='Menenjioma'){
+        if(dname.toLowerCase().includes('gliom')||dname.toLowerCase().includes('glioblastoma')||dname.toLowerCase().includes('lymphoma')||dname.toLowerCase().includes('lenfoma')||dname.toLowerCase().includes('meningioma')||dname.toLowerCase().includes('menenjiyoma')){
           if(v>1.2) s+=2;
-        } else if(d.name==='Radyasyon Nekrozu'){
+        } else if(d.nameKey==='ddxRadNecrosis'){
           if(v<=1.2) s+=2;
         }
       }
@@ -217,12 +533,7 @@ function scoreDDX(mets,ratios){
       t+=2;
       const v=parseFloat(ratios.choNaa);
       if(!isNaN(v)){
-        // Cho/NAA > 2 → malignite
-        // But this is NAA/Cho, so NAA/Cho < 0.5 → malignite
-        // Wait, the ratio card is NAA/Cho. Normal=1.6. <1.6 azalmış
-        // Let me check: in the drawio NAA/Cho normal=1.6
-        // Low NAA/Cho means high Cho relative to NAA → tumor
-        if(d.name.includes('glioma')||d.name.includes('Glioblastoma')||d.name.includes('Lenfoma')){
+        if(dname.toLowerCase().includes('gliom')||dname.toLowerCase().includes('glioblastoma')||dname.toLowerCase().includes('lymphoma')||dname.toLowerCase().includes('lenfoma')){
           if(v<1.6) s+=2;
         }
       }
@@ -231,7 +542,7 @@ function scoreDDX(mets,ratios){
       t+=2;
       const v=parseFloat(ratios.naaCr);
       if(!isNaN(v)){
-        if(d.match.naa==='Düşük'||d.match.naa==='Pik Yok'){
+        if(d.match.naa===OPT_LOW||d.match.naa===OPT_NONE){
           if(v<2.0) s+=2;
         } else {
           if(v>=2.0) s+=2;
@@ -239,18 +550,14 @@ function scoreDDX(mets,ratios){
       }
     }
     // Special metabolite bonuses
-    if(d.name==='Abse'){
-      if(mets.asetat==='Yüksek') s+=2;
-      if(mets.suksinat==='Yüksek') s+=2;
-      if(mets.val==='Yüksek') s+=2;
+    if(d.nameKey==='ddxAbse'){
+      if(mets.asetat===OPT_HIGH) s+=2;
+      if(mets.suksinat===OPT_HIGH) s+=2;
+      if(mets.val===OPT_HIGH) s+=2;
       t+=6;
     }
-    if(d.name==='Menenjioma'){
-      if(mets.alanin==='Yüksek') s+=3;
-      t+=3;
-    }
-    if(d.name.includes('2-HG')||d.name.includes('IDH')){
-      if(mets.hg2==='Yüksek') s+=3;
+    if(d.nameKey==='ddxMeningioma'){
+      if(mets.alanin===OPT_HIGH) s+=3;
       t+=3;
     }
 
@@ -261,38 +568,36 @@ function scoreDDX(mets,ratios){
 
 function genYorum(mets,ratios){
   let sev=0,f=[];
-  if(mets.naa==='Düşük'){sev+=15;f.push('NAA azalmış (nöronal kayıp)');}
-  if(mets.naa==='Pik Yok'){sev+=20;f.push('NAA piki yok');}
-  if(mets.cho==='Yüksek'){sev+=20;f.push('Kolin artmış (hücre proliferasyonu)');}
-  if(mets.cho==='Pik Yok'){sev+=5;f.push('Kolin piki yok (ekstraaksiyel/abse)');}
-  if(mets.laktat==='Yüksek'){sev+=15;f.push('Laktat yüksek (anaerobik metabolizma)');}
-  if(mets.lipit==='Yüksek'){sev+=15;f.push('Lipit yüksek (nekroz)');}
-  if(mets.alanin==='Yüksek'){f.push('Alanin piki (menenjioma)');}
-  if(mets.asetat==='Yüksek'&&mets.suksinat==='Yüksek'){sev+=10;f.push('Asetat + süksinat (abse paterni)');}
-  if(mets.hg2==='Yüksek'){f.push('2-HG piki (IDH mutant gliom)');}
+  if(mets.naa===OPT_LOW){sev+=15;f.push(T.fNaaLow);}
+  if(mets.naa===OPT_NONE){sev+=20;f.push(T.fNaaNone);}
+  if(mets.cho===OPT_HIGH){sev+=20;f.push(T.fChoHigh);}
+  if(mets.cho===OPT_NONE){sev+=5;f.push(T.fChoNone);}
+  if(mets.laktat===OPT_HIGH){sev+=15;f.push(T.fLaktatHigh);}
+  if(mets.lipit===OPT_HIGH){sev+=15;f.push(T.fLipitHigh);}
+  if(mets.alanin===OPT_HIGH){f.push(T.fAlaninHigh);}
+  if(mets.asetat===OPT_HIGH&&mets.suksinat===OPT_HIGH){sev+=10;f.push(T.fAbsePattern);}
+  if(mets.hg2===OPT_HIGH){f.push(T.fHg2High);}
 
   const naaCr=parseFloat(ratios.naaCr);
-  if(!isNaN(naaCr)&&naaCr<2.0){sev+=10;f.push(`NAA/Cr=${naaCr} (azalmış)`);}
+  if(!isNaN(naaCr)&&naaCr<2.0){sev+=10;f.push(T.fNaaCrLow(naaCr));}
   const choNaa=parseFloat(ratios.choNaa);
-  // Actually: drawio shows NAA/Cho. If NAA/Cho < 1.6 → azalmış → tumoral
-  if(!isNaN(choNaa)&&choNaa<1.6){sev+=10;f.push(`NAA/Cho=${choNaa} (azalmış → tümöral)`);}
+  if(!isNaN(choNaa)&&choNaa<1.6){sev+=10;f.push(T.fChoNaaLow(choNaa));}
   const choCr=parseFloat(ratios.choCr);
-  if(!isNaN(choCr)&&choCr>1.2){sev+=10;f.push(`Cho/Cr=${choCr} (artmış → proliferasyon)`);}
+  if(!isNaN(choCr)&&choCr>1.2){sev+=10;f.push(T.fChoCrHigh(choCr));}
 
   sev=Math.min(sev,100);
   const color=sev>=60?'var(--rd)':sev>=30?'var(--am)':'var(--gn)';
   let text='';
-  if(sev>=60) text=`Yüksek şüpheli metabolik profil: ${f.join('; ')}. Tümöral/nekrotik süreç ön planda.`;
-  else if(sev>=30) text=`Orta düzeyde anormal metabolik bulgular: ${f.join('; ')}. Klinik korelasyon ve takip önerilir.`;
-  else if(f.length) text=`Hafif metabolik değişiklikler: ${f.join('; ')}. Benign/nonspesifik bulgular.`;
-  else text='Normal metabolik profil. Belirgin patolojik metabolik değişiklik saptanmadı.';
+  if(sev>=60) text=T.sevHigh(f);
+  else if(sev>=30) text=T.sevMed(f);
+  else if(f.length) text=T.sevLow(f);
+  else text=T.sevNone;
   return {text,sev,color};
 }
 
 /* ══════════ APP ══════════ */
 function App(){
   const [step,setStep]=useState(0);
-  // 0=Ana metabolitler, 1=Ek metabolitler, 2=Oranlar, 3=Rapor
   const [mets,setMets]=useState(()=>{
     const o={};METABOLITES.forEach(m=>o[m.key]='');return o;
   });
@@ -302,15 +607,15 @@ function App(){
   const setMet=(k,v)=>setMets(prev=>({...prev,[k]:v}));
   const anaM=METABOLITES.filter(m=>m.group==='ana');
   const ekM=METABOLITES.filter(m=>m.group==='ek');
-  const stepLabels=['Ana Metabolitler','Ek Metabolitler','Oranlar','Rapor'];
+  const stepLabels=[T.tabAna,T.tabEk,T.tabRatios,T.tabReport];
   const progress=Math.round((step/3)*100);
 
   // Ratio auto-classification
   const ratioStatus=(key,val)=>{
     const v=parseFloat(val);if(isNaN(v)) return null;
-    if(key==='naaCr') return v>=2.0?{label:'Normal',cls:'rc-normal'}:{label:'Azalmış',cls:'rc-low'};
-    if(key==='choNaa') return v>=1.6?{label:'Normal',cls:'rc-normal'}:{label:'Azalmış',cls:'rc-low'};
-    if(key==='choCr') return v<=1.2?{label:'Normal',cls:'rc-normal'}:{label:'Artmış',cls:'rc-high'};
+    if(key==='naaCr') return v>=2.0?{label:T.statNormal,cls:'rc-normal'}:{label:T.statDecreased,cls:'rc-low'};
+    if(key==='choNaa') return v>=1.6?{label:T.statNormal,cls:'rc-normal'}:{label:T.statDecreased,cls:'rc-low'};
+    if(key==='choCr') return v<=1.2?{label:T.statNormal,cls:'rc-normal'}:{label:T.statIncreased,cls:'rc-high'};
     return null;
   };
 
@@ -318,19 +623,19 @@ function App(){
   const renderMetPage=(list,title,icon)=>(
     <div className="cd" key={`met-${step}`}>
       <div className="cd-t">{icon} {title}</div>
-      <div className="cd-d">Her metabolit için pik durumunu seçiniz.</div>
+      <div className="cd-d">{T.pickStatus}</div>
       <div className="met-grid">
         {list.map(m=>(
           <div className="met-row" key={m.key}>
             <div className="met-info">
-              <div className="met-name">{m.name}</div>
+              <div className="met-name">{T[m.nameKey]}</div>
               <div className="met-ppm">{m.ppm}</div>
             </div>
             <div className="met-opts">
               {MET_OPTS.map(o=>(
                 <button key={o}
                   className={`mb ${mets[m.key]===o?`on ${optClass(o)}`:''}`}
-                  onClick={()=>setMet(m.key,o)}>{o}</button>
+                  onClick={()=>setMet(m.key,o)}>{optLabel(o)}</button>
               ))}
             </div>
           </div>
@@ -342,13 +647,13 @@ function App(){
   /* ═══ RENDER RATIOS ═══ */
   const renderRatios=()=>(
     <div className="cd" key="ratios">
-      <div className="cd-t">📊 Metabolit Oranları</div>
-      <div className="cd-d">Hesaplanan metabolit oranlarını giriniz. Otomatik olarak sınıflandırılacaktır.</div>
+      <div className="cd-t">📊 {T.ratiosTitle}</div>
+      <div className="cd-d">{T.ratiosDesc}</div>
       <div className="ratio-grid">
         {[
-          {key:'naaCr',label:'NAA / Cr',norm:'Normal ≈ 2.0'},
-          {key:'choNaa',label:'NAA / Cho',norm:'Normal ≈ 1.6'},
-          {key:'choCr',label:'Cho / Cr',norm:'Normal ≈ 1.2'},
+          {key:'naaCr', label:'NAA / Cr', norm:T.normNaaCr},
+          {key:'choNaa',label:'NAA / Cho',norm:T.normChoNaa},
+          {key:'choCr', label:'Cho / Cr', norm:T.normChoCr},
         ].map(r=>{
           const st=ratioStatus(r.key,ratios[r.key]);
           return(
@@ -373,21 +678,21 @@ function App(){
   const renderReport=()=>(
     <div ref={rRef}>
       <div className="cd" style={{textAlign:'center',background:'linear-gradient(135deg,var(--sf),var(--sf2))'}}>
-        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>🧠 Beyin MR Spektroskopi Raporu</h2>
-        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>🧠 {T.reportTitle}</h2>
+        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>{T.reportDate}: {new Date().toLocaleDateString(RV_LOCALE==='en'?'en-GB':'tr-TR')}</p>
       </div>
 
       {/* Metabolitler Tablosu */}
       <div className="rps">
-        <h3>📈 Metabolit Profili</h3>
+        <h3>📈 {T.metProfile}</h3>
         <table className="rt">
-          <thead><tr><th>Metabolit</th><th>ppm</th><th>Durum</th></tr></thead>
+          <thead><tr><th>{T.colMetabolite}</th><th>ppm</th><th>{T.colStatus}</th></tr></thead>
           <tbody>
             {METABOLITES.filter(m=>mets[m.key]&&mets[m.key]!=='').map(m=>(
               <tr key={m.key}>
-                <td className="l">{m.name}</td>
+                <td className="l">{T[m.nameKey]}</td>
                 <td className="l" style={{fontFamily:'JetBrains Mono',fontSize:'.75rem'}}>{m.ppm}</td>
-                <td><span className={badgeClass(mets[m.key])}>{mets[m.key]}</span></td>
+                <td><span className={badgeClass(mets[m.key])}>{optLabel(mets[m.key])}</span></td>
               </tr>
             ))}
           </tbody>
@@ -396,14 +701,14 @@ function App(){
 
       {/* Oranlar */}
       <div className="rps">
-        <h3>📊 Metabolit Oranları</h3>
+        <h3>📊 {T.metRatios}</h3>
         <table className="rt">
-          <thead><tr><th>Oran</th><th>Değer</th><th>Durum</th></tr></thead>
+          <thead><tr><th>{T.colRatio}</th><th>{T.colValue}</th><th>{T.colStatus}</th></tr></thead>
           <tbody>
             {[
-              {key:'naaCr',label:'NAA / Cr',norm:2.0},
+              {key:'naaCr', label:'NAA / Cr', norm:2.0},
               {key:'choNaa',label:'NAA / Cho',norm:1.6},
-              {key:'choCr',label:'Cho / Cr',norm:1.2},
+              {key:'choCr', label:'Cho / Cr', norm:1.2},
             ].map(r=>{
               const v=ratios[r.key];
               const st=ratioStatus(r.key,v);
@@ -411,7 +716,7 @@ function App(){
                 <tr key={r.key}>
                   <td className="l">{r.label}</td>
                   <td className="v" style={{fontFamily:'JetBrains Mono'}}>{v}</td>
-                  <td>{st&&<span className={badgeClass(st.cls.includes('high')?'Yüksek':st.cls.includes('low')?'Düşük':'Normal')}>{st.label}</span>}</td>
+                  <td>{st&&<span className={badgeClass(st.cls.includes('high')?OPT_HIGH:st.cls.includes('low')?OPT_LOW:OPT_NORMAL)}>{st.label}</span>}</td>
                 </tr>
               ):null;
             })}
@@ -422,10 +727,10 @@ function App(){
       {/* YORUM */}
       <div className="rps">
         <div className="yb" style={{margin:0}}>
-          <div className="yt">📊 YORUM</div>
+          <div className="yt">📊 {T.commentary}</div>
           <div className="yx">{yorum.text}</div>
           <div style={{display:'flex',alignItems:'center',gap:7,fontSize:'.72rem',color:'var(--tx3)'}}>
-            <span>Şüphe</span>
+            <span>{T.suspicion}</span>
             <div className="svb" style={{flex:1}}><div className="svf" style={{width:`${yorum.sev}%`,background:yorum.color}}/></div>
             <span style={{color:yorum.color,fontWeight:600}}>{yorum.sev}%</span>
           </div>
@@ -434,19 +739,19 @@ function App(){
 
       {/* Ayırıcı Tanı */}
       <div className="rps">
-        <h3>🔍 Ayırıcı Tanı</h3>
+        <h3>🔍 {T.ddxTitle}</h3>
         <table className="dt">
-          <thead><tr><th>Patoloji</th><th>Uyum</th><th>NAA</th><th>Cho</th><th>Lak</th><th>Lip</th><th>Tipik Özellik</th></tr></thead>
+          <thead><tr><th>{T.colPathology}</th><th>{T.colMatch}</th><th>NAA</th><th>Cho</th><th>{T.colLak}</th><th>{T.colLip}</th><th>{T.colTypical}</th></tr></thead>
           <tbody>
             {dx.map((d,i)=>(
               <tr key={i} className={d.pct>=60?'mt':''}>
-                <td style={{fontWeight:d.pct>=60?600:400}}>{d.name}</td>
+                <td style={{fontWeight:d.pct>=60?600:400}}>{T[d.nameKey]}</td>
                 <td><span className={`ms ${d.pct>=70?'mh':d.pct>=40?'mm':'ml'}`}>{d.pct}%</span></td>
                 <td>{d.naa}</td>
                 <td>{d.cho}</td>
                 <td>{d.lak}</td>
                 <td>{d.lip}</td>
-                <td style={{fontSize:'.68rem',maxWidth:180}}>{d.extra}</td>
+                <td style={{fontSize:'.68rem',maxWidth:180}}>{T[d.extraKey]}</td>
               </tr>
             ))}
           </tbody>
@@ -455,44 +760,44 @@ function App(){
 
       {/* Metabolit Klinik Anlam Referansı */}
       <div className="rps">
-        <h3>📌 Metabolit Referans Tablosu</h3>
+        <h3>📌 {T.refTable}</h3>
         <table className="rt">
-          <thead><tr><th>Metabolit</th><th>Klinik Anlam</th></tr></thead>
+          <thead><tr><th>{T.colMetabolite}</th><th>{T.colClinical}</th></tr></thead>
           <tbody>
-            <tr><td className="l">NAA</td><td className="v">Nöronal bütünlüğü gösterir (tümör ve hasarda azalır)</td></tr>
-            <tr><td className="l">Kolin (Cho)</td><td className="v">Hücre membranı dönüşümü ve proliferasyon (tümörlerde artar)</td></tr>
-            <tr><td className="l">Kreatin (Cr)</td><td className="v">Enerji metabolizması (referans metabolit)</td></tr>
-            <tr><td className="l">Laktat</td><td className="v">Anaerobik metabolizma, nekroz veya hipoksi</td></tr>
-            <tr><td className="l">Lipit</td><td className="v">Nekroz, yüksek dereceli tümör veya enfeksiyon</td></tr>
+            <tr><td className="l">NAA</td><td className="v">{T.refNaa}</td></tr>
+            <tr><td className="l">{T.metCho}</td><td className="v">{T.refCho}</td></tr>
+            <tr><td className="l">{T.metCr}</td><td className="v">{T.refCr}</td></tr>
+            <tr><td className="l">{T.metLaktat}</td><td className="v">{T.refLaktat}</td></tr>
+            <tr><td className="l">{T.metLipit}</td><td className="v">{T.refLipit}</td></tr>
           </tbody>
         </table>
       </div>
 
       {/* Hızlı kurallar */}
       <div className="rps">
-        <h3>📌 Ayırıcı Tanı İpuçları</h3>
+        <h3>📌 {T.ddxTips}</h3>
         <table className="dt">
-          <thead><tr><th>Patern</th><th>Olası Tanı</th></tr></thead>
+          <thead><tr><th>{T.colPattern}</th><th>{T.colDiag}</th></tr></thead>
           <tbody>
-            <tr><td>Cho ↑ + NAA ↓ + Cho/NAA &gt; 2</td><td style={{fontWeight:600}}>Malignite (high-grade gliom)</td></tr>
-            <tr><td>Lipit ↑ + Laktat ↑</td><td style={{fontWeight:600}}>Nekroz veya enfeksiyon</td></tr>
-            <tr><td>NAA yok + Cho yok + Cr yok + Aminoasit/Asetat/Süksinat</td><td style={{fontWeight:600}}>Abse</td></tr>
-            <tr><td>Alanin piki</td><td style={{fontWeight:600}}>Menenjioma</td></tr>
-            <tr><td>Cho ↑ + NAA ↓ + Lipit yok</td><td style={{fontWeight:600}}>Multiple Skleroz (aktif plak)</td></tr>
-            <tr><td>Cho ↓ + NAA ↓ + Lipit ↑↑</td><td style={{fontWeight:600}}>Radyasyon Nekrozu</td></tr>
-            <tr><td>2-HG piki</td><td style={{fontWeight:600}}>IDH-mutant gliom</td></tr>
-            <tr><td>Cho/NAA &gt; 2</td><td style={{fontWeight:600}}>Malignite düşündürür</td></tr>
-            <tr><td>Cho/Cr ↑</td><td style={{fontWeight:600}}>Tümör proliferasyonu</td></tr>
-            <tr><td>NAA/Cr ↓</td><td style={{fontWeight:600}}>Nöronal kayıp</td></tr>
+            <tr><td>{T.tip1Pattern}</td><td style={{fontWeight:600}}>{T.tip1Diag}</td></tr>
+            <tr><td>{T.tip2Pattern}</td><td style={{fontWeight:600}}>{T.tip2Diag}</td></tr>
+            <tr><td>{T.tip3Pattern}</td><td style={{fontWeight:600}}>{T.tip3Diag}</td></tr>
+            <tr><td>{T.tip4Pattern}</td><td style={{fontWeight:600}}>{T.tip4Diag}</td></tr>
+            <tr><td>{T.tip5Pattern}</td><td style={{fontWeight:600}}>{T.tip5Diag}</td></tr>
+            <tr><td>{T.tip6Pattern}</td><td style={{fontWeight:600}}>{T.tip6Diag}</td></tr>
+            <tr><td>{T.tip7Pattern}</td><td style={{fontWeight:600}}>{T.tip7Diag}</td></tr>
+            <tr><td>{T.tip8Pattern}</td><td style={{fontWeight:600}}>{T.tip8Diag}</td></tr>
+            <tr><td>{T.tip9Pattern}</td><td style={{fontWeight:600}}>{T.tip9Diag}</td></tr>
+            <tr><td>{T.tip10Pattern}</td><td style={{fontWeight:600}}>{T.tip10Diag}</td></tr>
           </tbody>
         </table>
       </div>
 
       <div className="exr">
-        <button className="exb" onClick={()=>window.print()}>🖨️ PDF Yazdır</button>
-        <button className="exb" onClick={handleCopy}>📋 HTML Kopyala</button>
-        <button className="bt bt2 bts" onClick={()=>setStep(2)}>← Düzenle</button>
-        <button className="bt btd bts" onClick={handleReset}>🔄 Sıfırla</button>
+        <button className="exb" onClick={()=>window.print()}>🖨️ {T.btnPrint}</button>
+        <button className="exb" onClick={handleCopy}>📋 {T.btnCopy}</button>
+        <button className="bt bt2 bts" onClick={()=>setStep(2)}>← {T.btnEdit}</button>
+        <button className="bt btd bts" onClick={handleReset}>🔄 {T.btnReset}</button>
       </div>
     </div>
   );
@@ -503,10 +808,10 @@ function App(){
     ta.value=rRef.current.innerHTML;
     document.body.appendChild(ta);ta.select();
     document.execCommand('copy');document.body.removeChild(ta);
-    alert('Rapor HTML olarak panoya kopyalandı!');
+    alert(T.copyAlert);
   };
   const handleReset=()=>{
-    if(!confirm('Tüm verileri sıfırlamak istediğinize emin misiniz?'))return;
+    if(!confirm(T.resetConfirm))return;
     const o={};METABOLITES.forEach(m=>o[m.key]='');
     setMets(o);setRatios({naaCr:'',choNaa:'',choCr:''});setStep(0);
   };
@@ -514,8 +819,8 @@ function App(){
   return(
     <div className="wrap">
       <div className="hdr">
-        <h1>Beyin MR Spektroskopi Karar Destek</h1>
-        <div className="sub">Metabolit Analizi & Ayırıcı Tanı</div>
+        <h1>{T.appTitle}</h1>
+        <div className="sub">{T.appSub}</div>
       </div>
 
       {step<3&&(
@@ -534,18 +839,18 @@ function App(){
 
       {step===0&&(
         <>
-          {renderMetPage(anaM,'Ana Metabolitler','🧬')}
+          {renderMetPage(anaM,T.tabAna,'🧬')}
           <div className="br">
-            <button className="bt bt1" onClick={()=>setStep(1)}>İleri →</button>
+            <button className="bt bt1" onClick={()=>setStep(1)}>{T.btnNext}</button>
           </div>
         </>
       )}
       {step===1&&(
         <>
-          {renderMetPage(ekM,'Ek Metabolitler','🔬')}
+          {renderMetPage(ekM,T.tabEk,'🔬')}
           <div className="br">
-            <button className="bt bt2" onClick={()=>setStep(0)}>← Geri</button>
-            <button className="bt bt1" onClick={()=>setStep(2)}>İleri →</button>
+            <button className="bt bt2" onClick={()=>setStep(0)}>{T.btnBack}</button>
+            <button className="bt bt1" onClick={()=>setStep(2)}>{T.btnNext}</button>
           </div>
         </>
       )}
@@ -553,8 +858,8 @@ function App(){
         <>
           {renderRatios()}
           <div className="br">
-            <button className="bt bt2" onClick={()=>setStep(1)}>← Geri</button>
-            <button className="bt bt3" onClick={()=>setStep(3)}>Rapor Oluştur ✓</button>
+            <button className="bt bt2" onClick={()=>setStep(1)}>{T.btnBack}</button>
+            <button className="bt bt3" onClick={()=>setStep(3)}>{T.btnGenReport}</button>
           </div>
         </>
       )}

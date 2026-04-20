@@ -77,187 +77,337 @@ body{background:#fff;color:#000}
 .rt th{background:#4a7adf;color:#fff}.rt td{color:#000}
 }
 </style>
-<!-- radvisor-atlas bridge -->
-<script src="/bridge.js"></script>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Lenf Nodu MRI Karar Destek Sistemi',
+    step: 'ADIM',
+    stepLabelNodeEval: 'Lenf Nodu Değerlendirmesi',
+    stepSubNodeEval: 'Patolojik lenf nodlarını ekleyin',
+    stepLabelNodeSummary: 'Lenf Nodu Özeti',
+    stepSubNodeSummary: function(count) { return 'Toplam ' + count + ' lenf nodu'; },
+    nodLabel: function(i) { return 'Nod ' + i; },
+    nodLabelWithSize: function(i, kisa) { return 'Nod ' + i + ' (' + kisa + 'mm)'; },
+    nodLabelWithRegion: function(i, kisa, region) { return 'Nod ' + i + (kisa ? ' (' + kisa + 'mm)' : '') + (region ? ' \u2014 ' + region : ''); },
+    addNode: '+ Lenf Nodu Ekle',
+    addAnotherNode: '+ Başka Nod Ekle',
+    addNewNode: '+ Yeni Nod Ekle',
+    noPathNodes: 'Patolojik lenf nodu yoksa rapora ilerleyin.',
+    nodSubStep: function(sub, total) { return 'Alt adım ' + sub + '/' + total; },
+    nodTitle: function(i, lbl) { return 'Nod ' + i + ' \u2014 ' + lbl; },
+    diffMatchTitle: function(i) { return 'Nod ' + i + ' \u2014 Ayırıcı Tanı Eşleştirmesi'; },
+    diffTitle: function(i) { return 'Nod ' + i + ' \u2014 Ayırıcı Tanı'; },
+    backToList: 'Nod Listesine Dön',
+    noData: 'Yeterli veri yok.',
+    delete: '\u2715 Sil',
+    malign: 'MALİGN',
+    suspicious: 'ŞÜPHELİ',
+    benign: 'BENİGN',
+    printPdf: '\uD83D\uDDA8 PDF Yazdır',
+    copyReport: '\uD83D\uDCCB Kopyala',
+    exportHtml: '\uD83D\uDCE5 HTML İndir',
+    copied: 'Rapor panoya kopyalandı!',
+    createReport: '\uD83D\uDCCB Rapor Oluştur',
+    newReport: '\uD83D\uDD04 Yeni',
+    editReport: '\u2190 Düzenle',
+    prevBtn: '\u2190 Geri',
+    nextBtn: 'Sonraki \u2192',
+    finishBtn: 'Tamamla \u2713',
+    reportTitle: 'LENF NODU MRI \u2014 YAPISAL RAPOR',
+    noPathNodesReport: 'Patolojik lenf nodu saptanmamıştır.',
+    labelRegion: 'Bölge / Taraf',
+    labelAxes: 'Kısa Aks / Uzun Aks',
+    labelMorphology: 'Morfoloji',
+    labelHilus: 'Hilus',
+    labelCortex: 'Korteks',
+    labelT1T2: 'T1A / T2A',
+    labelInOut: 'In/Out-Phase',
+    labelDwiAdc: 'DWI / ADC',
+    labelContrast: 'Arterial / PV / Geç',
+    labelComment: 'YORUM',
+    shortAxisMeasure: 'Kısa aks ölçümü',
+    longAxisMeasure: 'Uzun aks ölçümü',
+    ratioCalc: function(ratio, shape) { return 'Hesaplanan oran: ' + ratio + (shape === 'oval' ? ' (Oval)' : ' (Yuvarlak)'); },
+    fieldRegion: 'Anatomik Bölge',
+    fieldSide: 'Taraf',
+    fieldShortAxis: 'Kısa Aks',
+    fieldLongAxis: 'Uzun Aks',
+    fieldShape: 'Morfoloji (Şekil)',
+    fieldHilus: 'Hilus Durumu',
+    fieldCortex: 'Korteks',
+    fieldT1: 'T1A Sinyal',
+    fieldT2: 'T2A Sinyal',
+    fieldIO: 'In-Phase / Out-Phase',
+    fieldDWI: 'DWI',
+    fieldADC: 'ADC',
+    fieldArt: 'Arterial Faz',
+    fieldPV: 'Portal Venöz Faz',
+    fieldLate: 'Geç Faz',
+    fieldResult: 'Ayırıcı Tanı Sonucu',
+    exportFileTitle: 'Lenf Nodu MRI Rapor',
+    exportFileName: 'lenf_nodu_mri_rapor.html',
+    sizeWarnNeck: ' Kısa aks boyut kriteri aşılmıştır (boyun: 10mm sınırı).',
+    sizeWarnRetropharyngeal: ' Retrofaringeal bölgede 8mm sınırı aşılmıştır.',
+    sizeWarnInguinal: ' İnguinal bölgede 15mm sınırı aşılmıştır.',
+    sizeWarnMediastinal: ' Mediastinal/hiler bölgede 10mm sınırı aşılmıştır.',
+    sizeWarnGeneral: ' Kısa aks 10mm sınırını aşmıştır.',
+    commentMatch: function(i, region, side, kisa, name, pct) { return 'Nod ' + i + ' (' + region + ', ' + side + ', kısa aks ' + kisa + 'mm): Sinyal profili en çok ' + name + ' ile uyumludur (%' + pct + ' eşleşme).'; },
+    commentMalign: ' MALİGNİTE AÇISINDAN DİKKATLİ DEĞERLENDİRİLMELİDİR.',
+    commentAlternative: function(name, pct) { return ' Ayırıcı tanıda ' + name + ' (%' + pct + ') de düşünülmelidir.'; },
+    commentAdcVeryLow: ' ADC değeri çok düşük olup lenfoma olasılığı yüksektir.',
+    commentAdcLow: ' ADC değeri düşük olup malignite olasılığı artmıştır.',
+    commentHilusPreserved: ' Yağlı hilusun korunması benign lehine bulgudur.',
+    commentRoundHilusLost: ' Yuvarlak morfoloji + hilus kaybı malignite lehine önemli morfolojik bulgulardır.',
+    commentTitle: function(i, name, pct) { return 'Nod ' + i + ': ' + name + ' (%' + pct + ')'; },
+    regionGroups: ['Baş-Boyun','Toraks','Abdomen','Pelvis'],
+    sides: ['Sağ','Sol','Bilateral','Midline'],
+    t1Opts: ['İzointens','Hipointens','Hiperintens','Hiperintens hilus','Heterojen'],
+    t2Opts: ['Hipointens','İzointens','Hafif hiperintens','Hiperintens','Heterojen hiperintens','Çok hiperintens'],
+    ioOpts: ['Değişiklik yok','Out-phase sinyal düşüşü'],
+    dwiOpts: ['Restriksiyon yok','Hafif hiperintens','Güçlü hiperintens','Periferik hiperintens','Shine-through'],
+    adcOpts: ['Normal','Hafif düşük','Düşük','Çok düşük','Düşük periferik','Hiperintens'],
+    artOpts: ['Kontrastlanma yok','Minimal','Hafif homojen','Homojen','Heterojen','Rim','Heterojen/Rim'],
+    pvOpts: ['Kontrastlanma yok','Minimal','Homojen','Heterojen','Rim'],
+    lateOpts: ['Kontrastlanma yok','Minimal','Persistan','Rim'],
+    shapes: ['Oval (uzun aks/kısa aks > 2)','Yuvarlak (uzun aks/kısa aks \u2248 1)'],
+    hilus: ['Korunmuş (yağlı hilus mevcut)','Kaybolmuş','Kısmen korunmuş'],
+    cortex: ['İnce ve düzenli','Kalınlaşmış (asimetrik)','Kalınlaşmış (konsantrik)','Düzensiz','Nekrotik merkez'],
+    diffNames: ['Normal Lenf Nodu','Reaktif Lenfadenopati','Metastatik Lenf Nodu','Nekrotik Metastatik Nod','Lenfoma','Tüberküloz Lenfadenit','Granülomatöz Hastalık (Sarkoidoz)','Yağlı Hilus \u2014 Benign Nod','Kistik Lenf Nodu','Anjioimmünoblastik / İnflamatuvar'],
+    diffDescs: [
+      'Oval morfoloji, yağlı hilus korunmuş, ince korteks. T2A hafif hiperintens, DWI hafif, ADC normal.',
+      'Büyümüş ancak oval morfolojiyi ve yağlı hilusu koruyan lenf nodu. Homojen kontrastlanma.',
+      'Yuvarlak morfoloji, hilus kaybı, heterojen kontrastlanma. Güçlü DWI restriksiyon ve düşük ADC.',
+      'Santral nekroz + rim kontrastlanma paterni. T2A merkezde çok yüksek sinyal. DWI periferik restriksiyon.',
+      'Multipl büyük homojen nodlar. Çok güçlü DWI restriksiyon ve çok düşük ADC (<0.8\u00D710\u207B\u00B3). Homojen kontrastlanma.',
+      'Nekrotik metastatik nodla benzer görünüm. Rim kontrastlanma + kazöz nekroz. Konglomerat pattern ayırt edici olabilir.',
+      'T1+T2 hipointens (fibrozis). Minimal kontrastlanma. DWI genellikle negatif. Bilateral hiler LAP sarkoidozda tipik.',
+      'Out-phase sinyal düşüşü (intrasellüler yağ) patognomoniktir. Yağlı hilus belirgin.',
+      'Basit kist sinyali: T1 düşük, T2 çok yüksek, kontrastlanma yok. DWI shine-through (gerçek restriksiyon değil).',
+      'Reaktif lenfadenopatiye benzer ancak daha belirgin kontrastlanma ve olası DWI restriksiyon. Klinik korelasyon gerektirir.'
+    ],
+    diffKeys: [
+      ['Oval','Yağlı hilus (+)','İnce korteks','Normal ADC'],
+      ['Oval korunmuş','Hilus (+)','Homojen CE','T2 hiperintens'],
+      ['Yuvarlak','Hilus kayıp','Heterojen CE','DWI(+)','Düşük ADC'],
+      ['Nekrotik merkez','Rim CE','T2 çok yüksek','Periferik DWI'],
+      ['Çok düşük ADC','Güçlü DWI','Homojen CE','Multipl büyük'],
+      ['Rim CE','Kazöz nekroz','Konglomerat','Nekrotik metastazla benzer'],
+      ['T1+T2 düşük','Minimal CE','DWI negatif','Fibrozis/kalsifikasyon'],
+      ['Out-phase sinyal kaybı','Yağlı hilus','Oval','Benign'],
+      ['T2 çok yüksek','CE yok','Shine-through','ADC yüksek'],
+      ['Homojen CE','T2 hiperintens','Klinik korelasyon','İnflamatuvar']
+    ],
+    adcVeryLow: 'Çok düşük',
+    adcLow: 'Düşük',
+    hilusPreserved: 'Korunmuş (yağlı hilus mevcut)',
+    shapeRound: 'Yuvarlak',
+    hilusLost: 'Kaybolmuş'
+  },
+  en: {
+    appTitle: 'Lymph Node MRI Decision Support System',
+    step: 'STEP',
+    stepLabelNodeEval: 'Lymph Node Evaluation',
+    stepSubNodeEval: 'Add pathological lymph nodes',
+    stepLabelNodeSummary: 'Lymph Node Summary',
+    stepSubNodeSummary: function(count) { return 'Total ' + count + ' lymph node(s)'; },
+    nodLabel: function(i) { return 'Node ' + i; },
+    nodLabelWithSize: function(i, kisa) { return 'Node ' + i + ' (' + kisa + 'mm)'; },
+    nodLabelWithRegion: function(i, kisa, region) { return 'Node ' + i + (kisa ? ' (' + kisa + 'mm)' : '') + (region ? ' \u2014 ' + region : ''); },
+    addNode: '+ Add Lymph Node',
+    addAnotherNode: '+ Add Another Node',
+    addNewNode: '+ Add New Node',
+    noPathNodes: 'If no pathological lymph node, proceed to report.',
+    nodSubStep: function(sub, total) { return 'Sub-step ' + sub + '/' + total; },
+    nodTitle: function(i, lbl) { return 'Node ' + i + ' \u2014 ' + lbl; },
+    diffMatchTitle: function(i) { return 'Node ' + i + ' \u2014 Differential Diagnosis Match'; },
+    diffTitle: function(i) { return 'Node ' + i + ' \u2014 Differential Diagnosis'; },
+    backToList: 'Back to Node List',
+    noData: 'Insufficient data.',
+    delete: '\u2715 Remove',
+    malign: 'MALIGNANT',
+    suspicious: 'SUSPICIOUS',
+    benign: 'BENIGN',
+    printPdf: '\uD83D\uDDA8 Print PDF',
+    copyReport: '\uD83D\uDCCB Copy',
+    exportHtml: '\uD83D\uDCE5 Export HTML',
+    copied: 'Report copied to clipboard!',
+    createReport: '\uD83D\uDCCB Create Report',
+    newReport: '\uD83D\uDD04 New',
+    editReport: '\u2190 Edit',
+    prevBtn: '\u2190 Back',
+    nextBtn: 'Next \u2192',
+    finishBtn: 'Finish \u2713',
+    reportTitle: 'LYMPH NODE MRI \u2014 STRUCTURED REPORT',
+    noPathNodesReport: 'No pathological lymph node detected.',
+    labelRegion: 'Region / Side',
+    labelAxes: 'Short Axis / Long Axis',
+    labelMorphology: 'Morphology',
+    labelHilus: 'Hilum',
+    labelCortex: 'Cortex',
+    labelT1T2: 'T1W / T2W',
+    labelInOut: 'In/Out-Phase',
+    labelDwiAdc: 'DWI / ADC',
+    labelContrast: 'Arterial / PV / Late',
+    labelComment: 'IMPRESSION',
+    shortAxisMeasure: 'Short axis measurement',
+    longAxisMeasure: 'Long axis measurement',
+    ratioCalc: function(ratio, shape) { return 'Calculated ratio: ' + ratio + (shape === 'oval' ? ' (Oval)' : ' (Round)'); },
+    fieldRegion: 'Anatomic Region',
+    fieldSide: 'Side',
+    fieldShortAxis: 'Short Axis',
+    fieldLongAxis: 'Long Axis',
+    fieldShape: 'Morphology (Shape)',
+    fieldHilus: 'Hilum Status',
+    fieldCortex: 'Cortex',
+    fieldT1: 'T1W Signal',
+    fieldT2: 'T2W Signal',
+    fieldIO: 'In-Phase / Out-Phase',
+    fieldDWI: 'DWI',
+    fieldADC: 'ADC',
+    fieldArt: 'Arterial Phase',
+    fieldPV: 'Portal Venous Phase',
+    fieldLate: 'Late Phase',
+    fieldResult: 'Differential Diagnosis Result',
+    exportFileTitle: 'Lymph Node MRI Report',
+    exportFileName: 'lymph_node_mri_report.html',
+    sizeWarnNeck: ' Short axis size criterion exceeded (neck: 10 mm threshold).',
+    sizeWarnRetropharyngeal: ' Retropharyngeal region 8 mm threshold exceeded.',
+    sizeWarnInguinal: ' Inguinal region 15 mm threshold exceeded.',
+    sizeWarnMediastinal: ' Mediastinal/hilar region 10 mm threshold exceeded.',
+    sizeWarnGeneral: ' Short axis exceeds 10 mm threshold.',
+    commentMatch: function(i, region, side, kisa, name, pct) { return 'Node ' + i + ' (' + region + ', ' + side + ', short axis ' + kisa + 'mm): Signal profile most consistent with ' + name + ' (' + pct + '% match).'; },
+    commentMalign: ' SHOULD BE CAREFULLY EVALUATED FOR MALIGNANCY.',
+    commentAlternative: function(name, pct) { return ' ' + name + ' (' + pct + '%) should also be considered in the differential.'; },
+    commentAdcVeryLow: ' ADC value is very low, raising high suspicion for lymphoma.',
+    commentAdcLow: ' ADC value is low, increasing the likelihood of malignancy.',
+    commentHilusPreserved: ' Preservation of fatty hilum is a finding in favor of benignity.',
+    commentRoundHilusLost: ' Round morphology + loss of hilum are important morphologic findings in favor of malignancy.',
+    commentTitle: function(i, name, pct) { return 'Node ' + i + ': ' + name + ' (' + pct + '%)'; },
+    regionGroups: ['Head-Neck','Thorax','Abdomen','Pelvis'],
+    sides: ['Right','Left','Bilateral','Midline'],
+    t1Opts: ['Isointense','Hypointense','Hyperintense','Hyperintense hilum','Heterogeneous'],
+    t2Opts: ['Hypointense','Isointense','Mildly hyperintense','Hyperintense','Heterogeneously hyperintense','Markedly hyperintense'],
+    ioOpts: ['No change','Out-phase signal loss'],
+    dwiOpts: ['No restricted diffusion','Mildly hyperintense','Markedly hyperintense','Peripherally hyperintense','Shine-through'],
+    adcOpts: ['Normal','Mildly low','Low','Very low','Peripherally low','Hyperintense'],
+    artOpts: ['No enhancement','Minimal','Mild homogeneous','Homogeneous','Heterogeneous','Rim','Heterogeneous/Rim'],
+    pvOpts: ['No enhancement','Minimal','Homogeneous','Heterogeneous','Rim'],
+    lateOpts: ['No enhancement','Minimal','Persistent','Rim'],
+    shapes: ['Oval (long axis/short axis > 2)','Round (long axis/short axis \u2248 1)'],
+    hilus: ['Preserved (fatty hilum present)','Lost','Partially preserved'],
+    cortex: ['Thin and regular','Thickened (asymmetric)','Thickened (concentric)','Irregular','Necrotic center'],
+    diffNames: ['Normal Lymph Node','Reactive Lymphadenopathy','Metastatic Lymph Node','Necrotic Metastatic Node','Lymphoma','Tuberculous Lymphadenitis','Granulomatous Disease (Sarcoidosis)','Fatty Hilum \u2014 Benign Node','Cystic Lymph Node','Angioimmunoblastic / Inflammatory'],
+    diffDescs: [
+      'Oval morphology, fatty hilum preserved, thin cortex. T2W mildly hyperintense, DWI mildly restricted, ADC normal.',
+      'Enlarged but preserving oval morphology and fatty hilum. Homogeneous enhancement.',
+      'Round morphology, loss of hilum, heterogeneous enhancement. Markedly restricted diffusion and low ADC.',
+      'Central necrosis + rim enhancement pattern. Markedly high central T2W signal. Peripheral restricted diffusion on DWI.',
+      'Multiple large homogeneous nodes. Markedly restricted diffusion and very low ADC (<0.8\u00D710\u207B\u00B3). Homogeneous enhancement.',
+      'Appearance similar to necrotic metastatic node. Rim enhancement + caseous necrosis. Conglomerated pattern may be distinguishing.',
+      'T1+T2 hypointense (fibrosis). Minimal enhancement. DWI usually negative. Bilateral hilar LAP typical in sarcoidosis.',
+      'Out-phase signal loss (intracellular fat) is pathognomonic. Fatty hilum prominent.',
+      'Simple cyst signal: T1 low, T2 markedly high, no enhancement. DWI shine-through (not true restricted diffusion).',
+      'Similar to reactive lymphadenopathy but more pronounced enhancement and possible restricted diffusion. Clinical correlation required.'
+    ],
+    diffKeys: [
+      ['Oval','Fatty hilum (+)','Thin cortex','Normal ADC'],
+      ['Oval preserved','Hilum (+)','Homogeneous CE','T2 hyperintense'],
+      ['Round','Hilum lost','Heterogeneous CE','DWI(+)','Low ADC'],
+      ['Necrotic center','Rim CE','T2 markedly high','Peripheral DWI'],
+      ['Very low ADC','Marked DWI','Homogeneous CE','Multiple large'],
+      ['Rim CE','Caseous necrosis','Conglomerated','Similar to necrotic metastasis'],
+      ['T1+T2 low','Minimal CE','DWI negative','Fibrosis/calcification'],
+      ['Out-phase signal loss','Fatty hilum','Oval','Benign'],
+      ['T2 markedly high','No CE','Shine-through','High ADC'],
+      ['Homogeneous CE','T2 hyperintense','Clinical correlation','Inflammatory']
+    ],
+    adcVeryLow: 'Very low',
+    adcLow: 'Low',
+    hilusPreserved: 'Preserved (fatty hilum present)',
+    shapeRound: 'Round',
+    hilusLost: 'Lost'
+  }
+})[RV_LOCALE];
+
 var useState = React.useState, Fragment = React.Fragment;
 
 /* ===== REGIONS ===== */
-var REGIONS = [
+var REGIONS_TR = [
   {g:'Baş-Boyun',r:['Submental (IA)','Submandibular (IB)','Üst Juguler (IIA/IIB)','Orta Juguler (III)','Alt Juguler (IV)','Posterior Üçgen (VA/VB)','Anterior Kompartman (VI)','Retrofaringeal','Parotid','Supraklavikular']},
   {g:'Toraks',r:['Mediastinal (Paratrakeal)','Mediastinal (Prevascular)','Mediastinal (Subkarinal)','Mediastinal (Paraözofageal)','Hiler','Aksiller (Level I)','Aksiller (Level II)','Aksiller (Level III)','İnternal Mammarian']},
   {g:'Abdomen',r:['Çölyak','Paraaortik','Parakavel','Retroperitoneal','Mezenterik','Hepatik Hilus','Splenik Hilus','Renal Hilus']},
   {g:'Pelvis',r:['İliak Kommon','İliak Eksternal','İliak İnternal (Obturator)','Presakral','Inguinal Yüzeyel','Inguinal Derin (Femoral)']}
 ];
+var REGIONS_EN = [
+  {g:'Head-Neck',r:['Submental (IA)','Submandibular (IB)','Upper Jugular (IIA/IIB)','Middle Jugular (III)','Lower Jugular (IV)','Posterior Triangle (VA/VB)','Anterior Compartment (VI)','Retropharyngeal','Parotid','Supraclavicular']},
+  {g:'Thorax',r:['Mediastinal (Paratracheal)','Mediastinal (Prevascular)','Mediastinal (Subcarinal)','Mediastinal (Paraesophageal)','Hilar','Axillary (Level I)','Axillary (Level II)','Axillary (Level III)','Internal Mammary']},
+  {g:'Abdomen',r:['Celiac','Para-aortic','Paracaval','Retroperitoneal','Mesenteric','Hepatic Hilum','Splenic Hilum','Renal Hilum']},
+  {g:'Pelvis',r:['Iliac (Common)','Iliac (External)','Iliac (Internal/Obturator)','Presacral','Superficial Inguinal','Deep Inguinal (Femoral)']}
+];
+var REGIONS = RV_LOCALE === 'en' ? REGIONS_EN : REGIONS_TR;
 
 /* ===== SIGNAL OPTIONS ===== */
-var T1_OPTS = ['İzointens','Hipointens','Hiperintens','Hiperintens hilus','Heterojen'];
-var T2_OPTS = ['Hipointens','İzointens','Hafif hiperintens','Hiperintens','Heterojen hiperintens','Çok hiperintens'];
-var IO_OPTS = ['Değişiklik yok','Out-phase sinyal düşüşü'];
-var DWI_OPTS = ['Restriksiyon yok','Hafif hiperintens','Güçlü hiperintens','Periferik hiperintens','Shine-through'];
-var ADC_OPTS = ['Normal','Hafif düşük','Düşük','Çok düşük','Düşük periferik','Hiperintens'];
-var ART_OPTS = ['Kontrastlanma yok','Minimal','Hafif homojen','Homojen','Heterojen','Rim','Heterojen/Rim'];
-var PV_OPTS = ['Kontrastlanma yok','Minimal','Homojen','Heterojen','Rim'];
-var LATE_OPTS = ['Kontrastlanma yok','Minimal','Persistan','Rim'];
-var SHAPES = ['Oval (uzun aks/kısa aks > 2)','Yuvarlak (uzun aks/kısa aks \u2248 1)'];
-var HILUS = ['Korunmuş (yağlı hilus mevcut)','Kaybolmuş','Kısmen korunmuş'];
-var CORTEX = ['İnce ve düzenli','Kalınlaşmış (asimetrik)','Kalınlaşmış (konsantrik)','Düzensiz','Nekrotik merkez'];
+var T1_OPTS = T.t1Opts;
+var T2_OPTS = T.t2Opts;
+var IO_OPTS = T.ioOpts;
+var DWI_OPTS = T.dwiOpts;
+var ADC_OPTS = T.adcOpts;
+var ART_OPTS = T.artOpts;
+var PV_OPTS = T.pvOpts;
+var LATE_OPTS = T.lateOpts;
+var SHAPES = T.shapes;
+var HILUS = T.hilus;
+var CORTEX = T.cortex;
 
-/* ===== DIFFERENTIAL PROFILES ===== */
-var DIFFS = [
-  {name:'Normal Lenf Nodu', sev:0,
-   t1e:['İzointens'],t1p:['Hiperintens hilus'],
-   t2e:['Hafif hiperintens'],t2p:['İzointens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Hafif hiperintens'],dwp:['Restriksiyon yok'],
-   adce:['Normal'],adcp:['Hafif düşük'],
-   arte:['Hafif homojen'],artp:['Homojen'],
-   pve:['Homojen'],pvp:['Hafif homojen'],
-   late:['Persistan'],latp:[],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:[],
-   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:['Kısmen korunmuş'],
-   core:['İnce ve düzenli'],corp:[],
-   desc:'Oval morfoloji, yağlı hilus korunmuş, ince korteks. T2A hafif hiperintens, DWI hafif, ADC normal.',
-   keys:['Oval','Yağlı hilus (+)','İnce korteks','Normal ADC']},
+/* ===== DIFFERENTIAL PROFILES (internal keys stay TR for state compatibility) ===== */
+var DIFFS_TR_T1E = [['İzointens'],['İzointens'],['Hipointens'],['Hipointens'],['İzointens','Hipointens'],['Hipointens'],['Hipointens'],['Hiperintens hilus'],['Hipointens'],['İzointens']];
+var DIFFS_TR_T1P = [['Hiperintens hilus'],[],['İzointens','Heterojen'],['Heterojen'],[],['Heterojen'],['İzointens'],['İzointens'],['İzointens'],[]];
+var DIFFS_TR_T2E = [['Hafif hiperintens'],['Hiperintens'],['Heterojen hiperintens'],['Çok hiperintens'],['Hafif hiperintens'],['Heterojen hiperintens'],['Hipointens','İzointens'],['Hafif hiperintens'],['Çok hiperintens'],['Hiperintens']];
+var DIFFS_TR_T2P = [['İzointens'],['Hafif hiperintens'],['Hiperintens'],['Heterojen hiperintens'],['Hiperintens'],[],[],['İzointens'],['Hiperintens'],['Hafif hiperintens']];
+var DIFFS_TR_IOE = [['Değişiklik yok'],['Değişiklik yok'],['Değişiklik yok'],['Değişiklik yok'],['Değişiklik yok'],['Değişiklik yok'],['Değişiklik yok'],['Out-phase sinyal düşüşü'],['Değişiklik yok'],['Değişiklik yok']];
+var DIFFS_TR_IOP = [[],[],[],[],[],[],[],[],[],[]];
+var DIFFS_TR_DWE = [['Hafif hiperintens'],['Hafif hiperintens'],['Güçlü hiperintens'],['Periferik hiperintens'],['Güçlü hiperintens'],['Periferik hiperintens'],['Restriksiyon yok'],['Restriksiyon yok'],['Shine-through'],['Hafif hiperintens']];
+var DIFFS_TR_DWP = [['Restriksiyon yok'],['Güçlü hiperintens'],[],['Güçlü hiperintens'],[],['Güçlü hiperintens'],['Hafif hiperintens'],['Hafif hiperintens'],['Restriksiyon yok'],['Güçlü hiperintens']];
+var DIFFS_TR_ADCE = [['Normal'],['Hafif düşük'],['Düşük'],['Düşük periferik'],['Çok düşük'],['Düşük periferik'],['Normal'],['Normal'],['Hiperintens'],['Hafif düşük']];
+var DIFFS_TR_ADCP = [['Hafif düşük'],['Normal'],['Hafif düşük'],['Düşük'],['Düşük'],[],['Hafif düşük'],[],['Normal'],['Düşük']];
+var DIFFS_TR_ARTE = [['Hafif homojen'],['Homojen'],['Heterojen','Heterojen/Rim'],['Rim'],['Homojen'],['Rim'],['Minimal'],['Hafif homojen'],['Kontrastlanma yok'],['Homojen']];
+var DIFFS_TR_ARTP = [['Homojen'],['Hafif homojen'],['Rim'],['Heterojen/Rim'],['Hafif homojen'],['Heterojen/Rim'],['Kontrastlanma yok'],['Minimal'],['Minimal'],['Hafif homojen']];
+var DIFFS_TR_PVE = [['Homojen'],['Homojen'],['Heterojen'],['Rim'],['Homojen'],['Rim'],['Minimal'],['Homojen'],['Kontrastlanma yok'],['Homojen']];
+var DIFFS_TR_PVP = [['Hafif homojen'],[],['Rim'],[],[],[],[],['Minimal'],['Minimal'],[]];
+var DIFFS_TR_LATE = [['Persistan'],['Persistan'],['Persistan'],['Rim'],['Persistan'],['Rim'],['Minimal'],['Persistan'],['Kontrastlanma yok'],['Persistan']];
+var DIFFS_TR_LATP = [[],[],['Rim'],[],[],[],[],[],[],[]];
+var DIFFS_TR_SHE = [['Oval (uzun aks/kısa aks > 2)'],['Oval (uzun aks/kısa aks > 2)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],['Oval (uzun aks/kısa aks > 2)'],['Oval (uzun aks/kısa aks > 2)'],['Oval (uzun aks/kısa aks > 2)'],['Oval (uzun aks/kısa aks > 2)']];
+var DIFFS_TR_SHP = [[],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],[],[],['Oval (uzun aks/kısa aks > 2)'],['Oval (uzun aks/kısa aks > 2)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],[],['Yuvarlak (uzun aks/kısa aks \u2248 1)'],['Yuvarlak (uzun aks/kısa aks \u2248 1)']];
+var DIFFS_TR_HILE = [['Korunmuş (yağlı hilus mevcut)'],['Korunmuş (yağlı hilus mevcut)'],['Kaybolmuş'],['Kaybolmuş'],['Kaybolmuş'],['Kaybolmuş'],['Kaybolmuş'],['Korunmuş (yağlı hilus mevcut)'],['Kaybolmuş'],['Kısmen korunmuş']];
+var DIFFS_TR_HILP = [['Kısmen korunmuş'],['Kısmen korunmuş'],['Kısmen korunmuş'],[],[],['Kısmen korunmuş'],['Kısmen korunmuş'],[],[],['Kaybolmuş']];
+var DIFFS_TR_CORE = [['İnce ve düzenli'],['Kalınlaşmış (konsantrik)'],['Kalınlaşmış (asimetrik)','Düzensiz'],['Nekrotik merkez'],['Kalınlaşmış (konsantrik)'],['Nekrotik merkez'],['Kalınlaşmış (konsantrik)'],['İnce ve düzenli'],['Nekrotik merkez'],['Kalınlaşmış (konsantrik)']];
+var DIFFS_TR_CORP = [[],['Kalınlaşmış (asimetrik)'],['Kalınlaşmış (konsantrik)'],['Düzensiz'],['Kalınlaşmış (asimetrik)'],['Düzensiz'],[],[],[],['Kalınlaşmış (asimetrik)']];
+var DIFFS_SEV = [0,10,85,90,80,55,20,0,15,30];
 
-  {name:'Reaktif Lenfadenopati', sev:10,
-   t1e:['İzointens'],t1p:[],
-   t2e:['Hiperintens'],t2p:['Hafif hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Hafif hiperintens'],dwp:['Güçlü hiperintens'],
-   adce:['Hafif düşük'],adcp:['Normal'],
-   arte:['Homojen'],artp:['Hafif homojen'],
-   pve:['Homojen'],pvp:[],
-   late:['Persistan'],latp:[],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
-   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:['Kısmen korunmuş'],
-   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
-   desc:'Büyümüş ancak oval morfolojiyi ve yağlı hilusu koruyan lenf nodu. Homojen kontrastlanma.',
-   keys:['Oval korunmuş','Hilus (+)','Homojen CE','T2 hiperintens']},
-
-  {name:'Metastatik Lenf Nodu', sev:85,
-   t1e:['Hipointens'],t1p:['İzointens','Heterojen'],
-   t2e:['Heterojen hiperintens'],t2p:['Hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Güçlü hiperintens'],dwp:['Periferik hiperintens'],
-   adce:['Düşük'],adcp:['Hafif düşük'],
-   arte:['Heterojen','Heterojen/Rim'],artp:['Rim'],
-   pve:['Heterojen'],pvp:['Rim'],
-   late:['Persistan'],latp:['Rim'],
-   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:[],
-   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
-   core:['Kalınlaşmış (asimetrik)','Düzensiz'],corp:['Kalınlaşmış (konsantrik)'],
-   desc:'Yuvarlak morfoloji, hilus kaybı, heterojen kontrastlanma. Güçlü DWI restriksiyon ve düşük ADC.',
-   keys:['Yuvarlak','Hilus kayıp','Heterojen CE','DWI(+)','Düşük ADC']},
-
-  {name:'Nekrotik Metastatik Nod', sev:90,
-   t1e:['Hipointens'],t1p:['Heterojen'],
-   t2e:['Çok hiperintens'],t2p:['Heterojen hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Periferik hiperintens'],dwp:['Güçlü hiperintens'],
-   adce:['Düşük periferik'],adcp:['Düşük'],
-   arte:['Rim'],artp:['Heterojen/Rim'],
-   pve:['Rim'],pvp:[],
-   late:['Rim'],latp:[],
-   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:[],
-   hile:['Kaybolmuş'],hilp:[],
-   core:['Nekrotik merkez'],corp:['Düzensiz'],
-   desc:'Santral nekroz + rim kontrastlanma paterni. T2A merkezde çok yüksek sinyal. DWI periferik restriksiyon.',
-   keys:['Nekrotik merkez','Rim CE','T2 çok yüksek','Periferik DWI']},
-
-  {name:'Lenfoma', sev:80,
-   t1e:['İzointens','Hipointens'],t1p:[],
-   t2e:['Hafif hiperintens'],t2p:['Hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Güçlü hiperintens'],dwp:[],
-   adce:['Çok düşük'],adcp:['Düşük'],
-   arte:['Homojen'],artp:['Hafif homojen'],
-   pve:['Homojen'],pvp:[],
-   late:['Persistan'],latp:[],
-   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:['Oval (uzun aks/kısa aks > 2)'],
-   hile:['Kaybolmuş'],hilp:[],
-   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
-   desc:'Multipl büyük homojen nodlar. Çok güçlü DWI restriksiyon ve çok düşük ADC (\u003C0.8\u00D710\u207B\u00B3). Homojen kontrastlanma.',
-   keys:['Çok düşük ADC','Güçlü DWI','Homojen CE','Multipl büyük']},
-
-  {name:'Tüberküloz Lenfadenit', sev:55,
-   t1e:['Hipointens'],t1p:['Heterojen'],
-   t2e:['Heterojen hiperintens'],t2p:['Çok hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Periferik hiperintens'],dwp:['Güçlü hiperintens'],
-   adce:['Düşük periferik'],adcp:['Düşük'],
-   arte:['Rim'],artp:['Heterojen/Rim'],
-   pve:['Rim'],pvp:[],
-   late:['Rim'],latp:[],
-   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:['Oval (uzun aks/kısa aks > 2)'],
-   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
-   core:['Nekrotik merkez'],corp:['Düzensiz'],
-   desc:'Nekrotik metastatik nodla benzer görünüm. Rim kontrastlanma + kazöz nekroz. Konglomerat pattern ayırt edici olabilir.',
-   keys:['Rim CE','Kazöz nekroz','Konglomerat','Nekrotik metastazla benzer']},
-
-  {name:'Granülomatöz Hastalık (Sarkoidoz)', sev:20,
-   t1e:['Hipointens'],t1p:['İzointens'],
-   t2e:['Hipointens','İzointens'],t2p:[],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Restriksiyon yok'],dwp:['Hafif hiperintens'],
-   adce:['Normal'],adcp:['Hafif düşük'],
-   arte:['Minimal'],artp:['Kontrastlanma yok'],
-   pve:['Minimal'],pvp:['Kontrastlanma yok'],
-   late:['Minimal'],latp:['Kontrastlanma yok'],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
-   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
-   core:['Kalınlaşmış (konsantrik)'],corp:[],
-   desc:'T1+T2 hipointens (fibrozis). Minimal kontrastlanma. DWI genellikle negatif. Bilateral hiler LAP sarkoidozda tipik.',
-   keys:['T1+T2 düşük','Minimal CE','DWI negatif','Fibrozis/kalsifikasyon']},
-
-  {name:'Yağlı Hilus \u2014 Benign Nod', sev:0,
-   t1e:['Hiperintens hilus'],t1p:['İzointens'],
-   t2e:['Hafif hiperintens'],t2p:['İzointens'],
-   ioe:['Out-phase sinyal düşüşü'],iop:[],
-   dwe:['Restriksiyon yok'],dwp:['Hafif hiperintens'],
-   adce:['Normal'],adcp:[],
-   arte:['Hafif homojen'],artp:['Minimal'],
-   pve:['Homojen'],pvp:['Minimal'],
-   late:['Persistan'],latp:[],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:[],
-   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:[],
-   core:['İnce ve düzenli'],corp:[],
-   desc:'Out-phase sinyal düşüşü (intrasellüler yağ) patognomoniktir. Yağlı hilus belirgin.',
-   keys:['Out-phase sinyal kaybı','Yağlı hilus','Oval','Benign']},
-
-  {name:'Kistik Lenf Nodu', sev:15,
-   t1e:['Hipointens'],t1p:['İzointens'],
-   t2e:['Çok hiperintens'],t2p:['Hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Shine-through'],dwp:['Restriksiyon yok'],
-   adce:['Hiperintens'],adcp:['Normal'],
-   arte:['Kontrastlanma yok'],artp:['Minimal'],
-   pve:['Kontrastlanma yok'],pvp:['Minimal'],
-   late:['Kontrastlanma yok'],latp:['Minimal'],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
-   hile:['Kaybolmuş'],hilp:[],
-   core:['Nekrotik merkez'],corp:[],
-   desc:'Basit kist sinyali: T1 düşük, T2 çok yüksek, kontrastlanma yok. DWI shine-through (gerçek restriksiyon değil).',
-   keys:['T2 çok yüksek','CE yok','Shine-through','ADC yüksek']},
-
-  {name:'Anjioimmünoblastik / İnflamatuvar', sev:30,
-   t1e:['İzointens'],t1p:[],
-   t2e:['Hiperintens'],t2p:['Hafif hiperintens'],
-   ioe:['Değişiklik yok'],iop:[],
-   dwe:['Hafif hiperintens'],dwp:['Güçlü hiperintens'],
-   adce:['Hafif düşük'],adcp:['Düşük'],
-   arte:['Homojen'],artp:['Hafif homojen'],
-   pve:['Homojen'],pvp:[],
-   late:['Persistan'],latp:[],
-   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
-   hile:['Kısmen korunmuş'],hilp:['Kaybolmuş'],
-   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
-   desc:'Reaktif lenfadenopatiye benzer ancak daha belirgin kontrastlanma ve olası DWI restriksiyon. Klinik korelasyon gerektirir.',
-   keys:['Homojen CE','T2 hiperintens','Klinik korelasyon','İnflamatuvar']}
-];
+var DIFFS = [];
+for(var _di=0;_di<T.diffNames.length;_di++){
+  DIFFS.push({
+    name:T.diffNames[_di],
+    sev:DIFFS_SEV[_di],
+    t1e:DIFFS_TR_T1E[_di],t1p:DIFFS_TR_T1P[_di],
+    t2e:DIFFS_TR_T2E[_di],t2p:DIFFS_TR_T2P[_di],
+    ioe:DIFFS_TR_IOE[_di],iop:DIFFS_TR_IOP[_di],
+    dwe:DIFFS_TR_DWE[_di],dwp:DIFFS_TR_DWP[_di],
+    adce:DIFFS_TR_ADCE[_di],adcp:DIFFS_TR_ADCP[_di],
+    arte:DIFFS_TR_ARTE[_di],artp:DIFFS_TR_ARTP[_di],
+    pve:DIFFS_TR_PVE[_di],pvp:DIFFS_TR_PVP[_di],
+    late:DIFFS_TR_LATE[_di],latp:DIFFS_TR_LATP[_di],
+    she:DIFFS_TR_SHE[_di],shp:DIFFS_TR_SHP[_di],
+    hile:DIFFS_TR_HILE[_di],hilp:DIFFS_TR_HILP[_di],
+    core:DIFFS_TR_CORE[_di],corp:DIFFS_TR_CORP[_di],
+    desc:T.diffDescs[_di],
+    keys:T.diffKeys[_di]
+  });
+}
 
 /* ===== WEIGHTS ===== */
 var W = {t1:2, t2:3, io:3, dwi:5, adc:5, art:3, pv:2, lat:1, sh:3, hil:4, cor:3};
@@ -309,7 +459,7 @@ function NumIn(p) {
 }
 function SW(p) {
   return React.createElement('div',{className:'cd'},
-    React.createElement('div',{className:'sn'},'ADIM '+p.n),
+    React.createElement('div',{className:'sn'},T.step+' '+p.n),
     React.createElement('div',{className:'st'},p.t),
     p.s?React.createElement('div',{className:'ss'},p.s):null,
     p.children);
@@ -318,16 +468,16 @@ function Row(p){return React.createElement('tr',null,React.createElement('td',{c
 
 function DiffResult(p) {
   var r = p.results;
-  if (!r||r.length===0) return React.createElement('div',{style:{color:'var(--txd)',fontSize:'.8rem',padding:8}},'Yeterli veri yok.');
+  if (!r||r.length===0) return React.createElement('div',{style:{color:'var(--txd)',fontSize:'.8rem',padding:8}},T.noData);
   return React.createElement('div',null,r.slice(0,6).map(function(d,i){
     var col=pctCol(d.pct), top=i===0&&d.pct>=35;
     return React.createElement('div',{key:i,className:'dr',style:{borderLeftColor:col,background:top?'rgba(109,159,255,.06)':undefined}},
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6}},
         React.createElement('span',{style:{fontSize:'.78rem',fontWeight:700,color:col}},'%'+d.pct),
         React.createElement('span',{style:{fontSize:'.84rem',fontWeight:top?700:600,color:top?'var(--txb)':'var(--tx)'}},d.name),
-        d.sev>=70?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(248,113,113,.15)',color:'var(--rd)',fontWeight:700,marginLeft:4}},'MALİGN'):
-        d.sev>=40?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(251,146,60,.12)',color:'var(--or)',fontWeight:700,marginLeft:4}},'ŞÜPHELİ'):
-        d.sev<=5?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(52,211,153,.12)',color:'var(--gn)',fontWeight:700,marginLeft:4}},'BENİGN'):null
+        d.sev>=70?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(248,113,113,.15)',color:'var(--rd)',fontWeight:700,marginLeft:4}},T.malign):
+        d.sev>=40?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(251,146,60,.12)',color:'var(--or)',fontWeight:700,marginLeft:4}},T.suspicious):
+        d.sev<=5?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(52,211,153,.12)',color:'var(--gn)',fontWeight:700,marginLeft:4}},T.benign):null
       ),
       React.createElement('div',{className:'dr-bar'},React.createElement('div',{className:'dr-fill',style:{width:d.pct+'%',background:col}})),
       React.createElement('div',{className:'dr-desc'},d.desc),
@@ -401,24 +551,43 @@ function App() {
     setStep(Math.max(step-1,0));
   }
 
+  /* ===== LABEL MAP ===== */
+  var lbl={
+    region:T.fieldRegion,
+    side:T.fieldSide,
+    kisa:T.fieldShortAxis,
+    uzun:T.fieldLongAxis,
+    shape:T.fieldShape,
+    hilus:T.fieldHilus,
+    cortex:T.fieldCortex,
+    t1:T.fieldT1,
+    t2:T.fieldT2,
+    io:T.fieldIO,
+    dwi:T.fieldDWI,
+    adc:T.fieldADC,
+    art:T.fieldArt,
+    pv:T.fieldPV,
+    lat:T.fieldLate,
+    sonuc:T.fieldResult
+  };
+
   /* ===== RENDER ===== */
   function renderStep(){
     switch(sn){
       case 'nodPre':
-        return React.createElement(SW,{n:1,t:'Lenf Nodu Değerlendirmesi',s:'Patolojik lenf nodlarını ekleyin'},
+        return React.createElement(SW,{n:1,t:T.stepLabelNodeEval,s:T.stepSubNodeEval},
           React.createElement('div',{className:'lb'},
             nods.map(function(n,i){return React.createElement('div',{key:i,className:'lc dn',onClick:function(){setNIdx(i);setNSub(0);setStep(ix('nodLoop'))}},
-              'Nod '+(i+1)+(n.kisa?' ('+n.kisa+'mm)':'')+(n.region?' \u2014 '+n.region:''))}),
-            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},'+ Lenf Nodu Ekle')
+              T.nodLabelWithRegion(i+1,n.kisa,n.region))}),
+            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},T.addNode)
           ),
-          nods.length===0?React.createElement('div',{style:{color:'var(--txd)',fontSize:'.82rem',padding:8}},'Patolojik lenf nodu yoksa rapora ilerleyin.'):null
+          nods.length===0?React.createElement('div',{style:{color:'var(--txd)',fontSize:'.82rem',padding:8}},T.noPathNodes):null
         );
 
       case 'nodLoop':{
         if(nIdx<0||!nods[nIdx]) return null;
         var nd=nods[nIdx],cs=NOD_SUB[nSub];
         var diffRes=calcDiff(nd);
-        var lbl={region:'Anatomik Bölge',side:'Taraf',kisa:'Kısa Aks',uzun:'Uzun Aks',shape:'Morfoloji (Şekil)',hilus:'Hilus Durumu',cortex:'Korteks',t1:'T1A Sinyal',t2:'T2A Sinyal',io:'In-Phase / Out-Phase',dwi:'DWI',adc:'ADC',art:'Arterial Faz',pv:'Portal Venöz Faz',lat:'Geç Faz',sonuc:'Ayırıcı Tanı Sonucu'};
         var content=null;
 
         if(cs==='region'){
@@ -431,12 +600,12 @@ function App() {
           });
           content = React.createElement('div',null,regionEls);
         }
-        else if(cs==='side') content=React.createElement(Radio,{options:['Sağ','Sol','Bilateral','Midline'],value:nd.side,onChange:function(v){setNF('side',v)}});
+        else if(cs==='side') content=React.createElement(Radio,{options:T.sides,value:nd.side,onChange:function(v){setNF('side',v)}});
         else if(cs==='kisa') content=React.createElement('div',null,
-          React.createElement('div',{className:'fl'},'Kısa aks ölçümü'),
+          React.createElement('div',{className:'fl'},T.shortAxisMeasure),
           React.createElement(NumIn,{value:nd.kisa,onChange:function(v){setNF('kisa',v)}}));
         else if(cs==='uzun') content=React.createElement('div',null,
-          React.createElement('div',{className:'fl'},'Uzun aks ölçümü'),
+          React.createElement('div',{className:'fl'},T.longAxisMeasure),
           React.createElement(NumIn,{value:nd.uzun,onChange:function(v){setNF('uzun',v)}}));
         else if(cs==='shape') content=React.createElement('div',null,
           React.createElement('div',{className:'morph-grid'},SHAPES.map(function(s){
@@ -445,8 +614,10 @@ function App() {
               React.createElement('div',{className:'mi-sub'},s.includes('(')?'('+s.split('(')[1]:''));
           })),
           nd.kisa && nd.uzun ? React.createElement('div',{style:{marginTop:8,fontSize:'.78rem',color:'var(--txd)'}},
-            'Hesaplanan oran: '+(parseFloat(nd.uzun)/parseFloat(nd.kisa)).toFixed(2)+
-            (parseFloat(nd.uzun)/parseFloat(nd.kisa)>=2?' (Oval)':' (Yuvarlak)')
+            T.ratioCalc(
+              (parseFloat(nd.uzun)/parseFloat(nd.kisa)).toFixed(2),
+              parseFloat(nd.uzun)/parseFloat(nd.kisa)>=2?'oval':'round'
+            )
           ):null);
         else if(cs==='hilus') content=React.createElement('div',{className:'morph-grid',style:{gridTemplateColumns:'1fr'}},HILUS.map(function(h){
           return React.createElement('div',{key:h,className:'morph-item'+(nd.hilus===h?' sel':''),onClick:function(){setNF('hilus',h)}},
@@ -462,36 +633,36 @@ function App() {
         else if(cs==='pv') content=React.createElement(Radio,{options:PV_OPTS,value:nd.pv,onChange:function(v){setNF('pv',v)}});
         else if(cs==='lat') content=React.createElement(Radio,{options:LATE_OPTS,value:nd.lat,onChange:function(v){setNF('lat',v)}});
         else if(cs==='sonuc') content=React.createElement('div',null,
-          React.createElement('div',{style:{fontSize:'.86rem',fontWeight:700,color:'var(--ac)',marginBottom:10}},'Nod '+(nIdx+1)+' \u2014 Ayırıcı Tanı Eşleştirmesi'),
+          React.createElement('div',{style:{fontSize:'.86rem',fontWeight:700,color:'var(--ac)',marginBottom:10}},T.diffMatchTitle(nIdx+1)),
           React.createElement(DiffResult,{results:diffRes}),
           React.createElement('div',{style:{marginTop:14,display:'flex',gap:8}},
-            React.createElement('button',{className:'btn bn',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();setStep(ix('nodPre'))}},'Nod Listesine Dön'),
-            React.createElement('button',{className:'btn bs',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();addNod();setNSub(0)}},'+ Yeni Nod Ekle')
+            React.createElement('button',{className:'btn bn',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();setStep(ix('nodPre'))}},T.backToList),
+            React.createElement('button',{className:'btn bs',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();addNod();setNSub(0)}},T.addNewNode)
           ));
 
-        return React.createElement(SW,{n:1,t:'Nod '+(nIdx+1)+' \u2014 '+lbl[cs],s:'Alt adım '+(nSub+1)+'/'+NOD_SUB.length},content);
+        return React.createElement(SW,{n:1,t:T.nodTitle(nIdx+1,lbl[cs]),s:T.nodSubStep(nSub+1,NOD_SUB.length)},content);
       }
 
       case 'nodPost':
-        return React.createElement(SW,{n:1,t:'Lenf Nodu Özeti',s:'Toplam '+nods.length+' lenf nodu'},
+        return React.createElement(SW,{n:1,t:T.stepLabelNodeSummary,s:T.stepSubNodeSummary(nods.length)},
           nods.map(function(n,i){
             var dr=calcDiff(n),top=dr.length>0?dr[0]:null;
             return React.createElement('div',{key:i,style:{background:'var(--sf2)',borderRadius:8,padding:12,marginBottom:8,fontSize:'.8rem'}},
               React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-                React.createElement('strong',{style:{color:'var(--ac)'}},'Nod '+(i+1)+': '+n.region+' ('+n.side+')'),
-                React.createElement('span',{style:{color:'var(--rd)',cursor:'pointer',fontSize:'.72rem'},onClick:function(){rmNod(i)}},'\u2715 Sil')
+                React.createElement('strong',{style:{color:'var(--ac)'}},T.nodLabel(i+1)+': '+n.region+' ('+n.side+')'),
+                React.createElement('span',{style:{color:'var(--rd)',cursor:'pointer',fontSize:'.72rem'},onClick:function(){rmNod(i)}},T.delete)
               ),
-              React.createElement('div',{style:{marginTop:3}},'Kısa: '+n.kisa+'mm | Uzun: '+n.uzun+'mm | '+n.shape.split('(')[0].trim()+' | Hilus: '+n.hilus.split('(')[0].trim()),
+              React.createElement('div',{style:{marginTop:3}},T.fieldShortAxis+': '+n.kisa+'mm | '+T.fieldLongAxis+': '+n.uzun+'mm | '+n.shape.split('(')[0].trim()+' | '+T.labelHilus+': '+n.hilus.split('(')[0].trim()),
               React.createElement('div',{style:{marginTop:2}},'T1:'+n.t1+' | T2:'+n.t2+' | DWI:'+n.dwi+' | ADC:'+n.adc),
               top?React.createElement('div',{style:{marginTop:4,padding:'4px 8px',background:'rgba(109,159,255,.08)',borderRadius:4,fontSize:'.76rem'}},
                 React.createElement('span',{style:{color:pctCol(top.pct),fontWeight:700}},'%'+top.pct+' '),
                 React.createElement('span',{style:{color:'var(--txb)'}},top.name),
-                top.sev>=70?React.createElement('span',{style:{marginLeft:6,fontSize:'.62rem',color:'var(--rd)',fontWeight:700}},'MALİGN'):null):null
+                top.sev>=70?React.createElement('span',{style:{marginLeft:6,fontSize:'.62rem',color:'var(--rd)',fontWeight:700}},T.malign):null):null
             );
           }),
           React.createElement('div',{style:{marginTop:12,display:'flex',gap:8,flexWrap:'wrap'}},
-            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},'+ Başka Nod Ekle'),
-            React.createElement('button',{className:'btn bn',style:{fontSize:'.82rem',padding:'8px 20px'},onClick:function(){setStep(ix('rapor'))}},'\uD83D\uDCCB Rapor Oluştur')
+            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},T.addAnotherNode),
+            React.createElement('button',{className:'btn bn',style:{fontSize:'.82rem',padding:'8px 20px'},onClick:function(){setStep(ix('rapor'))}},T.createReport)
           )
         );
 
@@ -503,36 +674,35 @@ function App() {
   /* ===== REPORT ===== */
   function renderReport(){
     var els=[];
-    els.push(React.createElement('h2',{key:'hd'},'LENF NODU MRI \u2014 YAPISAL RAPOR'));
+    els.push(React.createElement('h2',{key:'hd'},T.reportTitle));
 
     if(nods.length===0){
-      els.push(React.createElement('table',{key:'t0',className:'rt'},React.createElement('tbody',null,React.createElement(Row,{l:'Lenf Nodları',v:'Patolojik lenf nodu saptanmamıştır.'}))));
+      els.push(React.createElement('table',{key:'t0',className:'rt'},React.createElement('tbody',null,React.createElement(Row,{l:T.nodLabel(1).replace('1',''),v:T.noPathNodesReport}))));
     } else {
       nods.forEach(function(n,i){
-        els.push(React.createElement('h3',{key:'h'+i},'Nod '+(i+1)+': '+n.region+' ('+n.side+')'));
+        els.push(React.createElement('h3',{key:'h'+i},T.nodLabel(i+1)+': '+n.region+' ('+n.side+')'));
         els.push(React.createElement('table',{key:'t'+i,className:'rt'},React.createElement('tbody',null,
-          React.createElement(Row,{l:'Bölge / Taraf',v:n.region+' \u2014 '+n.side}),
-          React.createElement(Row,{l:'Kısa Aks / Uzun Aks',v:n.kisa+'mm / '+n.uzun+'mm'}),
-          React.createElement(Row,{l:'Morfoloji',v:n.shape}),
-          React.createElement(Row,{l:'Hilus',v:n.hilus}),
-          React.createElement(Row,{l:'Korteks',v:n.cortex}),
-          React.createElement(Row,{l:'T1A / T2A',v:n.t1+' / '+n.t2}),
-          React.createElement(Row,{l:'In/Out-Phase',v:n.io}),
-          React.createElement(Row,{l:'DWI / ADC',v:n.dwi+' / '+n.adc}),
-          React.createElement(Row,{l:'Arterial / PV / Geç',v:n.art+' / '+n.pv+' / '+n.lat})
+          React.createElement(Row,{l:T.labelRegion,v:n.region+' \u2014 '+n.side}),
+          React.createElement(Row,{l:T.labelAxes,v:n.kisa+'mm / '+n.uzun+'mm'}),
+          React.createElement(Row,{l:T.labelMorphology,v:n.shape}),
+          React.createElement(Row,{l:T.labelHilus,v:n.hilus}),
+          React.createElement(Row,{l:T.labelCortex,v:n.cortex}),
+          React.createElement(Row,{l:T.labelT1T2,v:n.t1+' / '+n.t2}),
+          React.createElement(Row,{l:T.labelInOut,v:n.io}),
+          React.createElement(Row,{l:T.labelDwiAdc,v:n.dwi+' / '+n.adc}),
+          React.createElement(Row,{l:T.labelContrast,v:n.art+' / '+n.pv+' / '+n.lat})
         )));
         var dr=calcDiff(n);
         if(dr.length>0){
           els.push(React.createElement('div',{key:'dr'+i,style:{marginBottom:14}},
-            React.createElement('div',{style:{fontSize:'.82rem',fontWeight:700,color:'var(--ac)',marginBottom:6,marginTop:4}},'Nod '+(i+1)+' \u2014 Ayırıcı Tanı'),
+            React.createElement('div',{style:{fontSize:'.82rem',fontWeight:700,color:'var(--ac)',marginBottom:6,marginTop:4}},T.diffTitle(i+1)),
             React.createElement(DiffResult,{results:dr})));
         }
       });
 
-      // YORUM
       var yorumlar = makeYorumlar();
       if(yorumlar.length>0){
-        els.push(React.createElement('h3',{key:'hy'},'YORUM'));
+        els.push(React.createElement('h3',{key:'hy'},T.labelComment));
         yorumlar.forEach(function(y,i){
           els.push(React.createElement('div',{key:'y'+i,className:'yb',style:{borderLeftColor:y.c}},
             React.createElement('div',{className:'yt',style:{color:y.c}},y.t),
@@ -542,9 +712,9 @@ function App() {
     }
 
     els.push(React.createElement('div',{key:'exp',className:'er'},
-      React.createElement('button',{className:'be',onClick:function(){window.print()}},'\uD83D\uDDA8 PDF Yazdır'),
-      React.createElement('button',{className:'be',onClick:copyRpt},'\uD83D\uDCCB Kopyala'),
-      React.createElement('button',{className:'be',onClick:exportHTML},'\uD83D\uDCE5 HTML İndir')
+      React.createElement('button',{className:'be',onClick:function(){window.print()}},T.printPdf),
+      React.createElement('button',{className:'be',onClick:copyRpt},T.copyReport),
+      React.createElement('button',{className:'be',onClick:exportHTML},T.exportHtml)
     ));
 
     return React.createElement('div',{className:'rp',id:'rpt-content'},els);
@@ -558,36 +728,32 @@ function App() {
       var top=dr[0];
       var col=top.sev>=70?'var(--rd)':top.sev>=40?'var(--or)':top.sev>=20?'var(--yl)':'var(--gn)';
 
-      // Size criteria
       var kisa=parseFloat(n.kisa)||0;
       var sizeWarn='';
-      if(n.region.indexOf('Juguler')>=0||n.region.indexOf('Submandibular')>=0||n.region.indexOf('Submental')>=0){
-        if(kisa>10) sizeWarn=' Kısa aks boyut kriteri aşılmıştır (boyun: 10mm sınırı).';
-      } else if(n.region.indexOf('Retrofaringeal')>=0){
-        if(kisa>8) sizeWarn=' Retrofaringeal bölgede 8mm sınırı aşılmıştır.';
+      if(n.region.indexOf('Juguler')>=0||n.region.indexOf('Jugular')>=0||n.region.indexOf('Submandibular')>=0||n.region.indexOf('Submental')>=0){
+        if(kisa>10) sizeWarn=T.sizeWarnNeck;
+      } else if(n.region.indexOf('Retrofaringeal')>=0||n.region.indexOf('Retropharyngeal')>=0){
+        if(kisa>8) sizeWarn=T.sizeWarnRetropharyngeal;
       } else if(n.region.indexOf('Inguinal')>=0){
-        if(kisa>15) sizeWarn=' İnguinal bölgede 15mm sınırı aşılmıştır.';
-      } else if(n.region.indexOf('Mediastinal')>=0||n.region.indexOf('Hiler')>=0){
-        if(kisa>10) sizeWarn=' Mediastinal/hiler bölgede 10mm sınırı aşılmıştır.';
+        if(kisa>15) sizeWarn=T.sizeWarnInguinal;
+      } else if(n.region.indexOf('Mediastinal')>=0||n.region.indexOf('Hiler')>=0||n.region.indexOf('Hilar')>=0){
+        if(kisa>10) sizeWarn=T.sizeWarnMediastinal;
       } else {
-        if(kisa>10) sizeWarn=' Kısa aks 10mm sınırını aşmıştır.';
+        if(kisa>10) sizeWarn=T.sizeWarnGeneral;
       }
 
-      var txt='Nod '+(i+1)+' ('+n.region+', '+n.side+', kısa aks '+n.kisa+'mm): Sinyal profili en çok '+top.name+' ile uyumludur (%'+top.pct+' eşleşme).'+sizeWarn;
-      if(top.sev>=70) txt+=' MALİGNİTE AÇISINDAN DİKKATLİ DEĞERLENDİRİLMELİDİR.';
-      if(dr.length>1) txt+=' Ayırıcı tanıda '+dr[1].name+' (%'+dr[1].pct+') de düşünülmelidir.';
+      var txt=T.commentMatch(i+1,n.region,n.side,n.kisa,top.name,top.pct)+sizeWarn;
+      if(top.sev>=70) txt+=T.commentMalign;
+      if(dr.length>1) txt+=T.commentAlternative(dr[1].name,dr[1].pct);
 
-      // ADC rule
-      if(n.adc==='Çok düşük') txt+=' ADC değeri çok düşük olup lenfoma olasılığı yüksektir.';
-      else if(n.adc==='Düşük') txt+=' ADC değeri düşük olup malignite olasılığı artmıştır.';
+      if(n.adc===T.adcVeryLow) txt+=T.commentAdcVeryLow;
+      else if(n.adc===T.adcLow) txt+=T.commentAdcLow;
 
-      // Hilus rule
-      if(n.hilus==='Korunmuş (yağlı hilus mevcut)') txt+=' Yağlı hilusun korunması benign lehine bulgudur.';
+      if(n.hilus===T.hilusPreserved) txt+=T.commentHilusPreserved;
 
-      // Morphology rule
-      if(n.shape.indexOf('Yuvarlak')>=0 && n.hilus==='Kaybolmuş') txt+=' Yuvarlak morfoloji + hilus kaybı malignite lehine önemli morfolojik bulgulardır.';
+      if(n.shape.indexOf(T.shapeRound)>=0 && n.hilus===T.hilusLost) txt+=T.commentRoundHilusLost;
 
-      y.push({t:'Nod '+(i+1)+': '+top.name+' (%'+top.pct+')',x:txt,c:col});
+      y.push({t:T.commentTitle(i+1,top.name,top.pct),x:txt,c:col});
     });
     return y;
   }
@@ -596,7 +762,7 @@ function App() {
     var el=document.getElementById('rpt-content');if(!el)return;
     var ta=document.createElement('textarea');ta.style.position='fixed';ta.style.left='-9999px';
     ta.value=el.innerText;document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);alert('Rapor panoya kopyalandı!');
+    document.execCommand('copy');document.body.removeChild(ta);alert(T.copied);
   }
 
   function exportHTML(){
@@ -619,32 +785,34 @@ function App() {
       +'.yt{font-size:.84rem;font-weight:700;margin-bottom:4px}'
       +'.yx{font-size:.8rem;line-height:1.5}'
       +'.er{display:none}';
-    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lenf Nodu MRI Rapor</title><style>'+css+'</style></head><body>'+el.innerHTML+'</body></html>';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+T.exportFileTitle+'</title><style>'+css+'</style></head><body>'+el.innerHTML+'</body></html>';
     var blob=new Blob([html],{type:'text/html'});
     var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='lenf_nodu_mri_rapor.html';
+    var a=document.createElement('a');a.href=url;a.download=T.exportFileName;
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
-  var nextLbl='İleri \u2192';
-  if(sn==='nodLoop') nextLbl=nSub>=NOD_SUB.length-1?'Tamamla \u2713':'Sonraki \u2192';
+  var nextLbl=T.nextBtn;
+  if(sn==='nodLoop') nextLbl=nSub>=NOD_SUB.length-1?T.finishBtn:T.nextBtn;
 
   return React.createElement('div',{className:'wrap'},
-    React.createElement('div',{className:'hdr'},React.createElement('h1',null,'Lenf Nodu MRI Karar Destek Sistemi')),
+    React.createElement('div',{className:'hdr'},React.createElement('h1',{'data-i18n-tr':'Lenf Nodu MRI Karar Destek Sistemi','data-i18n-en':'Lymph Node MRI Decision Support System'},T.appTitle)),
     React.createElement('div',{className:'pb'},React.createElement('div',{className:'pf',style:{width:pct+'%'}})),
     renderStep(),
     sn!=='rapor'?React.createElement('div',{className:'nr'},
-      React.createElement('button',{className:'btn bp',onClick:goPrev,disabled:step===0&&(sn!=='nodLoop'||nSub===0)},'\u2190 Geri'),
+      React.createElement('button',{className:'btn bp',onClick:goPrev,disabled:step===0&&(sn!=='nodLoop'||nSub===0)},T.prevBtn),
       React.createElement('span',{style:{color:'var(--txd)',fontSize:'.76rem'}},(step+1)+'/'+total),
       React.createElement('button',{className:'btn bn',onClick:goNext,disabled:!canNext()},nextLbl)
     ):React.createElement('div',{className:'nr'},
-      React.createElement('button',{className:'btn bp',onClick:goPrev},'\u2190 Düzenle'),
-      React.createElement('button',{className:'btn bs',onClick:function(){setStep(0);setNods([]);setNIdx(-1);}},'\uD83D\uDD04 Yeni'))
+      React.createElement('button',{className:'btn bp',onClick:goPrev},T.editReport),
+      React.createElement('button',{className:'btn bs',onClick:function(){setStep(0);setNods([]);setNIdx(-1);}},T.newReport))
   );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 </script>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
 </body>
 </html>
