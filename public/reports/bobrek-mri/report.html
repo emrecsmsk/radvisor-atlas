@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Böbrek MRI Değerlendirme</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0f0e17;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#1a1826;}
+::-webkit-scrollbar-thumb{background:#0e3a4a;border-radius:3px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes barGrow{from{width:0;}to{width:var(--w);}}
+@media print{.no-print{display:none!important;}body{background:#fff!important;color:#000!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback,useMemo}=React;
+
+// ── ACCENT ───────────────────────────────────────────────────────────────────
+const AC='#06b6d4', AC2='#0891b2';
+
+// ── OPTION ARRAYS ─────────────────────────────────────────────────────────────
+const TARAF_OPT=[{v:'sag',l:'Sağ'},{v:'sol',l:'Sol'},{v:'bilateral',l:'Bilateral'}];
+const POL_OPT=[{v:'ust',l:'Üst pol'},{v:'orta',l:'Orta zon'},{v:'alt',l:'Alt pol'},{v:'hiler',l:'Hiler bölge'},{v:'diffuz',l:'Diffüz / tüm böbrek'}];
+const SAYI_OPT=[{v:'tekil',l:'Tekil'},{v:'multiple',l:'Multiple (2-5)'},{v:'cok',l:'Çok sayıda (>5)'},{v:'diffuz',l:'Diffüz / yaygın'}];
+const KARAKTER_OPT=[{v:'solid',l:'Solid kitle'},{v:'kistik',l:'Kistik lezyon'},{v:'kombine',l:'Kombine (solid+kistik)'},{v:'infiltratif',l:'İnfiltratif / diffüz'},{v:'vask',l:'Vasküler / parankim dışı'}];
+const T1_OPT=[{v:'hipo',l:'Hipoinans'},{v:'izo',l:'İzoinans'},{v:'hiper',l:'Hiperinans'},{v:'het',l:'Heterojen'}];
+const T2_OPT=[{v:'hipo',l:'Hipoinans'},{v:'izo',l:'İzoinans'},{v:'hiper',l:'Hiperinans (belirgin)'},{v:'het',l:'Heterojen'}];
+const YAG_OPT=[{v:'yok',l:'Yok'},{v:'makro',l:'Makroskobik yağ (T1↑, kimyasal kayma)'},{v:'mikro',l:'Mikroskobik yağ (opposed phase ↓)'},{v:'het',l:'Heterojen yağ dağılımı'}];
+const DWI_OPT=[{v:'serbest',l:'Serbest difüzyon (parlak ADC)'},{v:'hafif',l:'Hafif kısıtlı'},{v:'kisitli',l:'Belirgin kısıtlı'},{v:'cok_kisitli',l:'Çok belirgin kısıtlı (koyu ADC)'}];
+const ADC_OPT=[{v:'yuksek',l:'Yüksek (>1.6×10⁻³)'},{v:'normal',l:'Normal (1.2–1.6×10⁻³)'},{v:'dusuk',l:'Düşük (0.8–1.2×10⁻³)'},{v:'cok_dusuk',l:'Çok düşük (<0.8×10⁻³)'}];
+const KONTRAST_OPT=[
+  {v:'yok',l:'Tutulum yok'},
+  {v:'cm',l:'Kortikomedüller faz tutulumu (hızlı wash-out)'},
+  {v:'persistan',l:'Persistan / progressif artış'},
+  {v:'uniform',l:'Uniform / homojen'},
+  {v:'het',l:'Heterojen tutulum'},
+  {v:'rim',l:'Rim / halka tarzı tutulum'},
+  {v:'striated',l:'Striated nephrogram (çizgili)'},
+  {v:'az',l:'Zayıf / minimal tutulum'},
+];
+const SKAR_OPT=[{v:'yok',l:'Yok'},{v:'merkezi',l:'Merkezi skar (T2 hipo, kontrastlanan)'},{v:'periferik',l:'Periferik fibrozis'}];
+const BOSNIAK_OPT=[
+  {v:'I',l:'Bosniak I – Basit kist (ince duvar, septasyon yok, kontrast yok)'},
+  {v:'II',l:'Bosniak II – Minimal komplike (ince septalar, kalsifikasyon, protein)'},
+  {v:'IIF',l:'Bosniak IIF – Orta komplike (>1 ince septal, hafif kontrast, takip)'},
+  {v:'III',l:'Bosniak III – Kompleks (kalın septalar/duvar, belirgin kontrast)'},
+  {v:'IV',l:'Bosniak IV – Kistik malign (solid enhancing nodül)'},
+];
+const PERIRENAL_OPT=[{v:'temiz',l:'Normal'},{v:'enflamasyon',l:'Yağ doku inflamasyonu'},{v:'hematom',l:'Hematom/kanama'},{v:'kitle',l:'Kitle uzanımı'},{v:'fibroz',l:'Fibrozis/kalınlaşma'}];
+const HIDRONEFROZ_OPT=[{v:'yok',l:'Yok'},{v:'hafif',l:'Hafif (grade 1-2)'},{v:'orta',l:'Orta (grade 2-3)'},{v:'ileri',l:'İleri (grade 4)'}];
+const BAGLAM_OPT=[
+  {v:'rutin',l:'Rutin tarama / insidental'},
+  {v:'kitle',l:'Bilinen/şüpheli kitle'},
+  {v:'travma',l:'Travma'},
+  {v:'enfeksiyon',l:'Ateş / enfeksiyon'},
+  {v:'onkoloji',l:'Sistemik malignite takibi'},
+  {v:'vaskuler',l:'Vasküler hastalık şüphesi'},
+  {v:'pediatrik',l:'Pediatrik hasta (<18 yaş)'},
+  {v:'immun',l:'İmmünosupresif / diyabetik'},
+];
+const KORTEKS_OPT=[{v:'normal',l:'Normal'},{v:'incelme',l:'Kortikal incelme'},{v:'duzensiz',l:'Düzensizlik'},{v:'kayip',l:'Fokal kayıp'},{v:'kalın',l:'Difüz kalınlaşma'}];
+const BOYUT_BOB_OPT=[{v:'normal',l:'Normal boyut'},{v:'buyuk',l:'Büyümüş'},{v:'kucuk',l:'Küçülmüş/atrofik'}];
+const LN_OPT=[{v:'normal',l:'Normal'},{v:'buyumush',l:'Büyümüş lenf nodu (>1 cm)'},{v:'multiple',l:'Multiple büyümüş'},{v:'retroperitoneal',l:'Retroperitoneal lenfadenopati'}];
+const RV_OPT=[{v:'acik',l:'Açık'},{v:'trombuz',l:'Trombüs (bland/tümöral?)'},{v:'genislemis',l:'Genişlemiş'}];
+
+// ── PATOLOJI VERİTABANI ──────────────────────────────────────────────────────
+const PATOLOGILER=[
+  // MALİGN
+  {id:'ccRCC',   ad:'Berrak Hücreli RCC',        kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'papRCC',  ad:'Papiller RCC',               kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'chRCC',   ad:'Kromofob RCC',               kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'uroCC',   ad:'Ürotelyal Karsinom',         kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'medRCC',  ad:'Toplayıcı Kanal Karsinomu',  kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'lenfoma', ad:'Renal Lenfoma',              kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'metastaz',ad:'Renal Metastaz',             kat:'Malign Tümör',   renk:'#f87171'},
+  {id:'wilms',   ad:'Wilms Tümörü (Nefroblastom)',kat:'Malign Tümör',   renk:'#f87171'},
+  // BENİGN
+  {id:'aml',     ad:'AML (Klasik, Yağlı)',        kat:'Benign Tümör',   renk:'#4ade80'},
+  {id:'aml_pf',  ad:'AML (Yağ Fakir – pf)',       kat:'Benign Tümör',   renk:'#4ade80'},
+  {id:'onko',    ad:'Onkositom',                  kat:'Benign Tümör',   renk:'#4ade80'},
+  {id:'metadrn', ad:'Metanefrik Adenom',          kat:'Benign Tümör',   renk:'#4ade80'},
+  // KİSTİK
+  {id:'kist12',  ad:'Basit/Minimal Komplike Kist',kat:'Kistik Lezyon',  renk:'#60a5fa'},
+  {id:'kistIIF', ad:'Orta Komplike Kist (IIF)',   kat:'Kistik Lezyon',  renk:'#60a5fa'},
+  {id:'kistIII', ad:'Kompleks Kist (Bosniak III)',kat:'Kistik Lezyon',  renk:'#60a5fa'},
+  {id:'kistIV',  ad:'Kistik RCC (Bosniak IV)',    kat:'Kistik Lezyon',  renk:'#fb923c'},
+  {id:'adpkd',   ad:'ADPKD / Polikistik Böbrek',  kat:'Kistik Lezyon',  renk:'#60a5fa'},
+  // ENFEKTİF
+  {id:'pyelo',   ad:'Akut Pyelonefrit / Fokal Nefrit', kat:'Enfektif',  renk:'#facc15'},
+  {id:'apse',    ad:'Renal Apse',                 kat:'Enfektif',       renk:'#facc15'},
+  {id:'xgp',     ad:'Ksantogranülomatöz Pyelonefrit', kat:'Enfektif',  renk:'#facc15'},
+  {id:'tbc',     ad:'Renal Tüberküloz',           kat:'Enfektif',       renk:'#facc15'},
+  // TRAVMATİK
+  {id:'kontuz',  ad:'Kontüzyon / Laserasyon',     kat:'Travmatik',      renk:'#c084fc'},
+  {id:'hematom', ad:'Subkapsüler / Perinefrik Hematom', kat:'Travmatik',renk:'#c084fc'},
+  // DİĞER
+  {id:'infarkt', ad:'Renal İnfarkt',              kat:'Vasküler',       renk:'#fb923c'},
+  {id:'vrentrom',ad:'Renal Ven Trombozu',         kat:'Vasküler',       renk:'#fb923c'},
+];
+
+// ── SCORING ENGINE ────────────────────────────────────────────────────────────
+function hesaplaSkor(id, l, baglam) {
+  let s = 0;
+  const b = parseFloat(l.boyut) || 0;
+  const {karakter,T1,T2,yag,DWI,ADC,kontrast,skar,bosniak,perirenal,sayi,pol}=l;
+
+  switch(id){
+    case 'ccRCC':{
+      if(karakter==='solid')s+=14;
+      if(karakter==='kombine')s+=9;
+      if(T2==='hiper')s+=14;
+      if(T2==='het')s+=7;
+      if(kontrast==='cm')s+=20;
+      if(kontrast==='het')s+=9;
+      if(yag==='mikro')s+=7;
+      if(DWI==='serbest'||DWI==='hafif')s+=5;
+      if(b>30)s+=5; if(b>70)s+=5;
+      if(baglam==='rutin'||baglam==='kitle')s+=4;
+      if(perirenal==='kitle')s+=8;
+      break;}
+    case 'papRCC':{
+      if(karakter==='solid')s+=14;
+      if(T2==='hipo')s+=20;
+      if(T1==='hiper')s+=7;
+      if(kontrast==='persistan')s+=13;
+      if(kontrast==='az')s+=9;
+      if(DWI==='kisitli')s+=13;
+      if(ADC==='dusuk')s+=11;
+      if(sayi==='multiple')s+=6;
+      break;}
+    case 'chRCC':{
+      if(karakter==='solid')s+=14;
+      if(T2==='izo')s+=12;
+      if(T2==='hipo')s+=6;
+      if(kontrast==='uniform')s+=10;
+      if(kontrast==='het')s+=8;
+      if(skar==='merkezi')s+=8;
+      if(b>40)s+=6;
+      break;}
+    case 'uroCC':{
+      if(pol==='hiler')s+=18;
+      if(karakter==='infiltratif')s+=18;
+      if(karakter==='solid')s+=8;
+      if(DWI==='kisitli')s+=11;
+      if(T2==='izo'||T2==='hipo')s+=8;
+      if(kontrast==='az')s+=8;
+      if(l.hidronefroz&&l.hidronefroz!=='yok')s+=10;
+      break;}
+    case 'medRCC':{
+      if(pol==='hiler')s+=12;
+      if(karakter==='infiltratif')s+=16;
+      if(DWI==='kisitli'||DWI==='cok_kisitli')s+=12;
+      if(kontrast==='het')s+=8;
+      if(b>50)s+=6;
+      break;}
+    case 'lenfoma':{
+      if(karakter==='infiltratif')s+=16;
+      if(karakter==='solid')s+=10;
+      if(sayi==='multiple'||sayi==='cok')s+=14;
+      if(T2==='hipo')s+=10;
+      if(kontrast==='az')s+=10;
+      if(DWI==='kisitli')s+=10;
+      if(perirenal==='kitle')s+=8;
+      if(baglam==='onkoloji')s+=12;
+      break;}
+    case 'metastaz':{
+      if(baglam==='onkoloji')s+=20;
+      if(sayi==='multiple'||sayi==='cok')s+=12;
+      if(karakter==='solid')s+=10;
+      if(DWI==='kisitli')s+=10;
+      if(b<40)s+=5;
+      break;}
+    case 'wilms':{
+      if(baglam==='pediatrik')s+=28;
+      if(b>60)s+=10;
+      if(T2==='het')s+=8;
+      if(karakter==='kombine'||karakter==='solid')s+=10;
+      break;}
+    case 'aml':{
+      if(yag==='makro')s+=35;
+      if(T1==='hiper')s+=15;
+      if(T2==='hiper')s+=8;
+      if(karakter==='solid')s+=8;
+      break;}
+    case 'aml_pf':{
+      if(karakter==='solid')s+=14;
+      if(T2==='hipo')s+=12;
+      if(yag==='yok'||yag==='mikro')s+=8;
+      if(kontrast==='het'||kontrast==='cm')s+=10;
+      if(DWI==='serbest'||DWI==='hafif')s+=7;
+      break;}
+    case 'onko':{
+      if(karakter==='solid')s+=14;
+      if(skar==='merkezi')s+=20;
+      if(T2==='het')s+=8;
+      if(kontrast==='uniform')s+=12;
+      if(yag==='yok')s+=5;
+      if(b>30)s+=5;
+      break;}
+    case 'metadrn':{
+      if(karakter==='solid')s+=14;
+      if(T2==='hipo')s+=14;
+      if(kontrast==='az')s+=12;
+      if(DWI==='kisitli')s+=10;
+      if(b<30)s+=8;
+      break;}
+    case 'kist12':{
+      if(karakter==='kistik')s+=22;
+      if(T2==='hiper')s+=18;
+      if(kontrast==='yok')s+=15;
+      if(bosniak==='I'||bosniak==='II')s+=22;
+      if(T1==='hipo')s+=10;
+      break;}
+    case 'kistIIF':{
+      if(karakter==='kistik')s+=18;
+      if(bosniak==='IIF')s+=22;
+      if(T2==='hiper')s+=12;
+      if(kontrast==='az')s+=10;
+      break;}
+    case 'kistIII':{
+      if(karakter==='kistik')s+=14;
+      if(bosniak==='III')s+=22;
+      if(T2==='het')s+=8;
+      if(kontrast==='rim'||kontrast==='het')s+=12;
+      break;}
+    case 'kistIV':{
+      if(karakter==='kombine'||karakter==='kistik')s+=12;
+      if(bosniak==='IV')s+=22;
+      if(kontrast==='het')s+=14;
+      if(T2==='het')s+=8;
+      break;}
+    case 'adpkd':{
+      if(sayi==='cok'||sayi==='diffuz')s+=25;
+      if(karakter==='kistik')s+=15;
+      if(T1==='het'||T1==='hiper')s+=8;
+      break;}
+    case 'pyelo':{
+      if(baglam==='enfeksiyon'||baglam==='immun')s+=22;
+      if(karakter==='infiltratif')s+=18;
+      if(kontrast==='striated')s+=20;
+      if(kontrast==='az')s+=10;
+      if(DWI==='hafif'||DWI==='kisitli')s+=10;
+      if(karakter==='solid')s+=5;
+      break;}
+    case 'apse':{
+      if(baglam==='enfeksiyon'||baglam==='immun')s+=18;
+      if(karakter==='kistik'||karakter==='kombine')s+=12;
+      if(kontrast==='rim')s+=22;
+      if(DWI==='cok_kisitli')s+=22;
+      if(ADC==='cok_dusuk')s+=18;
+      if(perirenal==='enflamasyon')s+=10;
+      break;}
+    case 'xgp':{
+      if(baglam==='enfeksiyon')s+=16;
+      if(karakter==='diffuz'||sayi==='diffuz')s+=14;
+      if(perirenal==='fibroz'||perirenal==='enflamasyon')s+=12;
+      if(T1==='het')s+=8;
+      if(l.hidronefroz&&l.hidronefroz!=='yok')s+=8;
+      break;}
+    case 'tbc':{
+      if(baglam==='enfeksiyon')s+=12;
+      if(sayi==='multiple'||sayi==='cok')s+=12;
+      if(karakter==='kistik')s+=10;
+      if(T1==='het')s+=8;
+      if(l.hidronefroz&&l.hidronefroz!=='yok')s+=6;
+      break;}
+    case 'kontuz':{
+      if(baglam==='travma')s+=30;
+      if(perirenal==='hematom')s+=18;
+      if(karakter==='infiltratif'||karakter==='kombine')s+=12;
+      break;}
+    case 'hematom':{
+      if(baglam==='travma')s+=25;
+      if(T1==='hiper')s+=20;
+      if(T2==='hipo')s+=12;
+      if(perirenal==='hematom')s+=18;
+      if(karakter==='kistik'||karakter==='kombine')s+=10;
+      break;}
+    case 'infarkt':{
+      if(karakter==='infiltratif'||karakter==='solid')s+=12;
+      if(kontrast==='yok')s+=18;
+      if(DWI==='kisitli'||DWI==='cok_kisitli')s+=16;
+      if(pol==='ust'||pol==='alt')s+=8;
+      if(baglam==='vaskuler')s+=14;
+      break;}
+    case 'vrentrom':{
+      if(karakter==='vask')s+=20;
+      if(T1==='hiper')s+=12;
+      if(l.hidronefroz&&l.hidronefroz!=='yok')s+=8;
+      if(baglam==='vaskuler')s+=12;
+      break;}
+    default: s=0;
+  }
+  return Math.max(s,0);
+}
+
+function getDxList(l, baglam){
+  const scored=PATOLOGILER.map(p=>({...p, skor:hesaplaSkor(p.id, l, baglam)}));
+  const total=scored.reduce((sum,p)=>sum+p.skor,0);
+  return scored
+    .map(p=>({...p, pct:total>0?Math.round((p.skor/total)*100):0}))
+    .sort((a,b)=>b.skor-a.skor);
+}
+
+
+// ── UI HELPERS ─────────────────────────────────────────────────────────────────
+function Chips({opts,val,onChange,multi=false}){
+  return(
+    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+      {opts.map(o=>{
+        const sel=multi?(val||[]).includes(o.v):val===o.v;
+        return(
+          <button key={o.v} onClick={()=>{
+            if(multi){const a=val||[];onChange(a.includes(o.v)?a.filter(x=>x!==o.v):[...a,o.v]);}
+            else onChange(o.v);
+          }} style={{
+            padding:'8px 14px',borderRadius:8,fontSize:13,fontFamily:'inherit',cursor:'pointer',
+            border:`2px solid ${sel?AC:'#1e2a2e'}`,
+            background:sel?'rgba(6,182,212,0.12)':'#111a1e',
+            color:sel?AC:'#7090a0',transition:'all 0.15s',
+          }}>{o.l}</button>
+        );
+      })}
+    </div>
+  );
+}
+function TxtIn({val,onChange,ph,type='text'}){
+  return <input type={type} value={val} onChange={e=>onChange(e.target.value)} placeholder={ph}
+    style={{width:'100%',padding:'10px 14px',borderRadius:8,border:'2px solid #1e2a2e',
+    background:'#111a1e',color:'#e0e0f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>;
+}
+function Q({title,hint,children}){
+  return(
+    <div style={{marginBottom:22}}>
+      <div style={{color:'#90b8c0',fontSize:12,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:hint?4:10}}>{title}</div>
+      {hint&&<div style={{color:'#3a5a62',fontSize:11,marginBottom:10}}>{hint}</div>}
+      {children}
+    </div>
+  );
+}
+function Chk({label,checked,onChange}){
+  return(
+    <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
+      color:checked?AC:'#7090a0',fontSize:14}} onClick={()=>onChange(!checked)}>
+      <div style={{width:20,height:20,borderRadius:4,border:`2px solid ${checked?AC:'#1e2a2e'}`,
+        background:checked?'rgba(6,182,212,0.12)':'#111a1e',
+        display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        {checked&&<span style={{color:AC,fontSize:11,fontWeight:700}}>✓</span>}
+      </div>
+      {label}
+    </label>
+  );
+}
+function LezCard({l,idx,onDelete}){
+  const tip={solid:'Solid',kistik:'Kistik',kombine:'Kombine',infiltratif:'İnfiltratif',vask:'Vasküler'}[l.karakter]||l.karakter||'?';
+  const taraf=l.taraf==='sag'?'Sağ':l.taraf==='sol'?'Sol':'Bil.';
+  return(
+    <div style={{background:'#111a1e',borderRadius:10,padding:'12px 16px',
+      border:'1px solid #1e2a2e',display:'flex',justifyContent:'space-between',
+      alignItems:'flex-start',gap:12,marginBottom:8}}>
+      <div>
+        <div style={{color:AC,fontWeight:600,fontSize:13,marginBottom:3}}>
+          Lezyon {idx+1} — {taraf} böbrek, {tip}
+        </div>
+        <div style={{color:'#4a7080',fontSize:12}}>
+          {l.boyut?l.boyut+' mm · ':''}{l.sayi||''}{l.pol?' · '+l.pol:''}
+        </div>
+      </div>
+      <button onClick={()=>onDelete(idx)} style={{
+        background:'rgba(248,113,113,0.08)',border:'1px solid #f87171',color:'#f87171',
+        borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontFamily:'inherit',flexShrink:0
+      }}>Sil</button>
+    </div>
+  );
+}
+
+// ── DX BAR COMPONENT ──────────────────────────────────────────────────────────
+function DxBar({p,rank}){
+  const w=p.pct+'%';
+  return(
+    <div style={{marginBottom:10}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:3}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{color:p.pct>0?'#ccc':'#333',fontWeight:rank<=3?600:400,fontSize:rank<=3?14:12}}>
+            {rank}. {p.ad}
+          </span>
+          <span style={{background:p.renk+'22',color:p.renk,borderRadius:4,padding:'1px 7px',fontSize:10}}>
+            {p.kat}
+          </span>
+        </div>
+        <span style={{color:p.renk,fontWeight:700,fontSize:13}}>{p.pct}%</span>
+      </div>
+      <div style={{height:6,background:'#1a2a2e',borderRadius:3,overflow:'hidden'}}>
+        <div style={{height:'100%',width:w,background:p.renk,borderRadius:3,
+          transition:'width 0.6s ease',opacity:p.pct>0?1:0}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── STEP CONSTANTS ────────────────────────────────────────────────────────────
+const PRE=3,LS=4,LE=9,POSTL=10,TOTAL=13;
+const TITLES=[
+  'Klinik Bilgi','Teknik Bilgi','Genel Böbrek Değerlendirmesi',
+  'Lezyon Listesi',
+  'Lezyon — Lokalizasyon & Boyut',
+  'Lezyon — Karakterizasyon',
+  'Lezyon — T1/T2/Yağ Sinyalleri',
+  'Lezyon — DWI / ADC',
+  'Lezyon — Kontrast Dinamikleri',
+  'Lezyon — Kistik Kriterler / Özel Bulgular',
+  'Böbrek Dışı Bulgular',
+  'Klinik Bağlam',
+  'Ayırıcı Tanı & Rapor',
+];
+
+// ── REPORT GENERATOR ──────────────────────────────────────────────────────────
+function lbl(opts,v){return opts.find(o=>o.v===v)?.l||v||'—';}
+
+function formatLez(l,i,baglam){
+  const dx=getDxList(l,baglam);
+  const top3=dx.filter(p=>p.pct>5).slice(0,3);
+  const lines=[];
+  lines.push(`Lezyon ${i+1} [${lbl(TARAF_OPT,l.taraf)} böbrek - ${lbl(POL_OPT,l.pol)}]`);
+  if(l.boyut)lines.push(`   Boyut: ${l.boyut} mm`);
+  lines.push(`   Sayı: ${lbl(SAYI_OPT,l.sayi)}`);
+  lines.push(`   Karakter: ${lbl(KARAKTER_OPT,l.karakter)}`);
+  if(l.T1)lines.push(`   T1: ${lbl(T1_OPT,l.T1)}`);
+  if(l.T2)lines.push(`   T2: ${lbl(T2_OPT,l.T2)}`);
+  if(l.yag)lines.push(`   Yağ: ${lbl(YAG_OPT,l.yag)}`);
+  if(l.DWI)lines.push(`   DWI/ADC: ${lbl(DWI_OPT,l.DWI)}${l.ADC?' / ADC: '+lbl(ADC_OPT,l.ADC):''}`);
+  if(l.kontrast)lines.push(`   Kontrast: ${lbl(KONTRAST_OPT,l.kontrast)}`);
+  if(l.bosniak)lines.push(`   Bosniak: ${l.bosniak}`);
+  if(l.perirenal&&l.perirenal!=='temiz')lines.push(`   Perirenal: ${lbl(PERIRENAL_OPT,l.perirenal)}`);
+  if(top3.length){
+    lines.push(`   Ayırıcı Tanı:`);
+    top3.forEach(p=>lines.push(`     • ${p.ad} (%${p.pct}) — ${p.kat}`));
+  }
+  if(l.not)lines.push(`   Not: ${l.not}`);
+  return lines.join('\n');
+}
+
+function generateReport(d){
+  const lines=[];
+  lines.push('BÖBREK MRI RAPORU');
+  lines.push('─'.repeat(52));
+  lines.push('');
+  lines.push('KLİNİK BİLGİ');
+  lines.push(`Yaş/Cinsiyet: ${d.yas||'—'}${d.cinsiyet?' / '+d.cinsiyet:''}`);
+  lines.push(`Endikasyon: ${d.endikasyon||'—'}`);
+  lines.push(`Klinik bağlam: ${lbl(BAGLAM_OPT,d.baglam)}`);
+  lines.push('');
+  lines.push('TEKNİK');
+  const seqTxt=Array.isArray(d.sekans)?d.sekans.join(', '):'—';
+  lines.push(`Sekans: ${seqTxt}`);
+  lines.push(`Kontrast: ${d.kontr||'—'}`);
+  lines.push('');
+  lines.push('GENEL DEĞERLENDİRME');
+  lines.push(`Sağ böbrek: ${lbl(BOYUT_BOB_OPT,d.sagBoyut)}, korteks ${lbl(KORTEKS_OPT,d.sagKorteks)}`);
+  lines.push(`Sol böbrek: ${lbl(BOYUT_BOB_OPT,d.solBoyut)}, korteks ${lbl(KORTEKS_OPT,d.solKorteks)}`);
+  if(d.sagHidro||d.solHidro){
+    lines.push(`Hidronefrozis: Sağ ${lbl(HIDRONEFROZ_OPT,d.sagHidro||'yok')} / Sol ${lbl(HIDRONEFROZ_OPT,d.solHidro||'yok')}`);
+  }
+  lines.push('');
+  lines.push('LEZYON DEĞERLENDİRMESİ');
+  if(d.lezyonlar.length===0){
+    lines.push('Böbreklerde kontrastlanan patolojik lezyon saptanmadı.');
+  } else {
+    d.lezyonlar.forEach((l,i)=>lines.push(formatLez(l,i,d.baglam)));
+  }
+  lines.push('');
+  lines.push('BÖBREK DIŞI BULGULAR');
+  if(d.lenf)lines.push(`Lenf nodu: ${lbl(LN_OPT,d.lenf)}`);
+  if(d.renalVen&&d.renalVen!=='acik')lines.push(`Renal ven: ${lbl(RV_OPT,d.renalVen)}`);
+  if(d.adrenal)lines.push(`Adrenal: ${d.adrenal}`);
+  if(d.ekBulgu)lines.push(`Ek: ${d.ekBulgu}`);
+  if(d.not)lines.push(`\nNOT: ${d.not}`);
+  return lines.join('\n');
+}
+
+// ── STEP RENDERS ──────────────────────────────────────────────────────────────
+const SEKANS_OPT=[
+  {v:'T1',l:'T1 TSE/SE'},{v:'T2',l:'T2 TSE'},{v:'T2fs',l:'T2 FS'},
+  {v:'DWI',l:'DWI/ADC'},{v:'T1fsCE',l:'T1 FS Kontrastlı (dinamik)'},
+  {v:'IP_OP',l:'In-phase / Opposed-phase'},{v:'DCE',l:'DCE (dinamik CE)'},
+  {v:'T2star',l:'T2*'},{v:'MRU',l:'MR Ürografi'},
+];
+const KONTR_OPT=[{v:'kontsuz',l:'Kontrastsız'},{v:'gd',l:'Gadolinyum verildi (standart doz)'},{v:'gd_dusuk',l:'Gadolinyum (düşük doz)'},{v:'hepatospecific',l:'Hepatoselüler spesifik ajan'}];
+
+function StepKlinik({d,set}){
+  return(<div>
+    <Q title="Yaş"><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph="Örn: 58" type="number"/></Q>
+    <Q title="Cinsiyet">
+      <Chips opts={[{v:'E',l:'Erkek'},{v:'K',l:'Kadın'}]} val={d.cinsiyet} onChange={v=>set('cinsiyet',v)}/>
+    </Q>
+    <Q title="Endikasyon"><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph="İnsidental kitle / hematüri / ağrı / takip..."/></Q>
+    <Q title="Klinik Bağlam" hint="Ayırıcı tanı motorunu etkiler">
+      <Chips opts={BAGLAM_OPT} val={d.baglam} onChange={v=>set('baglam',v)}/>
+    </Q>
+  </div>);
+}
+
+function StepTeknik({d,set}){
+  return(<div>
+    <Q title="Uygulanan Sekanslar" hint="Çoklu seçim">
+      <Chips opts={SEKANS_OPT} val={d.sekans} onChange={v=>set('sekans',v)} multi={true}/>
+    </Q>
+    <Q title="Kontrast"><Chips opts={KONTR_OPT} val={d.kontr} onChange={v=>set('kontr',v)}/></Q>
+  </div>);
+}
+
+function StepGenelBobrek({d,set}){
+  return(<div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+      {[['Sağ','sag'],['Sol','sol']].map(([label,pfx])=>(
+        <div key={pfx} style={{background:'#111a1e',borderRadius:10,padding:16,border:'1px solid #1e2a2e'}}>
+          <div style={{color:AC,fontSize:12,fontWeight:600,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.05em'}}>{label} Böbrek</div>
+          <Q title="Boyut"><Chips opts={BOYUT_BOB_OPT} val={d[pfx+'Boyut']} onChange={v=>set(pfx+'Boyut',v)}/></Q>
+          <Q title="Korteks"><Chips opts={KORTEKS_OPT} val={d[pfx+'Korteks']} onChange={v=>set(pfx+'Korteks',v)}/></Q>
+          <Q title="Hidronefrozis"><Chips opts={HIDRONEFROZ_OPT} val={d[pfx+'Hidro']} onChange={v=>set(pfx+'Hidro',v)}/></Q>
+        </div>
+      ))}
+    </div>
+    <div style={{marginTop:16}}>
+      <Q title="Genel Not"><TxtIn val={d.genelBobrekNot} onChange={v=>set('genelBobrekNot',v)} ph="Asimetri, genel parankimal değişiklik..."/></Q>
+    </div>
+  </div>);
+}
+
+function StepPreLoop({d,set,addLez}){
+  return(<div>
+    <p style={{color:'#4a7080',fontSize:13,marginBottom:16}}>
+      {d.lezyonlar.length===0
+        ? 'Saptanan lezyonları ekleyin. Lezyon yoksa "İleri" ile devam edin.'
+        : `${d.lezyonlar.length} lezyon eklendi. Yeni lezyon ekleyebilir veya devam edebilirsiniz.`}
+    </p>
+    {d.lezyonlar.map((l,i)=>(
+      <LezCard key={i} l={l} idx={i} onDelete={idx=>set('lezyonlar',d.lezyonlar.filter((_,j)=>j!==idx))}/>
+    ))}
+    <button onClick={addLez} style={{
+      width:'100%',padding:'12px',borderRadius:10,
+      border:`2px dashed ${AC}`,background:'rgba(6,182,212,0.04)',
+      color:AC,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
+    }}>+ Lezyon Ekle</button>
+  </div>);
+}
+
+function StepLezLok({cl,setCl}){
+  return(<div>
+    <Q title="Taraf"><Chips opts={TARAF_OPT} val={cl.taraf} onChange={v=>setCl('taraf',v)}/></Q>
+    <Q title="Lokalizasyon (Pol)"><Chips opts={POL_OPT} val={cl.pol} onChange={v=>setCl('pol',v)}/></Q>
+    <Q title="Sayı / Dağılım"><Chips opts={SAYI_OPT} val={cl.sayi} onChange={v=>setCl('sayi',v)}/></Q>
+    <Q title="Boyut – en büyük (mm)"><TxtIn val={cl.boyut} onChange={v=>setCl('boyut',v)} ph="mm" type="number"/></Q>
+    <Q title="Not (opsiyonel)"><TxtIn val={cl.not} onChange={v=>setCl('not',v)} ph="Ek klinik not..."/></Q>
+  </div>);
+}
+
+function StepLezKarakter({cl,setCl}){
+  return(<Q title="Lezyon Karakteri" hint="Dominant karakter">
+    <Chips opts={KARAKTER_OPT} val={cl.karakter} onChange={v=>setCl('karakter',v)}/>
+  </Q>);
+}
+
+function StepLezSignal({cl,setCl}){
+  return(<div>
+    <Q title="T1 Sinyali"><Chips opts={T1_OPT} val={cl.T1} onChange={v=>setCl('T1',v)}/></Q>
+    <Q title="T2 Sinyali"><Chips opts={T2_OPT} val={cl.T2} onChange={v=>setCl('T2',v)}/></Q>
+    <Q title="Yağ Bileşeni" hint="Kimyasal kayma / yağ baskılı görüntüler">
+      <Chips opts={YAG_OPT} val={cl.yag} onChange={v=>setCl('yag',v)}/>
+    </Q>
+    <Q title="Merkezi Skar (opsiyonel)">
+      <Chips opts={SKAR_OPT} val={cl.skar} onChange={v=>setCl('skar',v)}/>
+    </Q>
+  </div>);
+}
+
+function StepLezDWI({cl,setCl}){
+  return(<div>
+    <Q title="DWI Görünümü"><Chips opts={DWI_OPT} val={cl.DWI} onChange={v=>setCl('DWI',v)}/></Q>
+    <Q title="ADC Değeri (görsel)"><Chips opts={ADC_OPT} val={cl.ADC} onChange={v=>setCl('ADC',v)}/></Q>
+  </div>);
+}
+
+function StepLezKontrast({cl,setCl}){
+  return(<div>
+    <Q title="Kontrast Tutulum Paterni" hint="En baskın patern">
+      <Chips opts={KONTRAST_OPT} val={cl.kontrast} onChange={v=>setCl('kontrast',v)}/>
+    </Q>
+    <Q title="Perirenal Doku">
+      <Chips opts={PERIRENAL_OPT} val={cl.perirenal} onChange={v=>setCl('perirenal',v)}/>
+    </Q>
+  </div>);
+}
+
+function StepLezSpecial({cl,setCl}){
+  return(<div>
+    {(cl.karakter==='kistik'||cl.karakter==='kombine')&&(
+      <Q title="Bosniak Kategorisi (2019 rev.)" hint="Kistik lezyon değerlendirmesi">
+        <Chips opts={BOSNIAK_OPT} val={cl.bosniak} onChange={v=>setCl('bosniak',v)}/>
+      </Q>
+    )}
+    {cl.karakter==='solid'&&(
+      <div>
+        <Q title="Yağ Dışı Özel Bulgular">
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <Chk label="Kalsifikasyon" checked={!!cl.kals} onChange={v=>setCl('kals',v)}/>
+            <Chk label="İntralesyonel kanama (T1 fokal hiperinans)" checked={!!cl.kanama} onChange={v=>setCl('kanama',v)}/>
+            <Chk label="Renal ven / IVC uzanımı" checked={!!cl.venUzanim} onChange={v=>setCl('venUzanim',v)}/>
+            <Chk label="Kapsül taşma / perinefrik uzanım" checked={!!cl.kapsulTasma} onChange={v=>setCl('kapsulTasma',v)}/>
+          </div>
+        </Q>
+      </div>
+    )}
+    {cl.karakter==='infiltratif'&&(
+      <Q title="İnfiltratif Patern">
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <Chk label="Toplayıcı sistem tutulumu" checked={!!cl.toplayiciSistem} onChange={v=>setCl('toplayiciSistem',v)}/>
+          <Chk label="İpsilateral üreter kalınlaşması" checked={!!cl.ureterKalin} onChange={v=>setCl('ureterKalin',v)}/>
+          <Chk label="Tüm böbrek tutulumu (diffüz)" checked={!!cl.tumBobrek} onChange={v=>setCl('tumBobrek',v)}/>
+        </div>
+      </Q>
+    )}
+    <Q title="Hidronefrozis (lezyon ilişkili)">
+      <Chips opts={HIDRONEFROZ_OPT} val={cl.hidronefroz} onChange={v=>setCl('hidronefroz',v)}/>
+    </Q>
+  </div>);
+}
+
+
+function StepEkBulgular({d,set}){
+  return(<div>
+    <Q title="Lenf Nodu"><Chips opts={LN_OPT} val={d.lenf} onChange={v=>set('lenf',v)}/></Q>
+    <Q title="Renal Ven / IVC"><Chips opts={RV_OPT} val={d.renalVen} onChange={v=>set('renalVen',v)}/></Q>
+    <Q title="Adrenal (opsiyonel)"><TxtIn val={d.adrenal} onChange={v=>set('adrenal',v)} ph="Normal / lezyon tanımı..."/></Q>
+    <Q title="Diğer Karın İçi Bulgular"><TxtIn val={d.ekBulgu} onChange={v=>set('ekBulgu',v)} ph="Ek bulgular..."/></Q>
+  </div>);
+}
+
+function StepBaglam({d,set}){
+  return(<div>
+    <Q title="Klinik Bağlam (güncelle)" hint="Skoring motorunu optimize eder">
+      <Chips opts={BAGLAM_OPT} val={d.baglam} onChange={v=>set('baglam',v)}/>
+    </Q>
+    <Q title="Genel Not / Sonuç Yorumu">
+      <TxtIn val={d.not} onChange={v=>set('not',v)} ph="Klinik yorum, önceki tetkiklerle karşılaştırma..."/>
+    </Q>
+  </div>);
+}
+
+function StepSonuc({d,set,copyMsg,onCopy,onDownload}){
+  const allDx=useMemo(()=>d.lezyonlar.map((l,i)=>({
+    lezIdx:i+1, taraf:l.taraf, dx:getDxList(l,d.baglam).slice(0,8)
+  })),[d.lezyonlar,d.baglam]);
+
+  return(<div>
+    {d.lezyonlar.length===0?(
+      <div style={{padding:'20px',background:'#111a1e',borderRadius:10,
+        border:'1px solid #1e2a2e',color:'#4a7080',fontSize:14,textAlign:'center'}}>
+        Kayıtlı lezyon yok — genel böbrek değerlendirmesi raporu oluşturulacak.
+      </div>
+    ):(
+      <div>
+        {allDx.map(({lezIdx,taraf,dx})=>(
+          <div key={lezIdx} style={{background:'#111a1e',borderRadius:12,padding:20,
+            border:'1px solid #1e2a2e',marginBottom:16}}>
+            <div style={{color:AC,fontWeight:700,fontSize:14,marginBottom:16}}>
+              Lezyon {lezIdx} — {taraf==='sag'?'Sağ':taraf==='sol'?'Sol':'Bilateral'} Böbrek
+            </div>
+            {dx.filter(p=>p.pct>0).slice(0,8).map((p,i)=>(
+              <DxBar key={p.id} p={p} rank={i+1}/>
+            ))}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Summary flags */}
+    {d.lezyonlar.length>0&&(()=>{
+      const topDx=d.lezyonlar.map((l,i)=>{
+        const dx=getDxList(l,d.baglam);
+        return {idx:i+1,top:dx[0],second:dx[1]};
+      });
+      const hasMalign=topDx.some(x=>x.top&&x.top.kat==='Malign Tümör'&&x.top.pct>20);
+      const hasEnfek=topDx.some(x=>x.top&&x.top.kat==='Enfektif'&&x.top.pct>20);
+      const hasTravma=topDx.some(x=>x.top&&x.top.kat==='Travmatik'&&x.top.pct>20);
+      return(
+        <div style={{marginBottom:16}}>
+          {hasMalign&&<div style={{padding:'10px 14px',background:'rgba(248,113,113,0.08)',
+            borderRadius:8,borderLeft:'3px solid #f87171',marginBottom:8,color:'#fca5a5',fontSize:13}}>
+            ⚠ Malign tümör yüksek ayırıcı tanıda — ileri değerlendirme / biyopsi planlanmalıdır.
+          </div>}
+          {hasEnfek&&<div style={{padding:'10px 14px',background:'rgba(250,204,21,0.08)',
+            borderRadius:8,borderLeft:'3px solid #facc15',marginBottom:8,color:'#fde68a',fontSize:13}}>
+            ⚠ Enfektif patoloji yüksek olasılıklı — klinik ve laboratuvar korelasyonu önerilir.
+          </div>}
+          {hasTravma&&<div style={{padding:'10px 14px',background:'rgba(192,132,252,0.08)',
+            borderRadius:8,borderLeft:'3px solid #c084fc',marginBottom:8,color:'#e9d5ff',fontSize:13}}>
+            ⚠ Travmatik lezyon saptandı — AAST evreleme değerlendirmesi önerilir.
+          </div>}
+        </div>
+      );
+    })()}
+
+    <Q title="Sonuç Notu (opsiyonel)">
+      <TxtIn val={d.not} onChange={v=>set('not',v)} ph="Klinik öneri, takip süresi..."/>
+    </Q>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:8}}>
+      {[
+        ['Raporu Göster',()=>set('showReport',true),AC],
+        [copyMsg||'Panoya Kopyala',onCopy,'#4ade80'],
+        ['HTML İndir',onDownload,'#60a5fa'],
+        ['Yazdır',()=>window.print(),'#a78bfa'],
+      ].map(([label,fn,c])=>(
+        <button key={label} onClick={fn} style={{
+          padding:'10px 18px',borderRadius:8,border:`2px solid ${c}`,
+          background:`${c}18`,color:c,cursor:'pointer',
+          fontSize:13,fontFamily:'inherit',fontWeight:600,
+        }}>{label}</button>
+      ))}
+    </div>
+  </div>);
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+const EMPTY_LEZ={taraf:'',pol:'',sayi:'tekil',boyut:'',karakter:'',
+  T1:'',T2:'',yag:'',skar:'',DWI:'',ADC:'',kontrast:'',bosniak:'',
+  perirenal:'temiz',hidronefroz:'yok',
+  kals:false,kanama:false,venUzanim:false,kapsulTasma:false,
+  toplayiciSistem:false,ureterKalin:false,tumBobrek:false,not:''};
+
+function App(){
+  const [step,setStep]=useState(0);
+  const [lezIdx,setLezIdx]=useState(-1);
+  const [copyMsg,setCopyMsg]=useState('');
+  const [d,setD]=useState({
+    yas:'',cinsiyet:'',endikasyon:'',baglam:'',
+    sekans:[],kontr:'',
+    sagBoyut:'normal',sagKorteks:'normal',sagHidro:'yok',
+    solBoyut:'normal',solKorteks:'normal',solHidro:'yok',
+    genelBobrekNot:'',
+    lezyonlar:[],
+    cl:{...EMPTY_LEZ},
+    lenf:'',renalVen:'acik',adrenal:'',ekBulgu:'',
+    not:'',showReport:false,
+  });
+
+  const set=(k,v)=>setD(p=>({...p,[k]:v}));
+  const setCl=(k,v)=>setD(p=>({...p,cl:{...p.cl,[k]:v}}));
+
+  const inLoop=step>=LS&&step<=LE;
+
+  function addLez(){
+    setD(p=>({...p,cl:{...EMPTY_LEZ}}));
+    setLezIdx(d.lezyonlar.length);
+    setStep(LS);
+  }
+  function finalizeLez(){
+    setD(p=>({...p,
+      lezyonlar:[...p.lezyonlar,{...p.cl}],
+      cl:{...EMPTY_LEZ},
+    }));
+    setLezIdx(-1);
+    setStep(PRE);
+  }
+
+  function goNext(){
+    if(step===PRE){
+      if(lezIdx===-1)setStep(POSTL);
+      else setStep(LS);
+      return;
+    }
+    if(inLoop){
+      const nx=step+1;
+      if(nx>LE){finalizeLez();}
+      else setStep(nx);
+      return;
+    }
+    setStep(s=>Math.min(s+1,TOTAL-1));
+  }
+  function goPrev(){
+    if(step===POSTL){setStep(PRE);return;}
+    if(inLoop){
+      const pv=step-1;
+      if(pv<LS){setLezIdx(-1);setStep(PRE);}
+      else setStep(pv);
+      return;
+    }
+    setStep(s=>Math.max(0,s-1));
+  }
+
+  function copyReport(){
+    const txt=generateReport(d);
+    navigator.clipboard.writeText(txt).then(()=>{
+      setCopyMsg('Kopyalandı ✓');setTimeout(()=>setCopyMsg(''),2200);
+    });
+  }
+  function dlHTML(){
+    const txt=generateReport(d);
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Böbrek MRI Raporu</title>
+<style>body{font-family:Arial,sans-serif;max-width:820px;margin:40px auto;padding:20px;color:#111;}
+h1{color:#0891b2;border-bottom:2px solid #0891b2;padding-bottom:8px;}
+pre{white-space:pre-wrap;line-height:1.9;font-size:13px;}</style></head>
+<body><h1>Böbrek MRI Raporu</h1><pre>${txt}</pre></body></html>`;
+    const blob=new Blob([html],{type:'text/html'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='bobrek_mri_raporu.html';
+    a.click();
+  }
+
+  const progress=Math.round((step/(TOTAL-1))*100);
+  const sectionName=()=>{
+    if(step<=2)return'Genel';
+    if(step===PRE)return'Lezyon Listesi';
+    if(inLoop)return`Lezyon Girişi (${lezIdx+1})`;
+    if(step===POSTL)return'Ek Bulgular';
+    if(step===POSTL+1)return'Bağlam';
+    return'Sonuç';
+  };
+
+  function renderStep(){
+    switch(step){
+      case 0:return<StepKlinik d={d} set={set}/>;
+      case 1:return<StepTeknik d={d} set={set}/>;
+      case 2:return<StepGenelBobrek d={d} set={set}/>;
+      case PRE:return<StepPreLoop d={d} set={set} addLez={addLez}/>;
+      case 4:return<StepLezLok cl={d.cl} setCl={setCl}/>;
+      case 5:return<StepLezKarakter cl={d.cl} setCl={setCl}/>;
+      case 6:return<StepLezSignal cl={d.cl} setCl={setCl}/>;
+      case 7:return<StepLezDWI cl={d.cl} setCl={setCl}/>;
+      case 8:return<StepLezKontrast cl={d.cl} setCl={setCl}/>;
+      case 9:return<StepLezSpecial cl={d.cl} setCl={setCl}/>;
+      case POSTL:return<StepEkBulgular d={d} set={set}/>;
+      case POSTL+1:return<StepBaglam d={d} set={set}/>;
+      case TOTAL-1:return<StepSonuc d={d} set={set} copyMsg={copyMsg} onCopy={copyReport} onDownload={dlHTML}/>;
+      default:return null;
+    }
+  }
+
+  // Report modal
+  function ReportModal(){
+    if(!d.showReport)return null;
+    const rpt=generateReport(d);
+    return(
+      <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.9)',
+        display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:20}}>
+        <div style={{background:'#fff',color:'#111',borderRadius:14,
+          maxWidth:800,width:'100%',maxHeight:'88vh',overflow:'auto',padding:32}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+            <h2 style={{margin:0,color:'#0891b2',fontSize:19}}>Böbrek MRI Raporu</h2>
+            <button onClick={()=>set('showReport',false)} style={{background:'none',border:'none',
+              cursor:'pointer',fontSize:22,color:'#888',lineHeight:1}}>×</button>
+          </div>
+          <pre style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.9,fontFamily:'monospace'}}>{rpt}</pre>
+          <div style={{display:'flex',gap:10,marginTop:20,flexWrap:'wrap'}}>
+            <button onClick={copyReport} style={{padding:'8px 18px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||'Kopyala'}</button>
+            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>Yazdır</button>
+            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>HTML İndir</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{minHeight:'100vh',background:'#0f0e17',fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+      <ReportModal/>
+      {/* HEADER */}
+      <div className="no-print" style={{background:'linear-gradient(135deg,#071218,#0a1a22)',
+        padding:'18px 24px',borderBottom:'1px solid #0e2a36'}}>
+        <div style={{maxWidth:760,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+            <div style={{width:36,height:36,borderRadius:'50%',
+              background:'radial-gradient(circle,#06b6d4,#0369a1)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:17,flexShrink:0}}>⬡</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:700,color:'#e0f2f8'}}>Böbrek MRI Değerlendirme</div>
+              <div style={{fontSize:11,color:AC}}>Multilezyoner Ayırıcı Tanı · 25 Patoloji</div>
+            </div>
+            <div style={{textAlign:'right',fontSize:11,color:'#2a5a6a'}}>
+              <div>{sectionName()}</div>
+              <div style={{color:'#1a3a4a'}}>{step+1} / {TOTAL}</div>
+            </div>
+          </div>
+          <div style={{height:3,background:'#0e2a36',borderRadius:2}}>
+            <div style={{height:'100%',width:`${progress}%`,
+              background:'linear-gradient(90deg,#0369a1,#06b6d4)',
+              borderRadius:2,transition:'width 0.3s'}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* BODY */}
+      <div style={{maxWidth:760,margin:'0 auto',padding:'30px 24px'}}>
+        <div style={{marginBottom:22}}>
+          <div style={{fontSize:17,fontWeight:600,color:'#c0e8f0',marginBottom:3}}>
+            {TITLES[step]}
+          </div>
+          {inLoop&&<div style={{fontSize:11,color:AC,marginTop:2}}>
+            Lezyon {lezIdx+1} girişi — adım {step-LS+1}/{LE-LS+1}
+          </div>}
+        </div>
+        <div style={{animation:'fadeIn 0.22s ease'}}>
+          {renderStep()}
+        </div>
+        {/* NAVIGATION */}
+        <div className="no-print" style={{display:'flex',justifyContent:'space-between',
+          marginTop:30,paddingTop:18,borderTop:'1px solid #0e1e24'}}>
+          <button onClick={goPrev} disabled={step===0} style={{
+            padding:'10px 22px',borderRadius:8,border:'1px solid #0e2a36',
+            background:step===0?'#0f0e17':'#111a1e',
+            color:step===0?'#0e2a36':'#4a7080',
+            cursor:step===0?'default':'pointer',fontSize:13,fontFamily:'inherit',
+          }}>← Geri</button>
+          {step<TOTAL-1&&(
+            <button onClick={goNext} style={{
+              padding:'10px 26px',borderRadius:8,border:'none',
+              background:'linear-gradient(135deg,#0369a1,#06b6d4)',
+              color:'#fff',cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:600,
+            }}>İleri →</button>
+          )}
+        </div>
+      </div>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}`}</style>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

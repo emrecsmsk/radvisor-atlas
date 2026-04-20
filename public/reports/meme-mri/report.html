@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Meme MRI Değerlendirme</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0f0e17;color:#e0e0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#1a1826;}
+::-webkit-scrollbar-thumb{background:#3a2a3a;border-radius:3px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@media print{
+  .no-print{display:none!important;}
+  body{background:#fff!important;color:#000!important;}
+  .report-content{color:#000!important;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback } = React;
+
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+
+const FGT_OPT = [
+  {v:'a',l:'a – Neredeyse tamamen yağ'},
+  {v:'b',l:'b – Dağınık fibroglandüler doku'},
+  {v:'c',l:'c – Heterojen fibroglandüler doku'},
+  {v:'d',l:'d – Belirgin fibroglandüler doku'},
+];
+const BPE_OPT = [
+  {v:'minimal',l:'Minimal'},
+  {v:'mild',l:'Hafif (Mild)'},
+  {v:'moderate',l:'Orta (Moderate)'},
+  {v:'marked',l:'Belirgin (Marked)'},
+];
+const SIMETRI_OPT = [{v:'simetrik',l:'Simetrik'},{v:'asimetrik',l:'Asimetrik'}];
+const TIP_OPT = [
+  {v:'kitle',l:'Kitle (Mass)'},
+  {v:'nme',l:'Kitle Dışı Tutulum (NME)'},
+  {v:'focus',l:'Odak / Focus (<5 mm)'},
+];
+const KADRAN_OPT = [
+  {v:'USK',l:'Üst dış kadran (USK)'},
+  {v:'UIK',l:'Üst iç kadran (UİK)'},
+  {v:'ASK',l:'Alt dış kadran (ASK)'},
+  {v:'AIK',l:'Alt iç kadran (AİK)'},
+  {v:'retroareolar',l:'Retroareolar'},
+  {v:'santral',l:'Santral'},
+  {v:'aksiller',l:'Aksiller kuyruk'},
+  {v:'diffuz',l:'Diffüz / yaygın'},
+];
+const DERINLIK_OPT = [
+  {v:'anterior',l:'Anterior 1/3'},
+  {v:'orta',l:'Orta 1/3'},
+  {v:'posterior',l:'Posterior 1/3'},
+];
+const SEKIL_OPT = [
+  {v:'oval',l:'Oval'},
+  {v:'yuvarlak',l:'Yuvarlak'},
+  {v:'duzensiz',l:'Düzensiz'},
+];
+const KENAR_OPT = [
+  {v:'duzgun',l:'Düzgün (Circumscribed)'},
+  {v:'duzensiz',l:'Düzensiz (Irregular)'},
+  {v:'spikule',l:'Spiküler'},
+];
+const IC_YAPI_OPT = [
+  {v:'homojen',l:'Homojen'},
+  {v:'heterojen',l:'Heterojen'},
+  {v:'rim',l:'Rim tutulumu'},
+  {v:'darkSeptae',l:'Karanlık internal septalar'},
+  {v:'rimDark',l:'Rim + Karanlık septalar'},
+];
+const DAGILIM_OPT = [
+  {v:'fokal',l:'Fokal'},
+  {v:'lineer',l:'Lineer'},
+  {v:'segmental',l:'Segmental'},
+  {v:'bolgesel',l:'Bölgesel (Regional)'},
+  {v:'multiBolge',l:'Birden fazla bölge'},
+  {v:'diffuz',l:'Diffüz'},
+];
+const IC_PATERN_OPT = [
+  {v:'homojen',l:'Homojen'},
+  {v:'heterojen',l:'Heterojen'},
+  {v:'clumped',l:'Clumped'},
+  {v:'clusteredRing',l:'Clustered ring'},
+];
+const KIN_INIT_OPT = [
+  {v:'yavas',l:'Yavaş (<50%)'},
+  {v:'orta',l:'Orta (50–100%)'},
+  {v:'hizli',l:'Hızlı (>100%)'},
+];
+const KIN_DEL_OPT = [
+  {v:'persistan',l:'Persistan (artış devam)'},
+  {v:'plato',l:'Plato'},
+  {v:'washout',l:'Wash-out (azalma)'},
+];
+const LN_OPT = [
+  {v:'normal',l:'Normal'},
+  {v:'suphelı',l:'Şüpheli (korteks kalınlaşması)'},
+  {v:'patolojik',l:'Patolojik'},
+  {v:'goruntulenemiyor',l:'Görüntülenemedi'},
+];
+
+function lbl(opts, v) { return opts.find(o => o.v === v)?.l || v || '—'; }
+
+// ── BI-RADS AUTO ──────────────────────────────────────────────────────────────
+
+function autoBIRADS(lezyonlar) {
+  if (!lezyonlar || lezyonlar.length === 0) return 1;
+  let max = 1;
+  for (const l of lezyonlar) {
+    let s = 2;
+    if (l.tip === 'focus') { s = 3; }
+    else if (l.tip === 'kitle') {
+      if (l.sekil === 'oval' && l.kenar === 'duzgun') s = 2;
+      else if (l.sekil === 'yuvarlak' && l.kenar === 'duzgun') s = 3;
+      else if (l.sekil === 'duzensiz' || l.kenar === 'duzensiz') s = 4;
+      else if (l.kenar === 'spikule') s = 5;
+      if (l.icYapi === 'rim') s = Math.max(s, 4);
+      if (l.kinetikDelayed === 'washout' && l.kinetikInitial === 'hizli') s = Math.max(s, 4);
+      if (l.kinetikDelayed === 'persistan' && l.sekil === 'oval' && l.kenar === 'duzgun') s = Math.min(s, 3);
+    } else if (l.tip === 'nme') {
+      s = 3;
+      if (l.dagilim === 'segmental' || l.dagilim === 'lineer') s = Math.max(s, 4);
+      if (l.icPatern === 'clusteredRing' || l.icPatern === 'clumped') s = Math.max(s, 4);
+      if (l.kinetikDelayed === 'washout') s = Math.max(s, 4);
+    }
+    max = Math.max(max, s);
+  }
+  return Math.min(max, 5);
+}
+
+function biradsTxt(n) {
+  return ['','BI-RADS 1 – Negatif','BI-RADS 2 – Benign bulgu',
+    'BI-RADS 3 – Muhtemelen benign (≤2%)',
+    'BI-RADS 4 – Şüpheli (>2–95%)',
+    'BI-RADS 5 – Malignite açısından çok şüpheli (≥95%)',
+    'BI-RADS 6 – Biyopsi kanıtlı malignite'][n] || `BI-RADS ${n}`;
+}
+
+function biradsColor(n) {
+  if (n <= 2) return '#4ade80';
+  if (n === 3) return '#facc15';
+  if (n === 4) return '#fb923c';
+  return '#f87171';
+}
+
+function takipOneri(sag, sol) {
+  const m = Math.max(sag, sol);
+  if (m <= 1) return 'Her iki meme negatif. Rutin tarama programına devam.';
+  if (m === 2) return 'Benign bulgular. Rutin tarama önerilir.';
+  if (m === 3) return '6 aylık kısa aralıklı MRI takibi önerilir.';
+  if (m === 4) return 'Biyopsi endikasyonu mevcuttur. Girişimsel yaklaşım planlanmalıdır.';
+  if (m === 5) return 'Yüksek malignite şüphesi. Biyopsi + multidisipliner onkoloji değerlendirmesi.';
+  return '';
+}
+
+// ── REPORT ────────────────────────────────────────────────────────────────────
+
+function formatLezyon(l, idx) {
+  const tip = {kitle:'Kitle',nme:'NME',focus:'Odak'}[l.tip] || l.tip;
+  let parts = [`Lezyon ${idx+1} [${tip}]`];
+  const k = lbl(KADRAN_OPT, l.kadran);
+  if (l.tip === 'focus') {
+    parts.push(`Lokalizasyon: ${k}`);
+  } else if (l.tip === 'kitle') {
+    parts.push(`Lokalizasyon: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}${l.boyut ? ', ' + l.boyut + ' mm' : ''}`);
+    parts.push(`Morfoloji: ${lbl(SEKIL_OPT,l.sekil)}, ${lbl(KENAR_OPT,l.kenar)} kenar, ${lbl(IC_YAPI_OPT,l.icYapi)} iç yapı`);
+    parts.push(`Kinetik: İlk faz ${lbl(KIN_INIT_OPT,l.kinetikInitial)} – Geç faz ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
+  } else if (l.tip === 'nme') {
+    parts.push(`Lokalizasyon: ${k}${l.derinlik ? ', ' + lbl(DERINLIK_OPT,l.derinlik) : ''}`);
+    parts.push(`Dağılım: ${lbl(DAGILIM_OPT,l.dagilim)}, İç patern: ${lbl(IC_PATERN_OPT,l.icPatern)}`);
+    parts.push(`Kinetik: Geç faz ${lbl(KIN_DEL_OPT,l.kinetikDelayed)}`);
+  }
+  if (l.not) parts.push(`Not: ${l.not}`);
+  return parts.join('\n   ');
+}
+
+function generateReport(d) {
+  const sagFinal = d.sagBiradsOvr ? parseInt(d.sagBiradsOvr) : autoBIRADS(d.sagLezyonlar);
+  const solFinal = d.solBiradsOvr ? parseInt(d.solBiradsOvr) : autoBIRADS(d.solLezyonlar);
+  const lines = [];
+  lines.push('MEME MRI RAPORU');
+  lines.push('─'.repeat(50));
+  lines.push('');
+  lines.push('KLİNİK BİLGİ');
+  lines.push(`Yaş: ${d.yas || '—'}`);
+  lines.push(`Endikasyon: ${d.endikasyon || '—'}`);
+  if (d.oncekiTedavi) lines.push(`Önceki tedavi/biyopsi: ${d.oncekiTedavi}`);
+  lines.push('');
+  lines.push('PARANKİMAL DEĞERLENDİRME');
+  lines.push(`FGT: ${lbl(FGT_OPT,d.fgt)}`);
+  lines.push(`BPE: ${lbl(BPE_OPT,d.bpe)}${d.bpeSimetri ? ' – ' + d.bpeSimetri : ''}`);
+  lines.push('');
+  lines.push('SAĞ MEME');
+  if (d.sagLezyonlar.length === 0) {
+    lines.push('Sağ memede kontrastlanan patolojik lezyon saptanmadı.');
+  } else {
+    d.sagLezyonlar.forEach((l,i) => lines.push(formatLezyon(l,i)));
+  }
+  const sagEk = [];
+  if (d.sagMemeBasiRetraksiyon) sagEk.push('Meme başı retraksiyonu');
+  if (d.sagCiltKalinlasma) sagEk.push('Cilt kalınlaşması' + (d.sagCiltLok ? ' (' + d.sagCiltLok + ')' : ''));
+  if (d.sagImplant) sagEk.push('Meme implantı');
+  if (sagEk.length) lines.push('Ek: ' + sagEk.join(' | '));
+  lines.push('');
+  lines.push('SOL MEME');
+  if (d.solLezyonlar.length === 0) {
+    lines.push('Sol memede kontrastlanan patolojik lezyon saptanmadı.');
+  } else {
+    d.solLezyonlar.forEach((l,i) => lines.push(formatLezyon(l,i)));
+  }
+  const solEk = [];
+  if (d.solMemeBasiRetraksiyon) solEk.push('Meme başı retraksiyonu');
+  if (d.solCiltKalinlasma) solEk.push('Cilt kalınlaşması' + (d.solCiltLok ? ' (' + d.solCiltLok + ')' : ''));
+  if (d.solImplant) solEk.push('Meme implantı');
+  if (solEk.length) lines.push('Ek: ' + solEk.join(' | '));
+  lines.push('');
+  if (d.sagAksillerLN || d.solAksillerLN) {
+    lines.push('AKSİLLER DEĞERLENDİRME');
+    if (d.sagAksillerLN) lines.push(`Sağ aksilla: ${lbl(LN_OPT,d.sagAksillerLN)}`);
+    if (d.solAksillerLN) lines.push(`Sol aksilla: ${lbl(LN_OPT,d.solAksillerLN)}`);
+    lines.push('');
+  }
+  lines.push('SONUÇ');
+  lines.push(`Sağ meme: ${biradsTxt(sagFinal)}`);
+  lines.push(`Sol meme: ${biradsTxt(solFinal)}`);
+  lines.push('');
+  lines.push('TAKİP ÖNERİSİ');
+  lines.push(takipOneri(sagFinal, solFinal));
+  if (d.genelNot) { lines.push(''); lines.push('NOT: ' + d.genelNot); }
+  return lines.join('\n');
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────────
+
+const ACCENT = '#e879a0';
+const ACCENT2 = '#c2185b';
+
+function Chips({ opts, val, onChange, multi=false }) {
+  return (
+    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+      {opts.map(o => {
+        const sel = multi ? (val||[]).includes(o.v) : val===o.v;
+        return (
+          <button key={o.v} onClick={() => {
+            if(multi){const a=val||[];onChange(a.includes(o.v)?a.filter(x=>x!==o.v):[...a,o.v]);}
+            else onChange(o.v);
+          }} style={{
+            padding:'8px 14px',borderRadius:8,fontSize:13,fontFamily:'inherit',cursor:'pointer',
+            border:`2px solid ${sel?ACCENT:'#2a2838'}`,
+            background:sel?'rgba(232,121,160,0.12)':'#1a1826',
+            color:sel?ACCENT:'#8888a0',transition:'all 0.15s',
+          }}>{o.l}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TxtIn({val,onChange,ph,type='text'}) {
+  return <input type={type} value={val} onChange={e=>onChange(e.target.value)} placeholder={ph}
+    style={{width:'100%',padding:'10px 14px',borderRadius:8,border:'2px solid #2a2838',
+    background:'#1a1826',color:'#e0e0f0',fontSize:14,fontFamily:'inherit',outline:'none'}}/>;
+}
+
+function Chk({label,checked,onChange}) {
+  return (
+    <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
+      color:checked?ACCENT:'#8888a0',fontSize:14}} onClick={()=>onChange(!checked)}>
+      <div style={{width:20,height:20,borderRadius:4,border:`2px solid ${checked?ACCENT:'#2a2838'}`,
+        background:checked?'rgba(232,121,160,0.15)':'#1a1826',
+        display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        {checked&&<span style={{color:ACCENT,fontSize:11,fontWeight:700}}>✓</span>}
+      </div>
+      {label}
+    </label>
+  );
+}
+
+function Q({title,children,hint}) {
+  return (
+    <div style={{marginBottom:22}}>
+      <div style={{color:'#b0b0c8',fontSize:12,textTransform:'uppercase',letterSpacing:'0.06em',
+        marginBottom:hint?4:10}}>{title}</div>
+      {hint&&<div style={{color:'#555570',fontSize:11,marginBottom:10}}>{hint}</div>}
+      {children}
+    </div>
+  );
+}
+
+function LezCard({l,idx,onDelete}) {
+  const tip = {kitle:'Kitle',nme:'NME',focus:'Odak'}[l.tip]||l.tip;
+  const k = lbl(KADRAN_OPT,l.kadran);
+  let detail = k;
+  if(l.tip==='kitle') detail += (l.boyut?' · '+l.boyut+' mm':'') + (l.sekil?' · '+lbl(SEKIL_OPT,l.sekil):'');
+  if(l.tip==='nme') detail += l.dagilim?' · '+lbl(DAGILIM_OPT,l.dagilim):'';
+  return (
+    <div style={{background:'#1a1826',borderRadius:10,padding:'12px 16px',
+      border:'1px solid #2a2838',display:'flex',justifyContent:'space-between',
+      alignItems:'flex-start',gap:12,marginBottom:8}}>
+      <div>
+        <div style={{color:ACCENT,fontWeight:600,fontSize:13,marginBottom:3}}>
+          Lezyon {idx+1} – {tip}
+        </div>
+        <div style={{color:'#666880',fontSize:12}}>{detail}</div>
+      </div>
+      <button onClick={()=>onDelete(idx)} style={{
+        background:'rgba(248,113,113,0.08)',border:'1px solid #f87171',color:'#f87171',
+        borderRadius:6,padding:'4px 10px',cursor:'pointer',fontSize:11,fontFamily:'inherit',flexShrink:0
+      }}>Sil</button>
+    </div>
+  );
+}
+
+// ── STEP INDICES ──────────────────────────────────────────────────────────────
+// 0:klinik 1:fgt 2:bpe
+// 3:sag-pre 4:sag-tip 5:sag-lok 6:sag-morfo 7:sag-kin  8:sag-post
+// 9:sol-pre 10:sol-tip 11:sol-lok 12:sol-morfo 13:sol-kin 14:sol-post
+// 15:ln 16:sonuc
+const SAG_PRE=3,SAG_LS=4,SAG_LE=7,SAG_POST=8;
+const SOL_PRE=9,SOL_LS=10,SOL_LE=13,SOL_POST=14;
+const TOTAL=17;
+
+const STEP_TITLES=[
+  'Klinik Bilgi','Fibroglandüler Doku (FGT)','BPE – Arka Plan Parankimal Tutulum',
+  'Sağ Meme – Lezyon Listesi',
+  'Sağ – Lezyon Tipi','Sağ – Lokalizasyon','Sağ – Morfoloji','Sağ – Kinetik',
+  'Sağ Meme – Ek Bulgular',
+  'Sol Meme – Lezyon Listesi',
+  'Sol – Lezyon Tipi','Sol – Lokalizasyon','Sol – Morfoloji','Sol – Kinetik',
+  'Sol Meme – Ek Bulgular',
+  'Aksiller Lenf Nodları',
+  'Sonuç & BI-RADS',
+];
+
+const BIOV=[{v:'',l:'Otomatik'},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},
+  {v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'},{v:'6',l:'6'}];
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [sagIdx, setSagIdx] = useState(-1); // -1 = not in sag loop
+  const [solIdx, setSolIdx] = useState(-1);
+  const [d, setD] = useState({
+    yas:'',endikasyon:'',oncekiTedavi:'',
+    fgt:'',bpe:'',bpeSimetri:'simetrik',
+    sagLezyonlar:[],solLezyonlar:[],
+    // current sag lesion fields
+    sagTip:'',sagKadran:'',sagDerinlik:'',sagBoyut:'',
+    sagSekil:'',sagKenar:'',sagIcYapi:'',
+    sagDagilim:'',sagIcPatern:'',sagKinInit:'',sagKinDel:'',sagLezNot:'',
+    // current sol lesion fields
+    solTip:'',solKadran:'',solDerinlik:'',solBoyut:'',
+    solSekil:'',solKenar:'',solIcYapi:'',
+    solDagilim:'',solIcPatern:'',solKinInit:'',solKinDel:'',solLezNot:'',
+    // ek bulgular
+    sagMemeBasiRetraksiyon:false,sagCiltKalinlasma:false,sagCiltLok:'',sagImplant:false,
+    solMemeBasiRetraksiyon:false,solCiltKalinlasma:false,solCiltLok:'',solImplant:false,
+    sagAksillerLN:'',solAksillerLN:'',
+    sagBiradsOvr:'',solBiradsOvr:'',genelNot:'',
+  });
+  const set=(k,v)=>setD(p=>({...p,[k]:v}));
+
+  const [showRep,setShowRep]=useState(false);
+  const [copyMsg,setCopyMsg]=useState('');
+
+  const inSagLoop = step>=SAG_LS && step<=SAG_LE;
+  const inSolLoop = step>=SOL_LS && step<=SOL_LE;
+
+  function skipSag(i){
+    if((i===6||i===7) && d.sagTip==='focus') return true;
+    return false;
+  }
+  function skipSol(i){
+    if((i===12||i===13) && d.solTip==='focus') return true;
+    return false;
+  }
+
+  function finalizeSag() {
+    const l={
+      tip:d.sagTip,kadran:d.sagKadran,derinlik:d.sagDerinlik,boyut:d.sagBoyut,
+      sekil:d.sagSekil,kenar:d.sagKenar,icYapi:d.sagIcYapi,
+      dagilim:d.sagDagilim,icPatern:d.sagIcPatern,
+      kinetikInitial:d.sagKinInit,kinetikDelayed:d.sagKinDel,not:d.sagLezNot,
+    };
+    setD(p=>({
+      ...p,sagLezyonlar:[...p.sagLezyonlar,l],
+      sagTip:'',sagKadran:'',sagDerinlik:'',sagBoyut:'',sagSekil:'',sagKenar:'',sagIcYapi:'',
+      sagDagilim:'',sagIcPatern:'',sagKinInit:'',sagKinDel:'',sagLezNot:'',
+    }));
+    setSagIdx(-1);
+    setStep(SAG_PRE);
+  }
+  function finalizeSol() {
+    const l={
+      tip:d.solTip,kadran:d.solKadran,derinlik:d.solDerinlik,boyut:d.solBoyut,
+      sekil:d.solSekil,kenar:d.solKenar,icYapi:d.solIcYapi,
+      dagilim:d.solDagilim,icPatern:d.solIcPatern,
+      kinetikInitial:d.solKinInit,kinetikDelayed:d.solKinDel,not:d.solLezNot,
+    };
+    setD(p=>({
+      ...p,solLezyonlar:[...p.solLezyonlar,l],
+      solTip:'',solKadran:'',solDerinlik:'',solBoyut:'',solSekil:'',solKenar:'',solIcYapi:'',
+      solDagilim:'',solIcPatern:'',solKinInit:'',solKinDel:'',solLezNot:'',
+    }));
+    setSolIdx(-1);
+    setStep(SOL_PRE);
+  }
+
+  function goNext() {
+    // SAG pre-loop
+    if(step===SAG_PRE){
+      if(sagIdx===-1){setStep(SAG_POST);}
+      else{setStep(SAG_LS);}
+      return;
+    }
+    // in SAG loop
+    if(inSagLoop){
+      let nx=step+1;
+      while(nx<=SAG_LE && skipSag(nx)) nx++;
+      if(nx>SAG_LE){finalizeSag();}
+      else{setStep(nx);}
+      return;
+    }
+    // SOL pre-loop
+    if(step===SOL_PRE){
+      if(solIdx===-1){setStep(SOL_POST);}
+      else{setStep(SOL_LS);}
+      return;
+    }
+    // in SOL loop
+    if(inSolLoop){
+      let nx=step+1;
+      while(nx<=SOL_LE && skipSol(nx)) nx++;
+      if(nx>SOL_LE){finalizeSol();}
+      else{setStep(nx);}
+      return;
+    }
+    setStep(s=>Math.min(s+1,TOTAL-1));
+  }
+
+  function goPrev() {
+    if(step===SAG_POST){setStep(SAG_PRE);return;}
+    if(step===SOL_POST){setStep(SOL_PRE);return;}
+    if(inSagLoop){
+      let pv=step-1;
+      if(pv<SAG_LS){setSagIdx(-1);setStep(SAG_PRE);return;}
+      while(pv>=SAG_LS && skipSag(pv)) pv--;
+      setStep(Math.max(SAG_LS,pv));return;
+    }
+    if(inSolLoop){
+      let pv=step-1;
+      if(pv<SOL_LS){setSolIdx(-1);setStep(SOL_PRE);return;}
+      while(pv>=SOL_LS && skipSol(pv)) pv--;
+      setStep(Math.max(SOL_LS,pv));return;
+    }
+    setStep(s=>Math.max(0,s-1));
+  }
+
+  function addSagLez(){
+    setD(p=>({...p,sagTip:'',sagKadran:'',sagDerinlik:'',sagBoyut:'',sagSekil:'',
+      sagKenar:'',sagIcYapi:'',sagDagilim:'',sagIcPatern:'',sagKinInit:'',sagKinDel:'',sagLezNot:''}));
+    setSagIdx(d.sagLezyonlar.length);
+    setStep(SAG_LS);
+  }
+  function addSolLez(){
+    setD(p=>({...p,solTip:'',solKadran:'',solDerinlik:'',solBoyut:'',solSekil:'',
+      solKenar:'',solIcYapi:'',solDagilim:'',solIcPatern:'',solKinInit:'',solKinDel:'',solLezNot:''}));
+    setSolIdx(d.solLezyonlar.length);
+    setStep(SOL_LS);
+  }
+
+  function copyReport(){
+    const txt=generateReport(d);
+    navigator.clipboard.writeText(txt).then(()=>{setCopyMsg('Kopyalandı ✓');setTimeout(()=>setCopyMsg(''),2200);});
+  }
+  function dlHTML(){
+    const txt=generateReport(d);
+    const sagF=d.sagBiradsOvr?parseInt(d.sagBiradsOvr):autoBIRADS(d.sagLezyonlar);
+    const solF=d.solBiradsOvr?parseInt(d.solBiradsOvr):autoBIRADS(d.solLezyonlar);
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Meme MRI Raporu</title>
+<style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;padding:20px;color:#222;}
+h1{color:#c2185b;border-bottom:2px solid #c2185b;padding-bottom:8px;margin-bottom:20px;}
+pre{white-space:pre-wrap;line-height:1.9;font-size:14px;}</style>
+</head><body><h1>Meme MRI Raporu</h1><pre>${txt}</pre></body></html>`;
+    const blob=new Blob([html],{type:'text/html'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='meme_mri_raporu.html';
+    a.click();
+  }
+
+  const progress=Math.round((step/(TOTAL-1))*100);
+  const sectionOf=()=>{
+    if(step<=2)return'Genel';
+    if(step<=SAG_POST)return'Sağ Meme';
+    if(step<=SOL_POST)return'Sol Meme';
+    if(step===15)return'Aksilla';
+    return'Sonuç';
+  };
+
+  // ── render steps ──
+
+  function renderStep(){
+    switch(step){
+      case 0: return(
+        <div>
+          <Q title="Yaş"><TxtIn val={d.yas} onChange={v=>set('yas',v)} ph="Örn: 52" type="number"/></Q>
+          <Q title="Endikasyon"><TxtIn val={d.endikasyon} onChange={v=>set('endikasyon',v)} ph="Tarama / şüpheli kitle / neoadjuvan takip / biyopsi öncesi değerlendirme..."/></Q>
+          <Q title="Önceki tedavi / biyopsi (opsiyonel)"><TxtIn val={d.oncekiTedavi} onChange={v=>set('oncekiTedavi',v)} ph="Örn: 2022 yılı sol meme segmentektomi"/></Q>
+        </div>
+      );
+      case 1: return(
+        <Q title="Fibroglandüler Doku" hint="ACR BI-RADS MRI – FGT kategorisi">
+          <Chips opts={FGT_OPT} val={d.fgt} onChange={v=>set('fgt',v)}/>
+        </Q>
+      );
+      case 2: return(
+        <div>
+          <Q title="BPE Derecesi" hint="Arka Plan Parankimal Enhancement">
+            <Chips opts={BPE_OPT} val={d.bpe} onChange={v=>set('bpe',v)}/>
+          </Q>
+          <Q title="BPE Simetrisi">
+            <Chips opts={SIMETRI_OPT} val={d.bpeSimetri} onChange={v=>set('bpeSimetri',v)}/>
+          </Q>
+        </div>
+      );
+      case 3: return(
+        <div>
+          <p style={{color:'#666880',fontSize:13,marginBottom:16}}>
+            {d.sagLezyonlar.length===0
+              ? 'Sağ memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.'
+              : `${d.sagLezyonlar.length} lezyon eklendi. Yeni lezyon ekleyebilir veya İleri ile devam edebilirsiniz.`}
+          </p>
+          {d.sagLezyonlar.map((l,i)=>(
+            <LezCard key={i} l={l} idx={i} onDelete={idx=>setD(p=>({...p,sagLezyonlar:p.sagLezyonlar.filter((_,j)=>j!==idx)}))}/>
+          ))}
+          <button onClick={addSagLez} style={{
+            width:'100%',padding:'12px',borderRadius:10,
+            border:`2px dashed ${ACCENT}`,background:'rgba(232,121,160,0.04)',
+            color:ACCENT,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
+          }}>+ Lezyon Ekle</button>
+        </div>
+      );
+      case 4: return(
+        <Q title="Lezyon Tipi" hint="Sağ meme – lezyon karakterizasyonu">
+          <Chips opts={TIP_OPT} val={d.sagTip} onChange={v=>set('sagTip',v)}/>
+        </Q>
+      );
+      case 5: return(
+        <div>
+          <Q title="Kadran"><Chips opts={KADRAN_OPT} val={d.sagKadran} onChange={v=>set('sagKadran',v)}/></Q>
+          {d.sagTip!=='focus'&&(
+            <Q title="Derinlik"><Chips opts={DERINLIK_OPT} val={d.sagDerinlik} onChange={v=>set('sagDerinlik',v)}/></Q>
+          )}
+          {d.sagTip==='kitle'&&(
+            <Q title="Boyut – uzun aks (mm)"><TxtIn val={d.sagBoyut} onChange={v=>set('sagBoyut',v)} ph="mm" type="number"/></Q>
+          )}
+          <Q title="Not (opsiyonel)"><TxtIn val={d.sagLezNot} onChange={v=>set('sagLezNot',v)} ph="Ek açıklama..."/></Q>
+        </div>
+      );
+      case 6: return d.sagTip==='kitle'?(
+        <div>
+          <Q title="Şekil"><Chips opts={SEKIL_OPT} val={d.sagSekil} onChange={v=>set('sagSekil',v)}/></Q>
+          <Q title="Kenar"><Chips opts={KENAR_OPT} val={d.sagKenar} onChange={v=>set('sagKenar',v)}/></Q>
+          <Q title="İç Yapı Tutulumu"><Chips opts={IC_YAPI_OPT} val={d.sagIcYapi} onChange={v=>set('sagIcYapi',v)}/></Q>
+        </div>
+      ):(
+        <div>
+          <Q title="NME – Dağılım"><Chips opts={DAGILIM_OPT} val={d.sagDagilim} onChange={v=>set('sagDagilim',v)}/></Q>
+          <Q title="NME – İç Patern"><Chips opts={IC_PATERN_OPT} val={d.sagIcPatern} onChange={v=>set('sagIcPatern',v)}/></Q>
+        </div>
+      );
+      case 7: return(
+        <div>
+          {d.sagTip==='kitle'&&(
+            <Q title="Kinetik – İlk Faz"><Chips opts={KIN_INIT_OPT} val={d.sagKinInit} onChange={v=>set('sagKinInit',v)}/></Q>
+          )}
+          <Q title="Kinetik – Geç Faz"><Chips opts={KIN_DEL_OPT} val={d.sagKinDel} onChange={v=>set('sagKinDel',v)}/></Q>
+        </div>
+      );
+      case 8: return(
+        <div>
+          <Q title="Meme Başı">
+            <Chk label="Retraksiyon / involüsyon" checked={d.sagMemeBasiRetraksiyon} onChange={v=>set('sagMemeBasiRetraksiyon',v)}/>
+          </Q>
+          <Q title="Cilt">
+            <Chk label="Cilt kalınlaşması" checked={d.sagCiltKalinlasma} onChange={v=>set('sagCiltKalinlasma',v)}/>
+            {d.sagCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.sagCiltLok} onChange={v=>set('sagCiltLok',v)} ph="Lokalizasyon"/></div>}
+          </Q>
+          <Q title="Diğer">
+            <Chk label="Meme implantı mevcut" checked={d.sagImplant} onChange={v=>set('sagImplant',v)}/>
+          </Q>
+        </div>
+      );
+      case 9: return(
+        <div>
+          <p style={{color:'#666880',fontSize:13,marginBottom:16}}>
+            {d.solLezyonlar.length===0
+              ? 'Sol memede kontrastlanan lezyon saptandıysa ekleyin. Yoksa "İleri" ile devam edin.'
+              : `${d.solLezyonlar.length} lezyon eklendi.`}
+          </p>
+          {d.solLezyonlar.map((l,i)=>(
+            <LezCard key={i} l={l} idx={i} onDelete={idx=>setD(p=>({...p,solLezyonlar:p.solLezyonlar.filter((_,j)=>j!==idx)}))}/>
+          ))}
+          <button onClick={addSolLez} style={{
+            width:'100%',padding:'12px',borderRadius:10,
+            border:`2px dashed ${ACCENT}`,background:'rgba(232,121,160,0.04)',
+            color:ACCENT,cursor:'pointer',fontSize:14,fontFamily:'inherit',marginTop:8,
+          }}>+ Lezyon Ekle</button>
+        </div>
+      );
+      case 10: return(
+        <Q title="Lezyon Tipi" hint="Sol meme – lezyon karakterizasyonu">
+          <Chips opts={TIP_OPT} val={d.solTip} onChange={v=>set('solTip',v)}/>
+        </Q>
+      );
+      case 11: return(
+        <div>
+          <Q title="Kadran"><Chips opts={KADRAN_OPT} val={d.solKadran} onChange={v=>set('solKadran',v)}/></Q>
+          {d.solTip!=='focus'&&(
+            <Q title="Derinlik"><Chips opts={DERINLIK_OPT} val={d.solDerinlik} onChange={v=>set('solDerinlik',v)}/></Q>
+          )}
+          {d.solTip==='kitle'&&(
+            <Q title="Boyut – uzun aks (mm)"><TxtIn val={d.solBoyut} onChange={v=>set('solBoyut',v)} ph="mm" type="number"/></Q>
+          )}
+          <Q title="Not (opsiyonel)"><TxtIn val={d.solLezNot} onChange={v=>set('solLezNot',v)} ph="Ek açıklama..."/></Q>
+        </div>
+      );
+      case 12: return d.solTip==='kitle'?(
+        <div>
+          <Q title="Şekil"><Chips opts={SEKIL_OPT} val={d.solSekil} onChange={v=>set('solSekil',v)}/></Q>
+          <Q title="Kenar"><Chips opts={KENAR_OPT} val={d.solKenar} onChange={v=>set('solKenar',v)}/></Q>
+          <Q title="İç Yapı Tutulumu"><Chips opts={IC_YAPI_OPT} val={d.solIcYapi} onChange={v=>set('solIcYapi',v)}/></Q>
+        </div>
+      ):(
+        <div>
+          <Q title="NME – Dağılım"><Chips opts={DAGILIM_OPT} val={d.solDagilim} onChange={v=>set('solDagilim',v)}/></Q>
+          <Q title="NME – İç Patern"><Chips opts={IC_PATERN_OPT} val={d.solIcPatern} onChange={v=>set('solIcPatern',v)}/></Q>
+        </div>
+      );
+      case 13: return(
+        <div>
+          {d.solTip==='kitle'&&(
+            <Q title="Kinetik – İlk Faz"><Chips opts={KIN_INIT_OPT} val={d.solKinInit} onChange={v=>set('solKinInit',v)}/></Q>
+          )}
+          <Q title="Kinetik – Geç Faz"><Chips opts={KIN_DEL_OPT} val={d.solKinDel} onChange={v=>set('solKinDel',v)}/></Q>
+        </div>
+      );
+      case 14: return(
+        <div>
+          <Q title="Meme Başı">
+            <Chk label="Retraksiyon / involüsyon" checked={d.solMemeBasiRetraksiyon} onChange={v=>set('solMemeBasiRetraksiyon',v)}/>
+          </Q>
+          <Q title="Cilt">
+            <Chk label="Cilt kalınlaşması" checked={d.solCiltKalinlasma} onChange={v=>set('solCiltKalinlasma',v)}/>
+            {d.solCiltKalinlasma&&<div style={{marginTop:8}}><TxtIn val={d.solCiltLok} onChange={v=>set('solCiltLok',v)} ph="Lokalizasyon"/></div>}
+          </Q>
+          <Q title="Diğer">
+            <Chk label="Meme implantı mevcut" checked={d.solImplant} onChange={v=>set('solImplant',v)}/>
+          </Q>
+        </div>
+      );
+      case 15: return(
+        <div>
+          <Q title="Sağ Aksiller Lenf Nodu"><Chips opts={LN_OPT} val={d.sagAksillerLN} onChange={v=>set('sagAksillerLN',v)}/></Q>
+          <Q title="Sol Aksiller Lenf Nodu"><Chips opts={LN_OPT} val={d.solAksillerLN} onChange={v=>set('solAksillerLN',v)}/></Q>
+        </div>
+      );
+      case 16: {
+        const sagAuto=autoBIRADS(d.sagLezyonlar);
+        const solAuto=autoBIRADS(d.solLezyonlar);
+        const sagF=d.sagBiradsOvr?parseInt(d.sagBiradsOvr):sagAuto;
+        const solF=d.solBiradsOvr?parseInt(d.solBiradsOvr):solAuto;
+        return(
+          <div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:22}}>
+              {[['Sağ Meme',sagF,sagAuto,'sagBiradsOvr'],['Sol Meme',solF,solAuto,'solBiradsOvr']].map(([label,sc,auto,k])=>(
+                <div key={k} style={{background:'#1a1826',borderRadius:12,padding:16,border:'1px solid #2a2838'}}>
+                  <div style={{color:'#666880',fontSize:11,marginBottom:8}}>{label}</div>
+                  <div style={{fontSize:30,fontWeight:700,color:biradsColor(sc),marginBottom:2}}>BI-RADS {sc}</div>
+                  <div style={{color:'#444458',fontSize:10,marginBottom:12}}>Otomatik: {auto}</div>
+                  <div style={{color:'#666880',fontSize:11,marginBottom:6}}>Manuel düzelt:</div>
+                  <Chips opts={BIOV} val={d[k]} onChange={v=>set(k,v)}/>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'12px 16px',background:'#0d1f0d',borderRadius:10,
+              borderLeft:'3px solid #4ade80',marginBottom:20}}>
+              <div style={{color:'#4ade80',fontSize:11,marginBottom:5}}>TAKİP ÖNERİSİ</div>
+              <div style={{color:'#c0e0c0',fontSize:13}}>{takipOneri(sagF,solF)}</div>
+            </div>
+            <Q title="Genel Not (opsiyonel)">
+              <TxtIn val={d.genelNot} onChange={v=>set('genelNot',v)} ph="Karşılaştırma, klinik ek not..."/>
+            </Q>
+            <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:8}}>
+              {[
+                ['Raporu Göster',()=>setShowRep(true),'#e879a0'],
+                [copyMsg||'Panoya Kopyala',copyReport,'#4ade80'],
+                ['HTML İndir',dlHTML,'#60a5fa'],
+                ['Yazdır',()=>window.print(),'#a78bfa'],
+              ].map(([label,fn,c])=>(
+                <button key={label} onClick={fn} style={{
+                  padding:'10px 18px',borderRadius:8,border:`2px solid ${c}`,
+                  background:`${c}18`,color:c,cursor:'pointer',fontSize:13,
+                  fontFamily:'inherit',fontWeight:600,
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      default: return null;
+    }
+  }
+
+  // ── REPORT MODAL ──
+  function Modal() {
+    if(!showRep) return null;
+    const rpt=generateReport(d);
+    return(
+      <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.88)',
+        display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:20}}>
+        <div style={{background:'#fff',color:'#111',borderRadius:14,
+          maxWidth:760,width:'100%',maxHeight:'88vh',overflow:'auto',padding:32}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+            <h2 style={{margin:0,color:'#c2185b',fontSize:19}}>Meme MRI Raporu</h2>
+            <button onClick={()=>setShowRep(false)} style={{background:'none',border:'none',
+              cursor:'pointer',fontSize:22,color:'#888',lineHeight:1}}>×</button>
+          </div>
+          <pre className="report-content" style={{whiteSpace:'pre-wrap',fontSize:13,lineHeight:1.9,fontFamily:'monospace'}}>{rpt}</pre>
+          <div style={{display:'flex',gap:10,marginTop:20,flexWrap:'wrap'}}>
+            <button onClick={copyReport} style={{padding:'8px 18px',background:'#c2185b',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>{copyMsg||'Kopyala'}</button>
+            <button onClick={()=>window.print()} style={{padding:'8px 18px',background:'#555',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>Yazdır</button>
+            <button onClick={dlHTML} style={{padding:'8px 18px',background:'#1565c0',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>HTML İndir</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RENDER ──
+  return(
+    <div style={{minHeight:'100vh',background:'#0f0e17',color:'#e0e0f0',fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+      <Modal/>
+      {/* Header */}
+      <div className="no-print" style={{background:'linear-gradient(135deg,#1a0a1a,#150e28)',
+        padding:'18px 24px',borderBottom:'1px solid #2a1a2a'}}>
+        <div style={{maxWidth:720,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+            <div style={{width:34,height:34,borderRadius:'50%',
+              background:'radial-gradient(circle,#e879a0,#c2185b)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:16,flexShrink:0}}>✦</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:700,color:'#f0e6f0'}}>Meme MRI Değerlendirme</div>
+              <div style={{fontSize:11,color:ACCENT}}>ACR BI-RADS MRI Lexicon 2013</div>
+            </div>
+            <div style={{fontSize:11,color:'#444458',textAlign:'right'}}>
+              <div>{sectionOf()}</div>
+              <div style={{color:'#333348'}}>{step+1} / {TOTAL}</div>
+            </div>
+          </div>
+          {/* Progress */}
+          <div style={{height:3,background:'#2a1a2a',borderRadius:2}}>
+            <div style={{height:'100%',width:`${progress}%`,
+              background:'linear-gradient(90deg,#c2185b,#e879a0)',
+              borderRadius:2,transition:'width 0.3s'}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{maxWidth:720,margin:'0 auto',padding:'30px 24px'}}>
+        <div style={{marginBottom:22}}>
+          <div style={{fontSize:18,fontWeight:600,color:'#f0d0e8',marginBottom:3}}>
+            {STEP_TITLES[step]}
+          </div>
+          {inSagLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>Sağ meme – lezyon girişi devam ediyor</div>}
+          {inSolLoop&&<div style={{fontSize:11,color:ACCENT,marginTop:2}}>Sol meme – lezyon girişi devam ediyor</div>}
+        </div>
+        <div style={{animation:'fadeIn 0.22s ease'}}>
+          {renderStep()}
+        </div>
+        {/* Nav */}
+        <div className="no-print" style={{display:'flex',justifyContent:'space-between',
+          marginTop:30,paddingTop:18,borderTop:'1px solid #1a1826'}}>
+          <button onClick={goPrev} disabled={step===0} style={{
+            padding:'10px 22px',borderRadius:8,border:'1px solid #2a2838',
+            background:step===0?'#0f0e17':'#1a1826',
+            color:step===0?'#2a2838':'#7070a0',
+            cursor:step===0?'default':'pointer',fontSize:13,fontFamily:'inherit',
+          }}>← Geri</button>
+          {step<TOTAL-1&&(
+            <button onClick={goNext} style={{
+              padding:'10px 26px',borderRadius:8,border:'none',
+              background:'linear-gradient(135deg,#c2185b,#e879a0)',
+              color:'#fff',cursor:'pointer',fontSize:13,fontFamily:'inherit',fontWeight:600,
+            }}>İleri →</button>
+          )}
+        </div>
+      </div>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}`}</style>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
