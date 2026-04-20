@@ -1,5 +1,12 @@
 {
-  "title": "Orbita MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Orbita MR",
+    "en": "Orbital MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "orbita_mri.html"
 }

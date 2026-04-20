@@ -1,5 +1,12 @@
 {
-  "title": "Paranazal Sinüs MRI — Karar Destek v2",
-  "description": "",
+  "title": {
+    "tr": "Paranazal MR",
+    "en": "Paranasal MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "paranazal_mri_v2_fixed.html"
 }

@@ -1,5 +1,12 @@
 {
-  "title": "Sakroiliak Eklem MRI",
-  "description": "",
+  "title": {
+    "tr": "Sakroiliak Eklem MR",
+    "en": "Sacroiliac Joint MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "si_eklem_mri.html"
 }

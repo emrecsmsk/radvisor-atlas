@@ -1,5 +1,12 @@
 {
-  "title": "Baş-Boyun MRI Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Baş · Boyun MR",
+    "en": "Head · Neck MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "bas-boyun-mri (2).html"
 }

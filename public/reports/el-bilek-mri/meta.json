@@ -1,5 +1,12 @@
 {
-  "title": "El & El Bileği MRI Değerlendirme",
-  "description": "",
+  "title": {
+    "tr": "El · El Bileği MR",
+    "en": "Hand · Wrist MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "el-bilek-mri (3).html"
 }

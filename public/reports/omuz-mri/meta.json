@@ -1,5 +1,12 @@
 {
-  "title": "Omuz MRG — Çok Lezyonlu Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Omuz MR",
+    "en": "Shoulder MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "omuz-mri.html"
 }

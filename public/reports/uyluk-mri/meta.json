@@ -1,5 +1,12 @@
 {
-  "title": "Uyluk MRI — Kas-İskelet ve Nörovasküler Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Uyluk MR",
+    "en": "Thigh MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "uyluk_mri (2).html"
 }

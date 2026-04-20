@@ -1,5 +1,12 @@
 {
-  "title": "MR Enterografi Değerlendirme Sistemi",
-  "description": "",
+  "title": {
+    "tr": "MR Enterografi",
+    "en": "MR Enterography"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "mr_enterografi (3).html"
 }

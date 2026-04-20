@@ -1,5 +1,12 @@
 {
-  "title": "Over MRG Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Over MR",
+    "en": "Ovarian MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "over-mri-v2 (2).html"
 }

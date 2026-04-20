@@ -1,5 +1,12 @@
 {
-  "title": "Kulak ve Temporal Kemik MRI Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Kulak · Temporal MR",
+    "en": "Ear · Temporal MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "kulak-temporal-mri (7).html"
 }

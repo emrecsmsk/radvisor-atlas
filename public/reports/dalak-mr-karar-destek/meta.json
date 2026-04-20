@@ -1,5 +1,12 @@
 {
-  "title": "Dalak MR Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Dalak MR",
+    "en": "Spleen MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "dalak-mr-karar-destek (1).html"
 }

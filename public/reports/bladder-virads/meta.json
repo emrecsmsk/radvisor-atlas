@@ -1,5 +1,12 @@
 {
-  "title": "Mesane MR — VI-RADS Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Mesane MR — VI-RADS",
+    "en": "Bladder MRI — VI-RADS"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "bladder-virads-standalone.html"
 }

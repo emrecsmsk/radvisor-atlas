@@ -1,5 +1,12 @@
 {
-  "title": "Beyin MR Spektroskopi Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "MR Spektroskopi",
+    "en": "MR Spectroscopy"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "mr-spektro.html"
 }

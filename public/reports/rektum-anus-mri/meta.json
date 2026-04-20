@@ -1,5 +1,12 @@
 {
-  "title": "Rektum &amp; Anüs MRI — Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Rektum · Anüs MR",
+    "en": "Rectum · Anus MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "rektum_anus_mri.html"
 }

@@ -1,5 +1,12 @@
 {
-  "title": "Beyin Difüzyon MRI Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Beyin Difüzyon MR",
+    "en": "Brain Diffusion MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "beyin-difuzyon-mri (1).html"
 }

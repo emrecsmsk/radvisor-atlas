@@ -1,5 +1,12 @@
 {
-  "title": "Böbrek MRI Değerlendirme",
-  "description": "",
+  "title": {
+    "tr": "Böbrek MR",
+    "en": "Kidney MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "bobrek_mri (1).html"
 }

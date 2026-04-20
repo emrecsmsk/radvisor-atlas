@@ -1,5 +1,12 @@
 {
-  "title": "Kruris MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Kruris MR",
+    "en": "Crus (Lower Leg) MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "kruris_mri.html"
 }

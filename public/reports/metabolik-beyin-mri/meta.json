@@ -1,5 +1,12 @@
 {
-  "title": "Metabolik Beyin MRI — Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Metabolik Beyin MR",
+    "en": "Metabolic Brain MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "metabolik-beyin-mri (1).html"
 }

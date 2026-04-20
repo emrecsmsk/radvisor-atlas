@@ -1,5 +1,12 @@
 {
-  "title": "Prostat MR — PI-RADS v2.1 Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Prostat MR — PI-RADS",
+    "en": "Prostate MRI — PI-RADS"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "prostate-pirads-standalone.html"
 }

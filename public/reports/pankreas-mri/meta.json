@@ -1,5 +1,12 @@
 {
-  "title": "Pankreas MRI Değerlendirme",
-  "description": "",
+  "title": {
+    "tr": "Pankreas MR",
+    "en": "Pancreas MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "pankreas_mri_v1 (1).html"
 }

@@ -1,5 +1,12 @@
 {
-  "title": "Adrenal Gland Dinamik MR — Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Adrenal MR",
+    "en": "Adrenal MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "Adrenal.html"
 }

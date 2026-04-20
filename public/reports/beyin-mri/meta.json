@@ -1,5 +1,12 @@
 {
-  "title": "Beyin MRI Karar Destek",
-  "description": "",
+  "title": {
+    "tr": "Beyin MR",
+    "en": "Brain MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "beyin_mri (2).html"
 }

@@ -1,5 +1,12 @@
 {
-  "title": "Hipofiz MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Hipofiz MR",
+    "en": "Pituitary MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "hipofiz-mri (2).html"
 }

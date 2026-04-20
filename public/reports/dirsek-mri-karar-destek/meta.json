@@ -1,5 +1,12 @@
 {
-  "title": "Dirsek Eklemi MRI",
-  "description": "",
+  "title": {
+    "tr": "Dirsek MR",
+    "en": "Elbow MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "dirsek-mri-karar-destek.html"
 }

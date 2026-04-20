@@ -1,5 +1,12 @@
 {
-  "title": "T2* Demir Konsantrasyon Hesaplama",
-  "description": "",
+  "title": {
+    "tr": "T2* Demir Hesaplama",
+    "en": "T2* Iron Quantification"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "t2star_demir_hesaplama (3).html"
 }

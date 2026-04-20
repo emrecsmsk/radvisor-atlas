@@ -1,5 +1,12 @@
 {
-  "title": "IVC MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "IVC MR",
+    "en": "IVC MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "ivc_mri.html"
 }

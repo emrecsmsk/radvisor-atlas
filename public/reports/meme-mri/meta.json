@@ -1,5 +1,12 @@
 {
-  "title": "Meme MRI Değerlendirme",
-  "description": "",
+  "title": {
+    "tr": "Meme MR",
+    "en": "Breast MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "meme_mri.html"
 }

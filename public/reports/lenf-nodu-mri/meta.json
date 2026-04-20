@@ -1,5 +1,12 @@
 {
-  "title": "Lenf Nodu MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Lenf Nodu MR",
+    "en": "Lymph Node MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "lenf_nodu_mri.html"
 }

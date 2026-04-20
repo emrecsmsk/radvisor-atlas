@@ -1,5 +1,12 @@
 {
-  "title": "Kalça MR Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Kalça MR",
+    "en": "Hip MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "kalca-mri.html"
 }

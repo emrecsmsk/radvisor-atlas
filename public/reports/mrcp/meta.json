@@ -1,5 +1,12 @@
 {
-  "title": "MRCP Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "MRCP",
+    "en": "MRCP"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "mrcp_v3.html"
 }

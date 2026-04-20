@@ -1,5 +1,12 @@
 {
-  "title": "Spine MR Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Omurga MR",
+    "en": "Spine MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "spine-mri.html"
 }

@@ -1,5 +1,12 @@
 {
-  "title": "Aort MRI Karar Destek Sistemi",
-  "description": "",
+  "title": {
+    "tr": "Aort MR",
+    "en": "Aorta MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "aort_mri (3).html"
 }

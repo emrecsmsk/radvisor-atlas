@@ -1,5 +1,12 @@
 {
-  "title": "Karaciğer & Safra Kesesi MRI Karar Destek v3",
-  "description": "",
+  "title": {
+    "tr": "Karaciğer · Safra Yolları MR",
+    "en": "Liver · Biliary MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
   "sourceFilename": "kc_safra_mri_v3.html"
 }
