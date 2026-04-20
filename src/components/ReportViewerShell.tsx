@@ -35,7 +35,6 @@ export function ReportViewerShell({ report }: Props) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
 
-  // If report requires patient and we're hydrated without one, prompt
   useEffect(() => {
     if (!hydrated) return;
     if (report.requiresPatient && !patient && !editOpen) {
@@ -58,7 +57,6 @@ export function ReportViewerShell({ report }: Props) {
 
   const handleEditCancel = () => {
     setEditOpen(false);
-    // If we never had a patient for a required report, send user back to catalog
     if (report.requiresPatient && !patient) {
       router.push("/");
     }
@@ -110,6 +108,7 @@ export function ReportViewerShell({ report }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
+            {patient ? <PatientChip patient={patient} onEdit={() => setEditOpen(true)} /> : null}
             <LanguageSwitcher />
             <a
               href={iframeSrc}
@@ -136,8 +135,6 @@ export function ReportViewerShell({ report }: Props) {
             </a>
           </div>
         </div>
-
-        {patient ? <PatientBar patient={patient} onEdit={() => setEditOpen(true)} /> : null}
       </header>
 
       <main className="flex-1 bg-white">
@@ -166,7 +163,7 @@ export function ReportViewerShell({ report }: Props) {
   );
 }
 
-function PatientBar({
+function PatientChip({
   patient,
   onEdit,
 }: {
@@ -174,60 +171,36 @@ function PatientBar({
   onEdit: () => void;
 }) {
   const t = useT();
-  const genderShort = t.patientBar.genderShort[patient.gender];
-  const ptLabel = t.intake.patientType[patient.patientType];
-
+  const display = `${patient.patientName} ${patient.patientSurname.charAt(0).toUpperCase()}.`;
   return (
-    <div className="border-t border-[var(--color-line)] bg-[var(--color-surface-raised)]/60">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 text-xs sm:px-6">
-        <span className="font-semibold text-[var(--color-ink)]">
-          {patient.patientName} {patient.patientSurname}
-        </span>
-        <Meta label={t.intake.fields.gender} value={genderShort} />
-        <Meta label={t.intake.fields.patientType} value={ptLabel} />
-        <Meta label={t.intake.fields.modality} value={patient.modality} />
-        <Meta
-          label={t.intake.fields.assignedDoctor}
-          value={patient.assignedDoctor}
-        />
-        <Meta
-          label={t.intake.fields.approvingDoctor}
-          value={patient.approvingDoctor}
-        />
-        <button
-          type="button"
-          onClick={onEdit}
-          className="ml-auto inline-flex items-center gap-1 text-[var(--color-primary)] transition hover:underline"
-        >
-          <svg
-            aria-hidden
-            viewBox="0 0 16 16"
-            className="h-3.5 w-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <path
-              d="M10.5 2.5l3 3L5 14H2v-3l8.5-8.5z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {t.viewer.changePatient}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
-  return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className="text-[10px] uppercase tracking-wider text-[var(--color-muted-soft)]">
-        {label}
+    <button
+      type="button"
+      onClick={onEdit}
+      title={t.viewer.changePatient}
+      aria-label={t.viewer.changePatient}
+      className="hidden items-center gap-2 rounded-full border border-[var(--color-line)] bg-[var(--color-input)] px-3 py-1 text-xs transition hover:border-[var(--color-primary)] sm:inline-flex"
+    >
+      <span
+        aria-hidden
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white"
+      >
+        {patient.patientName.charAt(0).toUpperCase()}
       </span>
-      <span className="text-[var(--color-ink-soft)]">{value}</span>
-    </span>
+      <span className="font-medium text-[var(--color-ink)]">{display}</span>
+      <svg
+        aria-hidden
+        viewBox="0 0 16 16"
+        className="h-3.5 w-3.5 text-[var(--color-muted)]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <path
+          d="M10.5 2.5l3 3L5 14H2v-3l8.5-8.5z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
   );
 }
