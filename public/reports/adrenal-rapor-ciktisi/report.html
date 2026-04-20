@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Adrenal MR Raporu</title><style>* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',Tahoma,sans-serif; color:#1a1a2e; padding:0; background:#fff; }
+.page { padding:40px 50px; max-width:800px; margin:0 auto; }
+.header { text-align:center; border-bottom:3px solid #0288d1; padding-bottom:20px; margin-bottom:28px; }
+.header h1 { font-size:22px; color:#0d1b2a; font-weight:800; letter-spacing:-0.3px; margin-bottom:4px; }
+.header .sub { font-size:13px; color:#546e7a; font-weight:400; }
+.header .date { font-size:11px; color:#90a4ae; margin-top:6px; }
+.header .badge { display:inline-block; background:#e3f2fd; color:#0288d1; font-size:10px; font-weight:700; padding:4px 14px; border-radius:20px; letter-spacing:0.5px; margin-bottom:10px; }
+.overview { display:flex; gap:16px; margin-bottom:28px; }
+.ov-card { flex:1; border:1px solid #e0e0e0; border-radius:8px; padding:14px 18px; }
+.ov-card .ov-label { font-size:10px; color:#90a4ae; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; }
+.ov-card .ov-val { font-size:14px; font-weight:700; }
+.ov-card .ov-val.normal { color:#43a047; }
+.ov-card .ov-val.absent { color:#90a4ae; }
+.ov-card .ov-val.lesion { color:#ef6c00; }
+.ov-card.right { border-left:3px solid #0288d1; }
+.ov-card.left { border-left:3px solid #43a047; }
+.section { margin-bottom:28px; page-break-inside:avoid; }
+.sec-title { display:flex; align-items:center; gap:10px; font-size:16px; font-weight:700; color:#0d1b2a; padding-bottom:10px; border-bottom:2px solid #e3f2fd; margin-bottom:14px; }
+.sec-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; }
+.sec-icon.r { background:#0288d1; }
+.sec-icon.l { background:#43a047; }
+.tbl { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:12px; }
+.tbl-head { background:#f5f5f5; }
+.tbl-head td { padding:8px 14px; font-size:10px; font-weight:700; color:#0288d1; letter-spacing:0.5px; text-transform:uppercase; border-bottom:2px solid #e0e0e0; }
+.tbl-head.les td { color:#ef6c00; }
+.tbl td { padding:8px 14px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+.tbl tr:nth-child(even) { background:#fafafa; }
+.tbl .lbl { color:#607d8b; width:42%; }
+.tbl .val { color:#1a1a2e; font-weight:500; }
+.tbl .val.hl { color:#0288d1; font-weight:700; }
+.normal-box { background:#e8f5e9; border:1px solid #c8e6c9; border-radius:8px; padding:12px 18px; color:#2e7d32; font-weight:600; font-size:13px; margin-bottom:14px; }
+.absent-box { background:#f5f5f5; border:1px solid #e0e0e0; border-radius:8px; padding:12px 18px; color:#90a4ae; font-size:13px; }
+.diag-box { border:1px solid #e3f2fd; border-radius:8px; overflow:hidden; margin-bottom:14px; page-break-inside:avoid; }
+.diag-head { background:#e3f2fd; padding:10px 14px; font-size:11px; font-weight:700; color:#0288d1; letter-spacing:0.3px; }
+.diag-body { padding:14px; }
+.diag-item { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #f0f0f0; }
+.diag-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+.diag-name { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.diag-name span:first-child { font-size:14px; font-weight:700; color:#1a1a2e; }
+.diag-score { font-size:13px; font-weight:800; }
+.diag-score.high { color:#43a047; }
+.diag-score.mid { color:#ef6c00; }
+.diag-score.low { color:#e53935; }
+.bar { height:5px; background:#eceff1; border-radius:3px; margin-bottom:10px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; }
+.bar-fill.high { background:#43a047; }
+.bar-fill.mid { background:#ef6c00; }
+.bar-fill.low { background:#e53935; }
+.crit-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 14px; font-size:11px; }
+.crit-item { display:flex; gap:5px; align-items:center; }
+.crit-item .ck { font-weight:700; width:14px; }
+.crit-item .ck.y { color:#43a047; }
+.crit-item .ck.n { color:#bdbdbd; }
+.crit-item .ct { color:#455a64; }
+.crit-item .ct.n { color:#bdbdbd; }
+.divider { height:1px; background:linear-gradient(90deg,transparent,#e0e0e0,transparent); margin:10px 0 28px; }
+.footer { text-align:center; padding-top:20px; border-top:1px solid #e0e0e0; font-size:10px; color:#bdbdbd; margin-top:20px; }
+@media print { body { padding:0; } .page { padding:30px 40px; } .section { page-break-inside:avoid; } }</style></head><body><div class="page"><div class="header"><div class="badge">ADRENAL GLAND DİNAMİK MR</div><h1>Karar Destek Raporu</h1><div class="sub">Radyoloji Karar Destek Sistemi</div><div class="date">28 Mart 2026 Cumartesi</div></div><div class="overview"><div class="ov-card right"><div class="ov-label">Sağ Adrenal</div><div class="ov-val normal">Normal</div></div><div class="ov-card left"><div class="ov-label">Sol Adrenal</div><div class="ov-val normal">Normal</div></div></div><div class="section"><div class="sec-title"><div class="sec-icon r">R</div>Sağ Adrenal Gland</div><table class="tbl"><tr class="tbl-head"><td colspan="2">Gland Bulguları</td></tr><tr><td class="lbl">Lokalizasyon</td><td class="val">Evet</td></tr><tr><td class="lbl">İntensite</td><td class="val">Karaciğerle izointens</td></tr><tr><td class="lbl">İntensite dağılımı</td><td class="val">Homojen</td></tr><tr><td class="lbl">Kontrastlanma</td><td class="val">Homojen izointens</td></tr><tr><td class="lbl">Lezyon</td><td class="val">Yok</td></tr></table><div class="normal-box">✓ Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</div></div><div class="divider"></div><div class="section"><div class="sec-title"><div class="sec-icon l">L</div>Sol Adrenal Gland</div><table class="tbl"><tr class="tbl-head"><td colspan="2">Gland Bulguları</td></tr><tr><td class="lbl">Lokalizasyon</td><td class="val">Evet</td></tr><tr><td class="lbl">İntensite</td><td class="val">Karaciğerle izointens</td></tr><tr><td class="lbl">İntensite dağılımı</td><td class="val">Homojen</td></tr><tr><td class="lbl">Kontrastlanma</td><td class="val">Homojen izointens</td></tr><tr><td class="lbl">Lezyon</td><td class="val">Yok</td></tr></table><div class="normal-box">✓ Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</div></div><div class="footer">Adrenal Gland Dinamik MR — Karar Destek Sistemi — Bu rapor otomatik olarak oluşturulmuştur.</div></div></body></html>
