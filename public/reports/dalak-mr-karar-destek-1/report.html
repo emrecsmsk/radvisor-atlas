@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dalak MR Karar Destek</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f1117; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useCallback, useMemo, useRef, useEffect } = React;
+
+    /* ────────────────────────── CONSTANTS ────────────────────────── */
+    const SIGNAL_OPTIONS = [
+      "Hiperintens", "Hafif hiperintens", "İzointens", "Hafif hipointens", "Hipointens",
+    ];
+    const CONTOUR_OPTIONS = ["Düzenli", "Düzensiz", "Lobüle"];
+    const PHASES = [
+      { key: "arterial", label: "Arteriyel Faz" },
+      { key: "portal", label: "Portal Venöz Faz" },
+      { key: "late", label: "Geç Faz" },
+    ];
+    const ENHANCEMENT_LEVELS = ["Güçlü", "Zayıf", "Minimal", "Yok"];
+
+    const PATHOLOGIES = [
+      { name: "Basit kist", t1: "Hipointens", t2: "Çok hiperintens", dwi: "Hafif parlak (T2 shine-through)", adc: "Yüksek", arterial: "Kontrastlanma yok", portal: "Yok", late: "Yok" },
+      { name: "Hidatik kist", t1: "Hipointens", t2: "Çok hiperintens, septa/daughter kistler", dwi: "Değişken", adc: "Yüksek", arterial: "Periferik rim kontrast", portal: "Rim", late: "Rim" },
+      { name: "Psödokist (posttravmatik)", t1: "Hipointens", t2: "Hiperintens", dwi: "Değişken", adc: "Yüksek", arterial: "Genelde kontrastlanma yok", portal: "Yok", late: "Yok" },
+      { name: "Hemanjiyom", t1: "Hipointens", t2: "Çok hiperintens", dwi: "Hafif hiperintens", adc: "Yüksek", arterial: "Periferik nodüler kontrast", portal: "Progressif dolum", late: "Geç fazda homojen" },
+      { name: "Hamartom", t1: "İzointens", t2: "Hafif hiperintens", dwi: "Hafif restriksiyon olabilir", adc: "Hafif düşük", arterial: "Homojen kontrast", portal: "Devam eder", late: "İzointens" },
+      { name: "Lenfoma", t1: "Hipointens", t2: "Hafif hiperintens", dwi: "Belirgin restriksiyon", adc: "Düşük", arterial: "Hafif kontrast", portal: "Homojen", late: "İzointens" },
+      { name: "Metastaz", t1: "Hipointens", t2: "Hiperintens", dwi: "Restriksiyon", adc: "Düşük", arterial: "Rim veya heterojen", portal: "Rim devam", late: "Heterojen" },
+      { name: "Abse", t1: "Hipointens", t2: "Hiperintens", dwi: "Güçlü restriksiyon", adc: "Çok düşük", arterial: "Rim kontrast", portal: "Rim", late: "Rim" },
+      { name: "İnfarkt", t1: "Hipointens", t2: "Hafif hiperintens", dwi: "Erken restriksiyon olabilir", adc: "Düşük / normal", arterial: "Kontrastlanma yok", portal: "Kama şeklinde defekt", late: "Devam" },
+      { name: "Anjiyosarkom", t1: "Heterojen", t2: "Heterojen", dwi: "Restriksiyon", adc: "Düşük", arterial: "Heterojen kontrast", portal: "Heterojen", late: "Nekroz alanları" },
+      { name: "Granülomatöz hastalık (TB, sarkoidoz)", t1: "Hipointens", t2: "Hipointens", dwi: "Genelde restriksiyon yok", adc: "Normal", arterial: "Minimal", portal: "Minimal", late: "Minimal" },
+      { name: "Siderotik nodül (Gamna-Gandy)", t1: "Hipointens", t2: "Hipointens", dwi: "Restriksiyon yok", adc: "Normal", arterial: "Kontrastlanma yok", portal: "Yok", late: "" },
+    ];
+
+    const STEPS = [
+      { id: "S1", q: "Dalak değerlendirildi mi?", type: "single", opts: ["İzlendi", "İzlenmedi"] },
+      { id: "S2", q: "İzlenmeme nedeni nedir?", type: "single", opts: ["Opere (splenektomi)", "Agenesis"] },
+      { id: "S3", q: "Dalak sayısı", type: "single", opts: ["Tekil", "Birden fazla"] },
+      { id: "S4", q: "Dalak lokasyonu", type: "single", opts: ["Normal", "Anormal (ektopik)"] },
+      { id: "S5", q: "Ektopik dalak lokasyonu", type: "multi", opts: ["Sağ üst kadran", "Sağ alt kadran", "Sol alt kadran", "Orta hat"] },
+      { id: "S6", q: "Dalak kraniokaudal (CC) boyutu (mm)", type: "number", unit: "mm" },
+      { id: "S7", q: "Dalak şekli", type: "single", opts: ["Lentiküler (normal)", "Deforme", "Cleft", "Lobüle"] },
+      { id: "S8", q: "Aksesuar dalak", type: "single", opts: ["Var", "Yok"] },
+      { id: "S9", q: "Aksesuar dalak lokalizasyonu", type: "multi", opts: ["Hiler", "Üst pol", "Alt pol", "Posterior"] },
+      { id: "S10", q: "Aksesuar dalak boyutu (mm)", type: "number", unit: "mm" },
+      { id: "S11", q: "Dalak parankim intensitesi", type: "single", opts: ["Homojen", "Heterojen"] },
+      { id: "S12", q: "Dalak parankim – T1A sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S13", q: "Dalak parankim – T2A sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S14", q: "Dalak parankim – DWI sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S15", q: "Dalak parankim – ADC sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "S16", q: "Dalak konturu", type: "single", opts: CONTOUR_OPTIONS },
+      { id: "S17", q: "Dalakta lezyon var mı?", type: "single", opts: ["Var", "Yok"] },
+      { id: "L1", q: "Lezyon tipi", type: "single", opts: ["Kistik", "Solid", "Mikst"] },
+      { id: "L2", q: "Fokalite", type: "single", opts: ["Unifokal", "Multifokal"] },
+      { id: "L3", q: "Lezyon konturu", type: "single", opts: CONTOUR_OPTIONS },
+      { id: "L4", q: "Lezyon boyutu (mm)", type: "number", unit: "mm" },
+      { id: "L5", q: "Lezyon şekli", type: "single", opts: ["Yuvarlak/Ovoid", "Lentiform", "Wedge shape (kama)", "Düzensiz"] },
+      { id: "L6", q: "Septasyon", type: "single", opts: ["Var", "Yok"] },
+      { id: "L7", q: "Septasyon tipi", type: "single", opts: ["İnce tek", "Kalın tek", "İnce birkaç", "Kalın birkaç"] },
+      { id: "L8", q: "Lezyon lokasyonu", type: "multi", opts: ["Hiler", "Subkapsüler", "Parankimal"] },
+      { id: "L9", q: "Duvar kalınlığı (mm)", type: "number", unit: "mm" },
+      { id: "L10", q: "Duvar konturu", type: "single", opts: ["Düzenli", "Düzensiz"] },
+      { id: "L11", q: "Kontrastlanma", type: "single", opts: ["Var", "Yok"] },
+      { id: "L12", q: "Kontrastlanma paterni – Arteriyel faz", type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L13", q: "Kontrastlanma paterni – Portal venöz faz", type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L14", q: "Kontrastlanma paterni – Geç faz", type: "single", opts: ENHANCEMENT_LEVELS },
+      { id: "L15", q: "Lezyon internal intensitesi", type: "single", opts: ["Homojen", "Heterojen"] },
+      { id: "L16", q: "Lezyon – T1A sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L17", q: "Lezyon – T2A sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L18", q: "Lezyon – DWI sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L19", q: "Lezyon – ADC sinyal", type: "single", opts: SIGNAL_OPTIONS },
+      { id: "L20", q: "Başka lezyon var mı?", type: "single", opts: ["Var", "Yok"] },
+    ];
+
+    const STEP_MAP = Object.fromEntries(STEPS.map((s) => [s.id, s]));
+
+    function getNextStep(currentId, answers) {
+      const a = answers[currentId];
+      switch (currentId) {
+        case "S1": return a === "İzlendi" ? "S3" : "S2";
+        case "S2": return "END";
+        case "S3": return "S4";
+        case "S4": return a === "Anormal (ektopik)" ? "S5" : "S6";
+        case "S5": return "S6";
+        case "S6": return "S7";
+        case "S7": return "S8";
+        case "S8": return a === "Var" ? "S9" : "S11";
+        case "S9": return "S10";
+        case "S10": return "S11";
+        case "S11": return "S12";
+        case "S12": return "S13";
+        case "S13": return "S14";
+        case "S14": return "S15";
+        case "S15": return "S16";
+        case "S16": return "S17";
+        case "S17": return a === "Var" ? "L1" : "END";
+        case "L1": return "L2";
+        case "L2": return "L3";
+        case "L3": return "L4";
+        case "L4": return "L5";
+        case "L5": return "L6";
+        case "L6": return a === "Var" ? "L7" : "L8";
+        case "L7": return "L8";
+        case "L8": return "L9";
+        case "L9": return "L10";
+        case "L10": return "L11";
+        case "L11": return a === "Var" ? "L12" : "L15";
+        case "L12": return "L13";
+        case "L13": return "L14";
+        case "L14": return "L15";
+        case "L15": return "L16";
+        case "L16": return "L17";
+        case "L17": return "L18";
+        case "L18": return "L19";
+        case "L19": return "L20";
+        case "L20": return a === "Var" ? "LOOP" : "END";
+        default: return "END";
+      }
+    }
+
+    function checkSignalMatch(userSignal, expected) {
+      if (!userSignal || !expected) return false;
+      const u = userSignal.toLowerCase();
+      const e = expected.toLowerCase();
+      if (e.includes("çok hiperintens")) return u.includes("hiperintens");
+      if (e === "heterojen") return true;
+      if (e.includes("hipointens") && u.includes("hipointens")) return true;
+      if (e.includes("hiperintens") && u.includes("hiperintens")) return true;
+      if (e.includes("izointens") && u.includes("izointens")) return true;
+      return false;
+    }
+
+    function checkDwiMatch(userDwi, expected) {
+      if (!userDwi || !expected) return false;
+      const u = userDwi.toLowerCase();
+      const e = expected.toLowerCase();
+      if (e.includes("restriksiyon yok") || e.includes("genelde restriksiyon yok")) return u.includes("izointens") || u.includes("hipointens");
+      if (e.includes("güçlü restriksiyon") || e.includes("belirgin restriksiyon")) return u.includes("hiperintens") && !u.includes("hafif");
+      if (e.includes("restriksiyon")) return u.includes("hiperintens");
+      if (e.includes("hafif") || e.includes("shine-through")) return u.includes("hafif hiperintens") || u.includes("hiperintens");
+      if (e.includes("değişken")) return true;
+      return false;
+    }
+
+    function checkAdcMatch(userAdc, expected) {
+      if (!userAdc || !expected) return false;
+      const u = userAdc.toLowerCase();
+      const e = expected.toLowerCase();
+      if (e.includes("yüksek")) return u.includes("hiperintens");
+      if (e.includes("çok düşük")) return u.includes("hipointens") && !u.includes("hafif");
+      if (e.includes("düşük") || e.includes("hafif düşük")) return u.includes("hipointens");
+      if (e.includes("normal")) return u.includes("izointens") || u.includes("hafif");
+      return false;
+    }
+
+    function checkEnhMatch(userEnh, expected) {
+      if (!userEnh || !expected) return false;
+      const u = userEnh.toLowerCase();
+      const e = expected.toLowerCase();
+      if (e.includes("yok") || e.includes("kontrastlanma yok")) return u === "yok";
+      if (e.includes("rim") || e.includes("periferik")) return u === "zayıf" || u === "güçlü";
+      if (e.includes("homojen") || e.includes("progressif") || e.includes("devam")) return u === "güçlü" || u === "zayıf";
+      if (e.includes("heterojen") || e.includes("nekroz")) return true;
+      if (e.includes("minimal")) return u === "minimal" || u === "yok";
+      if (e.includes("hafif")) return u === "zayıf" || u === "minimal";
+      if (e.includes("kama")) return true;
+      return false;
+    }
+
+    function scoreLesion(lesion) {
+      const scores = PATHOLOGIES.map((p) => {
+        let total = 0, matched = 0;
+        const checks = [];
+
+        total++;
+        const t1Match = checkSignalMatch(lesion.L16, p.t1);
+        if (t1Match) { matched++; checks.push({ label: "T1A", pass: true }); }
+        else checks.push({ label: "T1A", pass: false });
+
+        total++;
+        const t2Match = checkSignalMatch(lesion.L17, p.t2);
+        if (t2Match) { matched++; checks.push({ label: "T2A", pass: true }); }
+        else checks.push({ label: "T2A", pass: false });
+
+        total++;
+        const dwiMatch = checkDwiMatch(lesion.L18, p.dwi);
+        if (dwiMatch) { matched++; checks.push({ label: "DWI", pass: true }); }
+        else checks.push({ label: "DWI", pass: false });
+
+        total++;
+        const adcMatch = checkAdcMatch(lesion.L19, p.adc);
+        if (adcMatch) { matched++; checks.push({ label: "ADC", pass: true }); }
+        else checks.push({ label: "ADC", pass: false });
+
+        if (lesion.L11 === "Var") {
+          total++;
+          const artMatch = checkEnhMatch(lesion.L12, p.arterial);
+          if (artMatch) { matched++; checks.push({ label: "Arteriyel", pass: true }); }
+          else checks.push({ label: "Arteriyel", pass: false });
+
+          total++;
+          const porMatch = checkEnhMatch(lesion.L13, p.portal);
+          if (porMatch) { matched++; checks.push({ label: "Portal", pass: true }); }
+          else checks.push({ label: "Portal", pass: false });
+
+          total++;
+          const lateMatch = checkEnhMatch(lesion.L14, p.late);
+          if (lateMatch) { matched++; checks.push({ label: "Geç Faz", pass: true }); }
+          else checks.push({ label: "Geç Faz", pass: false });
+        } else {
+          total++;
+          const noEnh = /yok|kontrastlanma yok/i.test(p.arterial);
+          if (noEnh) { matched++; checks.push({ label: "Kontrastlanma", pass: true }); }
+          else checks.push({ label: "Kontrastlanma", pass: false });
+        }
+
+        if (lesion.L1 === "Kistik" && /kist/i.test(p.name)) {
+          matched += 0.5;
+          checks.push({ label: "Kistik tip", pass: true });
+        }
+        if (lesion.L1 === "Solid" && /(lenfoma|metastaz|hamartom|anjiyosarkom|granülom)/i.test(p.name)) {
+          matched += 0.5;
+          checks.push({ label: "Solid tip", pass: true });
+        }
+        if (lesion.L5 === "Wedge shape (kama)" && p.name === "İnfarkt") {
+          matched += 1;
+          checks.push({ label: "Kama şekli", pass: true });
+        }
+        if (lesion.L6 === "Var" && p.name === "Hidatik kist") {
+          matched += 0.5;
+          checks.push({ label: "Septasyon", pass: true });
+        }
+
+        const pct = total > 0 ? Math.round((matched / total) * 100) : 0;
+        return { name: p.name, pct: Math.min(pct, 100), checks, matched, total };
+      });
+
+      return scores.sort((a, b) => b.pct - a.pct);
+    }
+
+    /* ══════ COLORS & STYLES ══════ */
+    const COLORS = {
+      bg: "#0f1117", card: "#1a1d27", cardHover: "#22263a",
+      accent: "#6366f1", accentLight: "#818cf8", accentDim: "rgba(99,102,241,0.15)",
+      green: "#22c55e", greenDim: "rgba(34,197,94,0.12)",
+      red: "#ef4444", redDim: "rgba(239,68,68,0.12)",
+      amber: "#f59e0b", amberDim: "rgba(245,158,11,0.12)",
+      text: "#e2e8f0", textMuted: "#94a3b8",
+      border: "#2d3148", surface: "#161822",
+    };
+
+    const styles = {
+      root: { minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" },
+      header: { background: COLORS.card, borderBottom: `1px solid ${COLORS.border}`, padding: "12px 20px 0", position: "sticky", top: 0, zIndex: 100 },
+      headerInner: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 8 },
+      logoIcon: { fontSize: 22, color: COLORS.accent },
+      logoText: { fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: COLORS.text },
+      resetBtn: { padding: "6px 14px", background: "transparent", border: `1px solid ${COLORS.border}`, borderRadius: 6, color: COLORS.textMuted, cursor: "pointer", fontSize: 13 },
+      actionBtn: { padding: "6px 14px", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 6, color: COLORS.text, cursor: "pointer", fontSize: 13 },
+      progressTrack: { height: 4, background: COLORS.surface, borderRadius: 2, overflow: "hidden" },
+      progressBar: { height: "100%", background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.accentLight})`, transition: "width 0.4s ease", borderRadius: 2 },
+      progressLabel: { fontSize: 11, color: COLORS.textMuted, textAlign: "right", padding: "4px 0 8px" },
+      content: { maxWidth: 640, margin: "0 auto", padding: "32px 20px 80px" },
+      questionCard: { background: COLORS.card, borderRadius: 12, padding: "28px 24px", border: `1px solid ${COLORS.border}` },
+      lesionBadge: { display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: COLORS.accentDim, color: COLORS.accentLight, marginBottom: 12 },
+      questionTitle: { fontSize: 18, fontWeight: 600, margin: "0 0 20px", lineHeight: 1.4 },
+      optionGrid: { display: "flex", flexDirection: "column", gap: 8 },
+      optionBtn: { padding: "12px 16px", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, cursor: "pointer", fontSize: 15, textAlign: "left", transition: "all 0.15s ease" },
+      submitBtn: { marginTop: 16, padding: "10px 24px", background: COLORS.accent, border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 },
+      numberRow: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+      numInput: { padding: "10px 14px", background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 16, width: 140, outline: "none" },
+      unitLabel: { fontSize: 14, color: COLORS.textMuted, fontWeight: 500 },
+      backBtn: { marginTop: 16, padding: "8px 16px", background: "transparent", border: `1px solid ${COLORS.border}`, borderRadius: 6, color: COLORS.textMuted, cursor: "pointer", fontSize: 13 },
+      reportBody: { maxWidth: 800, margin: "0 auto", padding: "24px 20px 60px" },
+      reportSection: { marginBottom: 28, animation: "fadeIn 0.4s ease" },
+      sectionTitle: { fontSize: 16, fontWeight: 700, color: COLORS.accentLight, borderBottom: `2px solid ${COLORS.accent}`, paddingBottom: 6, marginBottom: 12 },
+      reportTable: { width: "100%", borderCollapse: "collapse" },
+      tdLabel: { padding: "8px 12px", borderBottom: `1px solid ${COLORS.border}`, fontSize: 13, fontWeight: 500, color: COLORS.textMuted, width: "50%" },
+      tdValue: { padding: "8px 12px", borderBottom: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.text, fontWeight: 600 },
+      yorumBox: { marginTop: 16, padding: 20, background: COLORS.surface, borderRadius: 10, border: `1px solid ${COLORS.border}` },
+      yorumTitle: { margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: COLORS.accentLight },
+      scoreRow: { marginBottom: 14 },
+      scoreHeader: { display: "flex", justifyContent: "space-between", marginBottom: 4 },
+      scoreName: { fontSize: 13, fontWeight: 600 },
+      scorePct: { fontSize: 13, fontWeight: 700 },
+      barTrack: { height: 6, background: COLORS.card, borderRadius: 3, overflow: "hidden", marginBottom: 4 },
+      barFill: { height: "100%", borderRadius: 3, transition: "width 0.6s ease" },
+      checkRow: { display: "flex", flexWrap: "wrap", gap: 4 },
+      checkBadge: { display: "inline-block", padding: "2px 7px", borderRadius: 4, fontSize: 11, fontWeight: 500 },
+    };
+
+    /* ══════ REPORT SCREEN ══════ */
+    function ReportScreen({ answers, lesions, onReset, onCopy, onPrint, copyMsg }) {
+      const date = new Date().toLocaleDateString("tr-TR");
+      const lesionScores = useMemo(() => lesions.map((les) => ({ les, scores: scoreLesion(les) })), [lesions]);
+
+      return (
+        <div style={styles.root}>
+          <style>{`
+            @media print {
+              body, html { background: #fff !important; }
+              .no-print { display: none !important; }
+              .print-only { display: block !important; }
+              .print-report { display: block !important; color: #000 !important; background: #fff !important; padding: 20px !important; font-family: 'Segoe UI', system-ui, sans-serif !important; }
+              .print-report h1 { color: #4338ca; text-align: center; margin-bottom: 4px; font-size: 20px; }
+              .print-report .print-date { text-align: center; color: #666; margin-top: 0; font-size: 13px; }
+              .print-report h2 { color: #1e293b; border-bottom: 2px solid #6366f1; padding-bottom: 4px; margin-top: 24px; font-size: 16px; }
+              .print-report table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+              .print-report td { padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 12px; }
+              .print-report .td-label { font-weight: 600; color: #334155; width: 50%; }
+              .print-report .td-value { color: #1e293b; }
+              .print-report tr:nth-child(even) { background: #f8fafc; }
+              .print-report .yorum-box { background: #f1f5f9; border-radius: 8px; padding: 14px; margin-bottom: 16px; page-break-inside: avoid; }
+              .print-report .yorum-title { color: #4338ca; margin: 0 0 10px; font-size: 14px; }
+              .print-report .score-item { margin-bottom: 10px; }
+              .print-report .score-hdr { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+              .print-report .bar-track { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+              .print-report .bar-fill { height: 100%; border-radius: 3px; }
+              .print-report .check-row { margin-top: 3px; }
+              .print-report .chk { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin: 1px 2px; }
+              .print-report .chk-ok { background: #dcfce7; color: #166534; }
+              .print-report .chk-no { background: #fee2e2; color: #991b1b; }
+              .print-report .footer { text-align: center; color: #94a3b8; font-size: 10px; margin-top: 28px; }
+            }
+            .print-only { display: none; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+            * { box-sizing: border-box; }
+          `}</style>
+
+          <div style={styles.header} className="no-print">
+            <div style={styles.headerInner}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={styles.logoIcon}>◈</span>
+                <span style={styles.logoText}>Dalak MR – Rapor</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button onClick={onCopy} style={styles.actionBtn}>{copyMsg || "📋 Kopyala"}</button>
+                <button onClick={onPrint} style={{ ...styles.actionBtn, background: COLORS.accent, color: "#fff" }}>🖨 Yazdır / PDF</button>
+                <button onClick={onReset} style={styles.resetBtn}>↺ Yeni Değerlendirme</button>
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.reportBody} className="no-print">
+            <div style={styles.reportSection}>
+              <h3 style={styles.sectionTitle}>Genel Bulgular</h3>
+              <table style={styles.reportTable}>
+                <tbody>
+                  {STEPS.filter((s) => !s.id.startsWith("L") && answers[s.id] !== undefined).map((s, i) => (
+                    <tr key={s.id} style={{ background: i % 2 === 0 ? COLORS.surface : COLORS.card }}>
+                      <td style={styles.tdLabel}>{s.q}</td>
+                      <td style={styles.tdValue}>{answers[s.id]}{s.unit ? ` ${s.unit}` : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {lesionScores.map(({ les, scores }) => (
+              <div key={les._num} style={styles.reportSection}>
+                <h3 style={styles.sectionTitle}>Lezyon #{les._num}</h3>
+                <table style={styles.reportTable}>
+                  <tbody>
+                    {STEPS.filter((s) => s.id.startsWith("L") && les[s.id] !== undefined).map((s, i) => (
+                      <tr key={s.id} style={{ background: i % 2 === 0 ? COLORS.surface : COLORS.card }}>
+                        <td style={styles.tdLabel}>{s.q}</td>
+                        <td style={styles.tdValue}>{les[s.id]}{s.unit ? ` ${s.unit}` : ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={styles.yorumBox}>
+                  <h4 style={styles.yorumTitle}>YORUM – Olası Tanılar</h4>
+                  {scores.filter((sc) => sc.pct > 0).map((sc) => (
+                    <div key={sc.name} style={styles.scoreRow}>
+                      <div style={styles.scoreHeader}>
+                        <span style={styles.scoreName}>{sc.name}</span>
+                        <span style={{ ...styles.scorePct, color: sc.pct >= 70 ? COLORS.green : sc.pct >= 40 ? COLORS.amber : COLORS.red }}>%{sc.pct}</span>
+                      </div>
+                      <div style={styles.barTrack}>
+                        <div style={{ ...styles.barFill, width: `${sc.pct}%`, background: sc.pct >= 70 ? COLORS.green : sc.pct >= 40 ? COLORS.amber : COLORS.red }} />
+                      </div>
+                      <div style={styles.checkRow}>
+                        {sc.checks.map((ch, ci) => (
+                          <span key={ci} style={{ ...styles.checkBadge, background: ch.pass ? COLORS.greenDim : COLORS.redDim, color: ch.pass ? COLORS.green : COLORS.red }}>
+                            {ch.pass ? "✓" : "✕"} {ch.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Print-only version */}
+          <div className="print-only print-report">
+            <h1>Dalak MR Değerlendirme Raporu</h1>
+            <p className="print-date">Tarih: {date}</p>
+            <h2>Genel Bulgular</h2>
+            <table>
+              <tbody>
+                {STEPS.filter((s) => !s.id.startsWith("L") && answers[s.id] !== undefined).map((s) => (
+                  <tr key={s.id}>
+                    <td className="td-label">{s.q}</td>
+                    <td className="td-value">{answers[s.id]}{s.unit ? ` ${s.unit}` : ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {lesionScores.map(({ les, scores }) => (
+              <div key={les._num}>
+                <h2>Lezyon #{les._num}</h2>
+                <table>
+                  <tbody>
+                    {STEPS.filter((s) => s.id.startsWith("L") && les[s.id] !== undefined).map((s) => (
+                      <tr key={s.id}>
+                        <td className="td-label">{s.q}</td>
+                        <td className="td-value">{les[s.id]}{s.unit ? ` ${s.unit}` : ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="yorum-box">
+                  <h3 className="yorum-title">YORUM – Olası Tanılar</h3>
+                  {scores.filter((sc) => sc.pct > 0).map((sc) => {
+                    const color = sc.pct >= 70 ? "#22c55e" : sc.pct >= 40 ? "#f59e0b" : "#ef4444";
+                    return (
+                      <div key={sc.name} className="score-item">
+                        <div className="score-hdr">
+                          <strong>{sc.name}</strong>
+                          <span style={{ color, fontWeight: 700 }}>%{sc.pct}</span>
+                        </div>
+                        <div className="bar-track">
+                          <div className="bar-fill" style={{ width: `${sc.pct}%`, background: color }} />
+                        </div>
+                        <div className="check-row">
+                          {sc.checks.map((ch, ci) => (
+                            <span key={ci} className={`chk ${ch.pass ? "chk-ok" : "chk-no"}`}>
+                              {ch.pass ? "✓" : "✕"} {ch.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <p className="footer">Bu rapor Dalak MR Karar Destek Sistemi tarafından oluşturulmuştur.</p>
+          </div>
+        </div>
+      );
+    }
+
+    /* ══════ MAIN APP ══════ */
+    function DalakApp() {
+      const [screen, setScreen] = useState("wizard");
+      const [answers, setAnswers] = useState({});
+      const [stepHistory, setStepHistory] = useState(["S1"]);
+      const [currentInput, setCurrentInput] = useState("");
+      const [multiSelect, setMultiSelect] = useState([]);
+      const [lesions, setLesions] = useState([]);
+      const [currentLesion, setCurrentLesion] = useState({});
+      const [lesionNum, setLesionNum] = useState(1);
+      const [animDir, setAnimDir] = useState("in");
+      const contentRef = useRef(null);
+      const [copyMsg, setCopyMsg] = useState("");
+
+      const currentStepId = stepHistory[stepHistory.length - 1];
+      const step = STEP_MAP[currentStepId];
+      const isLesionStep = currentStepId && currentStepId.startsWith("L");
+
+      const totalMainSteps = 17;
+      const totalLesionSteps = 20;
+      const progress = useMemo(() => {
+        if (currentStepId === "END") return 100;
+        const mainIdx = STEPS.findIndex((s) => s.id === currentStepId);
+        if (mainIdx < 0) return 95;
+        if (!isLesionStep) return Math.round((mainIdx / totalMainSteps) * 60);
+        const lesionIdx = STEPS.findIndex((s) => s.id === currentStepId) - totalMainSteps;
+        return 60 + Math.round((lesionIdx / totalLesionSteps) * 35);
+      }, [currentStepId, isLesionStep]);
+
+      const navigate = useCallback((nextId) => {
+        if (nextId === "END") {
+          if (isLesionStep && Object.keys(currentLesion).length > 0) {
+            setLesions((prev) => [...prev, { ...currentLesion, _num: lesionNum }]);
+          }
+          setScreen("report");
+          return;
+        }
+        if (nextId === "LOOP") {
+          setLesions((prev) => [...prev, { ...currentLesion, _num: lesionNum }]);
+          setCurrentLesion({});
+          setLesionNum((n) => n + 1);
+          setAnimDir("in");
+          setStepHistory((h) => [...h, "L1"]);
+          return;
+        }
+        setAnimDir("in");
+        setStepHistory((h) => [...h, nextId]);
+      }, [isLesionStep, currentLesion, lesionNum]);
+
+      const handleAnswer = useCallback((value) => {
+        if (isLesionStep) {
+          setCurrentLesion((prev) => ({ ...prev, [currentStepId]: value }));
+        }
+        setAnswers((prev) => ({ ...prev, [currentStepId]: value }));
+        setCurrentInput("");
+        setMultiSelect([]);
+        const allAnswers = { ...answers, [currentStepId]: value };
+        const next = getNextStep(currentStepId, allAnswers);
+        navigate(next);
+      }, [answers, currentStepId, isLesionStep, navigate]);
+
+      const handleMultiSubmit = useCallback(() => {
+        if (multiSelect.length === 0) return;
+        handleAnswer(multiSelect.join(", "));
+      }, [multiSelect, handleAnswer]);
+
+      const handleNumberSubmit = useCallback(() => {
+        if (!currentInput || isNaN(currentInput)) return;
+        handleAnswer(currentInput);
+      }, [currentInput, handleAnswer]);
+
+      const goBack = useCallback(() => {
+        if (stepHistory.length <= 1) return;
+        setAnimDir("out");
+        if (currentStepId === "L1" && lesionNum > 1 && Object.keys(currentLesion).length === 0) {
+          setLesionNum((n) => n - 1);
+          const lastLesion = lesions[lesions.length - 1];
+          if (lastLesion) {
+            setCurrentLesion(lastLesion);
+            setLesions((prev) => prev.slice(0, -1));
+          }
+        }
+        setStepHistory((h) => h.slice(0, -1));
+        setCurrentInput("");
+        setMultiSelect([]);
+      }, [stepHistory, currentStepId, lesionNum, currentLesion, lesions]);
+
+      const resetAll = useCallback(() => {
+        setAnswers({});
+        setStepHistory(["S1"]);
+        setCurrentInput("");
+        setMultiSelect([]);
+        setLesions([]);
+        setCurrentLesion({});
+        setLesionNum(1);
+        setScreen("wizard");
+      }, []);
+
+      const toggleMulti = useCallback((opt) => {
+        setMultiSelect((prev) => prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]);
+      }, []);
+
+      const allLesions = useMemo(() => screen !== "report" ? [] : lesions, [screen, lesions]);
+
+      const generateReportText = useCallback(() => {
+        let lines = [];
+        lines.push("═══════════════════════════════════════════");
+        lines.push("  DALAK MR DEĞERLENDİRME RAPORU");
+        lines.push("═══════════════════════════════════════════");
+        lines.push(`  Tarih: ${new Date().toLocaleDateString("tr-TR")}`);
+        lines.push("───────────────────────────────────────────");
+        lines.push("");
+        lines.push("▸ GENEL BULGULAR");
+        lines.push("───────────────────────────────────────────");
+        for (const sid of STEPS.filter((s) => !s.id.startsWith("L")).map((s) => s.id)) {
+          if (answers[sid] !== undefined) {
+            const st = STEP_MAP[sid];
+            lines.push(`  ${st.q}: ${answers[sid]}${st.unit ? " " + st.unit : ""}`);
+          }
+        }
+        lines.push("");
+        if (allLesions.length > 0) {
+          for (const les of allLesions) {
+            lines.push(`▸ LEZYON #${les._num}`);
+            lines.push("───────────────────────────────────────────");
+            for (const sid of STEPS.filter((s) => s.id.startsWith("L")).map((s) => s.id)) {
+              if (les[sid] !== undefined) {
+                const st = STEP_MAP[sid];
+                lines.push(`  ${st.q}: ${les[sid]}${st.unit ? " " + st.unit : ""}`);
+              }
+            }
+            lines.push("");
+            const scores = scoreLesion(les);
+            lines.push("  YORUM – Olası Tanılar:");
+            for (const sc of scores.filter((s) => s.pct > 0)) {
+              lines.push(`    ${sc.name}: %${sc.pct}`);
+            }
+            lines.push("");
+          }
+        }
+        lines.push("═══════════════════════════════════════════");
+        return lines.join("\n");
+      }, [answers, allLesions]);
+
+      const handleCopy = useCallback(() => {
+        const text = generateReportText();
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          setCopyMsg("✓ Kopyalandı!");
+        } catch (e) {
+          setCopyMsg("✕ Kopyalanamadı");
+        }
+        document.body.removeChild(ta);
+        setTimeout(() => setCopyMsg(""), 2500);
+      }, [generateReportText]);
+
+      const handlePrint = useCallback(() => { window.print(); }, []);
+
+      if (screen === "report") {
+        return <ReportScreen answers={answers} lesions={allLesions} onReset={resetAll} onCopy={handleCopy} onPrint={handlePrint} copyMsg={copyMsg} />;
+      }
+
+      if (currentStepId === "END") {
+        setScreen("report");
+        return null;
+      }
+
+      return (
+        <div style={styles.root}>
+          <div style={styles.header}>
+            <div style={styles.headerInner}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={styles.logoIcon}>◈</span>
+                <span style={styles.logoText}>Dalak MR Karar Destek</span>
+              </div>
+              <button onClick={resetAll} style={styles.resetBtn}>Sıfırla</button>
+            </div>
+            <div style={styles.progressTrack}>
+              <div style={{ ...styles.progressBar, width: `${progress}%` }} />
+            </div>
+            <div style={styles.progressLabel}>
+              {isLesionStep ? `Lezyon #${lesionNum} – ${currentStepId}` : `Adım ${currentStepId}`} · %{progress}
+            </div>
+          </div>
+
+          <div style={styles.content} ref={contentRef}>
+            <div key={currentStepId} style={{ ...styles.questionCard, animation: `${animDir === "in" ? "slideIn" : "slideOut"} 0.3s ease` }}>
+              {isLesionStep && <div style={styles.lesionBadge}>Lezyon #{lesionNum}</div>}
+              <h2 style={styles.questionTitle}>{step && step.q}</h2>
+
+              {step && step.type === "single" && (
+                <div style={styles.optionGrid}>
+                  {step.opts.map((opt) => (
+                    <button key={opt} onClick={() => handleAnswer(opt)} style={styles.optionBtn}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = COLORS.cardHover; e.currentTarget.style.borderColor = COLORS.accent; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = COLORS.card; e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.transform = "translateY(0)"; }}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {step && step.type === "multi" && (
+                <div>
+                  <div style={styles.optionGrid}>
+                    {step.opts.map((opt) => {
+                      const selected = multiSelect.includes(opt);
+                      return (
+                        <button key={opt} onClick={() => toggleMulti(opt)} style={{ ...styles.optionBtn, ...(selected ? { background: COLORS.accentDim, borderColor: COLORS.accent, color: COLORS.accentLight } : {}) }}>
+                          {selected ? "✓ " : ""}{opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button onClick={handleMultiSubmit} disabled={multiSelect.length === 0} style={{ ...styles.submitBtn, opacity: multiSelect.length === 0 ? 0.4 : 1 }}>
+                    Devam →
+                  </button>
+                </div>
+              )}
+
+              {step && step.type === "number" && (
+                <div style={styles.numberRow}>
+                  <input type="number" value={currentInput} onChange={(e) => setCurrentInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleNumberSubmit()}
+                    placeholder="Değer girin" style={styles.numInput} autoFocus />
+                  <span style={styles.unitLabel}>{step.unit}</span>
+                  <button onClick={handleNumberSubmit} disabled={!currentInput} style={{ ...styles.submitBtn, opacity: !currentInput ? 0.4 : 1, marginTop: 0 }}>
+                    Devam →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {stepHistory.length > 1 && (
+              <button onClick={goBack} style={styles.backBtn}>← Geri</button>
+            )}
+          </div>
+
+          <style>{`
+            @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+            @keyframes slideOut { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+            input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+            input[type=number] { -moz-appearance: textfield; }
+            * { box-sizing: border-box; }
+          `}</style>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<DalakApp />);
+  </script>
+</body>
+</html>

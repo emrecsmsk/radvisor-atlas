@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mesane MR — VI-RADS Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a1628; }
+  @media print {
+    body { background: #fff !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .report-container { 
+      color: #1a1a1a !important; 
+      background: #fff !important;
+      padding: 20px !important;
+      max-width: 100% !important;
+    }
+    .report-container * { 
+      color: #1a1a1a !important; 
+      background: transparent !important;
+      border-color: #ccc !important;
+      box-shadow: none !important;
+    }
+    .report-container .report-title-header { 
+      color: #1a1a1a !important; 
+      font-size: 18px !important;
+    }
+    .report-container .section-title { 
+      color: #2563eb !important; 
+      border-bottom-color: #2563eb !important;
+    }
+    .report-container table { page-break-inside: avoid; }
+    .report-container .zebra-even { background: #f3f4f6 !important; }
+    .report-container .yorum-block { 
+      background: #f0f7ff !important; 
+      border-color: #93c5fd !important; 
+    }
+    .report-container .virads-badge {
+      color: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .report-container .alert-box {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useRef, useCallback } = React;
+
+// ─── VI-RADS Mesane MR Karar Destek Sistemi ───
+const STEPS = [
+  "Hasta Bilgileri","Mesane Değerlendirme","Tümör Tanımlama","T2 Ağırlıklı",
+  "DWI / ADC","DCE (Dinamik)","Tümör Boyut & Morfoloji","VI-RADS Skor",
+  "Musküler İnvazyon","Üst Üriner Sistem","Ek Bulgular","Rapor"
+];
+
+const LOCATIONS = [
+  {value:"trigone",label:"Trigon"},{value:"right_lateral",label:"Sağ lateral duvar"},
+  {value:"left_lateral",label:"Sol lateral duvar"},{value:"anterior",label:"Anterior duvar"},
+  {value:"posterior",label:"Posterior duvar"},{value:"dome",label:"Kubbe (Dome)"},
+  {value:"neck",label:"Mesane boynu"},{value:"right_uo",label:"Sağ üreter orifisi"},
+  {value:"left_uo",label:"Sol üreter orifisi"}
+];
+
+const MORPHOLOGY = [
+  {value:"papillary",label:"Papiller (saplı)"},{value:"sessile",label:"Sesil (geniş tabanlı)"},
+  {value:"flat",label:"Düz (flat)"},{value:"mixed",label:"Miks (papiller + sesil)"}
+];
+
+const GROWTH_PATTERN = [
+  {value:"intraluminal",label:"İntralüminal büyüme"},{value:"intramural",label:"İntramural büyüme"},
+  {value:"extravesical",label:"Ekstravezikal uzanım"},{value:"mixed",label:"Miks büyüme paterni"}
+];
+
+const T2W_SCORES = [
+  {value:1,label:"1 – Normal mesane duvarı, tümör saptanmadı"},
+  {value:2,label:"2 – İç tabakada kalınlaşma/kitle; muskularis propria intakt ve sürekli"},
+  {value:3,label:"3 – Muskularis propria düşük sinyal çizgisinin bozulup bozulmadığı belirsiz (equivocal)"},
+  {value:4,label:"4 – Muskularis propria düşük sinyal çizgisinin fokal bozulması (kas invazyonu muhtemel)"},
+  {value:5,label:"5 – Tümörün mesane duvarı ötesine uzanımı; perivesikal yağ dokusu invazyonu"}
+];
+
+const DWI_SCORES = [
+  {value:1,label:"1 – Normal mesane duvarı, difüzyon kısıtlaması yok"},
+  {value:2,label:"2 – Yüksek DWI sinyalli tümör; submukozal düşük sinyalli sap intakt"},
+  {value:3,label:"3 – Submukozal düşük sinyal çizgisinin bozulup bozulmadığı belirsiz (equivocal)"},
+  {value:4,label:"4 – Submukozal düşük sinyal çizgisinin fokal bozulması; tümör kas tabakasına uzanıyor"},
+  {value:5,label:"5 – Tümör yüksek sinyalinin mesane duvarı ötesine uzanımı"}
+];
+
+const DCE_SCORES = [
+  {value:1,label:"1 – Erken kontrastlanma yok; normal mesane duvarı"},
+  {value:2,label:"2 – Erken kontrastlanan iç tabaka/tümör; muskularis propria kontrastlanmıyor"},
+  {value:3,label:"3 – Erken kontrastlanmanın kas tabakasına uzanıp uzanmadığı belirsiz (equivocal)"},
+  {value:4,label:"4 – Erken kontrastlanma kas tabakasını fokal olarak tutuyor"},
+  {value:5,label:"5 – Erken kontrastlanma mesane duvarı ötesine uzanıyor"}
+];
+
+const STALK_OPTIONS = [
+  {value:"present",label:"Submukozal sap (stalk) mevcut — kas tabakasından ayrılmış"},
+  {value:"absent",label:"Submukozal sap izlenmiyor — geniş taban ile mesane duvarına oturuyor"},
+  {value:"equivocal",label:"Belirsiz — sap varlığı net değerlendirilemiyor"}
+];
+
+const MUSCLE_LAYER = [
+  {value:"intact",label:"Muskularis propria intakt — düşük sinyalli kas çizgisi sürekli"},
+  {value:"equivocal",label:"Belirsiz — kas tabakasının bütünlüğü kesin değerlendirilemiyor"},
+  {value:"disrupted",label:"Bozulmuş — kas tabakasında fokal sinyal kaybı / bozulma"},
+  {value:"absent",label:"Kas tabakası izlenemiyor — tümör tarafından tamamen infiltre"}
+];
+
+const PERIVESICAL = [
+  {value:"clear",label:"Perivesikal yağ dokusu temiz"},
+  {value:"stranding",label:"Perivesikal yağ dokusunda dansite artışı (stranding)"},
+  {value:"invasion",label:"Perivesikal yağ dokusu invazyonu"},
+  {value:"organ_invasion",label:"Komşu organ invazyonu (rektum, uterus, prostat vb.)"}
+];
+
+const UPPER_URINARY = [
+  {value:"normal",label:"Normal"},
+  {value:"mild_hydro",label:"Hafif hidronefroz / üreterohidronefroz"},
+  {value:"moderate_hydro",label:"Orta derece hidronefroz / üreterohidronefroz"},
+  {value:"severe_hydro",label:"İleri derece hidronefroz / üreterohidronefroz"},
+  {value:"ureteral_mass",label:"Üreteral kitle / duvar kalınlaşması"}
+];
+
+const LN_OPTIONS = [
+  {value:"normal",label:"Normal boyutta, morfolojide lenf nodları"},
+  {value:"borderline",label:"Sınırda boyutlu lenf nodları (kısa aks 8-10 mm)"},
+  {value:"enlarged",label:"Büyümüş lenf nodları (kısa aks >10 mm)"},
+  {value:"suspicious",label:"Patolojik lenf nodları (morfolojik şüpheli bulgular)"}
+];
+
+// ─── STYLES ───
+const S = {
+  app:{fontFamily:"'Segoe UI','Helvetica Neue',Arial,sans-serif",maxWidth:960,margin:"0 auto",padding:"16px 20px",background:"linear-gradient(135deg,#0a1628 0%,#1a2744 50%,#0d1f3c 100%)",minHeight:"100vh",color:"#e2e8f0"},
+  header:{textAlign:"center",marginBottom:24,padding:"20px 16px",background:"linear-gradient(135deg,rgba(59,130,246,0.15),rgba(139,92,246,0.1))",borderRadius:16,border:"1px solid rgba(59,130,246,0.2)",backdropFilter:"blur(10px)"},
+  title:{fontSize:22,fontWeight:700,background:"linear-gradient(135deg,#60a5fa,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",margin:0,letterSpacing:"-0.5px"},
+  subtitle:{fontSize:13,color:"#94a3b8",marginTop:6,fontWeight:400},
+  progressBar:{display:"flex",alignItems:"center",justifyContent:"center",gap:4,margin:"16px 0 24px",flexWrap:"wrap"},
+  progressDot:(a,c)=>({width:a?28:10,height:10,borderRadius:5,background:a?"linear-gradient(135deg,#3b82f6,#8b5cf6)":c?"#3b82f6":"rgba(148,163,184,0.2)",transition:"all 0.3s ease",cursor:"pointer"}),
+  card:{background:"rgba(30,41,59,0.8)",borderRadius:16,border:"1px solid rgba(148,163,184,0.1)",padding:"24px",marginBottom:16,backdropFilter:"blur(10px)"},
+  stepTitle:{fontSize:17,fontWeight:600,color:"#f1f5f9",marginBottom:20,display:"flex",alignItems:"center",gap:10},
+  stepBadge:{background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",color:"#fff",borderRadius:8,padding:"3px 10px",fontSize:12,fontWeight:700},
+  label:{display:"block",fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.5px"},
+  input:{width:"100%",padding:"10px 14px",borderRadius:10,border:"1px solid rgba(148,163,184,0.2)",background:"rgba(15,23,42,0.6)",color:"#e2e8f0",fontSize:14,outline:"none",transition:"border-color 0.2s",boxSizing:"border-box"},
+  radioGroup:{display:"flex",flexDirection:"column",gap:8},
+  radioOption:(sel)=>({display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",borderRadius:10,border:sel?"1.5px solid #3b82f6":"1px solid rgba(148,163,184,0.15)",background:sel?"rgba(59,130,246,0.08)":"rgba(15,23,42,0.4)",cursor:"pointer",transition:"all 0.2s ease",fontSize:13,lineHeight:1.5,color:sel?"#e2e8f0":"#94a3b8"}),
+  radioDot:(sel)=>({width:18,height:18,minWidth:18,borderRadius:"50%",border:sel?"5px solid #3b82f6":"2px solid rgba(148,163,184,0.3)",background:sel?"#fff":"transparent",marginTop:1,transition:"all 0.2s"}),
+  row:{display:"flex",gap:12,marginBottom:14,flexWrap:"wrap"},
+  col:(f=1)=>({flex:f,minWidth:120}),
+  btnPrimary:{padding:"11px 28px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.2s",letterSpacing:"0.3px"},
+  btnSecondary:{padding:"11px 28px",borderRadius:10,border:"1px solid rgba(148,163,184,0.2)",background:"rgba(30,41,59,0.5)",color:"#94a3b8",fontSize:14,fontWeight:500,cursor:"pointer",transition:"all 0.2s"},
+  btnSuccess:{padding:"11px 28px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"},
+  btnDanger:{padding:"9px 18px",borderRadius:8,border:"none",background:"rgba(239,68,68,0.15)",color:"#f87171",fontSize:13,fontWeight:500,cursor:"pointer"},
+  btnRow:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20,gap:10,flexWrap:"wrap"},
+  reportSection:{marginBottom:16},
+  reportTitle:{fontSize:15,fontWeight:700,color:"#60a5fa",marginBottom:10,borderBottom:"1px solid rgba(59,130,246,0.2)",paddingBottom:6},
+  zebraTable:{width:"100%",borderCollapse:"collapse",fontSize:13},
+  zebraRow:(i)=>({background:i%2===0?"rgba(15,23,42,0.4)":"transparent"}),
+  zebraTd:{padding:"8px 12px",borderBottom:"1px solid rgba(148,163,184,0.06)"},
+  zebraTdLabel:{padding:"8px 12px",borderBottom:"1px solid rgba(148,163,184,0.06)",color:"#94a3b8",fontWeight:500,width:"40%"},
+  yorumBlock:{background:"rgba(59,130,246,0.06)",border:"1px solid rgba(59,130,246,0.15)",borderRadius:12,padding:16,marginBottom:12},
+  yorumTitle:{fontSize:14,fontWeight:700,color:"#60a5fa",marginBottom:10},
+  piradsBar:()=>({height:8,borderRadius:4,background:"rgba(148,163,184,0.1)",overflow:"hidden",marginTop:6,marginBottom:4}),
+  piradsBarFill:(score)=>{const c={1:"#10b981",2:"#22c55e",3:"#eab308",4:"#f97316",5:"#ef4444"};return{height:"100%",width:`${(score/5)*100}%`,background:c[score]||"#64748b",borderRadius:4,transition:"width 0.5s ease"}},
+  piradsBadge:(score)=>{const c={1:"#10b981",2:"#22c55e",3:"#eab308",4:"#f97316",5:"#ef4444"};return{display:"inline-flex",alignItems:"center",justifyContent:"center",background:c[score]||"#64748b",color:score===3?"#1a1a1a":"#fff",fontWeight:800,fontSize:22,width:44,height:44,borderRadius:12,boxShadow:`0 0 20px ${c[score]||"#64748b"}40`}},
+  lesionTag:{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(139,92,246,0.1)",border:"1px solid rgba(139,92,246,0.2)",borderRadius:8,padding:"6px 12px",fontSize:13,color:"#c4b5fd",marginRight:8,marginBottom:8,cursor:"pointer"},
+  divider:{height:1,background:"rgba(148,163,184,0.1)",margin:"16px 0",border:"none"},
+  infoBox:{background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.15)",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#fbbf24",marginBottom:14}
+};
+
+// ─── VI-RADS Calculation ───
+function calcVIRADS(tumor){
+  const{t2Score,dwiScore,dceScore}=tumor;
+  if(!t2Score||!dwiScore||!dceScore) return null;
+  if(dwiScore===1) return 1;
+  if(dwiScore===5) return 5;
+  if(dwiScore===2){if(t2Score>=5||dceScore>=5) return 5; return 2;}
+  if(dwiScore===3){if(t2Score<=2&&dceScore<=2) return 2; if(t2Score>=4||dceScore>=4) return 4; return 3;}
+  if(dwiScore===4){if(t2Score<=2&&dceScore<=2) return 3; if(t2Score>=5||dceScore>=5) return 5; return 4;}
+  return dwiScore;
+}
+
+function viradsText(s){return{1:"Çok düşük – Musküler invazyon olasılığı çok düşük",2:"Düşük – Musküler invazyon olasılığı düşük (NMIBC muhtemel)",3:"Orta (Belirsiz) – Musküler invazyon belirsiz",4:"Yüksek – Musküler invazyon olasılığı yüksek (MIBC muhtemel)",5:"Çok yüksek – Musküler invazyon / ekstravezikal uzanım (MIBC)"}[s]||"";}
+function viradsStage(s){return{1:"Tümör saptanmadı",2:"≤T1 (Non-muscle invasive — Ta/T1)",3:"T1–T2a arası (belirsiz)",4:"≥T2a (Muscle invasive)",5:"≥T2b / T3 / T4 (İleri evre)"}[s]||"";}
+
+const locLabel=(v)=>LOCATIONS.find(l=>l.value===v)?.label||v;
+const morphLabel=(v)=>MORPHOLOGY.find(m=>m.value===v)?.label||v;
+const growthLabel=(v)=>GROWTH_PATTERN.find(g=>g.value===v)?.label||v;
+const stalkLabel=(v)=>STALK_OPTIONS.find(s=>s.value===v)?.label||v;
+const muscleLabel=(v)=>MUSCLE_LAYER.find(m=>m.value===v)?.label||v;
+const pvLabel=(v)=>PERIVESICAL.find(p=>p.value===v)?.label||v;
+const upperLabel=(v)=>UPPER_URINARY.find(u=>u.value===v)?.label||v;
+const lnLabel=(v)=>LN_OPTIONS.find(l=>l.value===v)?.label||v;
+
+const emptyTumor=()=>({id:Date.now(),location:"",morphology:"",growthPattern:"",t2Score:null,dwiScore:null,dceScore:null,stalk:"",muscleLayer:"",perivesical:"",sizeAP:"",sizeLR:"",sizeCC:"",wallThickness:"",virads:null});
+
+function Radio({options,value,onChange}){
+  return(<div style={S.radioGroup}>{options.map(opt=>(
+    <div key={opt.value} style={S.radioOption(value===opt.value)} onClick={()=>onChange(opt.value)}>
+      <div style={S.radioDot(value===opt.value)}/><span>{opt.label}</span>
+    </div>
+  ))}</div>);
+}
+
+// ─── EXPORT UTILITIES (SANDBOX-FREE) ───
+function generateReportHTML(reportEl, patientName){
+  const html = `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"/><title>VI-RADS Rapor — ${patientName||'Hasta'}</title>
+<style>
+body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:30px;color:#1a1a1a;line-height:1.6}
+h1{text-align:center;font-size:18px;margin-bottom:4px}
+.date{text-align:center;color:#666;font-size:12px;margin-bottom:24px}
+.section-title{font-size:14px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:4px;margin:20px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+tr:nth-child(even){background:#f3f4f6}
+td{padding:8px 12px;border-bottom:1px solid #e5e7eb}
+td:first-child{color:#6b7280;font-weight:500;width:40%}
+.yorum{background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:16px;margin:12px 0}
+.badge{display:inline-block;padding:4px 12px;border-radius:8px;color:#fff;font-weight:800;font-size:16px}
+.badge-1,.badge-2{background:#10b981} .badge-3{background:#eab308;color:#1a1a1a} .badge-4{background:#f97316} .badge-5{background:#ef4444}
+.alert-green{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 14px;color:#065f46;font-size:13px;margin:8px 0}
+.alert-yellow{background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px 14px;color:#854d0e;font-size:13px;margin:8px 0}
+.alert-red{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#991b1b;font-size:13px;margin:8px 0}
+@media print{body{padding:15px} .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+${reportEl.innerHTML
+  .replace(/style="[^"]*"/g,'')
+  .replace(/class="[^"]*"/g,'')
+}
+</body></html>`;
+  return html;
+}
+
+function downloadFile(content, filename, mimeType){
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─── MAIN COMPONENT ───
+function BladderVIRADS(){
+  const[step,setStep]=useState(0);
+  const[patient,setPatient]=useState({name:"",age:"",gender:"",protocol:"",date:new Date().toISOString().slice(0,10),clinicalInfo:"",priorTURBT:"",cystoscopy:""});
+  const[bladder,setBladder]=useState({distension:"",wallRegularity:"",diverticulum:"",diverticulumNote:"",freeFluid:""});
+  const[tumors,setTumors]=useState([]);
+  const[currentTumorIdx,setCurrentTumorIdx]=useState(-1);
+  const[upperUrinary,setUpperUrinary]=useState({right:"normal",left:"normal",rightNote:"",leftNote:""});
+  const[extras,setExtras]=useState({lymphNode:"normal",lymphNodeNote:"",bone:"",pelvicOrgan:"",other:""});
+  const[copied,setCopied]=useState(false);
+  const reportRef=useRef(null);
+  const printReportRef=useRef(null);
+
+  const currentTumor=currentTumorIdx>=0?tumors[currentTumorIdx]:null;
+  const updatePatient=(k,v)=>setPatient(p=>({...p,[k]:v}));
+  const updateBladder=(k,v)=>setBladder(p=>({...p,[k]:v}));
+
+  const addTumor=()=>{const nt=emptyTumor();setTumors(t=>[...t,nt]);setCurrentTumorIdx(tumors.length);setStep(3);};
+  const updateCurrentTumor=(k,v)=>{setTumors(ts=>ts.map((t,i)=>i===currentTumorIdx?{...t,[k]:v}:t));};
+  const removeTumor=(idx)=>{setTumors(ts=>ts.filter((_,i)=>i!==idx));if(currentTumorIdx===idx)setCurrentTumorIdx(-1);else if(currentTumorIdx>idx)setCurrentTumorIdx(currentTumorIdx-1);};
+  const finalizeTumor=()=>{if(currentTumor){const virads=calcVIRADS(currentTumor);setTumors(ts=>ts.map((t,i)=>i===currentTumorIdx?{...t,virads}:t));}setCurrentTumorIdx(-1);};
+
+  const goNext=()=>{
+    if(step===7){finalizeTumor();setStep(2);return;}
+    if(step===2&&currentTumorIdx<0){setStep(8);return;}
+    if(step>=3&&step<=6&&currentTumorIdx<0){setStep(8);return;}
+    setStep(s=>Math.min(s+1,STEPS.length-1));
+  };
+  const goPrev=()=>{
+    if(step===8){setStep(2);return;}
+    if(step>=3&&step<=7&&currentTumorIdx<0){setStep(2);return;}
+    setStep(s=>Math.max(s-1,0));
+  };
+
+  // ─── REAL EXPORT FUNCTIONS ───
+  const handlePrint=useCallback(()=>{window.print();},[]);
+
+  const handleCopy=useCallback(()=>{
+    try{
+      const el=reportRef.current;
+      if(!el) return;
+      const text=el.innerText;
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
+      }else{
+        const ta=document.createElement("textarea");
+        ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+        document.body.appendChild(ta);ta.select();document.execCommand("copy");
+        document.body.removeChild(ta);setCopied(true);setTimeout(()=>setCopied(false),2000);
+      }
+    }catch(e){console.error(e);}
+  },[]);
+
+  const handleDownloadHTML=useCallback(()=>{
+    const el=reportRef.current;
+    if(!el) return;
+    // Build clean printable HTML report
+    const distLabel={adequate:"Yeterli",suboptimal:"Suboptimal",overdistended:"Aşırı gergin",collapsed:"Kollabe"};
+    const wallLabel={smooth:"Düzgün, ince",diffuse_thickening:"Diffüz kalınlaşma",focal_thickening:"Fokal kalınlaşma",trabeculation:"Trabekulasyon"};
+    const fluidLabel={none:"Yok",minimal:"Minimal",moderate:"Orta miktarda",large:"Belirgin"};
+
+    const indexTumor = tumors.length>0 ? tumors.reduce((max,t,i)=>(t.virads||0)>(max.virads||0)?{...t,idx:i}:max,{...tumors[0],idx:0}) : null;
+
+    let tumorsHTML = '';
+    if(tumors.length>0){
+      tumorsHTML = `<div class="section-title">Tümör Değerlendirmesi (${tumors.length} tümör)</div>`;
+      tumors.forEach((t,i)=>{
+        const isIndex=indexTumor&&indexTumor.idx===i;
+        const s=t.virads||calcVIRADS(t);
+        tumorsHTML+=`<div class="yorum" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div><strong>Tümör ${i+1}</strong>${isIndex?' <span style="background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:6px;font-size:11px">İNDEKS</span>':''}</div>
+            <span class="badge badge-${s||1}">${s||'?'}</span>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:10px">${s?viradsText(s):''}</div>
+          <table>
+            <tr><td>Lokalizasyon</td><td>${locLabel(t.location)}</td></tr>
+            <tr><td>Boyut</td><td>${[t.sizeAP,t.sizeLR,t.sizeCC].filter(Boolean).length>0?`${t.sizeAP||'—'} × ${t.sizeLR||'—'} × ${t.sizeCC||'—'} mm`:'—'}</td></tr>
+            <tr><td>Morfoloji</td><td>${t.morphology?morphLabel(t.morphology):'—'}</td></tr>
+            <tr><td>Büyüme Paterni</td><td>${t.growthPattern?growthLabel(t.growthPattern):'—'}</td></tr>
+            <tr><td>Submukozal Sap</td><td>${t.stalk?stalkLabel(t.stalk):'—'}</td></tr>
+            <tr><td>T2W Skoru</td><td>${t.t2Score??'—'}</td></tr>
+            <tr><td>DWI Skoru</td><td>${t.dwiScore??'—'}</td></tr>
+            <tr><td>DCE Skoru</td><td>${t.dceScore??'—'}</td></tr>
+            <tr><td>Kas Tabakası</td><td>${t.muscleLayer?muscleLabel(t.muscleLayer):'—'}</td></tr>
+            <tr><td>Perivesikal</td><td>${t.perivesical?pvLabel(t.perivesical):'—'}</td></tr>
+            <tr><td>VI-RADS</td><td>${s||'—'}</td></tr>
+            <tr><td>Evre Tahmini</td><td>${s?viradsStage(s):'—'}</td></tr>
+          </table>
+        </div>`;
+      });
+    }
+
+    let yorumHTML='';
+    if(tumors.length===0){
+      yorumHTML='<p>Mesane MR incelemesinde VI-RADS skorlanmasını gerektiren fokal tümöral lezyon saptanmamıştır.</p>';
+    }else{
+      yorumHTML=`<p>Mesane multiparametrik MR incelemesinde toplam <strong>${tumors.length}</strong> adet tümöral lezyon tanımlanmıştır.</p>`;
+      if(indexTumor){
+        yorumHTML+=`<p><strong>İndeks tümör (Tümör ${indexTumor.idx+1}):</strong> ${locLabel(indexTumor.location)}${indexTumor.sizeAP?` — ${indexTumor.sizeAP}×${indexTumor.sizeLR||'?'}×${indexTumor.sizeCC||'?'} mm`:''}${indexTumor.morphology?`, ${morphLabel(indexTumor.morphology)}`:''}</p>`;
+      }
+      tumors.forEach((t,i)=>{
+        const s=t.virads||calcVIRADS(t);
+        yorumHTML+=`<p><span class="badge badge-${s||1}" style="font-size:12px;padding:2px 8px">${s||'?'}</span> <strong>Tümör ${i+1}:</strong> VI-RADS ${s} — ${viradsText(s)}</p>`;
+      });
+      if(indexTumor&&indexTumor.virads>=4)yorumHTML+=`<div class="alert-red">⚠️ VI-RADS ≥4: Musküler invazyon yüksek olasılıklıdır (MIBC). Derin kas invazyonu açısından TUR-BT ve evreleme önerilir.</div>`;
+      if(indexTumor&&indexTumor.virads===3)yorumHTML+=`<div class="alert-yellow">⚡ VI-RADS 3 (belirsiz): Musküler invazyon kesin değerlendirilememektedir. TUR-BT ile derin kas biyopsisi önerilir.</div>`;
+      if(indexTumor&&indexTumor.virads<=2&&indexTumor.virads>=1)yorumHTML+=`<div class="alert-green">✓ VI-RADS ≤2: Musküler invazyon düşük olasılıklıdır (NMIBC muhtemel). TUR-BT planlanmalıdır.</div>`;
+      if(upperUrinary.right!=="normal"||upperUrinary.left!=="normal")yorumHTML+=`<p style="color:#991b1b">• Üst üriner sistemde eşlik eden patoloji saptanmıştır.</p>`;
+      if(extras.lymphNode!=="normal")yorumHTML+=`<p style="color:#991b1b">• Pelvik lenfadenopati bulguları mevcut.</p>`;
+    }
+
+    const fullHTML=`<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"/><title>VI-RADS Rapor — ${patient.name||'Hasta'}</title>
+<style>
+body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:30px;color:#1a1a1a;line-height:1.6}
+h1{text-align:center;font-size:18px;margin-bottom:4px}
+.date{text-align:center;color:#666;font-size:12px;margin-bottom:24px}
+.section-title{font-size:14px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:4px;margin:20px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+tr:nth-child(even){background:#f3f4f6}
+td{padding:8px 12px;border-bottom:1px solid #e5e7eb}
+td:first-child{color:#6b7280;font-weight:500;width:40%}
+.yorum{background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:16px;margin:12px 0}
+.badge{display:inline-block;padding:4px 12px;border-radius:8px;color:#fff;font-weight:800;font-size:16px}
+.badge-1,.badge-2{background:#10b981} .badge-3{background:#eab308;color:#1a1a1a} .badge-4{background:#f97316} .badge-5{background:#ef4444}
+.alert-green{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 14px;color:#065f46;font-size:13px;margin:8px 0}
+.alert-yellow{background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px 14px;color:#854d0e;font-size:13px;margin:8px 0}
+.alert-red{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#991b1b;font-size:13px;margin:8px 0}
+@media print{body{padding:15px}.badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<h1>MESANE MR — VI-RADS YAPISAL RAPOR</h1>
+<div class="date">Oluşturulma: ${new Date().toLocaleDateString("tr-TR")}</div>
+
+<div class="section-title">Hasta Bilgileri</div>
+<table>
+<tr><td>Hasta</td><td>${patient.name||'—'}</td></tr>
+<tr><td>Yaş / Cinsiyet</td><td>${patient.age||'—'} yaş / ${patient.gender==='M'?'Erkek':patient.gender==='F'?'Kadın':'—'}</td></tr>
+<tr><td>Tarih</td><td>${patient.date||'—'}</td></tr>
+<tr><td>Protokol</td><td>${patient.protocol||'—'}</td></tr>
+<tr><td>Klinik Bilgi</td><td>${patient.clinicalInfo||'—'}</td></tr>
+<tr><td>Önceki TUR-BT</td><td>${patient.priorTURBT||'Bilgi yok'}</td></tr>
+<tr><td>Sistoskopi</td><td>${patient.cystoscopy||'Bilgi yok'}</td></tr>
+</table>
+
+<div class="section-title">Mesane Genel Değerlendirme</div>
+<table>
+<tr><td>Distansiyon</td><td>${distLabel[bladder.distension]||'—'}</td></tr>
+<tr><td>Duvar Düzenliliği</td><td>${wallLabel[bladder.wallRegularity]||'—'}</td></tr>
+<tr><td>Divertikül</td><td>${bladder.diverticulum==='present'?`Mevcut — ${bladder.diverticulumNote||''}`:'Yok'}</td></tr>
+<tr><td>Pelvik Serbest Sıvı</td><td>${fluidLabel[bladder.freeFluid]||'—'}</td></tr>
+</table>
+
+${tumorsHTML}
+
+<div class="section-title">Üst Üriner Sistem</div>
+<table>
+<tr><td>Sağ Böbrek / Üreter</td><td>${upperLabel(upperUrinary.right)}${upperUrinary.rightNote?` — ${upperUrinary.rightNote}`:''}</td></tr>
+<tr><td>Sol Böbrek / Üreter</td><td>${upperLabel(upperUrinary.left)}${upperUrinary.leftNote?` — ${upperUrinary.leftNote}`:''}</td></tr>
+</table>
+
+<div class="section-title">Ek Bulgular</div>
+<table>
+<tr><td>Pelvik Lenf Nodları</td><td>${lnLabel(extras.lymphNode)}${extras.lymphNodeNote?` — ${extras.lymphNodeNote}`:''}</td></tr>
+<tr><td>Kemik</td><td>${extras.bone||'Kemik metastazı ile uyumlu sinyal değişikliği saptanmadı'}</td></tr>
+<tr><td>Pelvik Organlar</td><td>${extras.pelvicOrgan||'Belirgin patoloji saptanmadı'}</td></tr>
+<tr><td>Diğer</td><td>${extras.other||'—'}</td></tr>
+</table>
+
+<div class="section-title">YORUM</div>
+<div class="yorum">${yorumHTML}</div>
+
+<div style="text-align:center;margin-top:30px;font-size:11px;color:#999">
+VI-RADS — Vesical Imaging-Reporting and Data System | Klinik karar destek aracıdır, tanı koymaz.
+</div>
+</body></html>`;
+
+    downloadFile(fullHTML, `VIRADS_Rapor_${patient.name||'Hasta'}_${patient.date||'tarihsiz'}.html`, 'text/html;charset=utf-8');
+  },[patient,bladder,tumors,upperUrinary,extras]);
+
+  const handleDownloadTXT=useCallback(()=>{
+    const el=reportRef.current;
+    if(!el) return;
+    downloadFile(el.innerText, `VIRADS_Rapor_${patient.name||'Hasta'}_${patient.date||'tarihsiz'}.txt`, 'text/plain;charset=utf-8');
+  },[patient]);
+
+  // ─── Step Renderers ───
+  const renderStep0=()=>(
+    <div>
+      <div style={S.row}>
+        <div style={S.col(2)}><label style={S.label}>Hasta Adı</label><input style={S.input} value={patient.name} onChange={e=>updatePatient("name",e.target.value)} placeholder="Ad Soyad"/></div>
+        <div style={S.col(1)}><label style={S.label}>Yaş</label><input style={S.input} type="number" value={patient.age} onChange={e=>updatePatient("age",e.target.value)} placeholder="Yaş"/></div>
+        <div style={S.col(1)}><label style={S.label}>Cinsiyet</label><Radio options={[{value:"M",label:"Erkek"},{value:"F",label:"Kadın"}]} value={patient.gender} onChange={v=>updatePatient("gender",v)}/></div>
+      </div>
+      <div style={S.row}>
+        <div style={S.col(1)}><label style={S.label}>Tetkik Tarihi</label><input style={S.input} type="date" value={patient.date} onChange={e=>updatePatient("date",e.target.value)}/></div>
+        <div style={S.col(1)}><label style={S.label}>Protokol</label><input style={S.input} value={patient.protocol} onChange={e=>updatePatient("protocol",e.target.value)} placeholder="mpMRI / bpMRI"/></div>
+      </div>
+      <div style={{marginBottom:14}}><label style={S.label}>Klinik Bilgi / Endikasyon</label><textarea style={{...S.input,minHeight:55,resize:"vertical"}} value={patient.clinicalInfo} onChange={e=>updatePatient("clinicalInfo",e.target.value)} placeholder="Hematüri, sistoskopi bulguları, şüpheli kitle..."/></div>
+      <div style={S.row}>
+        <div style={S.col(1)}><label style={S.label}>Önceki TUR-BT</label><input style={S.input} value={patient.priorTURBT} onChange={e=>updatePatient("priorTURBT",e.target.value)} placeholder="Tarih / Patoloji sonucu"/></div>
+        <div style={S.col(1)}><label style={S.label}>Sistoskopi Bulgusu</label><input style={S.input} value={patient.cystoscopy} onChange={e=>updatePatient("cystoscopy",e.target.value)} placeholder="Kitle yeri, boyutu, görünüm"/></div>
+      </div>
+    </div>
+  );
+
+  const renderStep1=()=>(
+    <div>
+      <div style={S.infoBox}>📐 VI-RADS değerlendirmesi için mesanenin yeterli distansiyonu önemlidir.</div>
+      <div style={{marginBottom:14}}><label style={S.label}>Mesane Distansiyonu</label><Radio options={[{value:"adequate",label:"Yeterli distansiyon"},{value:"suboptimal",label:"Suboptimal distansiyon"},{value:"overdistended",label:"Aşırı gergin (overdistended)"},{value:"collapsed",label:"Kollabe / boş mesane"}]} value={bladder.distension} onChange={v=>updateBladder("distension",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Mesane Duvarı Düzenliliği</label><Radio options={[{value:"smooth",label:"Düzgün, ince duvar"},{value:"diffuse_thickening",label:"Diffüz duvar kalınlaşması"},{value:"focal_thickening",label:"Fokal duvar kalınlaşması"},{value:"trabeculation",label:"Trabekulasyon mevcut"}]} value={bladder.wallRegularity} onChange={v=>updateBladder("wallRegularity",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Divertikül</label><Radio options={[{value:"none",label:"Divertikül yok"},{value:"present",label:"Divertikül mevcut"}]} value={bladder.diverticulum} onChange={v=>updateBladder("diverticulum",v)}/></div>
+      {bladder.diverticulum==="present"&&(<div style={{marginBottom:14}}><label style={S.label}>Divertikül Notu</label><input style={S.input} value={bladder.diverticulumNote} onChange={e=>updateBladder("diverticulumNote",e.target.value)} placeholder="Lokalizasyon, boyut, içerik..."/></div>)}
+      <div><label style={S.label}>Pelvik Serbest Sıvı</label><Radio options={[{value:"none",label:"Serbest sıvı yok"},{value:"minimal",label:"Minimal serbest sıvı"},{value:"moderate",label:"Orta miktarda serbest sıvı"},{value:"large",label:"Belirgin serbest sıvı"}]} value={bladder.freeFluid} onChange={v=>updateBladder("freeFluid",v)}/></div>
+    </div>
+  );
+
+  const renderStep2=()=>(
+    <div>
+      <div style={S.infoBox}>🎯 Her tümör için ayrı VI-RADS skorlaması yapılır. İndeks tümör en yüksek VI-RADS skoruna sahip tümördür.</div>
+      {tumors.length>0&&(<div style={{marginBottom:16}}>{tumors.map((t,i)=>(
+        <div key={t.id} style={{...S.lesionTag,border:currentTumorIdx===i?"1.5px solid #a78bfa":undefined}} onClick={()=>{setCurrentTumorIdx(i);setStep(3);}}>
+          <span style={{fontWeight:700}}>T{i+1}</span>
+          {t.location&&<span>· {locLabel(t.location)}</span>}
+          {t.virads&&<span style={{...S.piradsBadge(t.virads),width:22,height:22,fontSize:11,borderRadius:6}}>{t.virads}</span>}
+          <span style={{color:"#f87171",marginLeft:4,cursor:"pointer"}} onClick={e=>{e.stopPropagation();removeTumor(i);}}>✕</span>
+        </div>
+      ))}</div>)}
+      <button style={S.btnSuccess} onClick={addTumor}>+ Yeni Tümör Ekle</button>
+      {tumors.length===0&&(<div style={{color:"#64748b",fontSize:13,marginTop:10}}>Tümör saptanmadıysa, doğrudan "Ek Bulgular" adımına geçebilirsiniz.</div>)}
+    </div>
+  );
+
+  const renderStep3=()=>{
+    if(!currentTumor) return <div style={{color:"#94a3b8"}}>Önce tümör oluşturun (Adım 3).</div>;
+    return(<div>
+      <div style={{fontSize:14,fontWeight:600,color:"#a78bfa",marginBottom:14}}>Tümör #{currentTumorIdx+1} — T2 Ağırlıklı Görüntüleme</div>
+      <div style={{marginBottom:14}}><label style={S.label}>Tümör Lokalizasyonu</label><Radio options={LOCATIONS} value={currentTumor.location} onChange={v=>updateCurrentTumor("location",v)}/></div>
+      <hr style={S.divider}/>
+      <label style={S.label}>T2 Ağırlıklı Skor</label>
+      <div style={S.infoBox}>T2W'de muskularis propria düşük sinyalli ince bir çizgi olarak izlenir. Bu çizginin bütünlüğü değerlendirilir.</div>
+      <Radio options={T2W_SCORES} value={currentTumor.t2Score} onChange={v=>updateCurrentTumor("t2Score",v)}/>
+    </div>);
+  };
+
+  const renderStep4=()=>{
+    if(!currentTumor) return <div style={{color:"#94a3b8"}}>Önce tümör oluşturun.</div>;
+    return(<div>
+      <div style={{fontSize:14,fontWeight:600,color:"#a78bfa",marginBottom:14}}>Tümör #{currentTumorIdx+1} — DWI / ADC Skorlama</div>
+      <div style={S.infoBox}>⭐ DWI, VI-RADS'ta DOMINANT sekanstır.</div>
+      <Radio options={DWI_SCORES} value={currentTumor.dwiScore} onChange={v=>updateCurrentTumor("dwiScore",v)}/>
+    </div>);
+  };
+
+  const renderStep5=()=>{
+    if(!currentTumor) return <div style={{color:"#94a3b8"}}>Önce tümör oluşturun.</div>;
+    const showNote=currentTumor.dwiScore===3;
+    return(<div>
+      <div style={{fontSize:14,fontWeight:600,color:"#a78bfa",marginBottom:14}}>Tümör #{currentTumorIdx+1} — Dinamik Kontrast (DCE)</div>
+      {showNote&&(<div style={S.infoBox}>⚠️ DWI skoru 3 (belirsiz) olduğunda, DCE ve T2W bulguları final VI-RADS skorunu belirler.</div>)}
+      <Radio options={DCE_SCORES} value={currentTumor.dceScore} onChange={v=>updateCurrentTumor("dceScore",v)}/>
+    </div>);
+  };
+
+  const renderStep6=()=>{
+    if(!currentTumor) return <div style={{color:"#94a3b8"}}>Önce tümör oluşturun.</div>;
+    return(<div>
+      <div style={{fontSize:14,fontWeight:600,color:"#a78bfa",marginBottom:14}}>Tümör #{currentTumorIdx+1} — Boyut & Morfoloji</div>
+      <div style={S.row}>
+        <div style={S.col(1)}><label style={S.label}>AP (mm)</label><input style={S.input} type="number" value={currentTumor.sizeAP} onChange={e=>updateCurrentTumor("sizeAP",e.target.value)} placeholder="mm"/></div>
+        <div style={S.col(1)}><label style={S.label}>LR (mm)</label><input style={S.input} type="number" value={currentTumor.sizeLR} onChange={e=>updateCurrentTumor("sizeLR",e.target.value)} placeholder="mm"/></div>
+        <div style={S.col(1)}><label style={S.label}>CC (mm)</label><input style={S.input} type="number" value={currentTumor.sizeCC} onChange={e=>updateCurrentTumor("sizeCC",e.target.value)} placeholder="mm"/></div>
+      </div>
+      <div style={{marginBottom:14}}><label style={S.label}>Tümör Morfolojisi</label><Radio options={MORPHOLOGY} value={currentTumor.morphology} onChange={v=>updateCurrentTumor("morphology",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Büyüme Paterni</label><Radio options={GROWTH_PATTERN} value={currentTumor.growthPattern} onChange={v=>updateCurrentTumor("growthPattern",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Submukozal Sap (Stalk)</label><Radio options={STALK_OPTIONS} value={currentTumor.stalk} onChange={v=>updateCurrentTumor("stalk",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Muskularis Propria (Kas Tabakası)</label><Radio options={MUSCLE_LAYER} value={currentTumor.muscleLayer} onChange={v=>updateCurrentTumor("muscleLayer",v)}/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Duvar Kalınlığı (mm)</label><input style={S.input} type="number" value={currentTumor.wallThickness} onChange={e=>updateCurrentTumor("wallThickness",e.target.value)} placeholder="mm"/></div>
+      <div><label style={S.label}>Perivesikal Değerlendirme</label><Radio options={PERIVESICAL} value={currentTumor.perivesical} onChange={v=>updateCurrentTumor("perivesical",v)}/></div>
+    </div>);
+  };
+
+  const renderStep7=()=>{
+    if(!currentTumor) return <div style={{color:"#94a3b8"}}>Önce tümör oluşturun.</div>;
+    const score=calcVIRADS(currentTumor);
+    if(!score) return(<div style={{color:"#fbbf24",textAlign:"center",padding:20}}>
+      Skor hesaplanması için T2W, DWI ve DCE skorlarının tamamının girilmesi gerekmektedir.
+      <div style={{marginTop:10}}><button style={S.btnSecondary} onClick={()=>setStep(3)}>← Skorlamaya Dön</button></div>
+    </div>);
+    const isUpgrade=(currentTumor.dwiScore===3&&(currentTumor.t2Score>=4||currentTumor.dceScore>=4));
+    const isDowngrade=(currentTumor.dwiScore===3&&currentTumor.t2Score<=2&&currentTumor.dceScore<=2)||(currentTumor.dwiScore===4&&currentTumor.t2Score<=2&&currentTumor.dceScore<=2);
+    return(<div>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{color:"#94a3b8",fontSize:13,marginBottom:8}}>Tümör #{currentTumorIdx+1} — Hesaplanan VI-RADS Skoru</div>
+        <div style={S.piradsBadge(score)}>{score}</div>
+        <div style={{marginTop:10,color:"#e2e8f0",fontSize:14,fontWeight:500}}>{viradsText(score)}</div>
+        <div style={{marginTop:4,color:"#94a3b8",fontSize:12}}>Evre Tahmini: {viradsStage(score)}</div>
+        {isUpgrade&&<div style={{marginTop:8,color:"#f97316",fontSize:12}}>↑ Upgrade uygulandı (T2W/DCE ile)</div>}
+        {isDowngrade&&<div style={{marginTop:8,color:"#22c55e",fontSize:12}}>↓ Downgrade uygulandı (T2W+DCE düşük)</div>}
+      </div>
+      <div style={S.piradsBar(score)}><div style={S.piradsBarFill(score)}/></div>
+      <hr style={S.divider}/>
+      <div style={S.yorumBlock}>
+        <div style={S.yorumTitle}>Skorlama Detayı</div>
+        <table style={S.zebraTable}><tbody>
+          {[["Lokalizasyon",locLabel(currentTumor.location)],["Dominant Sekans","DWI (VI-RADS kuralı)"],["T2W Skoru",currentTumor.t2Score??"—"],["DWI Skoru",currentTumor.dwiScore??"—"],["DCE Skoru",currentTumor.dceScore??"—"],["Morfoloji",currentTumor.morphology?morphLabel(currentTumor.morphology):"—"],["Submukozal Sap",currentTumor.stalk?stalkLabel(currentTumor.stalk):"—"],["Final VI-RADS",score],["Evre Tahmini",viradsStage(score)]].map(([k,v],i)=>(
+            <tr key={k} style={S.zebraRow(i)}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+          ))}
+        </tbody></table>
+      </div>
+      <div style={{...S.btnRow,justifyContent:"center"}}>
+        <button style={S.btnSuccess} onClick={()=>{finalizeTumor();setStep(2);}}>✓ Tümörü Kaydet & Tümör Listesine Dön</button>
+      </div>
+    </div>);
+  };
+
+  const renderStep8=()=>(
+    <div>
+      <div style={S.infoBox}>🔬 VI-RADS'ın temel amacı musküler invazyon (MIBC vs NMIBC) ayrımını yapmaktır.</div>
+      {tumors.length===0?(<div style={{color:"#64748b",fontSize:13}}>Tanımlanmış tümör bulunmamaktadır.</div>):(
+        <div>{tumors.map((t,i)=>{const s=t.virads||calcVIRADS(t);return(
+          <div key={t.id} style={{...S.yorumBlock,marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{...S.piradsBadge(s||1),width:32,height:32,fontSize:15,borderRadius:8}}>{s||"?"}</div>
+              <div><div style={{fontWeight:600,color:"#e2e8f0"}}>Tümör {i+1} — {locLabel(t.location)}</div><div style={{fontSize:12,color:"#94a3b8"}}>{s?viradsText(s):"Skor hesaplanmadı"}</div></div>
+            </div>
+            <div style={S.piradsBar(s||1)}><div style={S.piradsBarFill(s||1)}/></div>
+            <div style={{fontSize:12,marginTop:6}}><span style={{color:"#94a3b8"}}>Kas Tabakası: </span><span style={{color:t.muscleLayer==="disrupted"||t.muscleLayer==="absent"?"#f87171":"#e2e8f0"}}>{t.muscleLayer?muscleLabel(t.muscleLayer):"Değerlendirilmedi"}</span></div>
+            <div style={{fontSize:12,marginTop:3}}><span style={{color:"#94a3b8"}}>Perivesikal: </span><span style={{color:t.perivesical==="invasion"||t.perivesical==="organ_invasion"?"#f87171":"#e2e8f0"}}>{t.perivesical?pvLabel(t.perivesical):"Değerlendirilmedi"}</span></div>
+          </div>
+        );})}</div>
+      )}
+    </div>
+  );
+
+  const renderStep9=()=>(
+    <div>
+      <div style={S.row}>
+        <div style={S.col(1)}>
+          <label style={S.label}>Sağ Böbrek / Üreter</label>
+          <Radio options={UPPER_URINARY} value={upperUrinary.right} onChange={v=>setUpperUrinary(p=>({...p,right:v}))}/>
+          {upperUrinary.right!=="normal"&&(<div style={{marginTop:8}}><input style={S.input} value={upperUrinary.rightNote} onChange={e=>setUpperUrinary(p=>({...p,rightNote:e.target.value}))} placeholder="Detay notu..."/></div>)}
+        </div>
+        <div style={S.col(1)}>
+          <label style={S.label}>Sol Böbrek / Üreter</label>
+          <Radio options={UPPER_URINARY} value={upperUrinary.left} onChange={v=>setUpperUrinary(p=>({...p,left:v}))}/>
+          {upperUrinary.left!=="normal"&&(<div style={{marginTop:8}}><input style={S.input} value={upperUrinary.leftNote} onChange={e=>setUpperUrinary(p=>({...p,leftNote:e.target.value}))} placeholder="Detay notu..."/></div>)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep10=()=>(
+    <div>
+      <div style={{marginBottom:14}}><label style={S.label}>Pelvik Lenf Nodları</label><Radio options={LN_OPTIONS} value={extras.lymphNode} onChange={v=>setExtras(p=>({...p,lymphNode:v}))}/>{extras.lymphNode!=="normal"&&(<div style={{marginTop:8}}><input style={S.input} value={extras.lymphNodeNote} onChange={e=>setExtras(p=>({...p,lymphNodeNote:e.target.value}))} placeholder="Lokalizasyon, boyut, sayı..."/></div>)}</div>
+      <div style={{marginBottom:14}}><label style={S.label}>Kemik</label><textarea style={{...S.input,minHeight:50,resize:"vertical"}} value={extras.bone} onChange={e=>setExtras(p=>({...p,bone:e.target.value}))} placeholder="Kemik metastazı değerlendirmesi..."/></div>
+      <div style={{marginBottom:14}}><label style={S.label}>Pelvik Organlar</label><textarea style={{...S.input,minHeight:50,resize:"vertical"}} value={extras.pelvicOrgan} onChange={e=>setExtras(p=>({...p,pelvicOrgan:e.target.value}))} placeholder="Prostat, uterus, over, rektum..."/></div>
+      <div><label style={S.label}>Diğer Bulgular</label><textarea style={{...S.input,minHeight:50,resize:"vertical"}} value={extras.other} onChange={e=>setExtras(p=>({...p,other:e.target.value}))} placeholder="Ek notlar..."/></div>
+    </div>
+  );
+
+  // ─── REPORT ───
+  const indexTumor=useMemo(()=>{
+    if(tumors.length===0) return null;
+    return tumors.reduce((max,t,i)=>(t.virads||0)>(max.virads||0)?{...t,idx:i}:max,{...tumors[0],idx:0});
+  },[tumors]);
+
+  const renderReport=()=>{
+    const distLabel={adequate:"Yeterli",suboptimal:"Suboptimal",overdistended:"Aşırı gergin",collapsed:"Kollabe"};
+    const wallLabel={smooth:"Düzgün, ince",diffuse_thickening:"Diffüz kalınlaşma",focal_thickening:"Fokal kalınlaşma",trabeculation:"Trabekulasyon"};
+    const fluidLabel={none:"Yok",minimal:"Minimal",moderate:"Orta miktarda",large:"Belirgin"};
+
+    return(
+      <div>
+        {/* EXPORT BUTTONS */}
+        <div className="no-print" style={{...S.btnRow,marginBottom:20,marginTop:0,justifyContent:"center",flexWrap:"wrap",gap:8}}>
+          <button style={S.btnPrimary} onClick={handlePrint}>🖨️ Yazdır / PDF</button>
+          <button style={{...S.btnSuccess,opacity:copied?0.6:1}} onClick={handleCopy}>{copied?"✓ Kopyalandı!":"📋 Metin Kopyala"}</button>
+          <button style={{...S.btnPrimary,background:"linear-gradient(135deg,#f59e0b,#d97706)"}} onClick={handleDownloadHTML}>📄 HTML İndir</button>
+          <button style={{...S.btnSecondary}} onClick={handleDownloadTXT}>📝 TXT İndir</button>
+        </div>
+
+        <div ref={reportRef} className="report-container">
+          <div style={{textAlign:"center",marginBottom:20}}>
+            <div className="report-title-header" style={{fontSize:17,fontWeight:700,color:"#f1f5f9"}}>MESANE MR — VI-RADS YAPISAL RAPOR</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:4}}>Oluşturulma: {new Date().toLocaleDateString("tr-TR")}</div>
+          </div>
+
+          {/* Hasta */}
+          <div style={S.reportSection}>
+            <div className="section-title" style={S.reportTitle}>Hasta Bilgileri</div>
+            <table style={S.zebraTable}><tbody>
+              {[["Hasta",patient.name||"—"],["Yaş / Cinsiyet",`${patient.age||"—"} yaş / ${patient.gender==="M"?"Erkek":patient.gender==="F"?"Kadın":"—"}`],["Tarih",patient.date||"—"],["Protokol",patient.protocol||"—"],["Klinik Bilgi",patient.clinicalInfo||"—"],["Önceki TUR-BT",patient.priorTURBT||"Bilgi yok"],["Sistoskopi",patient.cystoscopy||"Bilgi yok"]].map(([k,v],i)=>(
+                <tr key={k} style={S.zebraRow(i)} className={i%2===0?"zebra-even":""}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+              ))}
+            </tbody></table>
+          </div>
+
+          {/* Mesane */}
+          <div style={S.reportSection}>
+            <div className="section-title" style={S.reportTitle}>Mesane Genel Değerlendirme</div>
+            <table style={S.zebraTable}><tbody>
+              {[["Distansiyon",distLabel[bladder.distension]||"—"],["Duvar Düzenliliği",wallLabel[bladder.wallRegularity]||"—"],["Divertikül",bladder.diverticulum==="present"?`Mevcut — ${bladder.diverticulumNote||""}`:"Yok"],["Pelvik Serbest Sıvı",fluidLabel[bladder.freeFluid]||"—"]].map(([k,v],i)=>(
+                <tr key={k} style={S.zebraRow(i)} className={i%2===0?"zebra-even":""}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+              ))}
+            </tbody></table>
+          </div>
+
+          {/* Tümörler */}
+          {tumors.length>0&&(
+            <div style={S.reportSection}>
+              <div className="section-title" style={S.reportTitle}>Tümör Değerlendirmesi ({tumors.length} tümör)</div>
+              {tumors.map((t,i)=>{
+                const isIndex=indexTumor&&indexTumor.idx===i;
+                const s=t.virads||calcVIRADS(t);
+                return(
+                  <div key={t.id} className="yorum-block" style={{...S.yorumBlock,borderColor:isIndex?"rgba(59,130,246,0.4)":undefined,marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{fontWeight:700,color:"#e2e8f0"}}>Tümör {i+1}</span>
+                        {isIndex&&<span style={{background:"rgba(59,130,246,0.2)",color:"#60a5fa",padding:"2px 8px",borderRadius:6,fontSize:11,fontWeight:600}}>İNDEKS</span>}
+                      </div>
+                      <div className="virads-badge" style={S.piradsBadge(s||1)}>{s||"?"}</div>
+                    </div>
+                    <div style={S.piradsBar(s||1)}><div style={S.piradsBarFill(s||1)}/></div>
+                    <div style={{fontSize:12,color:"#94a3b8",marginBottom:10}}>{s?viradsText(s):""}</div>
+                    <table style={S.zebraTable}><tbody>
+                      {[["Lokalizasyon",locLabel(t.location)],["Boyut",[t.sizeAP,t.sizeLR,t.sizeCC].filter(Boolean).length>0?`${t.sizeAP||"—"} × ${t.sizeLR||"—"} × ${t.sizeCC||"—"} mm`:"—"],["Morfoloji",t.morphology?morphLabel(t.morphology):"—"],["Büyüme Paterni",t.growthPattern?growthLabel(t.growthPattern):"—"],["Submukozal Sap",t.stalk?stalkLabel(t.stalk):"—"],["T2W Skoru",t.t2Score??"—"],["DWI Skoru",t.dwiScore??"—"],["DCE Skoru",t.dceScore??"—"],["Kas Tabakası",t.muscleLayer?muscleLabel(t.muscleLayer):"—"],["Perivesikal",t.perivesical?pvLabel(t.perivesical):"—"],["VI-RADS",s||"—"],["Evre Tahmini",s?viradsStage(s):"—"]].map(([k,v],j)=>(
+                        <tr key={k} style={S.zebraRow(j)} className={j%2===0?"zebra-even":""}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+                      ))}
+                    </tbody></table>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Üst Üriner */}
+          <div style={S.reportSection}>
+            <div className="section-title" style={S.reportTitle}>Üst Üriner Sistem</div>
+            <table style={S.zebraTable}><tbody>
+              {[["Sağ Böbrek / Üreter",`${upperLabel(upperUrinary.right)}${upperUrinary.rightNote?` — ${upperUrinary.rightNote}`:""}`],["Sol Böbrek / Üreter",`${upperLabel(upperUrinary.left)}${upperUrinary.leftNote?` — ${upperUrinary.leftNote}`:""}`]].map(([k,v],i)=>(
+                <tr key={k} style={S.zebraRow(i)} className={i%2===0?"zebra-even":""}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+              ))}
+            </tbody></table>
+          </div>
+
+          {/* Ek Bulgular */}
+          <div style={S.reportSection}>
+            <div className="section-title" style={S.reportTitle}>Ek Bulgular</div>
+            <table style={S.zebraTable}><tbody>
+              {[["Pelvik Lenf Nodları",`${lnLabel(extras.lymphNode)}${extras.lymphNodeNote?` — ${extras.lymphNodeNote}`:""}`],["Kemik",extras.bone||"Kemik metastazı ile uyumlu sinyal değişikliği saptanmadı"],["Pelvik Organlar",extras.pelvicOrgan||"Belirgin patoloji saptanmadı"],["Diğer",extras.other||"—"]].map(([k,v],i)=>(
+                <tr key={k} style={S.zebraRow(i)} className={i%2===0?"zebra-even":""}><td style={S.zebraTdLabel}>{k}</td><td style={S.zebraTd}>{v}</td></tr>
+              ))}
+            </tbody></table>
+          </div>
+
+          {/* YORUM */}
+          <div style={S.reportSection}>
+            <div className="section-title" style={S.reportTitle}>YORUM</div>
+            <div className="yorum-block" style={S.yorumBlock}>
+              {tumors.length===0?(
+                <div style={{color:"#94a3b8"}}>Mesane MR incelemesinde VI-RADS skorlanmasını gerektiren fokal tümöral lezyon saptanmamıştır.</div>
+              ):(
+                <div>
+                  <div style={{marginBottom:12}}>Mesane multiparametrik MR incelemesinde toplam <b style={{color:"#60a5fa"}}>{tumors.length}</b> adet tümöral lezyon tanımlanmıştır.</div>
+                  {indexTumor&&(<div style={{marginBottom:12}}><b>İndeks tümör (Tümör {indexTumor.idx+1}):</b>{" "}{locLabel(indexTumor.location)}{indexTumor.sizeAP&&` — ${indexTumor.sizeAP}×${indexTumor.sizeLR||"?"}×${indexTumor.sizeCC||"?"} mm`}{indexTumor.morphology&&`, ${morphLabel(indexTumor.morphology)}`}</div>)}
+                  {tumors.map((t,i)=>{const s=t.virads||calcVIRADS(t);return(
+                    <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                      <div className="virads-badge" style={{...S.piradsBadge(s||1),width:30,height:30,fontSize:14,borderRadius:8}}>{s||"?"}</div>
+                      <div><span style={{fontWeight:600}}>Tümör {i+1}: </span><span>VI-RADS {s} — {viradsText(s)}</span></div>
+                    </div>
+                  );})}
+                  {indexTumor&&(indexTumor.virads>=4)&&(<div className="alert-box" style={{marginTop:12,padding:"10px 14px",background:"rgba(239,68,68,0.08)",borderRadius:8,border:"1px solid rgba(239,68,68,0.15)",color:"#fca5a5",fontSize:13}}>⚠️ VI-RADS ≥4: Musküler invazyon yüksek olasılıklıdır (MIBC). Derin kas invazyonu açısından TUR-BT ve evreleme önerilir. Neoadjuvan kemoterapi ve radikal sistektomi değerlendirilmelidir.</div>)}
+                  {indexTumor&&indexTumor.virads===3&&(<div className="alert-box" style={{marginTop:12,padding:"10px 14px",background:"rgba(234,179,8,0.08)",borderRadius:8,border:"1px solid rgba(234,179,8,0.15)",color:"#fde047",fontSize:13}}>⚡ VI-RADS 3 (belirsiz): Musküler invazyon kesin değerlendirilememektedir. TUR-BT ile derin kas biyopsisi önerilir. Klinik korelasyon ve multidisipliner değerlendirme gereklidir.</div>)}
+                  {indexTumor&&indexTumor.virads<=2&&indexTumor.virads>=1&&(<div className="alert-box" style={{marginTop:12,padding:"10px 14px",background:"rgba(16,185,129,0.08)",borderRadius:8,border:"1px solid rgba(16,185,129,0.15)",color:"#6ee7b7",fontSize:13}}>✓ VI-RADS ≤2: Musküler invazyon düşük olasılıklıdır (NMIBC muhtemel). TUR-BT planlanmalıdır. İntravezikal BCG/kemoterapi değerlendirilebilir.</div>)}
+                  {(upperUrinary.right!=="normal"||upperUrinary.left!=="normal")&&(<div style={{marginTop:8,color:"#fca5a5",fontSize:13}}>• Üst üriner sistemde eşlik eden patoloji saptanmıştır — detaylar yukarıda.</div>)}
+                  {(extras.lymphNode!=="normal")&&(<div style={{marginTop:4,color:"#fca5a5",fontSize:13}}>• Pelvik lenfadenopati bulguları mevcut.</div>)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const stepRenderers=[renderStep0,renderStep1,renderStep2,renderStep3,renderStep4,renderStep5,renderStep6,renderStep7,renderStep8,renderStep9,renderStep10,renderReport];
+
+  return(
+    <div style={S.app}>
+      <div style={S.header} className="no-print">
+        <h1 style={S.title}>Mesane MR — VI-RADS</h1>
+        <div style={S.subtitle}>Vesical Imaging-Reporting & Data System — Yapısal Raporlama Karar Destek Sistemi</div>
+      </div>
+      <div style={S.progressBar} className="no-print">
+        {STEPS.map((s,i)=>(<div key={i} style={S.progressDot(i===step,i<step)} onClick={()=>setStep(i)} title={s}/>))}
+      </div>
+      <div style={S.card} className={step===11?"":"no-print-card"}>
+        <div style={S.stepTitle} className={step===11?"no-print":""}>
+          <span style={S.stepBadge}>{step+1}/{STEPS.length}</span>
+          <span>{STEPS[step]}</span>
+        </div>
+        {stepRenderers[step]()}
+      </div>
+      {step!==11&&!(step===7&&currentTumorIdx>=0)&&(
+        <div style={S.btnRow} className="no-print">
+          <button style={S.btnSecondary} onClick={goPrev} disabled={step===0}>← Geri</button>
+          <button style={S.btnPrimary} onClick={goNext}>{step===10?"Rapor Oluştur →":"İleri →"}</button>
+        </div>
+      )}
+      <div className="no-print" style={{textAlign:"center",marginTop:24,fontSize:11,color:"#475569"}}>
+        VI-RADS — Vesical Imaging-Reporting and Data System | Klinik karar destek aracıdır, tanı koymaz.
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<BladderVIRADS/>);
+</script>
+</body>
+</html>

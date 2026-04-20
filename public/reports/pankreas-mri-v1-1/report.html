@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Pankreas MRI Değerlendirme</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root{
+  --bg:#0f0e17;--surface:#1a1927;--surface2:#22203a;--surface3:#2a2845;
+  --accent:#f59e0b;--accent2:#d97706;--cyan:#06b6d4;--cyan2:#0891b2;
+  --text:#e8e6f0;--text2:#a09cbf;--text3:#6b6891;
+  --green:#10b981;--red:#ef4444;--orange:#f97316;--purple:#8b5cf6;
+  --border:#2d2b4a;--border2:#3d3b5a;
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+#root{min-height:100vh}
+
+/* Layout */
+.app{max-width:860px;margin:0 auto;padding:16px}
+.header{display:flex;align-items:center;gap:14px;padding:20px 0 24px}
+.header-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.header h1{font-size:1.5rem;font-weight:700;color:var(--text)}
+.header p{font-size:.85rem;color:var(--text2);margin-top:2px}
+
+/* Progress */
+.progress-wrap{margin-bottom:20px}
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:2px;transition:width .4s ease}
+.progress-label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text3);margin-top:6px}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card-title{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card-subtitle{font-size:.82rem;color:var(--text3);margin-bottom:18px}
+.step-badge{background:var(--accent);color:#000;font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:20px}
+
+/* Form Elements */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:6px;font-weight:500}
+.field input[type=text],.field input[type=number],.field select,.field textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);border-radius:var(--radius-sm);padding:9px 12px;
+  font-size:.88rem;outline:none;transition:border-color .2s
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:70px}
+
+/* Option Grid */
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px}
+.opt-grid.cols2{grid-template-columns:1fr 1fr}
+.opt-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.opt-btn{
+  background:var(--surface2);border:1.5px solid var(--border2);
+  color:var(--text2);border-radius:var(--radius-sm);padding:10px 12px;
+  font-size:.82rem;cursor:pointer;transition:all .2s;text-align:center;
+  line-height:1.3
+}
+.opt-btn:hover{border-color:var(--accent);color:var(--text)}
+.opt-btn.selected{background:rgba(245,158,11,.15);border-color:var(--accent);color:var(--accent);font-weight:600}
+.opt-btn.multi.selected{background:rgba(6,182,212,.12);border-color:var(--cyan);color:var(--cyan)}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.toggle{width:40px;height:22px;background:var(--surface3);border-radius:11px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
+.toggle-label{font-size:.85rem;color:var(--text)}
+
+/* Alert boxes */
+.alert{border-radius:var(--radius-sm);padding:12px 14px;margin:10px 0;font-size:.82rem;border-left:4px solid}
+.alert-warn{background:rgba(249,115,22,.1);border-color:var(--orange);color:#fcd34d}
+.alert-info{background:rgba(6,182,212,.1);border-color:var(--cyan);color:var(--cyan)}
+.alert-danger{background:rgba(239,68,68,.12);border-color:var(--red);color:#fca5a5}
+.alert-success{background:rgba(16,185,129,.1);border-color:var(--green);color:var(--green)}
+
+/* Lesion cards */
+.lesion-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.lesion-item{background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.lesion-item.active{border-color:var(--accent)}
+.lesion-badge{background:var(--accent);color:#000;font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:20px}
+.lesion-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;padding:4px}
+
+/* Probability chart */
+.prob-chart{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.prob-row{display:grid;grid-template-columns:180px 1fr 52px;align-items:center;gap:10px}
+.prob-label{font-size:.82rem;color:var(--text);text-align:right}
+.prob-bar-wrap{background:var(--surface3);border-radius:4px;height:14px;overflow:hidden}
+.prob-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.prob-pct{font-size:.82rem;font-weight:700;color:var(--text)}
+.primary-diag{background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(245,158,11,.06));border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:16px;text-align:center}
+.primary-diag .diag-name{font-size:1.3rem;font-weight:800;color:var(--accent);margin-bottom:4px}
+.primary-diag .diag-pct{font-size:2.2rem;font-weight:900;color:var(--accent)}
+.primary-diag .diag-sub{font-size:.8rem;color:var(--text2)}
+
+/* Fukuoka box */
+.fukuoka-box{background:var(--surface2);border:1.5px solid;border-radius:var(--radius);padding:16px;margin-top:12px}
+.fukuoka-surgery{border-color:var(--red)}
+.fukuoka-eus{border-color:var(--orange)}
+.fukuoka-followup{border-color:var(--green)}
+.fukuoka-title{font-size:.9rem;font-weight:700;margin-bottom:8px}
+.fukuoka-features{display:flex;flex-wrap:wrap;gap:6px}
+.fukuoka-tag{font-size:.75rem;padding:3px 8px;border-radius:20px;font-weight:600}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{padding:10px 22px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text)}
+.btn-cyan{background:var(--cyan);color:#000}
+.btn-cyan:hover{background:var(--cyan2)}
+.btn-sm{padding:6px 14px;font-size:.78rem}
+
+/* Divider */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* Slider */
+.slider-row{display:flex;align-items:center;gap:12px}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-val{min-width:48px;text-align:right;font-weight:700;color:var(--accent);font-size:.9rem}
+
+/* Report overlay */
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px}
+.report-sheet{background:#fff;color:#111;max-width:760px;margin:0 auto;padding:32px 36px;border-radius:8px;font-family:'Segoe UI',sans-serif;font-size:.88rem;line-height:1.7}
+.report-sheet h2{font-size:1.1rem;text-align:center;margin-bottom:4px;color:#111}
+.report-sheet .rpt-meta{text-align:center;font-size:.78rem;color:#555;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #222}
+.report-sheet h3{font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#333;margin:14px 0 4px;border-top:1px solid #ddd;padding-top:10px}
+.report-sheet p{margin:3px 0;font-size:.85rem}
+.report-sheet .yorum{background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 14px;margin:12px 0;border-radius:4px;font-size:.84rem;color:#166534}
+.report-sheet .rpt-lesion-header{font-weight:700;margin-top:12px;color:#1e40af;font-size:.88rem}
+.overlay-btns{position:sticky;top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:12px;z-index:10}
+.overlay-btns .btn{box-shadow:0 2px 8px rgba(0,0,0,.4)}
+
+/* Zebra table */
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.83rem}
+th{background:#e8e8e8;padding:6px 10px;text-align:left;font-weight:700}
+td{padding:5px 10px;border-bottom:1px solid #e0e0e0}
+tr:nth-child(even) td{background:#f9f9f9}
+
+/* Lesion section header */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.section-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+/* Sub-section card */
+.sub-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px}
+.sub-card-title{font-size:.8rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback,useMemo,useRef} = React;
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const STEPS = {
+  CLINICAL:0,TECHNIQUE:1,PARENCHYMA:2,MPD:3,CBD:4,VASCULAR:5,
+  LYMPH:6,LESION_COUNT:7,LOC:8,TYPE:9,T1:10,T2:11,DWI:12,
+  CONTRAST:13,SPECIFIC:14,DIAGNOSIS:15,LIVER:16,OTHER:17,REPORT:18
+};
+const TOTAL = 19;
+
+const LOOP_START = STEPS.LOC;
+const LOOP_END   = STEPS.DIAGNOSIS;
+const PRE_LOOP   = STEPS.LESION_COUNT;
+const POST_LOOP  = STEPS.LIVER;
+
+const LOCATIONS = ['Baş','Unsinat','Boyun','Gövde','Kuyruk','Difüz'];
+const LESION_TYPES = ['Solid','Kistik','Solid-Kistik Mikst'];
+
+const SOLID_CANDIDATES = [
+  'Duktal Adenokarsinom (PDAC)',
+  'Nöroendokrin Tümör (pNET)',
+  'Solid Psödopapiller Neoplazi (SPN)',
+  'Otoimmün Pankreatit (AIP)',
+  'Fokal Kronik Pankreatit',
+  'Metastaz',
+  'Lenfoma',
+  'Asiner Hücreli Karsinom'
+];
+
+const CYSTIC_CANDIDATES = [
+  'Dal-Tip IPMN (BD-IPMN)',
+  'Ana Kanal IPMN (MD-IPMN)',
+  'Mikst Tip IPMN',
+  'Müsinöz Kistik Neoplazi (MCN)',
+  'Seröz Sistadenoma (SCA)',
+  'Psödokist',
+  'Solid Psödopapiller Neoplazi (SPN)',
+  'Kistik pNET',
+  'Lenfoepitelyal Kist',
+  'Basit/Retansiyon Kisti'
+];
+
+const BAR_COLORS = [
+  '#f59e0b','#06b6d4','#8b5cf6','#10b981',
+  '#ef4444','#f97316','#ec4899','#a3e635',
+  '#3b82f6','#fbbf24'
+];
+
+// ─── SCORING ENGINE ───────────────────────────────────────────────────────────
+// Safe increment: only touches keys that exist in s (prevents NaN from cross-list refs)
+function inc(s, key, val){ if(Object.prototype.hasOwnProperty.call(s,key)) s[key]+=val; }
+
+function diagSolid(L, clin){
+  const s = {};
+  // Baseline so there's always a distribution
+  s['Duktal Adenokarsinom (PDAC)']        = 3;
+  s['Nöroendokrin Tümör (pNET)']          = 2;
+  s['Solid Psödopapiller Neoplazi (SPN)'] = 1;
+  s['Otoimmün Pankreatit (AIP)']          = 1;
+  s['Fokal Kronik Pankreatit']            = 1;
+  s['Metastaz']                           = 1;
+  s['Lenfoma']                            = 1;
+  s['Asiner Hücreli Karsinom']            = 1;
+
+  // Vascularity
+  if(L.contrast==='hipovasküler')           {inc(s,'Duktal Adenokarsinom (PDAC)',5);inc(s,'Fokal Kronik Pankreatit',2)}
+  if(L.contrast==='arteriyel hipervasküler'){inc(s,'Nöroendokrin Tümör (pNET)',5);inc(s,'Asiner Hücreli Karsinom',2)}
+  if(L.contrast==='geç faz tutulum')        {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Otoimmün Pankreatit (AIP)',3)}
+  if(L.contrast==='heterogen')              {inc(s,'Asiner Hücreli Karsinom',2);inc(s,'Solid Psödopapiller Neoplazi (SPN)',2)}
+  if(L.contrast==='progresif tutulum (fibröz)'){inc(s,'Otoimmün Pankreatit (AIP)',3);inc(s,'Fokal Kronik Pankreatit',2)}
+
+  // Border
+  if(L.border==='spiküle') {inc(s,'Duktal Adenokarsinom (PDAC)',4);inc(s,'Fokal Kronik Pankreatit',1)}
+  if(L.border==='lobüle')  {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Asiner Hücreli Karsinom',2)}
+  if(L.border==='keskin')  {inc(s,'Nöroendokrin Tümör (pNET)',3);inc(s,'Solid Psödopapiller Neoplazi (SPN)',2);inc(s,'Metastaz',2)}
+  if(L.border==='belirsiz'){inc(s,'Otoimmün Pankreatit (AIP)',2);inc(s,'Fokal Kronik Pankreatit',2)}
+
+  // DWI
+  if(L.dwi==='belirgin kısıtlama'){inc(s,'Duktal Adenokarsinom (PDAC)',4);inc(s,'Lenfoma',4);inc(s,'Solid Psödopapiller Neoplazi (SPN)',2)}
+  if(L.dwi==='hafif kısıtlama')  {inc(s,'Nöroendokrin Tümör (pNET)',2);inc(s,'Metastaz',2);inc(s,'Asiner Hücreli Karsinom',2)}
+  if(L.dwi==='serbest difüzyon') {inc(s,'Fokal Kronik Pankreatit',3)}
+
+  // T1
+  if(L.t1==='hipointens')        {inc(s,'Duktal Adenokarsinom (PDAC)',3);inc(s,'Lenfoma',2)}
+  if(L.t1==='hemorajik/hipertens'){inc(s,'Solid Psödopapiller Neoplazi (SPN)',4)}
+  if(L.t1==='yağ içeriği')       {inc(s,'Fokal Kronik Pankreatit',2)}
+
+  // T2
+  if(L.t2==='hipointens')       {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Otoimmün Pankreatit (AIP)',2)}
+  if(L.t2==='belirgin hiperintens'){inc(s,'Nöroendokrin Tümör (pNET)',2);inc(s,'Asiner Hücreli Karsinom',2)}
+
+  // Specific features
+  if(L.haloSign)     {inc(s,'Otoimmün Pankreatit (AIP)',5)}
+  if(L.fibroKapsul)  {inc(s,'Solid Psödopapiller Neoplazi (SPN)',4)}
+  if(L.proxAtrophy)  {inc(s,'Duktal Adenokarsinom (PDAC)',3)}
+  if(L.vascInvasion) {inc(s,'Duktal Adenokarsinom (PDAC)',4)}
+  if(L.bileInvasion) {inc(s,'Duktal Adenokarsinom (PDAC)',3);inc(s,'Asiner Hücreli Karsinom',1)}
+  if(L.perineural)   {inc(s,'Duktal Adenokarsinom (PDAC)',2)}
+  if(L.mpdGrowth)    {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Nöroendokrin Tümör (pNET)',1)}
+
+  // Clinical
+  if(cbd && cbd.doubleDuct)         {inc(s,'Duktal Adenokarsinom (PDAC)',4)}
+  if(clin.ca199==='çok yüksek >1000'){inc(s,'Duktal Adenokarsinom (PDAC)',5)}
+  if(clin.ca199==='yüksek')          {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Asiner Hücreli Karsinom',1)}
+  if(clin.igg4High)                  {inc(s,'Otoimmün Pankreatit (AIP)',5)}
+  if(clin.knownMalignansy)           {inc(s,'Metastaz',5);inc(s,'Lenfoma',2)}
+  if(clin.jaundice)                  {inc(s,'Duktal Adenokarsinom (PDAC)',2);inc(s,'Lenfoma',1)}
+
+  // Gender/age
+  if(clin.gender==='kadın' && parseInt(clin.age||'99') < 40){inc(s,'Solid Psödopapiller Neoplazi (SPN)',5)}
+
+  // Location
+  if(['Baş','Unsinat'].includes(L.location)){inc(s,'Duktal Adenokarsinom (PDAC)',1)}
+  if(L.location==='Kuyruk')                 {inc(s,'Solid Psödopapiller Neoplazi (SPN)',1)}
+
+  return normalizeScores(s);
+}
+
+function diagCystic(L, clin, mpd){
+  const s = {};
+  // Baseline
+  s['Dal-Tip IPMN (BD-IPMN)']             = 2;
+  s['Ana Kanal IPMN (MD-IPMN)']           = 1;
+  s['Mikst Tip IPMN']                     = 1;
+  s['Müsinöz Kistik Neoplazi (MCN)']      = 2;
+  s['Seröz Sistadenoma (SCA)']            = 2;
+  s['Psödokist']                          = 1;
+  s['Solid Psödopapiller Neoplazi (SPN)'] = 1;
+  s['Kistik pNET']                        = 1;
+  s['Lenfoepitelyal Kist']                = 1;
+  s['Basit/Retansiyon Kisti']             = 1;
+
+  // Morphology
+  if(L.morphology==='mikrokistik petek'){inc(s,'Seröz Sistadenoma (SCA)',7)}
+  if(L.morphology==='makrokistik')      {inc(s,'Dal-Tip IPMN (BD-IPMN)',3);inc(s,'Müsinöz Kistik Neoplazi (MCN)',3)}
+  if(L.morphology==='oligokistik')      {inc(s,'Seröz Sistadenoma (SCA)',3);inc(s,'Dal-Tip IPMN (BD-IPMN)',2)}
+  if(L.morphology==='üzüm salkımı')     {inc(s,'Dal-Tip IPMN (BD-IPMN)',5)}
+  if(L.morphology==='uniloküler')       {inc(s,'Müsinöz Kistik Neoplazi (MCN)',3);inc(s,'Psödokist',2);inc(s,'Basit/Retansiyon Kisti',2)}
+
+  // MPD comm
+  if(L.mpdComm==='var')     {inc(s,'Dal-Tip IPMN (BD-IPMN)',6);inc(s,'Mikst Tip IPMN',2)}
+  if(L.mpdComm==='şüpheli') {inc(s,'Dal-Tip IPMN (BD-IPMN)',2);inc(s,'Mikst Tip IPMN',1)}
+  if(L.mpdComm==='yok')     {inc(s,'Müsinöz Kistik Neoplazi (MCN)',2);inc(s,'Seröz Sistadenoma (SCA)',2);inc(s,'Psödokist',2)}
+
+  // MPD dilation (global MPD)
+  const mpdMm = parseInt(mpd.mpdMm||'0');
+  if(mpdMm >= 10) {inc(s,'Ana Kanal IPMN (MD-IPMN)',6);inc(s,'Mikst Tip IPMN',3)}
+  else if(mpdMm >= 5){inc(s,'Ana Kanal IPMN (MD-IPMN)',4);inc(s,'Mikst Tip IPMN',2)}
+
+  // Calcification
+  if(L.calcType==='periferik (MCN??)'){inc(s,'Müsinöz Kistik Neoplazi (MCN)',4)}
+  if(L.calcType==='santral skar (SCA?)'){inc(s,'Seröz Sistadenoma (SCA)',4)}
+  if(L.calcType==='var (dağınık)'){inc(s,'Seröz Sistadenoma (SCA)',2)}
+
+  // Mural nodule
+  if(L.muralNodule){inc(s,'Dal-Tip IPMN (BD-IPMN)',3);inc(s,'Müsinöz Kistik Neoplazi (MCN)',3);inc(s,'Ana Kanal IPMN (MD-IPMN)',2)}
+
+  // Wall thickness
+  if(L.wallThickMm >= 3){inc(s,'Müsinöz Kistik Neoplazi (MCN)',2);inc(s,'Dal-Tip IPMN (BD-IPMN)',2)}
+
+  // T1
+  if(L.t1==='hemorajik/hipertens'){inc(s,'Solid Psödopapiller Neoplazi (SPN)',4);inc(s,'Psödokist',2)}
+  if(L.fibroKapsul){inc(s,'Solid Psödopapiller Neoplazi (SPN)',4)}
+
+  // SPN profile
+  if(clin.gender==='kadın' && parseInt(clin.age||'99') < 40){inc(s,'Solid Psödopapiller Neoplazi (SPN)',4)}
+
+  // Pseudocyst
+  if(clin.pancreatitisHx){inc(s,'Psödokist',5);inc(s,'Basit/Retansiyon Kisti',1)}
+
+  // Gender / age / location → MCN
+  if(clin.gender==='kadın'){inc(s,'Müsinöz Kistik Neoplazi (MCN)',1)}
+  if(parseInt(clin.age||'99') >= 30 && parseInt(clin.age||'99') <= 55 && clin.gender==='kadın'){inc(s,'Müsinöz Kistik Neoplazi (MCN)',3)}
+  if(['Gövde','Kuyruk'].includes(L.location)){inc(s,'Müsinöz Kistik Neoplazi (MCN)',2)}
+  if(['Baş','Unsinat'].includes(L.location)){inc(s,'Dal-Tip IPMN (BD-IPMN)',1)}
+
+  // Septation / debris
+  if(L.sepCount >= 2){inc(s,'Seröz Sistadenoma (SCA)',2);inc(s,'Müsinöz Kistik Neoplazi (MCN)',1)}
+  if(L.debris){inc(s,'Psödokist',3);inc(s,'Solid Psödopapiller Neoplazi (SPN)',1)}
+
+  // DWI
+  if(L.dwi==='belirgin kısıtlama'){inc(s,'Solid Psödopapiller Neoplazi (SPN)',3);inc(s,'Kistik pNET',2)}
+
+  // NET
+  if(L.contrast==='arteriyel hipervasküler'){inc(s,'Kistik pNET',4)}
+
+  return normalizeScores(s);
+}
+
+function normalizeScores(s){
+  const entries = Object.entries(s)
+    .map(([k,v]) => [k, (isNaN(v)||v<0) ? 0 : v]);
+  const total = entries.reduce((a,[,v]) => a+v, 0);
+  if(total===0){
+    // Uniform fallback
+    const n = entries.length;
+    return entries.map(([k]) => ({name:k, pct:Math.round(100/n)})).sort((a,b)=>b.pct-a.pct);
+  }
+  return entries
+    .map(([k,v]) => ({name:k, pct:Math.round(v/total*100)}))
+    .filter(e => e.pct > 0)
+    .sort((a,b) => b.pct-a.pct);
+}
+
+function ipmNRisk(L, mpd){
+  const highRisk=[];
+  const worrisome=[];
+  const mpdMm = parseInt(mpd.mpdMm||'0');
+  if(mpdMm >= 10) highRisk.push('MPD ≥10mm');
+  if(L.muralNoduleSizeMm >= 5 && L.muralNodule) highRisk.push('Enhancing mural nodül ≥5mm');
+  if(L.obstructiveJaundice) highRisk.push('Obstrüktif sarılık');
+  if(mpdMm >= 5 && mpdMm < 10) worrisome.push('MPD 5-9mm');
+  if(parseInt(L.sizeMm||'0') >= 30) worrisome.push('Kist ≥3cm');
+  if(L.wallThickMm >= 3) worrisome.push('Kalın/kontrastlanan duvar');
+  if(L.muralNodule && L.muralNoduleSizeMm < 5) worrisome.push('Non-enhancing mural nodül <5mm');
+  if(mpd.suddenCalib) worrisome.push('Ani MPD kalibrasyon değişimi');
+  if(L.mpdGrowth) worrisome.push('MPD büyümesi');
+
+  let rec='', recClass='';
+  if(highRisk.length>0){rec='Cerrahi rezeksiyon önerilir';recClass='surgery'}
+  else if(worrisome.length>0){rec='EUS ile değerlendirme önerilir';recClass='eus'}
+  else{rec='Görüntüleme takibi (6-12 ay MRI/MRCP)';recClass='followup'}
+
+  return{highRisk,worrisome,rec,recClass};
+}
+
+// ─── REPORT GENERATOR ────────────────────────────────────────────────────────
+function generateReportHTML(data){
+  const{clin,tech,parenchyma,mpd,cbd,vascular,lymph,lesions,liver,other}=data;
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('tr-TR',{year:'numeric',month:'long',day:'numeric'});
+  const timeStr=now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+
+  let rows='';
+
+  // Header
+  rows+=`<h2>PANKREAS MRI DEĞERLENDİRME RAPORU</h2>
+  <div class="rpt-meta">Tarih: ${dateStr} &nbsp;|&nbsp; Saat: ${timeStr} &nbsp;|&nbsp; Endikasyon: ${(clin.indications||[]).join(', ')||'—'}</div>`;
+
+  // Patient info table
+  rows+=`<table><tr><th>Yaş</th><th>Cinsiyet</th><th>CA 19-9</th><th>IgG4</th><th>Amilaz/Lipaz</th></tr>
+  <tr><td>${clin.age||'—'}</td><td>${clin.gender||'—'}</td><td>${clin.ca199||'—'}</td><td>${clin.igg4High?'Yüksek':'Normal/bilinmiyor'}</td><td>${clin.amylaseLipase||'—'}</td></tr></table>`;
+
+  // Technique
+  rows+=`<h3>TEKNİK</h3><p>${tech.sequences||'Standart pankreas MRI protokolü uygulandı.'} ${tech.contrast?'Gadolinyum bazlı kontrast madde verildi.':''} ${tech.mrcp?'MRCP sekansı eklendi.':''}</p>`;
+
+  // Parenchyma
+  rows+=`<h3>PANKREASİK PARENKİM</h3>`;
+  if(parenchyma.texture) rows+=`<p>Parankimal doku: ${parenchyma.texture}.</p>`;
+  if(parenchyma.fat) rows+=`<p>Yağ infiltrasyonu: ${parenchyma.fat}.</p>`;
+  if(parenchyma.atrophy) rows+=`<p>Atrofi: ${parenchyma.atrophy}.</p>`;
+  if(parenchyma.calcification) rows+=`<p>Parankimal kalsifikasyon: ${parenchyma.calcification}.</p>`;
+  if(!parenchyma.texture) rows+=`<p>Pankreas parankimi normal görünüm ve sinyalde.</p>`;
+
+  // MPD
+  rows+=`<h3>ANA PANKREAS KANALI (WIRSUNG)</h3>`;
+  const mpdMm = parseInt(mpd.mpdMm||'0');
+  if(mpdMm>0){
+    rows+=`<p>Ana pankreas kanalı çapı: ${mpdMm} mm (${mpd.mpdDilation||''}), lokalizasyon: ${mpd.mpdLocation||'difüz'}.</p>`;
+    if(mpd.mpdStone) rows+=`<p>Kanal içi taş saptandı.</p>`;
+    if(mpd.mpdIrreg) rows+=`<p>Kanal irregülaritesi mevcut.</p>`;
+    if(mpd.suddenCalib) rows+=`<p><strong>Ani kalibrasyon değişimi saptandı.</strong></p>`;
+  } else {
+    rows+=`<p>Ana pankreas kanalı normal kalibrede (3mm altı).</p>`;
+  }
+
+  // CBD
+  rows+=`<h3>SAFRA YOLLARI</h3>`;
+  const cbdMm = parseInt(cbd.cbdMm||'0');
+  if(cbdMm>0){
+    rows+=`<p>Koledok çapı: ${cbdMm} mm (${cbd.cbdDilation||''}).</p>`;
+    if(cbd.ihDilation) rows+=`<p>İntrahepatik safra yollarında dilatasyon mevcut.</p>`;
+    if(cbd.doubleDuct) rows+=`<p><strong>Çift kanal işareti (double duct sign) saptandı.</strong></p>`;
+    if(cbd.cbdStone) rows+=`<p>Taş/striktur saptandı.</p>`;
+  } else {
+    rows+=`<p>Safra yolları normal kalibrede.</p>`;
+  }
+
+  // Vascular
+  rows+=`<h3>VASKÜLER BULGULAR</h3>`;
+  let vascNormal=true;
+  if(vascular.pvSmv && vascular.pvSmv!=='normal'){rows+=`<p>Portal ven/SMV: ${vascular.pvSmv}.</p>`;vascNormal=false}
+  if(vascular.sma && vascular.sma!=='normal'){rows+=`<p>SMA: ${vascular.sma}.</p>`;vascNormal=false}
+  if(vascular.celiac && vascular.celiac!=='normal'){rows+=`<p>Çölyak aks: ${vascular.celiac}.</p>`;vascNormal=false}
+  if(vascular.splenicV && vascular.splenicV!=='normal'){rows+=`<p>Splenik ven: ${vascular.splenicV}.</p>`;vascNormal=false}
+  if(vascNormal) rows+=`<p>Major vasküler yapılar normaldir.</p>`;
+
+  // Lymph
+  rows+=`<h3>LENFADENOPATİ / ASİT</h3>`;
+  if(lymph.lap) rows+=`<p>Bölgesel lenfadenopati: ${lymph.lapDetail||'mevcut'}.</p>`;
+  else rows+=`<p>Bölgesel lenfadenopati saptanmadı.</p>`;
+  if(lymph.ascites) rows+=`<p>Asit mevcut: ${lymph.ascitesDetail||'az miktarda'}.</p>`;
+
+  // Liver
+  rows+=`<h3>KARACİĞER</h3>`;
+  if(liver.liverFindings) rows+=`<p>${liver.liverFindings}</p>`;
+  else rows+=`<p>Karaciğer değerlendirilen kesitlerde olağan görünümdedir.</p>`;
+
+  // Other
+  if(other.otherFindings){
+    rows+=`<h3>DİĞER BULGULAR</h3><p>${other.otherFindings}</p>`;
+  }
+
+  // Lesions
+  if(lesions.length>0){
+    rows+=`<h3>LEZYONlar</h3>`;
+    lesions.forEach((L,i)=>{
+      rows+=`<p class="rpt-lesion-header">Lezyon ${i+1}: ${L.location||''} – ${L.sizeMm||'?'} mm – ${L.type||''}</p>`;
+      rows+=`<p>T1: ${L.t1||'—'} | T2: ${L.t2||'—'} | DWI: ${L.dwi||'—'} | Kontrast: ${L.contrast||'—'}</p>`;
+      const diags = L.type==='Kistik' ? diagCystic(L,clin,mpd) : diagSolid(L,clin);
+      const top = diags.slice(0,3);
+      if(top.length>0){
+        rows+=`<p>Olasılıklar: ${top.map(d=>`${d.name} %${d.pct}`).join(' | ')}</p>`;
+      }
+      if(L.comment) rows+=`<p>Yorum: ${L.comment}</p>`;
+      // Fukuoka
+      const isIPMN = top[0]&&(top[0].name.includes('IPMN')||top[0].name.includes('MCN'));
+      if(isIPMN||L.mpdComm==='var'){
+        const fuk = ipmNRisk(L,mpd);
+        rows+=`<p><strong>IPMN Fukuoka Risk:</strong> ${fuk.rec}</p>`;
+        if(fuk.highRisk.length) rows+=`<p>Yüksek risk: ${fuk.highRisk.join(', ')}</p>`;
+        if(fuk.worrisome.length) rows+=`<p>Endişe verici: ${fuk.worrisome.join(', ')}</p>`;
+      }
+    });
+  }
+
+  // Yorum
+  rows+=`<h3>SONUÇ / YORUM</h3>`;
+  if(lesions.length===0){
+    rows+=`<div class="yorum">Pankreas lezyon saptanmadı. Yukarıda belirtilen bulgular klinisyen ile birlikte değerlendirilmelidir.</div>`;
+  } else {
+    lesions.forEach((L,i)=>{
+      const diags = L.type==='Kistik' ? diagCystic(L,clin,mpd) : diagSolid(L,clin);
+      const top1 = diags[0];
+      if(top1){
+        rows+=`<div class="yorum">Lezyon ${i+1} (${L.location||''}, ${L.sizeMm||'?'} mm): En yüksek olasılık <strong>${top1.name}</strong> (%${top1.pct}). ${diags[1]?`Ayırıcı tanıda ${diags[1].name} (%${diags[1].pct}) göz önünde bulundurulmalıdır.`:''} ${L.comment||''}</div>`;
+      }
+    });
+  }
+
+  return rows;
+}
+
+// ─── SUBCOMPONENTS ────────────────────────────────────────────────────────────
+function Toggle({on,onChange,label}){
+  return <div className="toggle-row">
+    <div className={`toggle${on?' on':''}`} onClick={()=>onChange(!on)}/>
+    <span className="toggle-label">{label}</span>
+  </div>;
+}
+
+function OptBtn({value,selected,onSelect,multi}){
+  const cls = `opt-btn${selected?(multi?' multi selected':' selected'):''}`;
+  return <button className={cls} onClick={()=>onSelect(value)}>{value}</button>;
+}
+
+function SingleSelect({options,value,onChange,cols}){
+  return <div className={`opt-grid${cols?` cols${cols}`:''}`}>
+    {options.map(o=><OptBtn key={o} value={o} selected={value===o} onSelect={onChange}/>)}
+  </div>;
+}
+
+function MultiSelect({options,values,onChange,cols}){
+  const toggle = v => onChange(values.includes(v)?values.filter(x=>x!==v):[...values,v]);
+  return <div className={`opt-grid${cols?` cols${cols}`:''}`}>
+    {options.map(o=><OptBtn key={o} value={o} selected={values.includes(o)} onSelect={toggle} multi/>)}
+  </div>;
+}
+
+function SliderMm({value,onChange,min=0,max=50,label}){
+  return <div className="field">
+    <label>{label}</label>
+    <div className="slider-row">
+      <input type="range" min={min} max={max} value={value||0} onChange={e=>onChange(e.target.value)}/>
+      <span className="slider-val">{value||0} mm</span>
+    </div>
+  </div>;
+}
+
+function ProbChart({data,isIPMN,mpd,lesion}){
+  if(!data||data.length===0) return null;
+  const top1=data[0];
+  const fukShow = isIPMN && (lesion.mpdComm==='var'||parseInt(mpd.mpdMm||'0')>=3);
+  const fuk = fukShow ? ipmNRisk(lesion,mpd) : null;
+  return <>
+    <div className="primary-diag">
+      <div className="diag-name">{top1.name}</div>
+      <div className="diag-pct">%{top1.pct}</div>
+      <div className="diag-sub">En yüksek olasılık</div>
+    </div>
+    <div className="prob-chart">
+      {data.slice(0,8).map((d,i)=><div key={d.name} className="prob-row">
+        <div className="prob-label">{d.name}</div>
+        <div className="prob-bar-wrap">
+          <div className="prob-bar-fill" style={{width:`${d.pct}%`,background:BAR_COLORS[i%BAR_COLORS.length]}}/>
+        </div>
+        <div className="prob-pct">%{d.pct}</div>
+      </div>)}
+    </div>
+    {fuk&&<div className={`fukuoka-box fukuoka-${fuk.recClass}`} style={{marginTop:14}}>
+      <div className="fukuoka-title" style={{color:fuk.recClass==='surgery'?'#fca5a5':fuk.recClass==='eus'?'#fcd34d':'#6ee7b7'}}>
+        IPMN Fukuoka 2017 — {fuk.rec}
+      </div>
+      {fuk.highRisk.length>0&&<>
+        <div style={{fontSize:'.75rem',color:'#fca5a5',fontWeight:700,marginBottom:4}}>YÜK­SEK RİSK STİGMATA:</div>
+        <div className="fukuoka-features">
+          {fuk.highRisk.map(f=><span key={f} className="fukuoka-tag" style={{background:'rgba(239,68,68,.2)',color:'#fca5a5'}}>{f}</span>)}
+        </div>
+      </>}
+      {fuk.worrisome.length>0&&<>
+        <div style={{fontSize:'.75rem',color:'#fcd34d',fontWeight:700,marginTop:6,marginBottom:4}}>ENDİŞELENDİRİCİ BULGULAR:</div>
+        <div className="fukuoka-features">
+          {fuk.worrisome.map(f=><span key={f} className="fukuoka-tag" style={{background:'rgba(249,115,22,.2)',color:'#fcd34d'}}>{f}</span>)}
+        </div>
+      </>}
+    </div>}
+  </>;
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App(){
+  const [step,setStep] = useState(0);
+  const [currentIdx,setCurrentIdx] = useState(-1);
+  const [lesions,setLesions] = useState([]);
+  const [showReport,setShowReport] = useState(false);
+  const reportRef = useRef();
+
+  // Global data
+  const [clin,setClin] = useState({indications:[],age:'',gender:'',ca199:'normal',igg4High:false,amylaseLipase:'',pancreatitisHx:false,knownMalignansy:false,malignansyType:'',jaundice:false});
+  const [tech,setTech] = useState({sequences:'',contrast:true,mrcp:false,fat_sat:true,dyn:true});
+  const [parenchyma,setParenchyma] = useState({texture:'',fat:'',atrophy:'',calcification:''});
+  const [mpd,setMpd] = useState({mpdDilation:'',mpdMm:'2',mpdLocation:'',mpdIrreg:false,mpdStone:false,suddenCalib:false});
+  const [cbd,setCbd] = useState({cbdDilation:'',cbdMm:'0',ihDilation:false,doubleDuct:false,cbdStone:false});
+  const [vascular,setVascular] = useState({pvSmv:'normal',sma:'normal',celiac:'normal',splenicV:'normal'});
+  const [lymph,setLymph] = useState({lap:false,lapDetail:'',ascites:false,ascitesDetail:''});
+  const [liver,setLiver] = useState({liverFindings:''});
+  const [other,setOther] = useState({otherFindings:''});
+
+  const lesionCount = lesions.length;
+  const curLesion = currentIdx>=0 && currentIdx<lesions.length ? lesions[currentIdx] : null;
+
+  const updateCurLesion = useCallback((patch)=>{
+    setLesions(prev=>prev.map((l,i)=>i===currentIdx?{...l,...patch}:l));
+  },[currentIdx]);
+
+  // Navigation
+  const inLoop = step>=LOOP_START && step<=LOOP_END;
+
+  const goNext = ()=>{
+    if(step===PRE_LOOP){
+      if(lesions.length===0||currentIdx===-1){
+        setStep(POST_LOOP);
+      } else {
+        setStep(LOOP_START);
+      }
+    } else if(step===LOOP_END){
+      if(currentIdx<lesions.length-1){
+        setCurrentIdx(currentIdx+1);
+        setStep(LOOP_START);
+      } else {
+        setCurrentIdx(-1);
+        setStep(POST_LOOP);
+      }
+    } else if(step<TOTAL-1){
+      setStep(s=>s+1);
+    }
+  };
+
+  const goPrev = ()=>{
+    if(step===POST_LOOP){
+      setStep(PRE_LOOP);
+    } else if(step===LOOP_START){
+      if(currentIdx===0){
+        setCurrentIdx(-1);
+        setStep(PRE_LOOP);
+      } else {
+        setCurrentIdx(i=>i-1);
+        setStep(LOOP_END);
+      }
+    } else if(step>0){
+      setStep(s=>s-1);
+    }
+  };
+
+  const addLesion = ()=>{
+    const newL = {
+      location:'',type:'',sizeMm:'',t1:'',t2:'',dwi:'',contrast:'',
+      // solid
+      border:'',haloSign:false,fibroKapsul:false,proxAtrophy:false,
+      vascInvasion:false,bileInvasion:false,perineural:false,mpdGrowth:false,
+      // cystic
+      morphology:'',mpdComm:'',calcType:'',muralNodule:false,muralNoduleSizeMm:0,
+      wallThickMm:0,sepCount:0,debris:false,obstructiveJaundice:false,
+      ipmType:'',papProj:false,
+      comment:''
+    };
+    setLesions(prev=>[...prev,newL]);
+  };
+
+  const removeLesion = (i)=>{
+    setLesions(prev=>prev.filter((_,idx)=>idx!==i));
+    if(currentIdx>=i) setCurrentIdx(idx=>Math.max(-1,idx-1));
+  };
+
+  const startEditing = (i)=>{
+    setCurrentIdx(i);
+    setStep(LOOP_START);
+  };
+
+  const finalizeLesion = ()=>{
+    setCurrentIdx(-1);
+    setStep(PRE_LOOP);
+  };
+
+  // Report
+  const allData = {clin,tech,parenchyma,mpd,cbd,vascular,lymph,lesions,liver,other};
+
+  const handleShowReport = ()=>setShowReport(true);
+
+  const handlePrint = ()=>{
+    const w=window.open('','_blank');
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pankreas MRI Raporu</title>
+    <style>body{font-family:'Segoe UI',sans-serif;font-size:13px;max-width:750px;margin:30px auto;color:#111;line-height:1.7}
+    h2{font-size:15px;text-align:center;margin-bottom:4px}
+    .rpt-meta{text-align:center;font-size:11px;color:#555;border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:14px}
+    h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;border-top:1px solid #ddd;padding-top:8px;margin-top:12px;margin-bottom:4px;color:#333}
+    p{margin:2px 0;font-size:12px}
+    .yorum{background:#f0fdf4;border-left:4px solid #16a34a;padding:8px 12px;margin:8px 0;font-size:12px;color:#166534}
+    .rpt-lesion-header{font-weight:700;color:#1e40af;margin-top:10px}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+    th{background:#e8e8e8;padding:4px 8px;text-align:left;font-weight:700}
+    td{padding:4px 8px;border-bottom:1px solid #e0e0e0}
+    tr:nth-child(even) td{background:#f9f9f9}
+    @media print{body{margin:10px}}</style></head><body>
+    ${generateReportHTML(allData)}</body></html>`;
+    w.document.write(html);w.document.close();w.print();
+  };
+
+  const handleCopy = ()=>{
+    const div=document.createElement('div');
+    div.innerHTML=generateReportHTML(allData);
+    document.body.appendChild(div);
+    const r=document.createRange();r.selectNode(div);
+    window.getSelection().removeAllRanges();window.getSelection().addRange(r);
+    document.execCommand('copy');document.body.removeChild(div);
+    alert('Rapor panoya kopyalandı.');
+  };
+
+  const handleDownload = ()=>{
+    const htmlContent=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pankreas MRI Raporu</title>
+    <style>body{font-family:'Segoe UI',sans-serif;font-size:13px;max-width:750px;margin:30px auto;color:#111;line-height:1.7}
+    h2{font-size:15px;text-align:center;margin-bottom:4px}
+    .rpt-meta{text-align:center;font-size:11px;color:#555;border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:14px}
+    h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;border-top:1px solid #ddd;padding-top:8px;margin-top:12px;margin-bottom:4px;color:#333}
+    p{margin:2px 0;font-size:12px}
+    .yorum{background:#f0fdf4;border-left:4px solid #16a34a;padding:8px 12px;margin:8px 0;font-size:12px;color:#166534}
+    .rpt-lesion-header{font-weight:700;color:#1e40af;margin-top:10px}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+    th{background:#e8e8e8;padding:4px 8px;text-align:left;font-weight:700}
+    td{padding:4px 8px;border-bottom:1px solid #e0e0e0}
+    tr:nth-child(even) td{background:#f9f9f9}
+    </style></head><body>${generateReportHTML(allData)}</body></html>`;
+    const blob=new Blob([htmlContent],{type:'text/html'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='pankreas_mri_raporu.html';a.click();
+  };
+
+  // ── STEP RENDERERS ──────────────────────────────────────────────────────────
+
+  function renderClinical(){
+    const INDICATIONS=['Sarılık','Kilo kaybı','Karın ağrısı','Akut pankreatit','Kronik pankreatit','İnsidental bulgu','Tarama','CA 19-9 yüksekliği','Yeni başlayan DM','Steatorrhea','Pankreatit öyküsü'];
+    return <>
+      <div className="sub-card">
+        <div className="sub-card-title">Endikasyon (çoklu seçim)</div>
+        <MultiSelect options={INDICATIONS} values={clin.indications} onChange={v=>setClin(p=>({...p,indications:v}))} cols={3}/>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <div className="field"><label>Yaş</label>
+          <input type="number" value={clin.age} onChange={e=>setClin(p=>({...p,age:e.target.value}))} placeholder="—"/>
+        </div>
+        <div className="field"><label>Cinsiyet</label>
+          <SingleSelect options={['kadın','erkek']} value={clin.gender} onChange={v=>setClin(p=>({...p,gender:v}))} cols={2}/>
+        </div>
+      </div>
+      <div className="field"><label>CA 19-9 düzeyi</label>
+        <SingleSelect options={['normal','yüksek','çok yüksek >1000']} value={clin.ca199} onChange={v=>setClin(p=>({...p,ca199:v}))} cols={3}/>
+      </div>
+      <div className="field"><label>Amilaz / Lipaz</label>
+        <SingleSelect options={['normal','yüksek','çok yüksek']} value={clin.amylaseLipase} onChange={v=>setClin(p=>({...p,amylaseLipase:v}))}/>
+      </div>
+      <div className="sub-card">
+        <div className="sub-card-title">Ek klinik bilgi</div>
+        <Toggle on={clin.igg4High} onChange={v=>setClin(p=>({...p,igg4High:v}))} label="IgG4 yüksekliği"/>
+        <Toggle on={clin.pancreatitisHx} onChange={v=>setClin(p=>({...p,pancreatitisHx:v}))} label="Pankreatit öyküsü"/>
+        <Toggle on={clin.jaundice} onChange={v=>setClin(p=>({...p,jaundice:v}))} label="Sarılık (klinik)"/>
+        <Toggle on={clin.knownMalignansy} onChange={v=>setClin(p=>({...p,knownMalignansy:v}))} label="Bilinen malignite"/>
+        {clin.knownMalignansy&&<div className="field"><label>Malignite tipi</label>
+          <input type="text" value={clin.malignansyType} onChange={e=>setClin(p=>({...p,malignansyType:e.target.value}))} placeholder="örn. RCC, akciğer ca..."/>
+        </div>}
+      </div>
+    </>;
+  }
+
+  function renderTechnique(){
+    return <>
+      <div className="field"><label>Uygulanan sekanslar</label>
+        <textarea value={tech.sequences} onChange={e=>setTech(p=>({...p,sequences:e.target.value}))}
+          placeholder="T1 in/out phase, T2, DWI, MRCP, dinamik kontrastlı T1..."/>
+      </div>
+      <Toggle on={tech.contrast} onChange={v=>setTech(p=>({...p,contrast:v}))} label="Kontrast maddesi verildi"/>
+      <Toggle on={tech.mrcp} onChange={v=>setTech(p=>({...p,mrcp:v}))} label="MRCP sekansı uygulandı"/>
+      <Toggle on={tech.fat_sat} onChange={v=>setTech(p=>({...p,fat_sat:v}))} label="Yağ baskılamalı sekanslar"/>
+      <Toggle on={tech.dyn} onChange={v=>setTech(p=>({...p,dyn:v}))} label="Dinamik (arteriyel/portal/geç faz) görüntüleme"/>
+    </>;
+  }
+
+  function renderParenchyma(){
+    return <>
+      <div className="field"><label>Parankim dokusu</label>
+        <SingleSelect options={['normal','lipomatöz değişim','atrofik','heterojen','fibröz']} value={parenchyma.texture} onChange={v=>setParenchyma(p=>({...p,texture:v}))}/>
+      </div>
+      <div className="field"><label>Yağ infiltrasyonu</label>
+        <SingleSelect options={['yok','hafif (<30%)','orta (30-60%)','belirgin (>60%)']} value={parenchyma.fat} onChange={v=>setParenchyma(p=>({...p,fat:v}))}/>
+      </div>
+      <div className="field"><label>Atrofi</label>
+        <SingleSelect options={['yok','fokal','difüz','proksimal (obstr. distal lezyon)']} value={parenchyma.atrophy} onChange={v=>setParenchyma(p=>({...p,atrophy:v}))}/>
+      </div>
+      <div className="field"><label>Parankimal kalsifikasyon</label>
+        <SingleSelect options={['yok','hafif','orta','belirgin (kronik pankreatit?)']} value={parenchyma.calcification} onChange={v=>setParenchyma(p=>({...p,calcification:v}))}/>
+      </div>
+    </>;
+  }
+
+  function renderMPD(){
+    const mm = parseInt(mpd.mpdMm||'0');
+    return <>
+      <SliderMm label="MPD çapı (mm)" value={mpd.mpdMm} onChange={v=>setMpd(p=>({...p,mpdMm:v}))} max={25}/>
+      {mm>=5&&<div className="alert alert-warn">⚠ MPD ≥5mm — IPMN olasılığı değerlendirilmeli</div>}
+      {mm>=10&&<div className="alert alert-danger">🚨 Fukuoka Yüksek Risk Kriterine karşılık gelir — MPD ≥10mm</div>}
+      <div className="field"><label>Dilatasyon seviyesi</label>
+        <SingleSelect options={['<3mm (normal)','3-4mm (borderline)','5-9mm (orta)','≥10mm (belirgin)']} value={mpd.mpdDilation} onChange={v=>setMpd(p=>({...p,mpdDilation:v}))}/>
+      </div>
+      <div className="field"><label>Lokalizasyon</label>
+        <SingleSelect options={['Difüz','Baş','Gövde','Kuyruk','Segmental']} value={mpd.mpdLocation} onChange={v=>setMpd(p=>({...p,mpdLocation:v}))}/>
+      </div>
+      <Toggle on={mpd.mpdIrreg} onChange={v=>setMpd(p=>({...p,mpdIrreg:v}))} label="Kanal irregülaritesi"/>
+      <Toggle on={mpd.mpdStone} onChange={v=>setMpd(p=>({...p,mpdStone:v}))} label="Kanal içi taş"/>
+      <Toggle on={mpd.suddenCalib} onChange={v=>setMpd(p=>({...p,suddenCalib:v}))} label="Ani kalibrasyon değişimi (cut-off sign)"/>
+      {mpd.suddenCalib&&<div className="alert alert-warn">⚠ Ani MPD kalibrasyon değişimi — malignite şüphesi, Fukuoka endişe verici bulgu</div>}
+    </>;
+  }
+
+  function renderCBD(){
+    return <>
+      <SliderMm label="Ortak safra kanalı çapı (mm)" value={cbd.cbdMm} onChange={v=>setCbd(p=>({...p,cbdMm:v}))} max={30}/>
+      {parseInt(cbd.cbdMm||'0')>=8&&<div className="alert alert-warn">⚠ CBD ≥8mm — obstrüktif etiyoloji araştırılmalı</div>}
+      <div className="field"><label>Dilatasyon derecesi</label>
+        <SingleSelect options={['yok / normal','hafif (6-8mm)','orta (8-12mm)','belirgin (>12mm)']} value={cbd.cbdDilation} onChange={v=>setCbd(p=>({...p,cbdDilation:v}))}/>
+      </div>
+      <Toggle on={cbd.ihDilation} onChange={v=>setCbd(p=>({...p,ihDilation:v}))} label="İntrahepatik dilatasyon"/>
+      <Toggle on={cbd.doubleDuct} onChange={v=>setCbd(p=>({...p,doubleDuct:v}))} label="Çift kanal işareti (Double Duct Sign)"/>
+      {cbd.doubleDuct&&<div className="alert alert-danger">🔴 Double Duct Sign — PDAC PPV %85-90! Kontrast pankreas protokolü ve/veya EUS önerilir.</div>}
+      <Toggle on={cbd.cbdStone} onChange={v=>setCbd(p=>({...p,cbdStone:v}))} label="Taş / striktur"/>
+    </>;
+  }
+
+  function renderVascular(){
+    const VPV=['normal','daralma <50%','daralma ≥50%','oklüzyon','tromboz'];
+    const VSMA=['<180° temas yok','<180° temas var','≥180° (borderline rezektabl)','invazyon (rezektabl değil)'];
+    return <>
+      <div className="field"><label>Portal Ven / SMV</label>
+        <SingleSelect options={VPV} value={vascular.pvSmv} onChange={v=>setVascular(p=>({...p,pvSmv:v}))}/>
+      </div>
+      <div className="field"><label>SMA</label>
+        <SingleSelect options={VSMA} value={vascular.sma} onChange={v=>setVascular(p=>({...p,sma:v}))}/>
+      </div>
+      {(vascular.sma==='≥180° (borderline rezektabl)'||vascular.sma==='invazyon (rezektabl değil)')&&
+        <div className="alert alert-danger">🚨 SMA invazyonu — Rezektabilite kısıtlanmış. Multidisipliner değerlendirme önerilir.</div>}
+      <div className="field"><label>Çölyak Aks</label>
+        <SingleSelect options={['normal','temas var','invazyon']} value={vascular.celiac} onChange={v=>setVascular(p=>({...p,celiac:v}))}/>
+      </div>
+      <div className="field"><label>Splenik Ven</label>
+        <SingleSelect options={['normal','daralma','oklüzyon/tromboz']} value={vascular.splenicV} onChange={v=>setVascular(p=>({...p,splenicV:v}))}/>
+      </div>
+    </>;
+  }
+
+  function renderLymph(){
+    return <>
+      <Toggle on={lymph.lap} onChange={v=>setLymph(p=>({...p,lap:v}))} label="Bölgesel lenfadenopati"/>
+      {lymph.lap&&<div className="field"><label>LAP detay (lokalizasyon, boyut)</label>
+        <input type="text" value={lymph.lapDetail} onChange={e=>setLymph(p=>({...p,lapDetail:e.target.value}))} placeholder="örn. peripankreatik, >1cm kısa aks"/>
+      </div>}
+      <Toggle on={lymph.ascites} onChange={v=>setLymph(p=>({...p,ascites:v}))} label="Asit"/>
+      {lymph.ascites&&<div className="field"><label>Asit miktarı</label>
+        <SingleSelect options={['az miktarda','orta miktarda','çok miktarda']} value={lymph.ascitesDetail} onChange={v=>setLymph(p=>({...p,ascitesDetail:v}))}/>
+      </div>}
+    </>;
+  }
+
+  function renderLesionCount(){
+    return <>
+      <div className="lesion-list">
+        {lesions.map((l,i)=><div key={i} className={`lesion-item${currentIdx===i?' active':''}`}>
+          <div>
+            <span className="lesion-badge">L{i+1}</span>
+            <span style={{marginLeft:10,fontSize:'.85rem',color:'var(--text)'}}>{l.location||'Lokalizasyon girilmedi'} – {l.type||'Tip belirsiz'} {l.sizeMm?`– ${l.sizeMm}mm`:''}</span>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-sm btn-secondary" onClick={()=>startEditing(i)}>Düzenle</button>
+            <button className="lesion-remove" onClick={()=>removeLesion(i)}>✕</button>
+          </div>
+        </div>)}
+      </div>
+      <button className="btn btn-cyan" onClick={()=>{addLesion();setCurrentIdx(lesions.length);setStep(LOOP_START);}}>
+        + Lezyon Ekle
+      </button>
+      {lesions.length>0&&<div className="alert alert-info" style={{marginTop:12}}>
+        {lesions.length} lezyon girildi. Devam için →  ileri tuşuna basın.
+      </div>}
+    </>;
+  }
+
+  function renderLocation(){
+    if(!curLesion) return null;
+    return <>
+      <div className="field"><label>Lokalizasyon</label>
+        <SingleSelect options={LOCATIONS} value={curLesion.location} onChange={v=>updateCurLesion({location:v})}/>
+      </div>
+      <SliderMm label="Lezyon boyutu (mm)" value={curLesion.sizeMm} onChange={v=>updateCurLesion({sizeMm:v})} max={120}/>
+    </>;
+  }
+
+  function renderType(){
+    if(!curLesion) return null;
+    return <div className="field"><label>Lezyon tipi</label>
+      <SingleSelect options={LESION_TYPES} value={curLesion.type} onChange={v=>updateCurLesion({type:v})} cols={3}/>
+    </div>;
+  }
+
+  function renderT1(){
+    if(!curLesion) return null;
+    const opts=['hipointens','izointens','hafif hiperintens','hemorajik/hipertens','yağ içeriği','heterojen'];
+    return <>
+      <div className="field"><label>T1 sinyal karakteri</label>
+        <SingleSelect options={opts} value={curLesion.t1} onChange={v=>updateCurLesion({t1:v})}/>
+      </div>
+      <div className="field"><label>Kontrast sonrası değişim (T1)</label>
+        <SingleSelect options={['sinyal artışı','sinyal azalması','değişim yok']} value={curLesion.t1contrast} onChange={v=>updateCurLesion({t1contrast:v})}/>
+      </div>
+    </>;
+  }
+
+  function renderT2(){
+    if(!curLesion) return null;
+    const isCyst = curLesion.type==='Kistik'||curLesion.type==='Solid-Kistik Mikst';
+    return <>
+      <div className="field"><label>T2 sinyal karakteri</label>
+        <SingleSelect options={['hipointens','hafif hiperintens','belirgin hiperintens','heterojen','izointens']} value={curLesion.t2} onChange={v=>updateCurLesion({t2:v})}/>
+      </div>
+      {isCyst&&<>
+        <SliderMm label="Duvar kalınlığı (mm)" value={curLesion.wallThickMm} onChange={v=>updateCurLesion({wallThickMm:parseInt(v)})} max={15}/>
+        <div className="field"><label>Septasyon sayısı</label>
+          <SingleSelect options={['0','1','2-5','>5']} value={String(curLesion.sepCount||0)} onChange={v=>updateCurLesion({sepCount:parseInt(v.replace('>',''))||6})}/>
+        </div>
+        <Toggle on={curLesion.muralNodule} onChange={v=>updateCurLesion({muralNodule:v})} label="Mural nodül"/>
+        {curLesion.muralNodule&&<SliderMm label="Mural nodül boyutu (mm)" value={curLesion.muralNoduleSizeMm} onChange={v=>updateCurLesion({muralNoduleSizeMm:parseInt(v)})} max={30}/>}
+        {curLesion.muralNodule&&curLesion.muralNoduleSizeMm>=5&&<div className="alert alert-danger">🚨 Enhancing mural nodül ≥5mm — Fukuoka Yüksek Risk</div>}
+        <Toggle on={curLesion.debris} onChange={v=>updateCurLesion({debris:v})} label="İnternal debris"/>
+        <div className="field"><label>Kist morfolojisi</label>
+          <SingleSelect options={['mikrokistik petek','makrokistik','oligokistik','üzüm salkımı','uniloküler']} value={curLesion.morphology} onChange={v=>updateCurLesion({morphology:v})}/>
+        </div>
+      </>}
+    </>;
+  }
+
+  function renderDWI(){
+    if(!curLesion) return null;
+    return <>
+      <div className="field"><label>DWI bulgusu</label>
+        <SingleSelect options={['belirgin kısıtlama','hafif kısıtlama','serbest difüzyon','değerlendirilemez']} value={curLesion.dwi} onChange={v=>updateCurLesion({dwi:v})}/>
+      </div>
+      <div className="field"><label>ADC değeri (yaklaşık)</label>
+        <SingleSelect options={['<0.8 (düşük)','0.8-1.2 (orta)','1.2-2.0 (yüksek)','değerlendirilemez']} value={curLesion.adc} onChange={v=>updateCurLesion({adc:v})}/>
+      </div>
+    </>;
+  }
+
+  function renderContrast(){
+    if(!curLesion) return null;
+    const CONT_SOLID=['hipovasküler','arteriyel hipervasküler','portal faz tutulum','geç faz tutulum','heterogen','progresif tutulum (fibröz)'];
+    const CONT_CYST=['duvar/septum tutulumu','mural nodül tutulumu','minimal periferal','tutulum yok'];
+    const opts = (curLesion.type==='Solid') ? CONT_SOLID : [...CONT_CYST,...CONT_SOLID];
+    return <>
+      <div className="field"><label>Kontrast tutulum paterni</label>
+        <SingleSelect options={opts} value={curLesion.contrast} onChange={v=>updateCurLesion({contrast:v})}/>
+      </div>
+      {curLesion.contrast==='arteriyel hipervasküler'&&<div className="alert alert-info">ℹ Arteriyel hipervasküler lezyon — pNET, kistik pNET, metastaz (RCC, melanoma?) düşün</div>}
+    </>;
+  }
+
+  function renderSpecific(){
+    if(!curLesion) return null;
+    const isSolid = curLesion.type==='Solid';
+    const isCyst  = curLesion.type==='Kistik';
+    const isMixed = curLesion.type==='Solid-Kistik Mikst';
+    return <>
+      {(isSolid||isMixed)&&<>
+        <div className="sub-card">
+          <div className="sub-card-title">Solid Lezyon Özellikleri</div>
+          <div className="field"><label>Lezyon sınırı</label>
+            <SingleSelect options={['spiküle','lobüle','keskin','belirsiz']} value={curLesion.border} onChange={v=>updateCurLesion({border:v})}/>
+          </div>
+          <Toggle on={curLesion.haloSign} onChange={v=>updateCurLesion({haloSign:v})} label="Halo sign (çevre düşük sinyal)"/>
+          {curLesion.haloSign&&<div className="alert alert-info">ℹ Halo sign — AIP (otoimmün pankreatit) sıklıkla görülür</div>}
+          <Toggle on={curLesion.fibroKapsul} onChange={v=>updateCurLesion({fibroKapsul:v})} label="Fibröz kapsül"/>
+          {curLesion.fibroKapsul&&<div className="alert alert-info">ℹ Fibröz kapsül — SPN (solid psödopapiller neoplezi) bulgusu</div>}
+          <Toggle on={curLesion.proxAtrophy} onChange={v=>updateCurLesion({proxAtrophy:v})} label="Proksimal parankim atrofisi"/>
+          <Toggle on={curLesion.vascInvasion} onChange={v=>updateCurLesion({vascInvasion:v})} label="Vasküler invazyon şüphesi"/>
+          <Toggle on={curLesion.bileInvasion} onChange={v=>updateCurLesion({bileInvasion:v})} label="Safra yolu invazyonu"/>
+          <Toggle on={curLesion.perineural} onChange={v=>updateCurLesion({perineural:v})} label="Perinevral yayılım şüphesi"/>
+          <Toggle on={curLesion.mpdGrowth} onChange={v=>updateCurLesion({mpdGrowth:v})} label="MPD üzerine bası / büyüme"/>
+        </div>
+      </>}
+      {(isCyst||isMixed)&&<>
+        <div className="sub-card">
+          <div className="sub-card-title">Kistik Lezyon Özellikleri</div>
+          <div className="field"><label>MPD kommunikasyonu</label>
+            <SingleSelect options={['var','yok','şüpheli']} value={curLesion.mpdComm} onChange={v=>updateCurLesion({mpdComm:v})} cols={3}/>
+          </div>
+          {curLesion.mpdComm==='var'&&<div className="alert alert-info">ℹ MPD kommunikasyonu mevcut — IPMN olasılığı yüksek</div>}
+          <div className="field"><label>IPMN alt tipi (varsa)</label>
+            <SingleSelect options={['Dal-tip (BD)','Ana kanal (MD)','Mikst tip','IPMN değil']} value={curLesion.ipmType} onChange={v=>updateCurLesion({ipmType:v})}/>
+          </div>
+          <div className="field"><label>Kalsifikasyon tipi</label>
+            <SingleSelect options={['yok','periferik (MCN??)','santral skar (SCA?)','var (dağınık)']} value={curLesion.calcType} onChange={v=>updateCurLesion({calcType:v})}/>
+          </div>
+          <Toggle on={curLesion.papProj} onChange={v=>updateCurLesion({papProj:v})} label="Papiller projeksiyon"/>
+          <Toggle on={curLesion.obstructiveJaundice} onChange={v=>updateCurLesion({obstructiveJaundice:v})} label="Tıkayıcı sarılık (bu lezyon ile ilişkili)"/>
+        </div>
+      </>}
+      <div className="field" style={{marginTop:12}}><label>Serbest yorum / ek bulgu</label>
+        <textarea value={curLesion.comment} onChange={e=>updateCurLesion({comment:e.target.value})} placeholder="Radyolog notu..."/>
+      </div>
+    </>;
+  }
+
+  function renderDiagnosis(){
+    if(!curLesion) return null;
+    const clinWithCbd = {...clin, doubleDuct: cbd.doubleDuct};
+    const diags = curLesion.type==='Kistik'
+      ? diagCystic(curLesion,clinWithCbd,mpd)
+      : diagSolid(curLesion,clinWithCbd);
+    const topIsIPMN = diags[0]&&(diags[0].name.includes('IPMN'));
+    const topIsMCN  = diags[0]&&diags[0].name.includes('MCN');
+    return <>
+      <ProbChart data={diags} isIPMN={topIsIPMN||topIsMCN} mpd={mpd} lesion={curLesion}/>
+      <div className="btn-row">
+        <button className="btn btn-secondary" onClick={finalizeLesion}>✓ Lezyonu Tamamla</button>
+      </div>
+    </>;
+  }
+
+  function renderLiver(){
+    return <>
+      <div className="field"><label>Karaciğer bulguları</label>
+        <textarea value={liver.liverFindings} onChange={e=>setLiver(p=>({...p,liverFindings:e.target.value}))} placeholder="Değerlendirilen kesitlerde olağan. / Fokal lezyon: boyut, lokalizasyon, sinyal özellikleri..."/>
+      </div>
+    </>;
+  }
+
+  function renderOther(){
+    return <>
+      <div className="field"><label>Diğer bulgular (dalak, böbrekler, kemik, sürrenal vb.)</label>
+        <textarea value={other.otherFindings} onChange={e=>setOther(p=>({...p,otherFindings:e.target.value}))} placeholder="Serbest metin..."/>
+      </div>
+    </>;
+  }
+
+  function renderFinalReport(){
+    return <>
+      <div style={{textAlign:'center',padding:'20px 0'}}>
+        <div style={{fontSize:'1.1rem',fontWeight:700,color:'var(--accent)',marginBottom:8}}>Tüm adımlar tamamlandı</div>
+        <div style={{fontSize:'.85rem',color:'var(--text2)',marginBottom:20}}>Raporu görüntülemek veya dışa aktarmak için aşağıdaki seçenekleri kullanın.</div>
+        <div className="btn-row" style={{justifyContent:'center'}}>
+          <button className="btn btn-primary" onClick={handleShowReport}>📄 Raporu Görüntüle</button>
+          <button className="btn btn-secondary" onClick={handlePrint}>🖨 Yazdır / PDF</button>
+          <button className="btn btn-secondary" onClick={handleCopy}>📋 Panoya Kopyala</button>
+          <button className="btn btn-cyan" onClick={handleDownload}>⬇ HTML İndir</button>
+        </div>
+      </div>
+      {lesions.length>0&&<>
+        <hr className="divider"/>
+        <div style={{fontSize:'.85rem',color:'var(--text3)',marginBottom:12,fontWeight:700}}>LEZYON ÖZETİ</div>
+        {lesions.map((L,i)=>{
+          const diags = L.type==='Kistik'?diagCystic(L,clin,mpd):diagSolid(L,clin);
+          const top=diags[0];
+          return <div key={i} className="sub-card" style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <span className="lesion-badge">L{i+1}</span>
+              <span style={{fontSize:'.82rem',color:'var(--text2)'}}>{L.location} — {L.sizeMm||'?'}mm — {L.type}</span>
+            </div>
+            {top&&<div className="primary-diag" style={{padding:'10px 14px',marginBottom:0}}>
+              <div className="diag-name" style={{fontSize:'1rem'}}>{top.name}</div>
+              <div className="diag-pct" style={{fontSize:'1.5rem'}}>%{top.pct}</div>
+            </div>}
+          </div>;
+        })}
+      </>}
+    </>;
+  }
+
+  // ── STEP CONFIG ─────────────────────────────────────────────────────────────
+  const STEP_CONFIG = [
+    {title:'Klinik Bilgiler',sub:'Endikasyon, yaş, biyokimya',render:renderClinical},
+    {title:'MRI Tekniği',sub:'Sekanslar ve protokol',render:renderTechnique},
+    {title:'Pankreas Parankimi',sub:'Doku karakteri, atrofi',render:renderParenchyma},
+    {title:'Ana Pankreas Kanalı',sub:'Wirsung / MPD değerlendirme',render:renderMPD},
+    {title:'Safra Yolları',sub:'CBD, intrahepatik dilatasyon',render:renderCBD},
+    {title:'Vasküler Değerlendirme',sub:'Portal ven, SMA, çölyak',render:renderVascular},
+    {title:'LAP / Asit',sub:'Lenfadenopati ve serbest sıvı',render:renderLymph},
+    {title:'Lezyon Girişi',sub:'Lezyon ekle veya düzenle',render:renderLesionCount},
+    // Loop steps
+    {title:'Lokalizasyon',sub:`Lezyon ${currentIdx+1} / ${lesions.length}`,render:renderLocation},
+    {title:'Lezyon Tipi',sub:'Solid, kistik veya mikst',render:renderType},
+    {title:'T1 Sinyali',sub:'Ön kontrast T1 karakteri',render:renderT1},
+    {title:'T2 Sinyali',sub:'T2 sinyal ve kistik özellikler',render:renderT2},
+    {title:'DWI / ADC',sub:'Difüzyon kısıtlaması',render:renderDWI},
+    {title:'Kontrast Tutulumu',sub:'Dinamik kontrast karakteri',render:renderContrast},
+    {title:'Spesifik Özellikler',sub:'Tanıya yönelik bulgular',render:renderSpecific},
+    {title:'Tanı Olasılıkları',sub:'Ağırlıklı diferansiyel tanı',render:renderDiagnosis},
+    // Post-loop
+    {title:'Karaciğer',sub:'Değerlendirilen kesitler',render:renderLiver},
+    {title:'Diğer Bulgular',sub:'Dalak, böbrekler, kemik, sürrenal',render:renderOther},
+    {title:'Rapor',sub:'Dışa aktarma seçenekleri',render:renderFinalReport},
+  ];
+
+  const cfg = STEP_CONFIG[step];
+  const canNext = step < TOTAL-1;
+  const canPrev = step > 0;
+
+  // Progress: exclude loop steps from linear progress
+  const progressPct = Math.round(step/(TOTAL-1)*100);
+
+  return <div className="app">
+    {/* Header */}
+    <div className="header">
+      <div className="header-icon">🫁</div>
+      <div>
+        <h1>Pankreas MRI Değerlendirme</h1>
+        <p>Multi-lezyon ağırlıklı diferansiyel tanı — Fukuoka 2017 IPMN Risk Sınıflaması</p>
+      </div>
+    </div>
+
+    {/* Progress */}
+    <div className="progress-wrap">
+      <div className="progress-bar"><div className="progress-fill" style={{width:`${progressPct}%`}}/></div>
+      <div className="progress-label">
+        <span>Adım {step+1} / {TOTAL}</span>
+        <span>{progressPct}%</span>
+      </div>
+    </div>
+
+    {/* Step Card */}
+    <div className="card">
+      <div className="section-header">
+        <div className="section-dot"/>
+        <div>
+          <div className="card-title">
+            <span className="step-badge">S{step}</span>
+            {cfg.title}
+            {inLoop&&curLesion&&<span style={{fontSize:'.75rem',background:'rgba(6,182,212,.2)',color:'var(--cyan)',padding:'2px 8px',borderRadius:20,marginLeft:6}}>
+              Lezyon {currentIdx+1}/{lesions.length}
+            </span>}
+          </div>
+          <div className="card-subtitle">{cfg.sub}</div>
+        </div>
+      </div>
+      {cfg.render()}
+    </div>
+
+    {/* Navigation */}
+    <div className="btn-row">
+      {canPrev&&<button className="btn btn-secondary" onClick={goPrev}>← Geri</button>}
+      {canNext&&step!==STEPS.DIAGNOSIS&&<button className="btn btn-primary" onClick={goNext}>İleri →</button>}
+      {step===STEPS.REPORT&&<button className="btn btn-primary" onClick={handleShowReport}>📄 Raporu Görüntüle</button>}
+    </div>
+
+    {/* Report Overlay */}
+    {showReport&&<div className="overlay" onClick={e=>{if(e.target.className==='overlay')setShowReport(false)}}>
+      <div className="overlay-btns">
+        <button className="btn btn-secondary" onClick={()=>setShowReport(false)}>✕ Kapat</button>
+        <button className="btn btn-secondary btn-sm" onClick={handleCopy}>📋 Kopyala</button>
+        <button className="btn btn-secondary btn-sm" onClick={handlePrint}>🖨 Yazdır</button>
+        <button className="btn btn-cyan btn-sm" onClick={handleDownload}>⬇ İndir</button>
+      </div>
+      <div className="report-sheet" ref={reportRef} dangerouslySetInnerHTML={{__html:generateReportHTML(allData)}}/>
+    </div>}
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

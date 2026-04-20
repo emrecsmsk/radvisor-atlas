@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyin MRI Karar Destek</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --bg: #0f0f14;
+  --surface: #1a1a24;
+  --surface2: #22222f;
+  --border: #2e2e3f;
+  --accent: #7c5cbf;
+  --accent2: #9b7de0;
+  --accent-dim: rgba(124,92,191,0.15);
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #606078;
+  --green: #4caf80;
+  --red: #e05555;
+  --yellow: #d4aa44;
+  --cyan: #4ab8c8;
+  --orange: #d4884a;
+  --radius: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+#app { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+
+.header { text-align: center; margin-bottom: 28px; padding: 24px 0 16px; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 1.6rem; color: var(--accent2); letter-spacing: 0.5px; }
+.header p { color: var(--text2); font-size: 0.85rem; margin-top: 6px; }
+
+/* Progress */
+.progress-wrap { margin-bottom: 24px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text2); margin-bottom: 6px; }
+.progress-bar { height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.4s ease; border-radius: 4px; }
+
+/* Card */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 22px; margin-bottom: 16px; }
+.card-title { font-size: 1.05rem; font-weight: 600; color: var(--accent2); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.card-title .step-badge { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent2); font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; }
+
+/* Section header */
+.section-header { font-size: 0.72rem; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; font-weight: 600; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+/* Form elements */
+.field-group { margin-bottom: 18px; }
+.field-label { font-size: 0.82rem; color: var(--text2); margin-bottom: 8px; font-weight: 500; }
+
+.radio-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.radio-btn { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text2); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; transition: all 0.15s; user-select: none; }
+.radio-btn:hover { border-color: var(--accent); color: var(--text); }
+.radio-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); font-weight: 600; }
+.radio-btn.multi.active { background: rgba(76,175,128,0.12); border-color: var(--green); color: var(--green); }
+
+.num-input { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 8px; font-size: 0.85rem; width: 110px; outline: none; transition: border 0.15s; }
+.num-input:focus { border-color: var(--accent); }
+.num-input::placeholder { color: var(--text2); }
+
+/* Table of values */
+.val-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.val-table th { background: var(--surface2); color: var(--accent2); padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
+.val-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text2); }
+.val-table tr:last-child td { border-bottom: none; }
+.val-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.val-table td:first-child { color: var(--text); font-weight: 500; }
+
+/* Signal group */
+.signal-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.signal-row { display: flex; align-items: center; gap: 10px; }
+.signal-label { font-size: 0.78rem; color: var(--text2); width: 32px; font-weight: 600; }
+
+/* Navigation */
+.nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.btn { padding: 9px 22px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; border: none; font-weight: 600; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { color: var(--text); border-color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--text2); padding: 9px 14px; }
+.btn-danger { background: rgba(224,85,85,0.15); color: var(--red); border: 1px solid var(--red); }
+.btn-green { background: rgba(76,175,128,0.15); color: var(--green); border: 1px solid var(--green); }
+
+/* YORUM block */
+.yorum-block { background: rgba(124,92,191,0.08); border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 14px 16px; margin-top: 16px; font-size: 0.83rem; color: var(--text2); line-height: 1.7; }
+.yorum-title { font-size: 0.7rem; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+
+/* Diff table */
+.diff-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.diff-table th { background: var(--accent-dim); color: var(--accent2); padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.7rem; white-space: nowrap; }
+.diff-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); line-height: 1.45; }
+.diff-table tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
+.diff-table td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+
+/* Report */
+.report-section { margin-bottom: 20px; }
+.report-section h3 { font-size: 0.82rem; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+.report-line { font-size: 0.84rem; line-height: 1.8; color: var(--text2); }
+.report-line strong { color: var(--text); }
+.report-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+
+.badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-left: 6px; }
+.badge-green { background: rgba(76,175,128,0.18); color: var(--green); border: 1px solid var(--green); }
+.badge-yellow { background: rgba(212,170,68,0.18); color: var(--yellow); border: 1px solid var(--yellow); }
+.badge-red { background: rgba(224,85,85,0.18); color: var(--red); border: 1px solid var(--red); }
+.badge-blue { background: rgba(74,184,200,0.18); color: var(--cyan); border: 1px solid var(--cyan); }
+.badge-purple { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent); }
+
+.copy-area { display: none; }
+
+/* Horizontal rule in form */
+.hline { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* Inline input group */
+.inline-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.inline-group .num-input { width: 90px; }
+.unit-label { font-size: 0.8rem; color: var(--text2); }
+
+/* Patoloji selector */
+.patoloji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.patoloji-card { background: var(--surface2); border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: all 0.2s; text-align: center; }
+.patoloji-card:hover { border-color: var(--accent); }
+.patoloji-card.active { border-color: var(--accent); background: var(--accent-dim); }
+.patoloji-card .icon { font-size: 1.6rem; margin-bottom: 8px; }
+.patoloji-card .name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.patoloji-card .desc { font-size: 0.72rem; color: var(--text2); margin-top: 4px; }
+
+/* Subsection card */
+.sub-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+.sub-card-title { font-size: 0.8rem; color: var(--accent2); font-weight: 600; margin-bottom: 12px; }
+
+/* Probability bars */
+.prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 8px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+.prob-rank { font-size: 0.72rem; font-weight: 700; color: var(--accent2); min-width: 24px; text-align: center; }
+.prob-info { flex: 1; min-width: 0; }
+.prob-name { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.prob-bar-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.prob-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.prob-pct { font-size: 0.82rem; font-weight: 700; min-width: 48px; text-align: right; }
+.prob-detail { font-size: 0.7rem; color: var(--text2); margin-top: 3px; line-height: 1.4; }
+
+/* Print styles */
+@media print {
+  body { background: #fff; color: #000; }
+  .no-print { display: none !important; }
+  .card { border: 1px solid #ccc; background: #fff; }
+  .report-wrap { background: #fff; border: 1px solid #ccc; }
+  .diff-table td, .diff-table th { color: #000 !important; }
+  .yorum-block { border-left: 3px solid #666; background: #f5f5f5; }
+  .prob-row { background: #f5f5f5; border: 1px solid #ccc; }
+  .prob-bar-wrap { background: #ddd; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="text/babel">
+const { useState, useCallback, useMemo } = React;
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+const SIGNAL_OPTS = ['HİPERİNTENS', 'İZOİNTENS', 'HİPOİNTENS'];
+const YOK_VAR = ['YOK', 'VAR'];
+const LOBE_LIST = ['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'İNSULA', 'SEREBELLAR'];
+const KANAMA_TIPI = ['EPİDURAL', 'SUBDURAL', 'SUBARAKNOİD', 'PARANKİMAL', 'MİKST'];
+const KANAMA_YASI = ['AKUT', 'SUBAKUT', 'KRONİK', 'KRONİK ZEMİNDE AKUT', 'MİKST'];
+const HERNIASYON_TIPI = ['UNCAL', 'TONSİLLAR', 'SUBFALSİNE', 'TRANSTENTORİYAL', 'EKSTRAKRANİAL'];
+const KONTRASTLANMA_TIPI = ['NODULAR', 'PERİFERAL', 'IRREGULAR', 'HOMOJENİK', 'RİM'];
+const LOKASYON_LIST = ['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SEREBELLAR', 'PERİVENTRİKÜLER', 'DERİN YAPI', 'FOSSA POSTERİOR'];
+const TERRITORY_LIST = ['MCA', 'ACA', 'PCA', 'WATERSHED', 'SCA', 'PICA'];
+const MS_LOK = ['PERİVENTRİKÜLER', 'KORTİKAL/JUXTAKORTİKAL', 'İNFRATENTORİYAL', 'KORPUS KALLOZUM', 'OPTİK SİNİR', 'SPİNAL KORD'];
+const FRAKTÜR_TIPI = ['LİNEER', 'DEPRESE', 'DİASTATİK', 'KARMA'];
+const ORTA_HAT_YON = ['SAĞA', 'SOLA'];
+const KEMIK_DEGISIK = ['SKLEROZ', 'KALINLAŞMA', 'DESTRÜKSİYON'];
+
+function Radio({ options, value, onChange, multi = false }) {
+  if (multi) {
+    const vals = value || [];
+    return (
+      <div className="radio-grid">
+        {options.map(o => (
+          <div key={o} className={`radio-btn multi ${vals.includes(o) ? 'active' : ''}`}
+            onClick={() => onChange(vals.includes(o) ? vals.filter(x => x !== o) : [...vals, o])}>
+            {vals.includes(o) ? '✓ ' : ''}{o}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="radio-grid">
+      {options.map(o => (
+        <div key={o} className={`radio-btn ${value === o ? 'active' : ''}`} onClick={() => onChange(o)}>{o}</div>
+      ))}
+    </div>
+  );
+}
+
+function NumInput({ value, onChange, placeholder = 'mm', width = 90 }) {
+  return <input type="number" className="num-input" style={{ width }} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} />;
+}
+
+function SignalPanel({ label, value, onChange }) {
+  return (
+    <div className="signal-row">
+      <div className="signal-label">{label}</div>
+      <Radio options={SIGNAL_OPTS} value={value} onChange={onChange} />
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="field-group">
+      {label && <div className="field-label">{label}</div>}
+      {children}
+    </div>
+  );
+}
+
+// ─── DIFF TABLE DATA ────────────────────────────────────────────────────────
+const DIFF_DATA = [
+  { name: 'Glioblastoma (GBM)', t1: 'Heterojen, hipo-nekroz', t2: 'Hiperintens periferik', flair: 'Hiperintens ödem', dwi: 'Periferal kısıtlama', adc: 'Düşük periferal', kontrast: 'Rim-enhancement, heterojen', ozellik: 'Masif ödem, kitle, infiltratif' },
+  { name: 'Metastaz', t1: 'İzo/hipointens', t2: 'Hiperintens', flair: 'Hiperintens ödem', dwi: 'Genellikle yok', adc: 'Orta', kontrast: 'Periferal halka', ozellik: 'Çoklu, kortikal-subkortikal' },
+  { name: 'Low-grade Astrositom', t1: 'İzointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Genellikle yok', adc: 'Normal-yüksek', kontrast: 'Minimal/yok', ozellik: 'Hafif kitle, infiltratif' },
+  { name: 'Anaplastik/High-grade Astrositom', t1: 'Heterojen', t2: 'Heterojen', flair: 'Hiperintens ödem', dwi: 'Olabilir', adc: 'Düşük', kontrast: 'Heterojen periferal', ozellik: 'Masif ödem, nekroz, infiltratif' },
+  { name: 'Oligodendrogliom', t1: 'İzo-hipointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Genellikle yok', adc: 'Normal-yüksek', kontrast: 'Minimal', ozellik: 'Kalsifikasyon sık, frontal lob' },
+  { name: 'Ependimom', t1: 'İzointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Olabilir', adc: 'Düşük-orta', kontrast: 'Nodüler', ozellik: 'Ventriküler yerleşim, kistik' },
+  { name: 'Medulloblastom', t1: 'İzointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Belirgin kısıtlama', adc: 'Düşük', kontrast: 'Homojen', ozellik: 'Posterior fossa, çocukta sık' },
+  { name: 'PCNSL (Primer CNS Lenfoma)', t1: 'İzo-hipointens', t2: 'Hipo-orta', flair: 'Hafif hiperintens', dwi: 'Belirgin kısıtlama', adc: 'Düşük', kontrast: 'Homojen', ozellik: 'Derin beyaz cevher, immünosuprese' },
+  { name: 'Meningiom', t1: 'İzo-hipointens', t2: 'Hafif hiperintens', flair: 'Hiperintens', dwi: 'Genellikle yok', adc: 'Orta-yüksek', kontrast: 'Homojen, güçlü', ozellik: 'Dural base, dural tail, kalsifikasyon' },
+  { name: 'Hemangioblastom', t1: 'Hipointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Genellikle yok', adc: 'Yüksek', kontrast: 'Nodüler', ozellik: 'Serebellum, kistik+nodüler' },
+  { name: 'Araknoid Kist', t1: 'Hipointens (CSF)', t2: 'Hiperintens', flair: 'Hipointens (CSF)', dwi: 'Yok', adc: 'Yüksek', kontrast: 'Yok', ozellik: 'CSF sinyali, kitle minimal' },
+  { name: 'Dermoid/Epidermoid', t1: 'T1: hiperintens (yağ)', t2: 'Değişken', flair: 'Heterojen', dwi: 'Kısmi (epidermoid)', adc: 'Düşük (epidermoid)', kontrast: 'Minimal', ozellik: 'Yağ sinyali (dermoid), DWI yardımcı' },
+  { name: 'Beyin Absesi', t1: 'Hipointens merkez', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Belirgin kısıtlama', adc: 'Düşük merkezi', kontrast: 'Rim-enhancement', ozellik: 'Perifokal ödem, halo, septasyon' },
+  { name: 'Subakut/Kronik Hematom', t1: 'Hiperintens (methemoglobin)', t2: 'Değişken', flair: '—', dwi: 'Genellikle yok', adc: 'Orta', kontrast: 'Minimal', ozellik: 'Sinyal zamanla değişir' },
+  { name: 'Anevrizma/AVM', t1: 'Akım void', t2: 'Akım void', flair: '—', dwi: '—', adc: '—', kontrast: '—', ozellik: 'Flow void belirleyici, hemoraj varsa değişir' },
+  { name: 'Kavernoma', t1: 'Heterojen, hipo sınır', t2: 'Heterojen ("popcorn")', flair: '—', dwi: 'Genellikle yok', adc: 'Orta', kontrast: 'Minimal', ozellik: 'Hemosiderin halkası, damar malformasyonu' },
+  { name: 'Ensefalomalazi/Eski İnfarkt', t1: 'Hipointens', t2: 'Hipointens', flair: 'Hipointens', dwi: 'Yok', adc: 'Yüksek', kontrast: 'Yok', ozellik: 'Atrofi, kitle etkisi yok' },
+  { name: 'Demyelinizan Plak (MS)', t1: 'İzointens', t2: 'Hiperintens', flair: 'Hiperintens', dwi: 'Genellikle yok', adc: 'Normal', kontrast: 'Aktif lezyonda gadolinyum', ozellik: 'Periventriküler, oval, T1 siyah delik' },
+  { name: 'Kontüzyon/Travma', t1: 'Hiper/hipointens', t2: 'Hiperintens ödem', flair: 'Hiperintens', dwi: 'Olabilir', adc: 'Düşük-orta', kontrast: 'Minimal', ozellik: 'Kortikal-subkortikal, hemosiderin' },
+];
+
+// ─── PATHOLOGY MATCH PROFILES ───────────────────────────────────────────────
+// Her patoloji için beklenen bulgular ve ağırlıkları
+const PATHOLOGY_PROFILES = [
+  {
+    name: 'Glioblastoma (GBM)',
+    t1: ['HİPOİNTENS'], t1Partial: ['İZOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: [],
+    adc: ['DÜŞÜK', 'HETEROJEN'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['RİM', 'IRREGULAR', 'PERİFERAL'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['CİDDİ', 'YAYGIN', 'ORTA'],
+    icerik: ['NEKROTIK', 'SOLID+KİSTİK'],
+    features: { infiltratif: true, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Metastaz',
+    t1: ['İZOİNTENS', 'HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPERİNTENS'], t2Partial: ['İZOİNTENS'],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['T2 SHINE-THROUGH'],
+    adc: ['NORMAL', 'YÜKSEK'], adcPartial: ['HETEROJEN'],
+    kontrastVar: true,
+    kontrastTip: ['PERİFERAL', 'RİM', 'NODULAR'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['CİDDİ', 'YAYGIN', 'ORTA'],
+    icerik: ['SOLID+KİSTİK', 'SOLID', 'NEKROTIK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['MULTIPLE (>5)', 'BİRKAÇ (2-5)'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Low-grade Astrositom',
+    t1: ['İZOİNTENS'], t1Partial: ['HİPOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['T2 SHINE-THROUGH'],
+    adc: ['NORMAL', 'YÜKSEK'], adcPartial: [],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['SOLID', 'SOLID+KİSTİK'],
+    features: { infiltratif: true, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Anaplastik/High-grade Astrositom',
+    t1: ['HİPOİNTENS', 'İZOİNTENS'], t1Partial: ['HİPERİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: ['İZOİNTENS'],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: ['KISITLAMIYOR'],
+    adc: ['DÜŞÜK', 'HETEROJEN'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['PERİFERAL', 'IRREGULAR', 'RİM'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['CİDDİ', 'YAYGIN', 'ORTA'],
+    icerik: ['NEKROTIK', 'SOLID+KİSTİK'],
+    features: { infiltratif: true, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Oligodendrogliom',
+    t1: ['İZOİNTENS', 'HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['T2 SHINE-THROUGH'],
+    adc: ['NORMAL', 'YÜKSEK'], adcPartial: [],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['SOLID', 'KALSIFIKE'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: true, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    lokasyon2Bonus: ['FRONTAL'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Ependimom',
+    t1: ['İZOİNTENS'], t1Partial: ['HİPOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: ['KISITLAMIYOR'],
+    adc: ['DÜŞÜK'], adcPartial: ['NORMAL'],
+    kontrastVar: true,
+    kontrastTip: ['NODULAR', 'HOMOJENİK'],
+    lokasyon1: ['İNTRAVENTRİKÜLER'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['KİSTİK', 'SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    lokasyon2Bonus: ['FOSSA POSTERİOR'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Medulloblastom',
+    t1: ['İZOİNTENS'], t1Partial: ['HİPOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: ['İZOİNTENS'],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: [],
+    adc: ['DÜŞÜK'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['HOMOJENİK', 'NODULAR'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['HAFİF', 'ORTA'],
+    icerik: ['SOLID'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    lokasyon2Bonus: ['FOSSA POSTERİOR', 'SEREBELLAR'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'PCNSL (Primer CNS Lenfoma)',
+    t1: ['İZOİNTENS', 'HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPOİNTENS', 'İZOİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: ['İZOİNTENS'],
+    dwi: ['KISITLIYOR'], dwiPartial: [],
+    adc: ['DÜŞÜK'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['HOMOJENİK'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['HAFİF', 'ORTA'],
+    icerik: ['SOLID'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK', 'BİRKAÇ (2-5)'],
+    lokasyon2Bonus: ['PERİVENTRİKÜLER', 'DERİN YAPI'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Meningiom',
+    t1: ['İZOİNTENS', 'HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPERİNTENS', 'İZOİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: ['İZOİNTENS'],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['T2 SHINE-THROUGH'],
+    adc: ['NORMAL', 'YÜKSEK'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['HOMOJENİK'],
+    lokasyon1: ['EKSTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF', 'ORTA'],
+    icerik: ['SOLID'],
+    features: { infiltratif: false, duralTail: true, duralBase: true, kalsif: true, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Hemangioblastom',
+    t1: ['HİPOİNTENS'], t1Partial: ['İZOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: [],
+    adc: ['YÜKSEK'], adcPartial: ['NORMAL'],
+    kontrastVar: true,
+    kontrastTip: ['NODULAR'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['KİSTİK', 'SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: true, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    lokasyon2Bonus: ['SEREBELLAR', 'FOSSA POSTERİOR'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Araknoid Kist',
+    t1: ['HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPOİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: [],
+    adc: ['YÜKSEK'], adcPartial: [],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['EKSTRAAKSİAL', 'İNTRAAKSİAL'],
+    odem: ['YOK'],
+    icerik: ['KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: true, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Dermoid/Epidermoid',
+    t1: ['HİPERİNTENS'], t1Partial: ['İZOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: ['İZOİNTENS', 'HİPOİNTENS'],
+    flair: ['HİPERİNTENS'], flairPartial: ['İZOİNTENS'],
+    dwi: ['KISITLIYOR'], dwiPartial: ['KISITLAMIYOR'],
+    adc: ['DÜŞÜK'], adcPartial: ['NORMAL'],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['EKSTRAAKSİAL', 'İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['KİSTİK', 'SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: true },
+    odakSayisi: ['TEK'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Beyin Absesi',
+    t1: ['HİPOİNTENS'], t1Partial: ['İZOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: [],
+    adc: ['DÜŞÜK'], adcPartial: [],
+    kontrastVar: true,
+    kontrastTip: ['RİM', 'PERİFERAL'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['CİDDİ', 'ORTA', 'YAYGIN'],
+    icerik: ['KİSTİK', 'SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: true, yagSinyali: false },
+    odakSayisi: ['TEK', 'BİRKAÇ (2-5)'],
+    category: 'TÜMÖR',
+  },
+  {
+    name: 'Subakut/Kronik Hematom',
+    t1: ['HİPERİNTENS'], t1Partial: [],
+    t2: ['HİPERİNTENS', 'HİPOİNTENS', 'İZOİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: ['İZOİNTENS'],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['T2 SHINE-THROUGH'],
+    adc: ['NORMAL', 'YÜKSEK'], adcPartial: [],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL', 'EKSTRAAKSİAL'],
+    odem: ['HAFİF', 'ORTA'],
+    icerik: ['KİSTİK', 'SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: true, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK'],
+    category: 'VASKÜLER',
+  },
+  {
+    name: 'Kavernoma',
+    t1: ['HİPERİNTENS', 'İZOİNTENS'], t1Partial: ['HİPOİNTENS'],
+    t2: ['HİPERİNTENS', 'İZOİNTENS'], t2Partial: ['HİPOİNTENS'],
+    flair: ['HİPERİNTENS'], flairPartial: ['İZOİNTENS'],
+    dwi: ['KISITLAMIYOR'], dwiPartial: [],
+    adc: ['NORMAL'], adcPartial: ['YÜKSEK'],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: true, popcorn: true, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK', 'BİRKAÇ (2-5)'],
+    category: 'VASKÜLER',
+  },
+  {
+    name: 'Ensefalomalazi/Eski İnfarkt',
+    t1: ['HİPOİNTENS'], t1Partial: [],
+    t2: ['HİPOİNTENS', 'HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPOİNTENS'], flairPartial: ['HİPERİNTENS'],
+    dwi: ['KISITLAMIYOR'], dwiPartial: [],
+    adc: ['YÜKSEK'], adcPartial: [],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK'],
+    icerik: ['KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: true, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK', 'BİRKAÇ (2-5)'],
+    category: 'VASKÜLER',
+  },
+  {
+    name: 'Demyelinizan Plak (MS)',
+    t1: ['İZOİNTENS'], t1Partial: ['HİPOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLAMIYOR'], dwiPartial: ['KISITLIYOR'],
+    adc: ['NORMAL'], adcPartial: ['YÜKSEK'],
+    kontrastVar: null, // olabilir
+    kontrastTip: ['NODULAR', 'PERİFERAL'],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['YOK', 'HAFİF'],
+    icerik: ['SOLID'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: false, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['MULTIPLE (>5)', 'BİRKAÇ (2-5)'],
+    lokasyon2Bonus: ['PERİVENTRİKÜLER'],
+    category: 'MS',
+  },
+  {
+    name: 'Kontüzyon/Travma',
+    t1: ['HİPERİNTENS', 'HİPOİNTENS'], t1Partial: ['İZOİNTENS'],
+    t2: ['HİPERİNTENS'], t2Partial: [],
+    flair: ['HİPERİNTENS'], flairPartial: [],
+    dwi: ['KISITLIYOR'], dwiPartial: ['KISITLAMIYOR'],
+    adc: ['DÜŞÜK'], adcPartial: ['NORMAL'],
+    kontrastVar: false,
+    kontrastTip: [],
+    lokasyon1: ['İNTRAAKSİAL'],
+    odem: ['HAFİF', 'ORTA'],
+    icerik: ['SOLID+KİSTİK'],
+    features: { infiltratif: false, duralTail: false, duralBase: false, kalsif: false, csfSignal: false, hemosiderin: true, popcorn: false, flowVoid: false, septasyon: false, yagSinyali: false },
+    odakSayisi: ['TEK', 'BİRKAÇ (2-5)'],
+    category: 'TRAVMA',
+  },
+];
+
+// ─── DIFFERENTIAL DIAGNOSIS ENGINE ──────────────────────────────────────────
+function calculateDifferential(s) {
+  const { patolojiTip, tumor, vaskuler, ms, travma } = s;
+
+  // Seçili patoloji kategorisine göre mevcut bulguları al
+  let t1 = '', t2 = '', flair = '', dwi = '', adc = '';
+  let kontrastVar = '', kontrastTip = [];
+  let lokasyon1 = '', lokasyon2 = [];
+  let odem = '', icerik = '', odakSayisi = '';
+  let features = {};
+
+  if (patolojiTip === 'TÜMÖR') {
+    t1 = tumor.t1; t2 = tumor.t2; flair = tumor.flair;
+    dwi = tumor.dwi; adc = tumor.adc;
+    kontrastVar = tumor.kontrast; kontrastTip = tumor.kontrastTip || [];
+    lokasyon1 = tumor.lokasyon1; lokasyon2 = tumor.lokasyon2 || [];
+    odem = tumor.perilezOdem; icerik = tumor.icerik;
+    odakSayisi = tumor.odakSayisi;
+    features = {
+      infiltratif: tumor.infiltratif === 'VAR',
+      duralTail: tumor.dural_tail === 'VAR',
+      duralBase: tumor.dural_base === 'VAR',
+      kalsif: tumor.kalsif === 'VAR',
+      csfSignal: tumor.csfSignal === 'VAR',
+      hemosiderin: tumor.hemosiderin === 'VAR',
+      popcorn: tumor.popcorn === 'VAR',
+      flowVoid: tumor.flowVoid === 'VAR',
+      septasyon: tumor.septasyon === 'VAR',
+      yagSinyali: tumor.yagSinyali === 'VAR',
+    };
+  } else if (patolojiTip === 'VASKÜLER LEZYON') {
+    t1 = vaskuler.t1; t2 = vaskuler.t2; flair = vaskuler.flair;
+    dwi = vaskuler.dwi;
+    kontrastVar = vaskuler.kontrast; kontrastTip = vaskuler.kontrastTip || [];
+    lokasyon2 = vaskuler.lokasyon || [];
+    odem = vaskuler.perilezOdem;
+    odakSayisi = vaskuler.odakSayisi;
+    lokasyon1 = 'İNTRAAKSİAL';
+    features = {
+      hemosiderin: vaskuler.hemosiderin === 'VAR',
+      popcorn: vaskuler.popcorn === 'VAR',
+      flowVoid: vaskuler.flowVoid === 'VAR',
+    };
+  } else if (patolojiTip === 'MULTIPLE SCLEROSIS') {
+    t1 = ms.t1; t2 = ms.t2; flair = ms.flair;
+    dwi = ms.dwi;
+    kontrastVar = ms.kontrast === 'VAR (aktif lezyon)' ? 'VAR' : 'YOK';
+    kontrastTip = ms.kontrastTip ? [ms.kontrastTip] : [];
+    lokasyon1 = 'İNTRAAKSİAL';
+    lokasyon2 = ms.plakLok || [];
+    odakSayisi = ms.plakSayisi === '≥10 (çok sayıda)' ? 'MULTIPLE (>5)' : ms.plakSayisi === '4-9' ? 'BİRKAÇ (2-5)' : 'TEK';
+    odem = 'YOK';
+    features = {};
+  } else if (patolojiTip === 'TRAVMA') {
+    t1 = travma.t1sig; t2 = travma.t2sig; flair = '';
+    dwi = '';
+    kontrastVar = 'YOK';
+    lokasyon1 = 'İNTRAAKSİAL';
+    lokasyon2 = travma.kanamaLok || [];
+    odem = '';
+    features = {
+      hemosiderin: true,
+    };
+  }
+
+  // Ağırlıklar
+  const W = { t1: 8, t2: 8, flair: 7, dwi: 14, adc: 14, kontrast: 12, lokasyon1: 6, odem: 7, icerik: 6, odakSayisi: 6, features: 12 };
+  const maxScore = Object.values(W).reduce((a, b) => a + b, 0);
+
+  const results = PATHOLOGY_PROFILES.map(profile => {
+    let score = 0;
+
+    // T1
+    if (t1) {
+      if (profile.t1.includes(t1)) score += W.t1;
+      else if (profile.t1Partial && profile.t1Partial.includes(t1)) score += W.t1 * 0.5;
+    }
+    // T2
+    if (t2) {
+      if (profile.t2.includes(t2)) score += W.t2;
+      else if (profile.t2Partial && profile.t2Partial.includes(t2)) score += W.t2 * 0.5;
+    }
+    // FLAIR
+    if (flair) {
+      if (profile.flair.includes(flair)) score += W.flair;
+      else if (profile.flairPartial && profile.flairPartial.includes(flair)) score += W.flair * 0.5;
+    }
+    // DWI
+    if (dwi) {
+      if (profile.dwi.includes(dwi)) score += W.dwi;
+      else if (profile.dwiPartial && profile.dwiPartial.includes(dwi)) score += W.dwi * 0.4;
+    }
+    // ADC
+    if (adc) {
+      if (profile.adc.includes(adc)) score += W.adc;
+      else if (profile.adcPartial && profile.adcPartial.includes(adc)) score += W.adc * 0.4;
+    }
+    // Kontrast
+    if (kontrastVar) {
+      const profileKontrast = profile.kontrastVar;
+      if (profileKontrast === true && kontrastVar === 'VAR') {
+        score += W.kontrast * 0.5;
+        if (kontrastTip.length > 0 && profile.kontrastTip.length > 0) {
+          const overlap = kontrastTip.filter(x => profile.kontrastTip.includes(x));
+          if (overlap.length > 0) score += W.kontrast * 0.5;
+        }
+      } else if (profileKontrast === false && kontrastVar === 'YOK') {
+        score += W.kontrast;
+      } else if (profileKontrast === null) {
+        score += W.kontrast * 0.3; // olabilir
+      }
+    }
+    // Lokasyon1
+    if (lokasyon1 && profile.lokasyon1) {
+      if (profile.lokasyon1.includes(lokasyon1)) score += W.lokasyon1;
+    }
+    // Ödem
+    if (odem && profile.odem) {
+      if (profile.odem.includes(odem)) score += W.odem;
+    }
+    // İçerik
+    if (icerik && profile.icerik) {
+      if (profile.icerik.includes(icerik)) score += W.icerik;
+    }
+    // Odak sayısı
+    if (odakSayisi && profile.odakSayisi) {
+      if (profile.odakSayisi.includes(odakSayisi)) score += W.odakSayisi;
+    }
+    // Features
+    if (profile.features && Object.keys(features).length > 0) {
+      const featureKeys = Object.keys(profile.features);
+      let featureMatch = 0;
+      let featureTotal = 0;
+      featureKeys.forEach(fk => {
+        if (features[fk] !== undefined) {
+          featureTotal++;
+          if (features[fk] === profile.features[fk]) featureMatch++;
+        }
+      });
+      if (featureTotal > 0) {
+        score += W.features * (featureMatch / featureTotal);
+      }
+    }
+
+    // Lokasyon2 bonus
+    if (profile.lokasyon2Bonus && lokasyon2.length > 0) {
+      const locBonus = lokasyon2.filter(x => profile.lokasyon2Bonus.includes(x));
+      if (locBonus.length > 0) score += 4; // bonus puan
+    }
+
+    const pct = Math.round((score / maxScore) * 100);
+    return { name: profile.name, score, pct, category: profile.category };
+  });
+
+  // Sırala ve normalize
+  results.sort((a, b) => b.pct - a.pct);
+
+  // Üst 10 sonucu döndür
+  return results.slice(0, 10).filter(r => r.pct > 5);
+}
+
+
+// ─── INITIAL STATE ───────────────────────────────────────────────────────────
+const initState = () => ({
+  step: 0,
+  // Anatomik
+  korteks: {},
+  ventrikul: {
+    sagLateral: '', sagLateralEvans: '',
+    solLateral: '', solLateralEvans: '',
+    v3: '', v4Trans: '', v4AP: '',
+    akuaduktus: '',
+  },
+  korpus: {
+    rostrum: '', genu: '', body: '', splenium: '',
+    gelesimsel: '',
+  },
+  hipokampus: { sagYuk: '', sagHac: '', solYuk: '', solHac: '' },
+  t2flair: { bulgu: '', lokasyon: [] },
+  hipofiz: { yukseklik: '', infundibular: '' },
+  // Patoloji
+  patolojiTip: '',
+  // TRAVMA
+  travma: {
+    fraktur: '', frakturKemik: '', frakturTip: [], displasma: '',
+    kanama: '', kanamaLok: [], kanamaTipi: [], kanamaYasi: [],
+    kanamaBoyu: '', t1sig: '', t2sig: '', t2starSig: '', swiSig: '',
+    karsilastirma: '',
+    kitlEtkisi: '', basilananYapilar: '', ortaHatShift: '', ortaHatMM: '', ortaHatYon: '',
+    herniasyon: '', herniasyonTip: [], herniasyonBasilan: '',
+    yumsatDoc: [],
+  },
+  // TÜMÖR
+  tumor: {
+    lokasyon1: '', lokasyon2: [], odakSayisi: '',
+    boyut: '', dagitim: [],
+    t1: '', t2: '', flair: '',
+    dwi: '', adc: '',
+    kontrast: '', kontrastTip: [],
+    abse: '', perilezOdem: '', odemDerece: '', kalsif: '', kalsifTip: [],
+    kanama: '', kitlEtkisi: '', ortaHatShift: '', ortaHatMM: '', ortaHatYon: '',
+    dural_tail: '', dural_base: '', komsuKemik: '', komsuKemikTip: [],
+    perinoral: '', perinoralTip: [],
+    ekstBulgular: [],
+    icerik: '', sekil: '',
+    // Ek tanısal özellikler
+    infiltratif: '', csfSignal: '', hemosiderin: '', popcorn: '',
+    flowVoid: '', septasyon: '', yagSinyali: '',
+  },
+  // VASKÜLER
+  vaskuler: {
+    tip: '', lokasyon: [], territory: [], odakSayisi: '',
+    dwi: '', kanamaYasi: [],
+    t1: '', t2: '', t2star: '', swi: '',
+    flair: '', rimSign: '',
+    kontrast: '', kontrastTip: [],
+    nidus: '', nidusBoyut: '', feedingArter: [], dreneVen: [],
+    perilezOdem: '', odemDerece: '',
+    ortaHatShift: '', ortaHatMM: '',
+    kanama: '', kitlEtkisi: '', komsuKemik: '', komsuKemikTip: [],
+    // Ek tanısal
+    hemosiderin: '', popcorn: '', flowVoid: '',
+  },
+  // MS
+  ms: {
+    plakDagilim: [], plakLok: [],
+    t1: '', t2: '', flair: '',
+    kontrast: '', kontrastTip: '',
+    dwi: '',
+    plakSayisi: '', enBuyuk: '',
+    blackHole: '',
+  },
+});
+
+// ─── STEP CONFIG ─────────────────────────────────────────────────────────────
+const STEPS_ANT = ['ANATOMİK - Korteks', 'ANATOMİK - Ventriküller', 'ANATOMİK - Korpus Kallozum', 'ANATOMİK - Hipokampus', 'ANATOMİK - T2/FLAIR', 'ANATOMİK - Hipofiz'];
+const STEPS_PAT = ['Patoloji Seçimi'];
+const STEPS_TRAVMA = ['Travma - Fraktür', 'Travma - Kanama', 'Travma - Kitle Etkisi/Herniasyon'];
+const STEPS_TUMOR = ['Tümör - Lokasyon & Boyut', 'Tümör - Sinyal Karakteri', 'Tümör - Kontrastlanma', 'Tümör - Eşlik Eden Bulgular', 'Tümör - Ek Tanısal Özellikler'];
+const STEPS_VASC = ['Vasküler - Lokasyon & Tip', 'Vasküler - Sinyal & DWI', 'Vasküler - Kontrastlanma & Ek Bulgular', 'Vasküler - Ek Tanısal Özellikler'];
+const STEPS_MS = ['MS - Plak Karakteri', 'MS - Sinyal & Kontrast'];
+const STEP_RAPOR = ['RAPOR'];
+
+// ─── MAIN APP ────────────────────────────────────────────────────────────────
+function App() {
+  const [s, setS] = useState(initState());
+
+  const update = useCallback((path, val) => {
+    setS(prev => {
+      const next = { ...prev };
+      const parts = path.split('.');
+      let obj = next;
+      for (let i = 0; i < parts.length - 1; i++) {
+        obj[parts[i]] = { ...obj[parts[i]] };
+        obj = obj[parts[i]];
+      }
+      obj[parts[parts.length - 1]] = val;
+      return next;
+    });
+  }, []);
+
+  const allSteps = useMemo(() => {
+    const base = [...STEPS_ANT, ...STEPS_PAT];
+    const pat = s.patolojiTip;
+    let patSteps = [];
+    if (pat === 'TRAVMA') patSteps = STEPS_TRAVMA;
+    else if (pat === 'TÜMÖR') patSteps = STEPS_TUMOR;
+    else if (pat === 'VASKÜLER LEZYON') patSteps = STEPS_VASC;
+    else if (pat === 'MULTIPLE SCLEROSIS') patSteps = STEPS_MS;
+    return [...base, ...patSteps, ...STEP_RAPOR];
+  }, [s.patolojiTip]);
+
+  const totalSteps = allSteps.length;
+  const stepLabel = allSteps[s.step] || '';
+
+  const goNext = () => setS(p => ({ ...p, step: Math.min(p.step + 1, totalSteps - 1) }));
+  const goPrev = () => setS(p => ({ ...p, step: Math.max(p.step - 1, 0) }));
+  const reset = () => setS(initState());
+
+  const isReport = s.step === totalSteps - 1;
+
+  const pct = Math.round(((s.step) / (totalSteps - 1)) * 100);
+
+  return (
+    <div id="app-root">
+      <div className="header">
+        <h1>🧠 Beyin / İntrakranial MRI</h1>
+        <p>Yapılandırılmış Raporlama & Ayırıcı Tanı Karar Destek Sistemi</p>
+      </div>
+
+      <div className="progress-wrap no-print">
+        <div className="progress-label">
+          <span>{stepLabel}</span>
+          <span>Adım {s.step + 1} / {totalSteps}</span>
+        </div>
+        <div className="progress-bar"><div className="progress-fill" style={{ width: pct + '%' }} /></div>
+      </div>
+
+      {!isReport && <StepContent step={s.step} s={s} update={update} patolojiTip={s.patolojiTip} />}
+      {isReport && <Report s={s} reset={reset} goPrev={goPrev} />}
+
+      {!isReport && (
+        <div className="nav-row no-print">
+          {s.step > 0
+            ? <button className="btn btn-secondary" onClick={goPrev}>← Geri</button>
+            : <span />}
+          <button className="btn btn-primary" onClick={goNext}>
+            {s.step < totalSteps - 2 ? 'İleri →' : 'Raporu Oluştur 📄'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── STEP CONTENT ────────────────────────────────────────────────────────────
+function StepContent({ step, s, update, patolojiTip }) {
+  // anatomik steps 0-5
+  if (step === 0) return <StepKorteks s={s} update={update} />;
+  if (step === 1) return <StepVentrikul s={s} update={update} />;
+  if (step === 2) return <StepKorpus s={s} update={update} />;
+  if (step === 3) return <StepHipokampus s={s} update={update} />;
+  if (step === 4) return <StepT2Flair s={s} update={update} />;
+  if (step === 5) return <StepHipofiz s={s} update={update} />;
+  if (step === 6) return <StepPatolojiSec s={s} update={update} />;
+
+  const base = 7;
+  if (patolojiTip === 'TRAVMA') {
+    if (step === base) return <StepTravmaFraktur s={s} update={update} />;
+    if (step === base + 1) return <StepTravmaKanama s={s} update={update} />;
+    if (step === base + 2) return <StepTravmaKitle s={s} update={update} />;
+  }
+  if (patolojiTip === 'TÜMÖR') {
+    if (step === base) return <StepTumorLok s={s} update={update} />;
+    if (step === base + 1) return <StepTumorSinyal s={s} update={update} />;
+    if (step === base + 2) return <StepTumorKontrast s={s} update={update} />;
+    if (step === base + 3) return <StepTumorEslik s={s} update={update} />;
+    if (step === base + 4) return <StepTumorEkTanisal s={s} update={update} />;
+  }
+  if (patolojiTip === 'VASKÜLER LEZYON') {
+    if (step === base) return <StepVascLok s={s} update={update} />;
+    if (step === base + 1) return <StepVascSinyal s={s} update={update} />;
+    if (step === base + 2) return <StepVascKontrast s={s} update={update} />;
+    if (step === base + 3) return <StepVascEkTanisal s={s} update={update} />;
+  }
+  if (patolojiTip === 'MULTIPLE SCLEROSIS') {
+    if (step === base) return <StepMSPlak s={s} update={update} />;
+    if (step === base + 1) return <StepMSSinyal s={s} update={update} />;
+  }
+  return <div className="card"><p style={{color:'var(--text2)'}}>Bu adım için içerik hazırlanıyor...</p></div>;
+}
+
+// ─── ANATOMIC STEPS ──────────────────────────────────────────────────────────
+function StepKorteks({ s, update }) {
+  const korteks = s.korteks;
+  const KORTEKS_OPT = ['NORMAL', 'İNCELMİŞ', 'KALINLAŞMIŞ'];
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 1</span> Korteks Kalınlığı</div>
+      <div className="section-header">Bölgesel Değerlendirme</div>
+      <table className="val-table">
+        <thead><tr><th>Bölge</th><th>Bulgu</th></tr></thead>
+        <tbody>
+          {['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'İNSULA'].map(lobe => (
+            <tr key={lobe}>
+              <td>{lobe}</td>
+              <td><Radio options={KORTEKS_OPT} value={korteks[lobe] || 'NORMAL'} onChange={v => update('korteks', { ...korteks, [lobe]: v })} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="yorum-block">
+        <div className="yorum-title">Klinik Not</div>
+        Kortikal incelme değerlendirmesi; Alzheimer başta olmak üzere nörodejeneratif hastalıklar, kronik kortikal displazi ve serebral atrofi takibinde kritik öneme sahiptir.
+      </div>
+    </div>
+  );
+}
+
+function StepVentrikul({ s, update }) {
+  const v = s.ventrikul;
+  const set = (k, val) => update('ventrikul', { ...v, [k]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 2</span> Ventriküller</div>
+      <div className="section-header">Lateral Ventriküller</div>
+      <table className="val-table" style={{ marginBottom: 16 }}>
+        <thead><tr><th>Yapı</th><th>Transvers Çap (mm)</th><th>Evans İndeksi</th><th>Görünüm</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Sağ Lateral Ventrikül</td>
+            <td><NumInput value={v.sagLateral} onChange={val => set('sagLateral', val)} /></td>
+            <td><NumInput value={v.sagLateralEvans} onChange={val => set('sagLateralEvans', val)} placeholder="oran" /></td>
+            <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.sagGor || ''} onChange={val => set('sagGor', val)} /></td>
+          </tr>
+          <tr>
+            <td>Sol Lateral Ventrikül</td>
+            <td><NumInput value={v.solLateral} onChange={val => set('solLateral', val)} /></td>
+            <td><NumInput value={v.solLateralEvans} onChange={val => set('solLateralEvans', val)} placeholder="oran" /></td>
+            <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.solGor || ''} onChange={val => set('solGor', val)} /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="section-header">3. ve 4. Ventriküller</div>
+      <table className="val-table" style={{ marginBottom: 16 }}>
+        <thead><tr><th>Yapı</th><th>Transvers Çap (mm)</th><th>AP Çap (mm)</th><th>Görünüm</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>3. Ventrikül</td>
+            <td><NumInput value={v.v3} onChange={val => set('v3', val)} /></td>
+            <td>—</td>
+            <td><Radio options={['NORMAL', 'GENİŞLEMİŞ']} value={v.v3Gor || ''} onChange={val => set('v3Gor', val)} /></td>
+          </tr>
+          <tr>
+            <td>4. Ventrikül</td>
+            <td><NumInput value={v.v4Trans} onChange={val => set('v4Trans', val)} /></td>
+            <td><NumInput value={v.v4AP} onChange={val => set('v4AP', val)} /></td>
+            <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.v4Gor || ''} onChange={val => set('v4Gor', val)} /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="section-header">Serebral Akuaduktus</div>
+      <Field label="Akuaduktus Stenozu">
+        <Radio options={['PATENT', 'OBSTRÜKTE', 'DARALMIS']} value={v.akuaduktus} onChange={val => set('akuaduktus', val)} />
+      </Field>
+      <div className="yorum-block">
+        <div className="yorum-title">Klinik Not</div>
+        Evans İndeksi = frontal boynuzlar genişliği / maksimal internal kranial çap. &gt;0.3 hidrosefali için eşik değeri.
+      </div>
+    </div>
+  );
+}
+
+function StepKorpus({ s, update }) {
+  const k = s.korpus;
+  const set = (key, val) => update('korpus', { ...k, [key]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 3</span> Korpus Kallozum</div>
+      <div className="section-header">Segment Çapları (mm)</div>
+      <table className="val-table" style={{ marginBottom: 16 }}>
+        <thead><tr><th>Segment</th><th>Çap (mm)</th><th>Sinyal (T2)</th></tr></thead>
+        <tbody>
+          {[['ROSTRUM', 'rostrum', 'rostrumSig'], ['GENU', 'genu', 'genuSig'], ['BODY', 'body', 'bodySig'], ['SPLENIUM', 'splenium', 'spleniumSig']].map(([lbl, key, sigKey]) => (
+            <tr key={key}>
+              <td>{lbl}</td>
+              <td><NumInput value={k[key]} onChange={v => set(key, v)} /></td>
+              <td><Radio options={['NORMAL', 'HİPERİNTENS', 'HİPOİNTENS']} value={k[sigKey] || ''} onChange={v => set(sigKey, v)} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="section-header">Gelişimsel Patoloji</div>
+      <Field label="Gelişimsel Hastalık">
+        <Radio options={['YOK', 'AGENESİS', 'DİSGENESİS', 'HİPOPLAZİ', 'KALINLEŞMASı']} value={k.gelesimsel} onChange={v => set('gelesimsel', v)} />
+      </Field>
+    </div>
+  );
+}
+
+function StepHipokampus({ s, update }) {
+  const h = s.hipokampus;
+  const set = (k, v) => update('hipokampus', { ...h, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 4</span> Hipokampus</div>
+      <table className="val-table">
+        <thead><tr><th>Taraf</th><th>Yükseklik (mm)</th><th>Görüntüsel Hacim</th><th>T2 Sinyali</th><th>Simetri</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>SAĞ</td>
+            <td><NumInput value={h.sagYuk} onChange={v => set('sagYuk', v)} /></td>
+            <td><Radio options={['NORMAL', 'AZALMIŞ', 'ARTMIŞ']} value={h.sagHac || ''} onChange={v => set('sagHac', v)} /></td>
+            <td><Radio options={['NORMAL', 'HİPERİNTENS']} value={h.sagT2 || ''} onChange={v => set('sagT2', v)} /></td>
+            <td rowSpan={2} style={{ verticalAlign: 'middle' }}>
+              <Radio options={['SİMETRİK', 'ASİMETRİK']} value={h.simetri || ''} onChange={v => set('simetri', v)} />
+            </td>
+          </tr>
+          <tr>
+            <td>SOL</td>
+            <td><NumInput value={h.solYuk} onChange={v => set('solYuk', v)} /></td>
+            <td><Radio options={['NORMAL', 'AZALMIŞ', 'ARTMIŞ']} value={h.solHac || ''} onChange={v => set('solHac', v)} /></td>
+            <td><Radio options={['NORMAL', 'HİPERİNTENS']} value={h.solT2 || ''} onChange={v => set('solT2', v)} /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="yorum-block">
+        <div className="yorum-title">Klinik Not</div>
+        Hipokampal atrofi MTA skalası ile değerlendirilir. T2/FLAIR'da hiperintensite + hacim kaybı hipokampal skleroza işaret eder.
+      </div>
+    </div>
+  );
+}
+
+function StepT2Flair({ s, update }) {
+  const t = s.t2flair;
+  const set = (k, v) => update('t2flair', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 5</span> T2/FLAIR Bulguları</div>
+      <Field label="Beyaz Cevher Hiperintensiteleri (WMH)">
+        <Radio options={['YOK', 'HAFİF', 'ORTA', 'BELİRGİN', 'YAYGIN']} value={t.wmh || ''} onChange={v => set('wmh', v)} />
+      </Field>
+      <Field label="Dağılım Paterni">
+        <Radio options={['PERİVENTRİKÜLER', 'DERİN BEYAZ CEVHER', 'JUKSTAKORTİKAL', 'KARMA']} value={t.dagitim || ''} onChange={v => set('dagitim', v)} />
+      </Field>
+      <Field label="Ek T2/FLAIR Bulgusu">
+        <Radio options={['YOK', 'HİPOİNTENS ODAK', 'ÖDEM', 'KANAT İŞARETİ', 'SİFON KAPATMA']} value={t.ekBulgu || ''} onChange={v => set('ekBulgu', v)} />
+      </Field>
+      <Field label="Leptomeningeal Sinyal">
+        <Radio options={['NORMAL', 'HİPERİNTENS (FLAIR)']} value={t.leptomenin || ''} onChange={v => set('leptomenin', v)} />
+      </Field>
+    </div>
+  );
+}
+
+function StepHipofiz({ s, update }) {
+  const h = s.hipofiz;
+  const set = (k, v) => update('hipofiz', { ...h, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 6</span> Hipofiz</div>
+      <table className="val-table">
+        <thead><tr><th>Parametre</th><th>Değer</th><th>Değerlendirme</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Hipofiz Yüksekliği</td>
+            <td><div className="inline-group"><NumInput value={h.yukseklik} onChange={v => set('yukseklik', v)} /><span className="unit-label">mm</span></div></td>
+            <td><Radio options={['NORMAL', 'ARTMIŞ', 'AZALMIŞ']} value={h.yuksekDeg || ''} onChange={v => set('yuksekDeg', v)} /></td>
+          </tr>
+          <tr>
+            <td>İnfundibuler Kalınlık</td>
+            <td><div className="inline-group"><NumInput value={h.infundibular} onChange={v => set('infundibular', v)} /><span className="unit-label">mm</span></div></td>
+            <td><Radio options={['NORMAL', 'KALINLAŞMIŞ', 'KALINLAŞMIŞ+DEVİYE']} value={h.infDeg || ''} onChange={v => set('infDeg', v)} /></td>
+          </tr>
+          <tr>
+            <td>T1 Sinyali (Posterior Lob)</td>
+            <td colSpan={2}><Radio options={['PARLAK NOKTA MEVCUT', 'PARLAK NOKTA YOK (EKTOPIK)', 'HETEROJEN']} value={h.t1sig || ''} onChange={v => set('t1sig', v)} /></td>
+          </tr>
+          <tr>
+            <td>Kitle Etkisi</td>
+            <td colSpan={2}><Radio options={['YOK', 'OPTİK KİAZMA BASILMASI', 'KAVERNÖSİNUS İNVAZYONU', 'SFENOID UZANM.']} value={h.kitlEtkisi || ''} onChange={v => set('kitlEtkisi', v)} /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="yorum-block">
+        <div className="yorum-title">Klinik Not</div>
+        Erişkin kadın hipofiz yüksekliği ≤10 mm normal (gebelikte 12 mm'ye kadar). Erişkin erkek ≤8 mm. Parlak nokta kaybı santral diabetes insipidus ile ilişkilidir.
+      </div>
+    </div>
+  );
+}
+
+// ─── PATOLOJI SELECTION ───────────────────────────────────────────────────────
+function StepPatolojiSec({ s, update }) {
+  const opts = [
+    { key: 'TRAVMA', icon: '🦴', name: 'TRAVMA', desc: 'Fraktür, kanama, kontüzyon' },
+    { key: 'TÜMÖR', icon: '🔬', name: 'TÜMÖR / KİTLE', desc: 'İntra/ekstraaksiyal lezyon' },
+    { key: 'VASKÜLER LEZYON', icon: '🩸', name: 'VASKÜLER LEZYON', desc: 'İnfarkt, kanama, AVM, kavernoma' },
+    { key: 'MULTIPLE SCLEROSIS', icon: '⚡', name: 'MULTIPLE SCLEROSIS', desc: 'Demyelinizan plak değerlendirmesi' },
+    { key: 'YOK', icon: '✅', name: 'PATOLOJİ YOK', desc: 'Sadece anatomik bulgular raporlanacak' },
+  ];
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Adım 7</span> Patoloji Tipi</div>
+      <p style={{ fontSize: '0.83rem', color: 'var(--text2)', marginBottom: 16 }}>Değerlendirilen patoloji kategorisini seçin:</p>
+      <div className="patoloji-grid">
+        {opts.map(o => (
+          <div key={o.key} className={`patoloji-card ${s.patolojiTip === o.key ? 'active' : ''}`}
+            onClick={() => update('patolojiTip', o.key)}>
+            <div className="icon">{o.icon}</div>
+            <div className="name">{o.name}</div>
+            <div className="desc">{o.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── TRAVMA STEPS ─────────────────────────────────────────────────────────────
+function StepTravmaFraktur({ s, update }) {
+  const t = s.travma;
+  const set = (k, v) => update('travma', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Travma 1/3</span> Fraktür Değerlendirmesi</div>
+      <Field label="Fraktür Saptandı mı?">
+        <Radio options={YOK_VAR} value={t.fraktur} onChange={v => set('fraktur', v)} />
+      </Field>
+      {t.fraktur === 'VAR' && (
+        <>
+          <Field label="Fraktür Saptanan Kemik">
+            <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SFENOID', 'ETMOİD', 'ORBITA', 'MANDIBULA']}
+              value={t.frakturKemik} onChange={v => set('frakturKemik', v)} />
+          </Field>
+          <Field label="Fraktür Tipi (çoklu seçim)">
+            <Radio options={FRAKTÜR_TIPI} value={t.frakturTip} onChange={v => set('frakturTip', v)} multi={true} />
+          </Field>
+          <Field label="Displasma">
+            <Radio options={YOK_VAR} value={t.displasma} onChange={v => set('displasma', v)} />
+          </Field>
+          {t.displasma === 'VAR' && (
+            <Field label="Displasma Miktarı (mm)">
+              <div className="inline-group">
+                <NumInput value={t.displasmaBoyu} onChange={v => set('displasmaBoyu', v)} />
+                <span className="unit-label">mm</span>
+              </div>
+            </Field>
+          )}
+        </>
+      )}
+      <div className="yorum-block">
+        <div className="yorum-title">Klinik Not</div>
+        Temporal kemik fraktürü → mastoid hava hücrelerini içeriyorsa mastoidit riski. Deprese fraktür &gt;5 mm displasma cerrahi eşiği aşabilir.
+      </div>
+    </div>
+  );
+}
+
+function StepTravmaKanama({ s, update }) {
+  const t = s.travma;
+  const set = (k, v) => update('travma', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Travma 2/3</span> Eşlik Eden Kanama</div>
+      <Field label="Kanama Var mı?">
+        <Radio options={YOK_VAR} value={t.kanama} onChange={v => set('kanama', v)} />
+      </Field>
+      {t.kanama === 'VAR' && (
+        <>
+          <Field label="Lokalizasyon (çoklu)">
+            <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SEREBELLAR', 'FRONTAL FOSSA', 'POSTERIOR FOSSA']}
+              value={t.kanamaLok} onChange={v => set('kanamaLok', v)} multi={true} />
+          </Field>
+          <Field label="Kanama Tipi (çoklu)">
+            <Radio options={KANAMA_TIPI} value={t.kanamaTipi} onChange={v => set('kanamaTipi', v)} multi={true} />
+          </Field>
+          <Field label="Kanama Yaşı (çoklu)">
+            <Radio options={KANAMA_YASI} value={t.kanamaYasi} onChange={v => set('kanamaYasi', v)} multi={true} />
+          </Field>
+          <Field label="En Kalın Yerde Boyut (mm)">
+            <div className="inline-group">
+              <NumInput value={t.kanamaBoyu} onChange={v => set('kanamaBoyu', v)} />
+              <span className="unit-label">mm</span>
+            </div>
+          </Field>
+          <hr className="hline" />
+          <div className="section-header">İntensiteler</div>
+          <div className="signal-group">
+            <SignalPanel label="T1" value={t.t1sig} onChange={v => set('t1sig', v)} />
+            <SignalPanel label="T2" value={t.t2sig} onChange={v => set('t2sig', v)} />
+            <SignalPanel label="T2*" value={t.t2starSig} onChange={v => set('t2starSig', v)} />
+            <SignalPanel label="SWI" value={t.swiSig} onChange={v => set('swiSig', v)} />
+          </div>
+          <hr className="hline" />
+          <Field label="Önceki İnceleme ile Karşılaştırma">
+            <Radio options={['KARŞILAŞTIRMA YOK', 'ARTMIŞ', 'STABİL', 'AZALMIŞ', 'REZORBE OLMUŞ']}
+              value={t.karsilastirma} onChange={v => set('karsilastirma', v)} />
+          </Field>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StepTravmaKitle({ s, update }) {
+  const t = s.travma;
+  const set = (k, v) => update('travma', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Travma 3/3</span> Kitle Etkisi & Herniasyon</div>
+      <Field label="Kitle Etkisi">
+        <Radio options={YOK_VAR} value={t.kitlEtkisi} onChange={v => set('kitlEtkisi', v)} />
+      </Field>
+      {t.kitlEtkisi === 'VAR' && (
+        <Field label="Basılanan Yapılar">
+          <Radio options={['VENTRİKÜL', 'SİSTERN', 'SULKUS', 'BEYIN SAP']}
+            value={t.basilananYapilar} onChange={v => set('basilananYapilar', v)} />
+        </Field>
+      )}
+      <hr className="hline" />
+      <Field label="Orta Hat Shift">
+        <Radio options={YOK_VAR} value={t.ortaHatShift} onChange={v => set('ortaHatShift', v)} />
+      </Field>
+      {t.ortaHatShift === 'VAR' && (
+        <div className="inline-group" style={{ marginBottom: 14 }}>
+          <Radio options={ORTA_HAT_YON} value={t.ortaHatYon} onChange={v => set('ortaHatYon', v)} />
+          <NumInput value={t.ortaHatMM} onChange={v => set('ortaHatMM', v)} />
+          <span className="unit-label">mm</span>
+        </div>
+      )}
+      <hr className="hline" />
+      <Field label="Herniasyon">
+        <Radio options={YOK_VAR} value={t.herniasyon} onChange={v => set('herniasyon', v)} />
+      </Field>
+      {t.herniasyon === 'VAR' && (
+        <>
+          <Field label="Herniasyon Tipi (çoklu)">
+            <Radio options={HERNIASYON_TIPI} value={t.herniasyonTip} onChange={v => set('herniasyonTip', v)} multi={true} />
+          </Field>
+          <Field label="Herniasyona Bağlı Basılanan Yapı">
+            <Radio options={['YOK', 'BEYIN SAPI', 'MEZENSEFALON', 'SEREBELLUM', 'POSTERİOR SEREBRAL ARTER']}
+              value={t.herniasyonBasilan} onChange={v => set('herniasyonBasilan', v)} />
+          </Field>
+        </>
+      )}
+      <hr className="hline" />
+      <Field label="Eşlik Eden Yumuşak Doku Yaralanması (çoklu)">
+        <Radio options={['ÖDEM', 'HEMATOM', 'ENFEKSİYON', 'GAZ', 'YABANCI CİSİM']}
+          value={t.yumsatDoc} onChange={v => set('yumsatDoc', v)} multi={true} />
+      </Field>
+    </div>
+  );
+}
+
+// ─── TÜMÖR STEPS ─────────────────────────────────────────────────────────────
+function StepTumorLok({ s, update }) {
+  const t = s.tumor;
+  const set = (k, v) => update('tumor', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Tümör 1/5</span> Lokasyon & Boyut</div>
+      <Field label="Lokasyon 1 (Eksen)">
+        <Radio options={['İNTRAAKSİAL', 'EKSTRAAKSİAL', 'İNTRAVENTRİKÜLER', 'KARMA']}
+          value={t.lokasyon1} onChange={v => set('lokasyon1', v)} />
+      </Field>
+      <Field label="Lokasyon 2 (Bölge) - çoklu">
+        <Radio options={LOKASYON_LIST} value={t.lokasyon2} onChange={v => set('lokasyon2', v)} multi={true} />
+      </Field>
+      <Field label="Odak Sayısı">
+        <Radio options={['TEK', 'BİRKAÇ (2-5)', 'MULTIPLE (>5)']} value={t.odakSayisi} onChange={v => set('odakSayisi', v)} />
+      </Field>
+      <Field label="En Büyük Odak Boyutu (mm)">
+        <div className="inline-group">
+          <NumInput value={t.boyut} onChange={v => set('boyut', v)} />
+          <span className="unit-label">mm</span>
+        </div>
+      </Field>
+      <Field label="Dağılım Paterni (çoklu)">
+        <Radio options={['TEK LOB', 'MULTİLOBÜLER', 'PERİVENTRİKÜLER', 'EPENDİMAL', 'LEPTOMENİNGEAL']}
+          value={t.dagitim} onChange={v => set('dagitim', v)} multi={true} />
+      </Field>
+      <Field label="Şekil">
+        <Radio options={['OVAL/YUVARLAK', 'LOBULE', 'IRREGÜLERİ', 'DÜZENSİZ İNFİLTRATİF']}
+          value={t.sekil || ''} onChange={v => set('sekil', v)} />
+      </Field>
+    </div>
+  );
+}
+
+function StepTumorSinyal({ s, update }) {
+  const t = s.tumor;
+  const set = (k, v) => update('tumor', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Tümör 2/5</span> Sinyal Karakteri</div>
+      <div className="section-header">MRI Sinyalleri</div>
+      <div className="signal-group">
+        <SignalPanel label="T1" value={t.t1} onChange={v => set('t1', v)} />
+        <SignalPanel label="T2" value={t.t2} onChange={v => set('t2', v)} />
+        <SignalPanel label="FLAIR" value={t.flair} onChange={v => set('flair', v)} />
+      </div>
+      <hr className="hline" />
+      <Field label="DWI Kısıtlaması">
+        <Radio options={['KISITLIYOR', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={t.dwi} onChange={v => set('dwi', v)} />
+      </Field>
+      <Field label="ADC">
+        <Radio options={['DÜŞÜK', 'NORMAL', 'YÜKSEK', 'HETEROJEN']} value={t.adc} onChange={v => set('adc', v)} />
+      </Field>
+      <Field label="İçerik">
+        <Radio options={['SOLID', 'KİSTİK', 'SOLID+KİSTİK', 'NEKROTIK', 'KALSIFIKE']}
+          value={t.icerik || ''} onChange={v => set('icerik', v)} />
+      </Field>
+    </div>
+  );
+}
+
+function StepTumorKontrast({ s, update }) {
+  const t = s.tumor;
+  const set = (k, v) => update('tumor', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Tümör 3/5</span> Kontrastlanma</div>
+      <Field label="Kontrastlanma">
+        <Radio options={['YOK', 'VAR']} value={t.kontrast} onChange={v => set('kontrast', v)} />
+      </Field>
+      {t.kontrast === 'VAR' && (
+        <Field label="Kontrastlanma Tipi (çoklu)">
+          <Radio options={KONTRASTLANMA_TIPI} value={t.kontrastTip} onChange={v => set('kontrastTip', v)} multi={true} />
+        </Field>
+      )}
+      <hr className="hline" />
+      <Field label="Dural Tail İşareti">
+        <Radio options={YOK_VAR} value={t.dural_tail} onChange={v => set('dural_tail', v)} />
+      </Field>
+      <Field label="Dural Base Tutulumu">
+        <Radio options={YOK_VAR} value={t.dural_base} onChange={v => set('dural_base', v)} />
+      </Field>
+      <Field label="Komşu Kemik Değişikliği">
+        <Radio options={['YOK', ...KEMIK_DEGISIK]} value={t.komsuKemik} onChange={v => set('komsuKemik', v)} />
+      </Field>
+      {t.komsuKemik && t.komsuKemik !== 'YOK' && (
+        <Field label="Kemik Değişiklik Tipi (çoklu)">
+          <Radio options={KEMIK_DEGISIK} value={t.komsuKemikTip} onChange={v => set('komsuKemikTip', v)} multi={true} />
+        </Field>
+      )}
+      <Field label="Perifokal Ödem">
+        <Radio options={['YOK', 'HAFİF', 'ORTA', 'CİDDİ', 'YAYGIN']} value={t.perilezOdem} onChange={v => set('perilezOdem', v)} />
+      </Field>
+    </div>
+  );
+}
+
+function StepTumorEslik({ s, update }) {
+  const t = s.tumor;
+  const set = (k, v) => update('tumor', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Tümör 4/5</span> Eşlik Eden Bulgular</div>
+      <Field label="Kalsifikasyon">
+        <Radio options={YOK_VAR} value={t.kalsif} onChange={v => set('kalsif', v)} />
+      </Field>
+      {t.kalsif === 'VAR' && (
+        <Field label="Kalsifikasyon Tipi (çoklu)">
+          <Radio options={['LİNEER', 'PUNKTAT', 'KABA']} value={t.kalsifTip} onChange={v => set('kalsifTip', v)} multi={true} />
+        </Field>
+      )}
+      <Field label="Eşlik Eden Kanama">
+        <Radio options={YOK_VAR} value={t.kanama} onChange={v => set('kanama', v)} />
+      </Field>
+      <Field label="Kitle Etkisi">
+        <Radio options={YOK_VAR} value={t.kitlEtkisi} onChange={v => set('kitlEtkisi', v)} />
+      </Field>
+      {t.kitlEtkisi === 'VAR' && (
+        <>
+          <Field label="Orta Hat Shift">
+            <Radio options={YOK_VAR} value={t.ortaHatShift} onChange={v => set('ortaHatShift', v)} />
+          </Field>
+          {t.ortaHatShift === 'VAR' && (
+            <div className="inline-group" style={{ marginBottom: 14 }}>
+              <Radio options={ORTA_HAT_YON} value={t.ortaHatYon} onChange={v => set('ortaHatYon', v)} />
+              <NumInput value={t.ortaHatMM} onChange={v => set('ortaHatMM', v)} />
+              <span className="unit-label">mm</span>
+            </div>
+          )}
+        </>
+      )}
+      <Field label="Perinooral Yayılım">
+        <Radio options={YOK_VAR} value={t.perinoral} onChange={v => set('perinoral', v)} />
+      </Field>
+      {t.perinoral === 'VAR' && (
+        <Field label="İlgili Sinir (çoklu)">
+          <Radio options={['OLFAKTÖR', 'MAKSİLLAR (V2)', 'OPTİK', 'OKÜLOMOTORLİK', 'FASIYAL']}
+            value={t.perinoralTip} onChange={v => set('perinoralTip', v)} multi={true} />
+        </Field>
+      )}
+      <Field label="Ek Bulgular (çoklu)">
+        <Radio options={['KİST İÇİNDE NODÜL', 'KONTRASTLANAN NODÜL', 'SIVI-SIVI SEVİYESİ', 'KANAMALI NODÜL']}
+          value={t.ekstBulgular} onChange={v => set('ekstBulgular', v)} multi={true} />
+      </Field>
+    </div>
+  );
+}
+
+// ─── YENİ ADIM: TÜMÖR EK TANISAL ÖZELLİKLER ───────────────────────────────
+function StepTumorEkTanisal({ s, update }) {
+  const t = s.tumor;
+  const set = (k, v) => update('tumor', { ...t, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Tümör 5/5</span> Ek Tanısal Özellikler</div>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>
+        Bu sorular ayırıcı tanı olasılık hesaplamasında kullanılacaktır. Mevcut olan bulguları işaretleyiniz.
+      </p>
+
+      <div className="section-header">Morfolojik Özellikler</div>
+      <Field label="İnfiltratif Büyüme Paterni">
+        <Radio options={YOK_VAR} value={t.infiltratif || ''} onChange={v => set('infiltratif', v)} />
+      </Field>
+      <Field label="Septasyon (internal bölmelenmesi)">
+        <Radio options={YOK_VAR} value={t.septasyon || ''} onChange={v => set('septasyon', v)} />
+      </Field>
+
+      <hr className="hline" />
+      <div className="section-header">Sinyal Özellikleri</div>
+      <Field label="CSF ile İzointens Sinyal (BOS sinyali)">
+        <Radio options={YOK_VAR} value={t.csfSignal || ''} onChange={v => set('csfSignal', v)} />
+      </Field>
+      <Field label="Yağ Sinyali (T1 hiperintens, yağ baskılamada düşen)">
+        <Radio options={YOK_VAR} value={t.yagSinyali || ''} onChange={v => set('yagSinyali', v)} />
+      </Field>
+      <Field label="Hemosiderin Halkası / Depositi (T2* / SWI hipointensite)">
+        <Radio options={YOK_VAR} value={t.hemosiderin || ''} onChange={v => set('hemosiderin', v)} />
+      </Field>
+      <Field label='Popcorn Paterni (heterojen "popcorn" görünüm)'>
+        <Radio options={YOK_VAR} value={t.popcorn || ''} onChange={v => set('popcorn', v)} />
+      </Field>
+      <Field label="Flow Void (akım boşluğu)">
+        <Radio options={YOK_VAR} value={t.flowVoid || ''} onChange={v => set('flowVoid', v)} />
+      </Field>
+
+      <div className="yorum-block">
+        <div className="yorum-title">Tanısal İpuçları</div>
+        <div style={{ lineHeight: 1.7 }}>
+          <strong>Hemosiderin halkası:</strong> Kavernoma, kronik hematom patognomonik bulgusu.<br/>
+          <strong>Popcorn paterni:</strong> Kavernoma için tipik T2 heterojenliği.<br/>
+          <strong>CSF sinyali:</strong> Araknoid kist, porensefalik kist, ensefalomalazi.<br/>
+          <strong>Yağ sinyali:</strong> Dermoid kist, lipom, teratom.<br/>
+          <strong>Flow void:</strong> AVM, hemangioblastom, yüksek akımlı vasküler malformasyon.<br/>
+          <strong>Septasyon:</strong> Beyin absesi, kistik neoplazm ayırıcı tanısında önemli.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── VASKÜLER STEPS ───────────────────────────────────────────────────────────
+function StepVascLok({ s, update }) {
+  const v = s.vaskuler;
+  const set = (k, val) => update('vaskuler', { ...v, [k]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Vasküler 1/4</span> Lokasyon & Lezyon Tipi</div>
+      <Field label="Vasküler Lezyon Tipi">
+        <Radio options={['İSKEMİK İNFARKT', 'PARANKIMAL KANAMA', 'AVM', 'KAVERNOMA', 'VENÖZ TROMBOZ', 'HİPEROKSİK HASAR']}
+          value={v.tip} onChange={val => set('tip', val)} />
+      </Field>
+      <Field label="Lokasyon (çoklu)">
+        <Radio options={LOKASYON_LIST} value={v.lokasyon} onChange={val => set('lokasyon', val)} multi={true} />
+      </Field>
+      <Field label="Vasküler Territory (çoklu)">
+        <Radio options={TERRITORY_LIST} value={v.territory} onChange={val => set('territory', val)} multi={true} />
+      </Field>
+      <Field label="Odak Sayısı">
+        <Radio options={['TEK', 'BİRKAÇ (2-5)', 'MULTIPLE (>5)']} value={v.odakSayisi} onChange={val => set('odakSayisi', val)} />
+      </Field>
+      {v.tip === 'AVM' && (
+        <>
+          <hr className="hline" />
+          <div className="section-header">AVM Özellikleri</div>
+          <Field label="Nidus Varlığı">
+            <Radio options={YOK_VAR} value={v.nidus} onChange={val => set('nidus', val)} />
+          </Field>
+          {v.nidus === 'VAR' && (
+            <Field label="Maks Nidus Boyutu (mm)">
+              <div className="inline-group">
+                <NumInput value={v.nidusBoyut} onChange={val => set('nidusBoyut', val)} />
+                <span className="unit-label">mm</span>
+              </div>
+            </Field>
+          )}
+          <Field label="Besleyici Arter (çoklu)">
+            <Radio options={TERRITORY_LIST} value={v.feedingArter} onChange={val => set('feedingArter', val)} multi={true} />
+          </Field>
+          <Field label="Drene Eden Ven">
+            <Radio options={['DERIN VENÖZ SİSTEM', 'SUPERFİSİYEL VENÖZ SİSTEM', 'KARMA']}
+              value={v.dreneVen} onChange={val => set('dreneVen', val)} multi={true} />
+          </Field>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StepVascSinyal({ s, update }) {
+  const v = s.vaskuler;
+  const set = (k, val) => update('vaskuler', { ...v, [k]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Vasküler 2/4</span> Sinyal Karakteri & DWI</div>
+      <div className="section-header">MRI Sinyalleri</div>
+      <div className="signal-group">
+        <SignalPanel label="T1" value={v.t1} onChange={val => set('t1', val)} />
+        <SignalPanel label="T2" value={v.t2} onChange={val => set('t2', val)} />
+        <SignalPanel label="T2*" value={v.t2star} onChange={val => set('t2star', val)} />
+        <SignalPanel label="SWI" value={v.swi} onChange={val => set('swi', val)} />
+        <SignalPanel label="FLAIR" value={v.flair} onChange={val => set('flair', val)} />
+      </div>
+      <hr className="hline" />
+      <Field label="DWI Kısıtlaması">
+        <Radio options={['KISITLIYOR', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={v.dwi} onChange={val => set('dwi', val)} />
+      </Field>
+      <Field label="Rim Sign (FLAIR)">
+        <Radio options={YOK_VAR} value={v.rimSign} onChange={val => set('rimSign', val)} />
+      </Field>
+      <Field label="Kanama Yaşı (çoklu)">
+        <Radio options={KANAMA_YASI} value={v.kanamaYasi} onChange={val => set('kanamaYasi', val)} multi={true} />
+      </Field>
+    </div>
+  );
+}
+
+function StepVascKontrast({ s, update }) {
+  const v = s.vaskuler;
+  const set = (k, val) => update('vaskuler', { ...v, [k]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Vasküler 3/4</span> Kontrastlanma & Eşlik Eden Bulgular</div>
+      <Field label="Kontrastlanma">
+        <Radio options={YOK_VAR} value={v.kontrast} onChange={val => set('kontrast', val)} />
+      </Field>
+      {v.kontrast === 'VAR' && (
+        <Field label="Kontrast Tipi (çoklu)">
+          <Radio options={KONTRASTLANMA_TIPI} value={v.kontrastTip} onChange={val => set('kontrastTip', val)} multi={true} />
+        </Field>
+      )}
+      <hr className="hline" />
+      <Field label="Perifokal Ödem">
+        <Radio options={['YOK', 'HAFİF', 'ORTA', 'CİDDİ']} value={v.perilezOdem} onChange={val => set('perilezOdem', val)} />
+      </Field>
+      <Field label="Orta Hat Shift">
+        <Radio options={YOK_VAR} value={v.ortaHatShift} onChange={val => set('ortaHatShift', val)} />
+      </Field>
+      {v.ortaHatShift === 'VAR' && (
+        <div className="inline-group" style={{ marginBottom: 14 }}>
+          <NumInput value={v.ortaHatMM} onChange={val => set('ortaHatMM', val)} />
+          <span className="unit-label">mm</span>
+        </div>
+      )}
+      <Field label="Eşlik Eden Kanama">
+        <Radio options={YOK_VAR} value={v.kanama} onChange={val => set('kanama', val)} />
+      </Field>
+      <Field label="Kitle Etkisi">
+        <Radio options={YOK_VAR} value={v.kitlEtkisi} onChange={val => set('kitlEtkisi', val)} />
+      </Field>
+      <Field label="Komşu Kemik Değişikliği">
+        <Radio options={['YOK', ...KEMIK_DEGISIK]} value={v.komsuKemik} onChange={val => set('komsuKemik', val)} />
+      </Field>
+    </div>
+  );
+}
+
+// ─── YENİ ADIM: VASKÜLER EK TANISAL ÖZELLİKLER ────────────────────────────
+function StepVascEkTanisal({ s, update }) {
+  const v = s.vaskuler;
+  const set = (k, val) => update('vaskuler', { ...v, [k]: val });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">Vasküler 4/4</span> Ek Tanısal Özellikler</div>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>
+        Ayırıcı tanı olasılık hesaplaması için ek bulgular:
+      </p>
+      <Field label="Hemosiderin Halkası / Depositi (T2* / SWI)">
+        <Radio options={YOK_VAR} value={v.hemosiderin || ''} onChange={val => set('hemosiderin', val)} />
+      </Field>
+      <Field label='Popcorn Paterni (heterojen "popcorn" görünüm)'>
+        <Radio options={YOK_VAR} value={v.popcorn || ''} onChange={val => set('popcorn', val)} />
+      </Field>
+      <Field label="Flow Void (akım boşluğu)">
+        <Radio options={YOK_VAR} value={v.flowVoid || ''} onChange={val => set('flowVoid', val)} />
+      </Field>
+
+      <div className="yorum-block">
+        <div className="yorum-title">Tanısal İpuçları</div>
+        <strong>Hemosiderin:</strong> Kavernoma ve kronik hematom için tipik.<br/>
+        <strong>Popcorn:</strong> Kavernoma patognomonik T2 bulgusu.<br/>
+        <strong>Flow void:</strong> AVM, dural AV fistül, hipervasküler lezyon.
+      </div>
+    </div>
+  );
+}
+
+// ─── MS STEPS ─────────────────────────────────────────────────────────────────
+function StepMSPlak({ s, update }) {
+  const m = s.ms;
+  const set = (k, v) => update('ms', { ...m, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">MS 1/2</span> Plak Dağılımı & Lokalizasyonu</div>
+      <Field label="Plak Dağılımı (çoklu)">
+        <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SEREBELLAR', 'SPİNAL KORD', 'BRAİN STEM']}
+          value={m.plakDagilim} onChange={v => set('plakDagilim', v)} multi={true} />
+      </Field>
+      <Field label="Plak Lokalizasyonu (çoklu) - McDonald Kriterleri">
+        <Radio options={MS_LOK} value={m.plakLok} onChange={v => set('plakLok', v)} multi={true} />
+      </Field>
+      <Field label="Tahmini Plak Sayısı">
+        <Radio options={['1-3', '4-9', '≥10 (çok sayıda)']} value={m.plakSayisi} onChange={v => set('plakSayisi', v)} />
+      </Field>
+      <Field label="En Büyük Plak Çapı (mm)">
+        <div className="inline-group">
+          <NumInput value={m.enBuyuk} onChange={v => set('enBuyuk', v)} />
+          <span className="unit-label">mm</span>
+        </div>
+      </Field>
+      <div className="yorum-block">
+        <div className="yorum-title">McDonald Kriterleri 2017</div>
+        Zamansal yayılım: ≥1 kontrast tutan + ≥1 kontrast tutmayan lezyon. Mekansal yayılım: ≥2 bölge (periventriküler, kortikal/juxtakortikal, infratentoryal, spinal kord).
+      </div>
+    </div>
+  );
+}
+
+function StepMSSinyal({ s, update }) {
+  const m = s.ms;
+  const set = (k, v) => update('ms', { ...m, [k]: v });
+  return (
+    <div className="card">
+      <div className="card-title"><span className="step-badge">MS 2/2</span> Sinyal Karakteri & Kontrastlanma</div>
+      <div className="section-header">İntensiteler</div>
+      <div className="signal-group">
+        <SignalPanel label="T1" value={m.t1} onChange={v => set('t1', v)} />
+        <SignalPanel label="T2" value={m.t2} onChange={v => set('t2', v)} />
+        <SignalPanel label="FLAIR" value={m.flair} onChange={v => set('flair', v)} />
+      </div>
+      <hr className="hline" />
+      <Field label="T1 Siyah Delik (Black Hole)">
+        <Radio options={['YOK', 'VAR - Persistan', 'VAR - Geçici']} value={m.blackHole || ''} onChange={v => set('blackHole', v)} />
+      </Field>
+      <Field label="DWI">
+        <Radio options={['KISITLIYOR (aktif)', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={m.dwi} onChange={v => set('dwi', v)} />
+      </Field>
+      <hr className="hline" />
+      <Field label="Kontrastlanma">
+        <Radio options={['YOK (inaktif)', 'VAR (aktif lezyon)']} value={m.kontrast} onChange={v => set('kontrast', v)} />
+      </Field>
+      {m.kontrast && m.kontrast !== 'YOK (inaktif)' && (
+        <Field label="Kontrast Paterni">
+          <Radio options={['NODULAR', 'PERİFERAL (açık halka)', 'ZAYIF/HOMOJENİK']} value={m.kontrastTip} onChange={v => set('kontrastTip', v)} />
+        </Field>
+      )}
+    </div>
+  );
+}
+
+// ─── PROBABILITY BAR COLOR ──────────────────────────────────────────────────
+function getProbColor(pct) {
+  if (pct >= 70) return 'var(--red)';
+  if (pct >= 50) return 'var(--orange)';
+  if (pct >= 30) return 'var(--yellow)';
+  if (pct >= 15) return 'var(--cyan)';
+  return 'var(--text2)';
+}
+
+function getProbBadge(pct) {
+  if (pct >= 70) return { cls: 'badge-red', txt: 'YÜKSEK' };
+  if (pct >= 50) return { cls: 'badge-yellow', txt: 'ORTA-YÜKSEK' };
+  if (pct >= 30) return { cls: 'badge-blue', txt: 'ORTA' };
+  if (pct >= 15) return { cls: 'badge-purple', txt: 'DÜŞÜK' };
+  return { cls: 'badge-purple', txt: 'ÇOK DÜŞÜK' };
+}
+
+// ─── REPORT ───────────────────────────────────────────────────────────────────
+function Report({ s, reset, goPrev }) {
+  const { korteks, ventrikul, korpus, hipokampus, t2flair, hipofiz, patolojiTip, travma, tumor, vaskuler, ms } = s;
+
+  const lines = [];
+
+  // ANATOMIC
+  const korteksBulgulari = Object.entries(korteks).filter(([,v]) => v && v !== 'NORMAL').map(([k, v]) => `${k} ${v}`);
+  lines.push(['ANATOMİK DEĞERLENDİRME', [
+    korteksBulgulari.length > 0 ? `Korteks kalınlığı: ${korteksBulgulari.join(', ')}` : 'Korteks kalınlığı normal',
+    ventrikul.sagGor === 'GENİŞLEMİŞ' || ventrikul.solGor === 'GENİŞLEMİŞ' ? `Lateral ventriküller genişlemiş (Sağ trans.çap: ${ventrikul.sagLateral || '?'} mm, Sağ Evans: ${ventrikul.sagLateralEvans || '?'}, Sol trans.çap: ${ventrikul.solLateral || '?'} mm, Sol Evans: ${ventrikul.solLateralEvans || '?'})` : (ventrikul.sagLateral ? `Lateral ventriküller normal. Sağ: ${ventrikul.sagLateral} mm, Sol: ${ventrikul.solLateral || '?'} mm` : 'Lateral ventriküller değerlendirilmedi'),
+    ventrikul.v3 ? `3. ventrikül transvers çap: ${ventrikul.v3} mm` : '',
+    ventrikul.v4Trans ? `4. ventrikül transvers çap: ${ventrikul.v4Trans} mm, AP çap: ${ventrikul.v4AP || '?'} mm` : '',
+    ventrikul.akuaduktus && ventrikul.akuaduktus !== 'PATENT' ? `Serebral akuaduktus: ${ventrikul.akuaduktus}` : '',
+    korpus.genu ? `Korpus kallozum; Rostrum: ${korpus.rostrum || '?'} mm, Genu: ${korpus.genu} mm, Body: ${korpus.body || '?'} mm, Splenium: ${korpus.splenium || '?'} mm` : '',
+    korpus.gelesimsel && korpus.gelesimsel !== 'YOK' ? `Korpus kallozum gelişimsel anomali: ${korpus.gelesimsel}` : '',
+    hipokampus.sagYuk ? `Hipokampus yüksekliği; Sağ: ${hipokampus.sagYuk} mm, Sol: ${hipokampus.solYuk || '?'} mm${hipokampus.simetri === 'ASİMETRİK' ? ' - ASİMETRİK' : ''}` : '',
+    (hipokampus.sagHac === 'AZALMIŞ' || hipokampus.solHac === 'AZALMIŞ') ? `Hipokampal hacim azalmış (${hipokampus.sagHac === 'AZALMIŞ' ? 'Sağ' : ''}${hipokampus.solHac === 'AZALMIŞ' ? ' Sol' : ''})` : '',
+    t2flair.wmh && t2flair.wmh !== 'YOK' ? `T2/FLAIR beyaz cevher hiperintensiteleri: ${t2flair.wmh}${t2flair.dagitim ? ' - ' + t2flair.dagitim : ''}` : '',
+    hipofiz.yukseklik ? `Hipofiz yüksekliği: ${hipofiz.yukseklik} mm${hipofiz.yuksekDeg ? ' (' + hipofiz.yuksekDeg + ')' : ''}` : '',
+    hipofiz.infundibular && hipofiz.infDeg !== 'NORMAL' ? `İnfundibuler kalınlık: ${hipofiz.infundibular} mm (${hipofiz.infDeg || ''})` : '',
+  ].filter(Boolean)]);
+
+  // PATOLOJI
+  if (patolojiTip === 'TRAVMA') {
+    const trvLines = [];
+    if (travma.fraktur === 'VAR') {
+      trvLines.push(`${travma.frakturKemik || '?'} kemiğinde ${(travma.frakturTip || []).join(', ') || '?'} tip fraktür saptandı.${travma.displasma === 'VAR' ? ` Displasma: ${travma.displasmaBoyu || '?'} mm.` : ' Displasma yok.'}`);
+    } else if (travma.fraktur === 'YOK') {
+      trvLines.push('Değerlendirilen kesimlerde fraktür saptanmadı.');
+    }
+    if (travma.kanama === 'VAR') {
+      trvLines.push(`Eşlik eden intrakranial kanama saptandı: ${(travma.kanamaTipi || []).join(', ')}, ${(travma.kanamaLok || []).join(', ')} lokalizasyonunda.`);
+      if (travma.kanamaBoyu) trvLines.push(`En kalın yerde boyut: ${travma.kanamaBoyu} mm.`);
+      trvLines.push(`Sinyal karakteri: T1 ${travma.t1sig || '?'}, T2 ${travma.t2sig || '?'}, T2* ${travma.t2starSig || '?'}, SWI ${travma.swiSig || '?'} → Kanama yaşı: ${(travma.kanamaYasi || []).join(', ') || '?'}.`);
+      if (travma.karsilastirma && travma.karsilastirma !== 'KARŞILAŞTIRMA YOK') trvLines.push(`Önceki inceleme ile karşılaştırma: ${travma.karsilastirma}.`);
+    } else if (travma.kanama === 'YOK') {
+      trvLines.push('Eşlik eden intrakranial kanama bulgusu saptanmadı.');
+    }
+    if (travma.kitlEtkisi === 'VAR') trvLines.push(`Kitle etkisi mevcut (${travma.basilananYapilar || 'yapılar baskılanıyor'}).`);
+    if (travma.ortaHatShift === 'VAR') trvLines.push(`Orta hat şift: ${travma.ortaHatYon || '?'} yönde ${travma.ortaHatMM || '?'} mm.`);
+    if (travma.herniasyon === 'VAR') trvLines.push(`Serebral herniasyon: ${(travma.herniasyonTip || []).join(', ')}.${travma.herniasyonBasilan && travma.herniasyonBasilan !== 'YOK' ? ' Basılan yapı: ' + travma.herniasyonBasilan + '.' : ''}`);
+    if ((travma.yumsatDoc || []).length > 0) trvLines.push(`Eşlik eden yumuşak doku bulguları: ${travma.yumsatDoc.join(', ')}.`);
+    lines.push(['TRAVMA BULGULARI', trvLines]);
+  }
+
+  if (patolojiTip === 'TÜMÖR') {
+    const tumLines = [];
+    tumLines.push(`Lezyon lokalizasyonu: ${tumor.lokasyon1 || '?'}, ${(tumor.lokasyon2 || []).join(', ') || '?'} bölgesinde.`);
+    if (tumor.odakSayisi) tumLines.push(`Odak sayısı: ${tumor.odakSayisi}.`);
+    if (tumor.boyut) tumLines.push(`En büyük odak boyutu: ${tumor.boyut} mm.`);
+    if ((tumor.dagitim || []).length > 0) tumLines.push(`Dağılım: ${tumor.dagitim.join(', ')}.`);
+    tumLines.push(`Sinyal karakteri: T1 ${tumor.t1 || '?'}, T2 ${tumor.t2 || '?'}, FLAIR ${tumor.flair || '?'}.`);
+    if (tumor.dwi) tumLines.push(`DWI: ${tumor.dwi}. ADC: ${tumor.adc || '?'}.`);
+    if (tumor.kontrast === 'VAR') tumLines.push(`Kontrastlanma mevcut: ${(tumor.kontrastTip || []).join(', ')}.`);
+    else if (tumor.kontrast === 'YOK') tumLines.push('Belirgin kontrastlanma gözlenmedi.');
+    if (tumor.dural_tail === 'VAR') tumLines.push('Dural tail işareti pozitif.');
+    if (tumor.dural_base === 'VAR') tumLines.push('Dural base tutulumu mevcut.');
+    if (tumor.perilezOdem && tumor.perilezOdem !== 'YOK') tumLines.push(`Perifokal ödem: ${tumor.perilezOdem}.`);
+    if (tumor.kalsif === 'VAR') tumLines.push(`Kalsifikasyon: ${(tumor.kalsifTip || []).join(', ') || 'mevcut'}.`);
+    if (tumor.kanama === 'VAR') tumLines.push('Eşlik eden intraleziyonel kanama saptandı.');
+    if (tumor.kitlEtkisi === 'VAR') {
+      tumLines.push('Kitle etkisi mevcuttur.');
+      if (tumor.ortaHatShift === 'VAR') tumLines.push(`Orta hat şift: ${tumor.ortaHatYon || '?'} yönde ${tumor.ortaHatMM || '?'} mm.`);
+    }
+    if (tumor.komsuKemik && tumor.komsuKemik !== 'YOK') tumLines.push(`Komşu kemik değişikliği: ${(tumor.komsuKemikTip || []).join(', ') || tumor.komsuKemik}.`);
+    if (tumor.perinoral === 'VAR') tumLines.push(`Perinooral yayılım: ${(tumor.perinoralTip || []).join(', ')}.`);
+    // Ek tanısal
+    const ekBulgular = [];
+    if (tumor.infiltratif === 'VAR') ekBulgular.push('infiltratif büyüme paterni');
+    if (tumor.septasyon === 'VAR') ekBulgular.push('septasyon');
+    if (tumor.csfSignal === 'VAR') ekBulgular.push('CSF ile izointens sinyal');
+    if (tumor.yagSinyali === 'VAR') ekBulgular.push('yağ sinyali');
+    if (tumor.hemosiderin === 'VAR') ekBulgular.push('hemosiderin depositi');
+    if (tumor.popcorn === 'VAR') ekBulgular.push('popcorn paterni');
+    if (tumor.flowVoid === 'VAR') ekBulgular.push('flow void');
+    if (ekBulgular.length > 0) tumLines.push(`Ek tanısal bulgular: ${ekBulgular.join(', ')}.`);
+    lines.push(['TÜMÖR / KİTLE BULGULARI', tumLines]);
+  }
+
+  if (patolojiTip === 'VASKÜLER LEZYON') {
+    const vscLines = [];
+    if (vaskuler.tip) vscLines.push(`Vasküler lezyon tipi: ${vaskuler.tip}.`);
+    if ((vaskuler.lokasyon || []).length > 0) vscLines.push(`Lokasyon: ${vaskuler.lokasyon.join(', ')}.`);
+    if ((vaskuler.territory || []).length > 0) vscLines.push(`Vasküler territory: ${vaskuler.territory.join(', ')}.`);
+    if (vaskuler.odakSayisi) vscLines.push(`Odak sayısı: ${vaskuler.odakSayisi}.`);
+    vscLines.push(`Sinyal: T1 ${vaskuler.t1 || '?'}, T2 ${vaskuler.t2 || '?'}, T2* ${vaskuler.t2star || '?'}, SWI ${vaskuler.swi || '?'}, FLAIR ${vaskuler.flair || '?'}.`);
+    if (vaskuler.dwi) vscLines.push(`DWI: ${vaskuler.dwi}.`);
+    if (vaskuler.rimSign === 'VAR') vscLines.push('FLAIR Rim Sign pozitif.');
+    if ((vaskuler.kanamaYasi || []).length > 0) vscLines.push(`Kanama yaşı: ${vaskuler.kanamaYasi.join(', ')}.`);
+    if (vaskuler.kontrast === 'VAR') vscLines.push(`Kontrastlanma: ${(vaskuler.kontrastTip || []).join(', ')}.`);
+    if (vaskuler.nidus === 'VAR') vscLines.push(`AVM nidus saptandı, maksimal boyut: ${vaskuler.nidusBoyut || '?'} mm. Besleyici: ${(vaskuler.feedingArter || []).join(', ')}. Drene: ${(vaskuler.dreneVen || []).join(', ')}.`);
+    if (vaskuler.perilezOdem && vaskuler.perilezOdem !== 'YOK') vscLines.push(`Perifokal ödem: ${vaskuler.perilezOdem}.`);
+    if (vaskuler.ortaHatShift === 'VAR') vscLines.push(`Orta hat şift: ${vaskuler.ortaHatMM || '?'} mm.`);
+    // Ek tanısal
+    const ekV = [];
+    if (vaskuler.hemosiderin === 'VAR') ekV.push('hemosiderin depositi');
+    if (vaskuler.popcorn === 'VAR') ekV.push('popcorn paterni');
+    if (vaskuler.flowVoid === 'VAR') ekV.push('flow void');
+    if (ekV.length > 0) vscLines.push(`Ek tanısal bulgular: ${ekV.join(', ')}.`);
+    lines.push(['VASKÜLER LEZYON BULGULARI', vscLines]);
+  }
+
+  if (patolojiTip === 'MULTIPLE SCLEROSIS') {
+    const msLines = [];
+    if ((ms.plakDagilim || []).length > 0) msLines.push(`Demiyelinizan plaklar: ${ms.plakDagilim.join(', ')} bölgelerinde izlendi.`);
+    if ((ms.plakLok || []).length > 0) msLines.push(`Plak lokalizasyonu (McDonald kriterleri): ${ms.plakLok.join(', ')}.`);
+    if (ms.plakSayisi) msLines.push(`Tahmini plak sayısı: ${ms.plakSayisi}.${ms.enBuyuk ? ' En büyük: ' + ms.enBuyuk + ' mm.' : ''}`);
+    msLines.push(`Sinyal: T1 ${ms.t1 || '?'}, T2 ${ms.t2 || '?'}, FLAIR ${ms.flair || '?'}.`);
+    if (ms.blackHole && ms.blackHole !== 'YOK') msLines.push(`T1 siyah delik: ${ms.blackHole}.`);
+    if (ms.dwi) msLines.push(`DWI: ${ms.dwi}.`);
+    if (ms.kontrast) msLines.push(`Kontrastlanma: ${ms.kontrast}${ms.kontrastTip ? ' (' + ms.kontrastTip + ')' : ''}.`);
+    lines.push(['MULTİPL SKLEROZ BULGULARI', msLines]);
+  }
+
+  // Differential hesapla
+  const diffResults = (patolojiTip && patolojiTip !== 'YOK') ? calculateDifferential(s) : [];
+
+  const copyReport = () => {
+    let txt = 'BEYİN / İNTRAKRANİAL MRI RAPORU\n\n';
+    lines.forEach(([sec, lns]) => {
+      txt += sec + '\n' + lns.map(l => '- ' + l).join('\n') + '\n\n';
+    });
+    if (diffResults.length > 0) {
+      txt += 'AYIRICI TANI OLASILIKLARI\n';
+      diffResults.forEach((r, i) => {
+        txt += `${i + 1}. ${r.name}: %${r.pct}\n`;
+      });
+      txt += '\n';
+    }
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('Rapor panoya kopyalandı.');
+  };
+
+  return (
+    <div>
+      {/* Report card */}
+      <div className="card report-wrap">
+        <div className="card-title">📋 Yapılandırılmış MRI Raporu</div>
+        {lines.map(([sec, lns]) => (
+          <div key={sec} className="report-section">
+            <h3>{sec}</h3>
+            {lns.map((l, i) => (
+              <div key={i} className="report-line">• <span dangerouslySetInnerHTML={{ __html: l }} /></div>
+            ))}
+          </div>
+        ))}
+
+        {/* YORUM */}
+        {patolojiTip === 'TÜMÖR' && (
+          <div className="yorum-block">
+            <div className="yorum-title">Klinik Yorum</div>
+            {tumor.dural_tail === 'VAR' && tumor.dural_base === 'VAR'
+              ? 'Dural tail işareti ve geniş dural bazis; meningiom ile birincil uyumludur. Komşu kemik değişikliği mevcutsa hipervasküler tutulum veya invazif davranış düşünülmelidir.'
+              : tumor.dwi === 'KISITLIYOR' && tumor.adc === 'DÜŞÜK'
+              ? 'Belirgin DWI kısıtlaması ve düşük ADC; PCNSL, medulloblastom veya abse ile uyumlu olabilir. Klinik bağlam ve kontrast paterni ayırıcı tanıda kritiktir.'
+              : 'İntrakranial kitle değerlendirmesi tamamlandı. Histopatolojik doğrulama ve klinik-laboratuvar korelasyon önerilir.'}
+          </div>
+        )}
+        {patolojiTip === 'VASKÜLER LEZYON' && vaskuler.dwi === 'KISITLIYOR' && (
+          <div className="yorum-block">
+            <div className="yorum-title">Klinik Yorum - Akut İskemi</div>
+            DWI kısıtlaması akut/subakut iskemik infarktı destekler. İlgili vasküler territory değerlendirildiğinde {(vaskuler.territory || []).join(', ') || '?'} alanında enfarkt mevcuttur. Acil klinik değerlendirme önerilir.
+          </div>
+        )}
+        {patolojiTip === 'MULTIPLE SCLEROSIS' && (
+          <div className="yorum-block">
+            <div className="yorum-title">McDonald 2017 Kriterleri Uyumu</div>
+            {(ms.plakLok || []).length >= 2
+              ? `Mekansal yayılım için ≥2 tutulum bölgesi (${(ms.plakLok || []).join(', ')}) saptandı.`
+              : 'Mekansal yayılım kriterleri için ≥2 farklı bölge tutulumu gereklidir.'}
+            {ms.kontrast && ms.kontrast !== 'YOK (inaktif)' ? ' Aktif lezyon (kontrast tutan) ile birlikte kontrast tutmayan lezyon mevcutsa zamansal yayılım kriteri karşılanmış sayılır.' : ' Aktif kontrast tutan lezyon izlenmedi; zamansal yayılım için takip MRI önerilir.'}
+          </div>
+        )}
+      </div>
+
+      {/* AYIRICI TANI OLASILIKLARI */}
+      {diffResults.length > 0 && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="card-title">🎯 Ayırıcı Tanı Olasılıkları</div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.5 }}>
+            Girilen MRI sinyal özellikleri ve bulgulara göre hesaplanan uyumluluk yüzdeleri. Bu değerler klinik korelasyon gerektiren yönlendirici bilgidir.
+          </p>
+          {diffResults.map((r, i) => {
+            const badge = getProbBadge(r.pct);
+            return (
+              <div key={r.name} className="prob-row">
+                <div className="prob-rank">#{i + 1}</div>
+                <div className="prob-info">
+                  <div className="prob-name">
+                    {r.name}
+                    <span className={`badge ${badge.cls}`}>{badge.txt}</span>
+                  </div>
+                  <div className="prob-bar-wrap">
+                    <div className="prob-bar-fill" style={{ width: r.pct + '%', background: getProbColor(r.pct) }} />
+                  </div>
+                  <div className="prob-detail">
+                    Kategori: {r.category === 'TÜMÖR' ? 'Tümör/Kitle' : r.category === 'VASKÜLER' ? 'Vasküler' : r.category === 'MS' ? 'Demyelinizan' : 'Travma'}
+                  </div>
+                </div>
+                <div className="prob-pct" style={{ color: getProbColor(r.pct) }}>%{r.pct}</div>
+              </div>
+            );
+          })}
+
+          <div className="yorum-block" style={{ marginTop: 16 }}>
+            <div className="yorum-title">Uyarı</div>
+            Bu olasılık skorları, girilen MRI bulguları ile bilinen patoloji profillerinin sinyal/morfolojik eşleştirmesine dayalıdır. Kesin tanı için klinik değerlendirme, ileri tetkik ve histopatolojik doğrulama gereklidir. Bu uygulama tanı koyma aracı değildir.
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="nav-row no-print">
+        <button className="btn btn-secondary" onClick={goPrev}>← Geri Dön</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-green" onClick={copyReport}>📋 Kopyala</button>
+          <button className="btn btn-primary" onClick={() => window.print()}>🖨️ Yazdır</button>
+          <button className="btn btn-danger" onClick={reset}>🔄 Yeni</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mount
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+</body>
+</html>

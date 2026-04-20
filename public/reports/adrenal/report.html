@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adrenal Gland Dinamik MR — Karar Destek</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0c0e1a; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useCallback, useMemo, useRef, useEffect } = React;
+
+    const C = {
+      bg: "#0c0e1a", card: "#141728", cardAlt: "#181c34",
+      accent: "#4fc3f7", accentDk: "#0288d1", glow: "rgba(79,195,247,0.12)",
+      text: "#e8eaf6", dim: "#8892b0", muted: "#5a6380",
+      ok: "#66bb6a", warn: "#ffb74d", err: "#ef5350",
+      bdr: "#232950", trk: "#1a1e38", div: "#1e2345"
+    };
+
+    const B = {
+      padding: "10px 20px", borderRadius: 8, border: "none",
+      cursor: "pointer", fontSize: 14, fontWeight: 600,
+      fontFamily: "'Segoe UI',sans-serif", transition: "all 0.2s"
+    };
+
+    const RIGHT_STEPS = [
+      { id: "RS1", label: "S1", q: "Sağ adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: a => a === "Evet" ? "RS3" : "RS2", rp: true, sec: "gland", rl: "Lokalizasyon" },
+      { id: "RS2", label: "S2", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: a => a === "İzlenmedi (Opere?/Agenezi?)" ? "RIGHT_END_ABSENT" : "RS2b", rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
+      { id: "RS2b", label: "S2b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: () => "RS3", rp: true, sec: "gland", rl: "Konum detayı" },
+      { id: "RS3", label: "S3", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: () => "RS4", rp: true, sec: "gland", rl: "İntensite" },
+      { id: "RS4", label: "S4", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: () => "RS5", rp: true, sec: "gland", rl: "İntensite dağılımı" },
+      { id: "RS5", label: "S5", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: () => "RS6", rp: true, sec: "gland", rl: "Kontrastlanma" },
+      { id: "RS6", label: "S6", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "RS7" : "RIGHT_END_NORMAL", rp: true, sec: "gland", rl: "Lezyon" },
+      { id: "RS7", label: "S7", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: () => "RS8", rp: true, sec: "les", rl: "Yapı" },
+      { id: "RS8", label: "S8", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: () => "RS9", rp: true, sec: "les", rl: "Lokalizasyon" },
+      { id: "RS9", label: "S9", q: "Boyut (a × b mm):", type: "size", nx: () => "RS10", rp: true, sec: "les", rl: "Boyut" },
+      { id: "RS10", label: "S10", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS11", rp: true, sec: "les", rl: "T1 Sinyal" },
+      { id: "RS11", label: "S11", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS12", rp: true, sec: "les", rl: "T2 Sinyal" },
+      { id: "RS12", label: "S12", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "RS13", rp: true, sec: "les", rl: "T2-FS Sinyal" },
+      { id: "RS13", label: "S13", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "RS14", rp: true, sec: "les", rl: "DWI Sinyal" },
+      { id: "RS14", label: "S14", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "RS15", rp: true, sec: "les", rl: "ADC Sinyal" },
+      { id: "RS15", label: "S15", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS16", rp: true, sec: "les", rl: "Lezyon Out Phase" },
+      { id: "RS16", label: "S16", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS17", rp: true, sec: "les", rl: "Lezyon In Phase" },
+      { id: "RS17", label: "S17", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS18", rp: true, sec: "les", rl: "Dalak Out Phase" },
+      { id: "RS18", label: "S18", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "RS19", rp: true, sec: "les", rl: "Dalak In Phase" },
+      { id: "RS19", label: "S19", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: () => "RS20", rp: true, sec: "les", rl: "CSI Oranı" },
+      { id: "RS20", label: "S20", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: () => "RS21", rp: true, sec: "les", rl: "SI İndeks" },
+      { id: "RS21", label: "S21", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: () => "RS22", rp: true, sec: "les", rl: "Konturlar" },
+      { id: "RS22", label: "S22", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens"], nx: () => "RS23", rp: true, sec: "les", rl: "Kontrastlanma" },
+      { id: "RS23", label: "S23", q: "Washout?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: () => "RS24", rp: true, sec: "les", rl: "Washout" },
+      { id: "RS24", label: "S24", q: "Aynı tarafta (sağ) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "RS7" : "GO_LEFT", rp: false, sec: "les" }
+    ];
+
+    const LEFT_STEPS = [
+      { id: "LS1", label: "S24", q: "Sol adrenal gland normal lokalizasyonda izleniyor mu?", type: "single", opts: ["Evet", "Hayır"], nx: a => a === "Evet" ? "LS3" : "LS2", rp: true, sec: "gland", rl: "Lokalizasyon" },
+      { id: "LS2", label: "S25", q: "Lokalizasyon nedir?", type: "single", opts: ["İzlenmedi (Opere?/Agenezi?)", "Farklı konumda izleniyor"], nx: a => a === "İzlenmedi (Opere?/Agenezi?)" ? "LEFT_END_ABSENT" : "LS2b", rp: true, sec: "gland", rl: "Lokalizasyon durumu" },
+      { id: "LS2b", label: "S25b", q: "Farklı konum (çoklu seçilebilir):", type: "multi", opts: ["Anterior yerleşimli", "Posterior yerleşimli", "Süperior yerleşimli", "İnferior yerleşimli"], nx: () => "LS3", rp: true, sec: "gland", rl: "Konum detayı" },
+      { id: "LS3", label: "S26", q: "Adrenal gland intensitesi?", type: "single", opts: ["Karaciğerle izointens", "Dalakla izointens"], nx: () => "LS4", rp: true, sec: "gland", rl: "İntensite" },
+      { id: "LS4", label: "S27", q: "İntensite dağılımı?", type: "single", opts: ["Homojen", "Heterojen"], nx: () => "LS5", rp: true, sec: "gland", rl: "İntensite dağılımı" },
+      { id: "LS5", label: "S28", q: "Adrenal gland kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Homojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: () => "LS6", rp: true, sec: "gland", rl: "Kontrastlanma" },
+      { id: "LS6", label: "S29", q: "Lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "LS7" : "LEFT_END_NORMAL", rp: true, sec: "gland", rl: "Lezyon" },
+      { id: "LS7", label: "S30", q: "Lezyon yapısı?", type: "single", opts: ["Kistik", "Solid"], nx: () => "LS8", rp: true, sec: "les", rl: "Yapı" },
+      { id: "LS8", label: "S31", q: "Lezyon lokalizasyonu:", type: "multi", opts: ["Korpus", "Medial Krus", "Lateral Krus"], nx: () => "LS9", rp: true, sec: "les", rl: "Lokalizasyon" },
+      { id: "LS9", label: "S32", q: "Boyut (a × b mm):", type: "size", nx: () => "LS10", rp: true, sec: "les", rl: "Boyut" },
+      { id: "LS10", label: "S33", q: "T1 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS11", rp: true, sec: "les", rl: "T1 Sinyal" },
+      { id: "LS11", label: "S34", q: "T2 görünüm?", type: "single", opts: ["Hafif Hipointens", "Hipointens", "İzointens", "Hafif hiperintens", "Orta hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS12", rp: true, sec: "les", rl: "T2 Sinyal" },
+      { id: "LS12", label: "S35", q: "T2-FS görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "LS13", rp: true, sec: "les", rl: "T2-FS Sinyal" },
+      { id: "LS13", label: "S36", q: "DWI görünüm?", type: "single", opts: ["Hipointens", "İzointens", "Hafif hiperintens", "Hiperintens", "Sinyalsiz"], nx: () => "LS14", rp: true, sec: "les", rl: "DWI Sinyal" },
+      { id: "LS14", label: "S37", q: "ADC görünüm?", type: "single", opts: ["Hipointens", "Orta hiperintens", "İzointens", "Hiperintens", "Sinyalsiz"], nx: () => "LS15", rp: true, sec: "les", rl: "ADC Sinyal" },
+      { id: "LS15", label: "S39", q: "Lezyon Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS16", rp: true, sec: "les", rl: "Lezyon Out Phase" },
+      { id: "LS16", label: "S40", q: "Lezyon In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS17", rp: true, sec: "les", rl: "Lezyon In Phase" },
+      { id: "LS17", label: "S41", q: "Dalak Out Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS18", rp: true, sec: "les", rl: "Dalak Out Phase" },
+      { id: "LS18", label: "S42", q: "Dalak In Phase sinyal değeri:", type: "number", placeholder: "Sinyal değeri", nx: () => "LS19", rp: true, sec: "les", rl: "Dalak In Phase" },
+      { id: "LS19", label: "S43", q: "CSI Oranı (Otomatik Hesaplama)", type: "calc_csi", nx: () => "LS20", rp: true, sec: "les", rl: "CSI Oranı" },
+      { id: "LS20", label: "S44", q: "SI İndeks (Otomatik Hesaplama)", type: "calc_si", nx: () => "LS21", rp: true, sec: "les", rl: "SI İndeks" },
+      { id: "LS21", label: "S45", q: "Konturlar?", type: "single", opts: ["Silik", "Düzenli", "Düzensiz", "Sinyalsiz", "Lobüle"], nx: () => "LS22", rp: true, sec: "les", rl: "Konturlar" },
+      { id: "LS22", label: "S46", q: "Lezyon kontrastlanma sonrası görünüm?", type: "single", opts: ["Homojen izointens", "Hafif Erken kontrastlanma", "Erken heterojen hiperintens", "Homojen hiperintens", "Güçlü heterojen hiperintens", "Homojen hipointens", "Sinyalsiz", "Heterojen izointens", "Heterojen hiperintens", "Heterojen hipointens", "Rim kontrastlanma"], nx: () => "LS23", rp: true, sec: "les", rl: "Kontrastlanma" },
+      { id: "LS23", label: "S47", q: "Washout var mı?", type: "single", opts: ["Washout yok", "Yavaş washout", "Orta derecede washout", "Güçlü washout"], nx: () => "LS24", rp: true, sec: "les", rl: "Washout" },
+      { id: "LS24", label: "S48", q: "Aynı tarafta (sol) başka lezyon var mı?", type: "single", opts: ["Var", "Yok"], nx: a => a === "Var" ? "LS7" : "FINISH", rp: false, sec: "les" }
+    ];
+
+    function calcCSI(lOP, lIP, sOP, sIP) {
+      if (!sOP || !sIP || sOP === 0 || sIP === 0) return null;
+      return (lOP / sOP) / (lIP / sIP);
+    }
+
+    function calcSI(lIP, lOP) {
+      if (!lIP || lIP === 0) return null;
+      return ((lIP - lOP) / lIP) * 100;
+    }
+
+    function evalDiag(les, side) {
+      const p = side === "right" ? "R" : "L";
+      const gv = (a, b) => les[p + a] || les[p + b] || "";
+      const t1 = gv("S10", "S33");
+      const t2 = gv("S11", "S34");
+      const dwi = gv("S13", "S36");
+      const adc = gv("S14", "S37");
+      const con = gv("S22", "S46");
+      const wo = gv("S23", "S47");
+      const lOP = parseFloat(gv("S15", "S39")) || 0;
+      const lIP = parseFloat(gv("S16", "S40")) || 0;
+      const csiVal = les[p + "S19_csi"] || les[p + "S43_csi"] || null;
+      const siVal = les[p + "S20_si"] || les[p + "S44_si"] || null;
+      const eqIP = lIP > 0 ? Math.abs(lOP - lIP) / lIP * 100 <= 10 : false;
+      const ms = [];
+
+      const ck = (name, tests, crit) => {
+        const met = tests.map(fn => fn());
+        const sc = met.filter(Boolean).length;
+        if (sc >= Math.ceil(crit.length * 0.5)) {
+          ms.push({ name: name, score: sc, max: crit.length, criteria: crit, met: met });
+        }
+      };
+
+      ck("Adrenal Adenoma (Lipid-rich)", [
+        () => t1.includes("İzointens") || t1.includes("Hafif Hipointens") || t1.includes("Hafif hipointens"),
+        () => t2.includes("Hafif hiperintens"),
+        () => dwi.includes("İzointens"),
+        () => adc.includes("Hiperintens"),
+        () => con.includes("Hafif Erken kontrastlanma"),
+        () => wo.includes("Güçlü washout"),
+        () => csiVal !== null && csiVal < 0.71,
+        () => siVal !== null && siVal > 16.5
+      ], ["T1 İzointens/Hafif hipointens", "T2 Hafif hiperintens", "DWI İzointens", "ADC Hiperintens", "Hafif Erken kontrastlanma", "Güçlü washout", "CSI < 0.71", "SII > %16.5"]);
+
+      ck("Adrenal Adenoma (Lipid-poor)", [
+        () => t1.includes("İzointens"),
+        () => t2.includes("Hafif hiperintens"),
+        () => dwi.includes("Hafif hiperintens"),
+        () => adc.includes("Orta hiperintens"),
+        () => con.includes("hiperintens"),
+        () => wo !== "Washout yok"
+      ], ["T1 İzointens", "T2 Hafif hiperintens", "DWI Hafif hiperintens", "ADC Orta hiperintens", "Hiperintens kontrastlanma", "Washout var"]);
+
+      ck("Adrenokortikal Karsinom", [
+        () => t1.includes("Hiperintens") && !t1.includes("Hafif"),
+        () => t2.includes("Hiperintens") || t2.includes("Heterojen"),
+        () => eqIP,
+        () => dwi.includes("Hiperintens") && !dwi.includes("Hafif"),
+        () => adc.includes("Hipointens") && !adc.includes("Orta"),
+        () => con.includes("Güçlü heterojen") || con.includes("Erken heterojen"),
+        () => wo.includes("Yavaş") || wo === "Washout yok"
+      ], ["T1 Hiperintens", "T2 Heterojen hiperintens", "Out/In eşit ±%10", "DWI Hiperintens", "ADC Hipointens", "Güçlü heterojen kontrastlanma", "Zayıf washout"]);
+
+      ck("Metastaz", [
+        () => t1.includes("İzointens") || t1.includes("Hafif Hipointens") || t1.includes("Hafif hipointens"),
+        () => t2.includes("Orta"),
+        () => eqIP,
+        () => dwi.includes("Hiperintens") && !dwi.includes("Hafif"),
+        () => adc.includes("Hipointens") && !adc.includes("Orta"),
+        () => con.includes("heterojen") && con.includes("hiperintens"),
+        () => wo.includes("Yavaş") || wo === "Washout yok"
+      ], ["T1 İzointens/Hafif hipointens", "T2 Orta hiperintens", "Out/In eşit ±%10", "DWI Hiperintens", "ADC Hipointens", "Heterojen kontrastlanma", "Zayıf washout"]);
+
+      ck("Feokromositoma", [
+        () => t1.includes("İzointens") || t1.includes("Hafif hiperintens"),
+        () => t2.includes("Hiperintens") && !t2.includes("Hafif") && !t2.includes("Orta"),
+        () => eqIP,
+        () => dwi.includes("Hiperintens") && !dwi.includes("Hafif"),
+        () => adc.includes("Orta") || adc.includes("Hafif"),
+        () => con.includes("Güçlü") || con.includes("Erken"),
+        () => wo === "Washout yok"
+      ], ["T1 İzointens/Hafif hiperintens", "T2 Hiperintens", "Out/In eşit ±%10", "DWI Hiperintens", "ADC Orta/Hafif hipointens", "Güçlü erken kontrastlanma", "Washout yok"]);
+
+      ck("Adrenal Miyelolipoma", [
+        () => t1.includes("Hiperintens") && !t1.includes("Hafif"),
+        () => t2.includes("Hiperintens") && !t2.includes("Hafif") && !t2.includes("Orta"),
+        () => lOP > 0 && lIP > 0 && lOP < lIP,
+        () => dwi.includes("İzointens"),
+        () => adc.includes("Hiperintens"),
+        () => con.includes("Hafif Erken"),
+        () => wo.includes("Yavaş")
+      ], ["T1 Hiperintens", "T2 Hiperintens", "Out phase < In phase", "DWI İzointens", "ADC Hiperintens", "Hafif erken kontrastlanma", "Yavaş washout"]);
+
+      ck("Adrenal Basit Kist", [
+        () => t1.includes("Hipointens") && !t1.includes("Hafif"),
+        () => t2.includes("Hiperintens") && !t2.includes("Hafif") && !t2.includes("Orta"),
+        () => dwi.includes("İzointens"),
+        () => adc.includes("Hiperintens"),
+        () => con.includes("izointens") || con.includes("Sinyalsiz"),
+        () => wo === "Washout yok"
+      ], ["T1 Hipointens", "T2 Güçlü hiperintens", "DWI İzointens", "ADC Hiperintens", "Kontrastlanma yok", "Washout yok"]);
+
+      ck("Adrenal Psödokist", [
+        () => t1.includes("Hiperintens"),
+        () => t2.includes("Hiperintens"),
+        () => dwi.includes("İzointens"),
+        () => adc.includes("Hiperintens"),
+        () => con.includes("Rim kontrastlanma")
+      ], ["T1 Hiperintens", "T2 Hiperintens", "DWI İzointens", "ADC Hiperintens", "Rim kontrastlanma"]);
+
+      ck("Adrenal Hematom", [
+        () => t1.includes("Hiperintens"),
+        () => dwi.includes("Hiperintens"),
+        () => adc.includes("Orta") || adc.includes("Hafif"),
+        () => con.includes("Sinyalsiz") || con.includes("izointens")
+      ], ["T1 Hiperintens", "DWI Hiperintens", "ADC Hafif/Orta hipointens", "Kontrastlanma yok"]);
+
+      ck("Adrenal Ganglionöroma", [
+        () => t1.includes("İzointens"),
+        () => t2.includes("Hiperintens") && !t2.includes("Orta"),
+        () => dwi.includes("Hafif hiperintens"),
+        () => adc.includes("Orta"),
+        () => con.includes("Hafif Erken")
+      ], ["T1 İzointens", "T2 Hiperintens", "DWI Hafif hiperintens", "ADC Orta hipointens", "Hafif erken kontrastlanma"]);
+
+      ck("Adrenal Ganglionöroblastoma", [
+        () => t1.includes("İzointens"),
+        () => t2.includes("Orta"),
+        () => dwi.includes("Hiperintens") && !dwi.includes("Hafif"),
+        () => adc.includes("Hipointens") && !adc.includes("Orta"),
+        () => con.includes("Homojen"),
+        () => wo === "Washout yok"
+      ], ["T1 İzointens", "T2 Orta hiperintens", "DWI Güçlü hiperintens", "ADC Düşük hipointens", "Homojen kontrastlanma", "Washout yok"]);
+
+      ms.sort((a, b) => (b.score / b.max) - (a.score / a.max));
+      return ms;
+    }
+
+    function fmtVal(step, val, les) {
+      if (val == null || val === "") return null;
+      if (step.type === "size" && typeof val === "object") return val.a + " x " + val.b + " mm";
+      if (step.type === "multi" && Array.isArray(val)) return val.join(", ");
+      if (step.type === "calc_csi") {
+        var pr = step.id.charAt(0) === "R" ? "R" : "L";
+        var v = calcCSI(
+          parseFloat((les || {})[pr + "S15"] || (les || {})[pr + "S39"]) || 0,
+          parseFloat((les || {})[pr + "S16"] || (les || {})[pr + "S40"]) || 0,
+          parseFloat((les || {})[pr + "S17"] || (les || {})[pr + "S41"]) || 0,
+          parseFloat((les || {})[pr + "S18"] || (les || {})[pr + "S42"]) || 0
+        );
+        return v !== null ? v.toFixed(4) : "Hesaplanamadi";
+      }
+      if (step.type === "calc_si") {
+        var pr2 = step.id.charAt(0) === "R" ? "R" : "L";
+        var v2 = calcSI(
+          parseFloat((les || {})[pr2 + "S16"] || (les || {})[pr2 + "S40"]) || 0,
+          parseFloat((les || {})[pr2 + "S15"] || (les || {})[pr2 + "S39"]) || 0
+        );
+        return v2 !== null ? "%" + v2.toFixed(2) : "Hesaplanamadi";
+      }
+      return String(val);
+    }
+
+    const GLAND_IDS = ["RS1","RS2","RS2b","RS3","RS4","RS5","RS6","LS1","LS2","LS2b","LS3","LS4","LS5","LS6"];
+
+    function ReportRow({ label, value, even, highlight }) {
+      return (
+        <div style={{
+          display: "flex", padding: "10px 16px",
+          background: even ? C.card : "transparent",
+          borderRadius: 4, gap: 12, alignItems: "baseline"
+        }}>
+          <div style={{ flex: "0 0 42%", color: C.dim, fontSize: 13, lineHeight: 1.5 }}>{label}</div>
+          <div style={{
+            flex: 1, fontSize: 13, lineHeight: 1.5,
+            color: highlight ? C.accent : C.text,
+            fontWeight: highlight ? 700 : 500
+          }}>{value}</div>
+        </div>
+      );
+    }
+
+    function DiagBlock({ diagnoses, lesIdx }) {
+      if (!diagnoses || diagnoses.length === 0) return null;
+      return (
+        <div style={{
+          marginTop: 12, background: C.accent + "08",
+          borderRadius: 10, border: "1px solid " + C.accent + "22", overflow: "hidden"
+        }}>
+          <div style={{
+            padding: "10px 16px", background: C.accent + "10",
+            borderBottom: "1px solid " + C.accent + "18"
+          }}>
+            <span style={{ color: C.accent, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px" }}>
+              {"★ YORUM — Lezyon " + lesIdx}
+            </span>
+          </div>
+          <div style={{ padding: 16 }}>
+            {diagnoses.map(function(d, di) {
+              var pct = Math.round(d.score / d.max * 100);
+              var bc = pct >= 75 ? C.ok : pct >= 50 ? C.warn : C.err;
+              return (
+                <div key={di} style={{
+                  marginBottom: di < diagnoses.length - 1 ? 20 : 0,
+                  paddingBottom: di < diagnoses.length - 1 ? 20 : 0,
+                  borderBottom: di < diagnoses.length - 1 ? "1px solid " + C.div : "none"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{(di + 1) + ". " + d.name}</span>
+                    <span style={{ color: bc, fontSize: 14, fontWeight: 800 }}>
+                      {d.score + "/" + d.max + " (" + pct + "%)"}
+                    </span>
+                  </div>
+                  <div style={{ height: 6, background: C.trk, borderRadius: 3, marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: pct + "%", background: bc, borderRadius: 3, transition: "width .6s ease" }} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px 16px" }}>
+                    {d.criteria.map(function(cr, ci) {
+                      return (
+                        <div key={ci} style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+                          <span style={{ color: d.met[ci] ? C.ok : C.muted, fontSize: 13, fontWeight: 700, width: 16 }}>
+                            {d.met[ci] ? "✓" : "✗"}
+                          </span>
+                          <span style={{ color: d.met[ci] ? C.text : C.muted }}>{cr}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [phase, setPhase] = useState("start");
+      const [sid, setSid] = useState(null);
+      const [rGl, setRGl] = useState({});
+      const [lGl, setLGl] = useState({});
+      const [cur, setCur] = useState({});
+      const [rLes, setRLes] = useState([]);
+      const [lLes, setLLes] = useState([]);
+      const [rEnd, setREnd] = useState(null);
+      const [lEnd, setLEnd] = useState(null);
+      const [hist, setHist] = useState([]);
+      const [tmp, setTmp] = useState({});
+      const [ml, setMl] = useState([]);
+      const [aDir, setADir] = useState("f");
+      const [copied, setCopied] = useState(false);
+      const [printMode, setPrintMode] = useState(false);
+
+      const sMap = useMemo(function() {
+        var m = {};
+        RIGHT_STEPS.forEach(function(s) { m[s.id] = Object.assign({}, s, { side: "right" }); });
+        LEFT_STEPS.forEach(function(s) { m[s.id] = Object.assign({}, s, { side: "left" }); });
+        return m;
+      }, []);
+
+      var st = sid ? sMap[sid] : null;
+      var isGl = function(id) { return GLAND_IDS.indexOf(id) >= 0; };
+
+      var goStart = function() {
+        setPhase("right"); setSid("RS1"); setHist([]);
+        setRGl({}); setLGl({}); setCur({});
+        setRLes([]); setLLes([]);
+        setREnd(null); setLEnd(null); setADir("f");
+      };
+
+      var saveLesion = function(s) {
+        var copy = Object.assign({}, cur);
+        if (s === "right") setRLes(function(p) { return p.concat([copy]); });
+        else setLLes(function(p) { return p.concat([copy]); });
+      };
+
+      var getSigs = function() {
+        var pr = st && st.side === "right" ? "R" : "L";
+        return {
+          lOP: parseFloat(cur[pr + "S15"] || cur[pr + "S39"]) || 0,
+          lIP: parseFloat(cur[pr + "S16"] || cur[pr + "S40"]) || 0,
+          sOP: parseFloat(cur[pr + "S17"] || cur[pr + "S41"]) || 0,
+          sIP: parseFloat(cur[pr + "S18"] || cur[pr + "S42"]) || 0
+        };
+      };
+
+      var doAnswer = useCallback(function(val) {
+        if (!st) return;
+        setADir("f");
+        if (isGl(sid)) {
+          if (st.side === "right") setRGl(function(p) { var n = Object.assign({}, p); n[sid] = val; return n; });
+          else setLGl(function(p) { var n = Object.assign({}, p); n[sid] = val; return n; });
+        } else {
+          setCur(function(p) { var n = Object.assign({}, p); n[sid] = val; return n; });
+        }
+        setHist(function(p) {
+          return p.concat([{ sid: sid, phase: phase, cur: Object.assign({}, cur), rg: Object.assign({}, rGl), lg: Object.assign({}, lGl), rl: rLes.slice(), ll: lLes.slice() }]);
+        });
+        var nx = st.nx(val);
+        if (nx === "RIGHT_END_ABSENT") { setREnd("absent"); setPhase("left"); setSid("LS1"); return; }
+        if (nx === "RIGHT_END_NORMAL") { setREnd("normal"); setPhase("left"); setSid("LS1"); return; }
+        if (nx === "GO_LEFT") { saveLesion("right"); setCur({}); setPhase("left"); setSid("LS1"); return; }
+        if (nx === "LEFT_END_ABSENT") { setLEnd("absent"); setPhase("report"); return; }
+        if (nx === "LEFT_END_NORMAL") { setLEnd("normal"); setPhase("report"); return; }
+        if (nx === "FINISH") { saveLesion("left"); setPhase("report"); return; }
+        if ((nx === "RS7" && sid === "RS24") || (nx === "LS7" && sid === "LS24")) { saveLesion(st.side); setCur({}); }
+        setSid(nx); setTmp({}); setMl([]);
+      }, [st, sid, phase, cur, rGl, lGl, rLes, lLes]);
+
+      var goBack = function() {
+        if (!hist.length) return;
+        setADir("b");
+        var last = hist[hist.length - 1];
+        setHist(function(p) { return p.slice(0, -1); });
+        setSid(last.sid); setPhase(last.phase);
+        setCur(last.cur); setRGl(last.rg); setLGl(last.lg);
+        setRLes(last.rl); setLLes(last.ll);
+        setTmp({}); setMl([]);
+      };
+
+      var autoV = useMemo(function() {
+        if (!st) return null;
+        var s = getSigs();
+        if (st.type === "calc_csi") {
+          var v = calcCSI(s.lOP, s.lIP, s.sOP, s.sIP);
+          return v !== null ? v.toFixed(4) : "Hesaplanamadi";
+        }
+        if (st.type === "calc_si") {
+          var v2 = calcSI(s.lIP, s.lOP);
+          return v2 !== null ? "%" + v2.toFixed(2) : "Hesaplanamadi";
+        }
+        return null;
+      }, [st, cur]);
+
+      var prog = (function() {
+        var ss = phase === "right" ? RIGHT_STEPS : phase === "left" ? LEFT_STEPS : [];
+        var idx = -1;
+        for (var i = 0; i < ss.length; i++) { if (ss[i].id === sid) { idx = i; break; } }
+        return ss.length > 0 ? ((idx + 1) / ss.length) * 100 : 100;
+      })();
+
+      // ═══ COPY/PRINT ═══
+      var genText = function() {
+        var r = "ADRENAL GLAND DINAMIK MR - KARAR DESTEK RAPORU\n";
+        r += "Tarih: " + new Date().toLocaleDateString("tr-TR") + "\n\n";
+        var addSide = function(lb, gl, les, en, ST, sd) {
+          r += "--- " + lb + " ---\n\n";
+          if (en === "absent") { r += "Izlenmedi (Opere?/Agenezi?)\n\n"; return; }
+          ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
+            var a = gl[s.id];
+            if (a) r += (s.rl || s.q) + " -> " + (Array.isArray(a) ? a.join(", ") : typeof a === "object" ? a.a + "x" + a.b + " mm" : a) + "\n";
+          });
+          if (en === "normal") { r += "\nSonuc: Normal yapi ve sinyal intensitede adrenal gland.\n\n"; return; }
+          les.forEach(function(l, i) {
+            r += "\nLezyon " + (i + 1) + ":\n";
+            ST.filter(function(s) { return s.rp && s.sec === "les"; }).forEach(function(s) {
+              var a = l[s.id];
+              if (a != null && a !== "") {
+                var f = fmtVal(s, a, l);
+                if (f) r += "  " + (s.rl || s.q) + " -> " + f + "\n";
+              }
+            });
+            var d = evalDiag(l, sd);
+            if (d.length) {
+              r += "\n  YORUM:\n";
+              d.forEach(function(dx, di) {
+                r += "    " + (di + 1) + ". " + dx.name + " (" + dx.score + "/" + dx.max + ")\n";
+                dx.criteria.forEach(function(cr, ci) { r += "       " + (dx.met[ci] ? "V" : "X") + " " + cr + "\n"; });
+              });
+            }
+          });
+          r += "\n";
+        };
+        addSide("SAG ADRENAL GLAND", rGl, rLes, rEnd, RIGHT_STEPS, "right");
+        addSide("SOL ADRENAL GLAND", lGl, lLes, lEnd, LEFT_STEPS, "left");
+        return r;
+      };
+
+      var copyReport = function() {
+        var text = genText();
+        try {
+          navigator.clipboard.writeText(text).then(function() {
+            setCopied(true); setTimeout(function() { setCopied(false); }, 2000);
+          }).catch(function() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            setCopied(true); setTimeout(function() { setCopied(false); }, 2000);
+          });
+        } catch(e) {}
+      };
+
+      var genPdfHtml = function() {
+        var date = new Date().toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        var css = [
+          "* { margin:0; padding:0; box-sizing:border-box; }",
+          "body { font-family:'Segoe UI',Tahoma,sans-serif; color:#1a1a2e; padding:0; background:#fff; }",
+          ".page { padding:40px 50px; max-width:800px; margin:0 auto; }",
+          ".header { text-align:center; border-bottom:3px solid #0288d1; padding-bottom:20px; margin-bottom:28px; }",
+          ".header h1 { font-size:22px; color:#0d1b2a; font-weight:800; letter-spacing:-0.3px; margin-bottom:4px; }",
+          ".header .sub { font-size:13px; color:#546e7a; font-weight:400; }",
+          ".header .date { font-size:11px; color:#90a4ae; margin-top:6px; }",
+          ".header .badge { display:inline-block; background:#e3f2fd; color:#0288d1; font-size:10px; font-weight:700; padding:4px 14px; border-radius:20px; letter-spacing:0.5px; margin-bottom:10px; }",
+          ".overview { display:flex; gap:16px; margin-bottom:28px; }",
+          ".ov-card { flex:1; border:1px solid #e0e0e0; border-radius:8px; padding:14px 18px; }",
+          ".ov-card .ov-label { font-size:10px; color:#90a4ae; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; }",
+          ".ov-card .ov-val { font-size:14px; font-weight:700; }",
+          ".ov-card .ov-val.normal { color:#43a047; }",
+          ".ov-card .ov-val.absent { color:#90a4ae; }",
+          ".ov-card .ov-val.lesion { color:#ef6c00; }",
+          ".ov-card.right { border-left:3px solid #0288d1; }",
+          ".ov-card.left { border-left:3px solid #43a047; }",
+          ".section { margin-bottom:28px; page-break-inside:avoid; }",
+          ".sec-title { display:flex; align-items:center; gap:10px; font-size:16px; font-weight:700; color:#0d1b2a; padding-bottom:10px; border-bottom:2px solid #e3f2fd; margin-bottom:14px; }",
+          ".sec-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; }",
+          ".sec-icon.r { background:#0288d1; }",
+          ".sec-icon.l { background:#43a047; }",
+          ".tbl { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:12px; }",
+          ".tbl-head { background:#f5f5f5; }",
+          ".tbl-head td { padding:8px 14px; font-size:10px; font-weight:700; color:#0288d1; letter-spacing:0.5px; text-transform:uppercase; border-bottom:2px solid #e0e0e0; }",
+          ".tbl-head.les td { color:#ef6c00; }",
+          ".tbl td { padding:8px 14px; border-bottom:1px solid #f0f0f0; vertical-align:top; }",
+          ".tbl tr:nth-child(even) { background:#fafafa; }",
+          ".tbl .lbl { color:#607d8b; width:42%; }",
+          ".tbl .val { color:#1a1a2e; font-weight:500; }",
+          ".tbl .val.hl { color:#0288d1; font-weight:700; }",
+          ".normal-box { background:#e8f5e9; border:1px solid #c8e6c9; border-radius:8px; padding:12px 18px; color:#2e7d32; font-weight:600; font-size:13px; margin-bottom:14px; }",
+          ".absent-box { background:#f5f5f5; border:1px solid #e0e0e0; border-radius:8px; padding:12px 18px; color:#90a4ae; font-size:13px; }",
+          ".diag-box { border:1px solid #e3f2fd; border-radius:8px; overflow:hidden; margin-bottom:14px; page-break-inside:avoid; }",
+          ".diag-head { background:#e3f2fd; padding:10px 14px; font-size:11px; font-weight:700; color:#0288d1; letter-spacing:0.3px; }",
+          ".diag-body { padding:14px; }",
+          ".diag-item { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #f0f0f0; }",
+          ".diag-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }",
+          ".diag-name { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }",
+          ".diag-name span:first-child { font-size:14px; font-weight:700; color:#1a1a2e; }",
+          ".diag-score { font-size:13px; font-weight:800; }",
+          ".diag-score.high { color:#43a047; }",
+          ".diag-score.mid { color:#ef6c00; }",
+          ".diag-score.low { color:#e53935; }",
+          ".bar { height:5px; background:#eceff1; border-radius:3px; margin-bottom:10px; overflow:hidden; }",
+          ".bar-fill { height:100%; border-radius:3px; }",
+          ".bar-fill.high { background:#43a047; }",
+          ".bar-fill.mid { background:#ef6c00; }",
+          ".bar-fill.low { background:#e53935; }",
+          ".crit-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 14px; font-size:11px; }",
+          ".crit-item { display:flex; gap:5px; align-items:center; }",
+          ".crit-item .ck { font-weight:700; width:14px; }",
+          ".crit-item .ck.y { color:#43a047; }",
+          ".crit-item .ck.n { color:#bdbdbd; }",
+          ".crit-item .ct { color:#455a64; }",
+          ".crit-item .ct.n { color:#bdbdbd; }",
+          ".divider { height:1px; background:linear-gradient(90deg,transparent,#e0e0e0,transparent); margin:10px 0 28px; }",
+          ".footer { text-align:center; padding-top:20px; border-top:1px solid #e0e0e0; font-size:10px; color:#bdbdbd; margin-top:20px; }",
+          "@media print { body { padding:0; } .page { padding:30px 40px; } .section { page-break-inside:avoid; } }"
+        ].join("\n");
+
+        var html = "";
+
+        var addSideHtml = function(title, iconCls, gl, les, en, ST, sd) {
+          html += '<div class="section">';
+          html += '<div class="sec-title"><div class="sec-icon ' + iconCls + '">' + (iconCls === "r" ? "R" : "L") + '</div>' + title + '</div>';
+          if (en === "absent") {
+            html += '<div class="absent-box">İzlenmedi (Opere? / Agenezi?)</div>';
+            html += '</div>';
+            return;
+          }
+          var gRows = [];
+          ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
+            var a = gl[s.id];
+            if (a != null) {
+              gRows.push({ label: s.rl || s.q, value: fmtVal(s, a, null) || String(a), type: s.type });
+            }
+          });
+          if (gRows.length > 0) {
+            html += '<table class="tbl"><tr class="tbl-head"><td colspan="2">Gland Bulguları</td></tr>';
+            gRows.forEach(function(r) {
+              var hlCls = (r.type === "calc_csi" || r.type === "calc_si") ? " hl" : "";
+              html += '<tr><td class="lbl">' + r.label + '</td><td class="val' + hlCls + '">' + r.value + '</td></tr>';
+            });
+            html += '</table>';
+          }
+          if (en === "normal") {
+            html += '<div class="normal-box">✓ Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</div>';
+            html += '</div>';
+            return;
+          }
+          les.forEach(function(l, i) {
+            var rows = [];
+            ST.filter(function(s) { return s.rp && s.sec === "les"; }).forEach(function(s) {
+              var a = l[s.id];
+              if (a != null && a !== "") {
+                var f = fmtVal(s, a, l);
+                if (f) rows.push({ label: s.rl || s.q, value: f, type: s.type });
+              }
+            });
+            html += '<table class="tbl"><tr class="tbl-head les"><td colspan="2">Lezyon ' + (i + 1) + ' — Bulgular (' + rows.length + ' parametre)</td></tr>';
+            rows.forEach(function(r) {
+              var hlCls = (r.type === "calc_csi" || r.type === "calc_si") ? " hl" : "";
+              html += '<tr><td class="lbl">' + r.label + '</td><td class="val' + hlCls + '">' + r.value + '</td></tr>';
+            });
+            html += '</table>';
+            var diags = evalDiag(l, sd);
+            if (diags.length > 0) {
+              html += '<div class="diag-box"><div class="diag-head">★ YORUM — Lezyon ' + (i + 1) + '</div><div class="diag-body">';
+              diags.forEach(function(d, di) {
+                var pct = Math.round(d.score / d.max * 100);
+                var lvl = pct >= 75 ? "high" : pct >= 50 ? "mid" : "low";
+                html += '<div class="diag-item">';
+                html += '<div class="diag-name"><span>' + (di + 1) + '. ' + d.name + '</span><span class="diag-score ' + lvl + '">' + d.score + '/' + d.max + ' (' + pct + '%)</span></div>';
+                html += '<div class="bar"><div class="bar-fill ' + lvl + '" style="width:' + pct + '%"></div></div>';
+                html += '<div class="crit-grid">';
+                d.criteria.forEach(function(cr, ci) {
+                  var yn = d.met[ci] ? "y" : "n";
+                  html += '<div class="crit-item"><span class="ck ' + yn + '">' + (d.met[ci] ? "✓" : "✗") + '</span><span class="ct ' + yn + '">' + cr + '</span></div>';
+                });
+                html += '</div></div>';
+              });
+              html += '</div></div>';
+            }
+          });
+          html += '</div>';
+        };
+
+        var rStatus = rEnd === "absent" ? "absent" : rEnd === "normal" ? "normal" : "lesion";
+        var lStatus = lEnd === "absent" ? "absent" : lEnd === "normal" ? "normal" : "lesion";
+        var rText = rEnd === "absent" ? "İzlenmedi" : rEnd === "normal" ? "Normal" : rLes.length + " Lezyon";
+        var lText = lEnd === "absent" ? "İzlenmedi" : lEnd === "normal" ? "Normal" : lLes.length + " Lezyon";
+
+        var page = '<div class="page">';
+        page += '<div class="header">';
+        page += '<div class="badge">ADRENAL GLAND DİNAMİK MR</div>';
+        page += '<h1>Karar Destek Raporu</h1>';
+        page += '<div class="sub">Radyoloji Karar Destek Sistemi</div>';
+        page += '<div class="date">' + date + '</div>';
+        page += '</div>';
+        page += '<div class="overview">';
+        page += '<div class="ov-card right"><div class="ov-label">Sağ Adrenal</div><div class="ov-val ' + rStatus + '">' + rText + '</div></div>';
+        page += '<div class="ov-card left"><div class="ov-label">Sol Adrenal</div><div class="ov-val ' + lStatus + '">' + lText + '</div></div>';
+        page += '</div>';
+
+        html = "";
+        addSideHtml("Sağ Adrenal Gland", "r", rGl, rLes, rEnd, RIGHT_STEPS, "right");
+        page += html;
+        page += '<div class="divider"></div>';
+        html = "";
+        addSideHtml("Sol Adrenal Gland", "l", lGl, lLes, lEnd, LEFT_STEPS, "left");
+        page += html;
+        page += '<div class="footer">Adrenal Gland Dinamik MR — Karar Destek Sistemi — Bu rapor otomatik olarak oluşturulmuştur.</div>';
+        page += '</div>';
+
+        return '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Adrenal MR Raporu</title><style>' + css + '</style></head><body>' + page + '</body></html>';
+      };
+
+      var printReport = function() {
+        setPrintMode(true);
+      };
+
+      useEffect(function() {
+        if (printMode) {
+          var timer = setTimeout(function() { window.print(); }, 400);
+          var onAfter = function() { setPrintMode(false); };
+          window.addEventListener("afterprint", onAfter);
+          return function() { clearTimeout(timer); window.removeEventListener("afterprint", onAfter); };
+        }
+      }, [printMode]);
+
+      // ═══ PRINT MODE ═══
+      if (printMode) {
+        var pHtml = genPdfHtml();
+        var styleMatch = pHtml.match(/<style>([\s\S]*?)<\/style>/);
+        var bodyMatch = pHtml.match(/<body>([\s\S]*?)<\/body>/);
+        var pStyle = styleMatch ? styleMatch[1] : "";
+        var pBody = bodyMatch ? bodyMatch[1] : "";
+        return (
+          <div>
+            <style dangerouslySetInnerHTML={{ __html: pStyle + "\n@media screen { .no-print-btn { display:block; } } @media print { .no-print-btn { display:none !important; } }" }} />
+            <div className="no-print-btn" style={{ position: "fixed", top: 12, right: 12, zIndex: 9999 }}>
+              <button onClick={function() { setPrintMode(false); }} style={Object.assign({}, B, { background: "#e53935", color: "#fff", padding: "8px 20px", borderRadius: 8, fontSize: 13 })}>
+                ✕ Kapat
+              </button>
+            </div>
+            <div dangerouslySetInnerHTML={{ __html: pBody }} />
+          </div>
+        );
+      }
+
+      // ═══ START SCREEN ═══
+      if (phase === "start") {
+        return (
+          <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, " + C.bg + ", #0d1b2a, #1b2838)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif", padding: 20 }}>
+            <div style={{ textAlign: "center", maxWidth: 540, animation: "fu .7s ease" }}>
+              <div style={{ width: 80, height: 80, margin: "0 auto 20px", borderRadius: "50%", background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 50px " + C.glow }}>
+              </div>
+              <h1 style={{ color: C.text, fontSize: 26, marginBottom: 6, fontWeight: 700 }}>Adrenal Gland Dinamik MR</h1>
+              <p style={{ color: C.dim, fontSize: 14, marginBottom: 28 }}>Karar Destek Sistemi</p>
+              <div style={{ color: C.muted, fontSize: 11, marginBottom: 28, lineHeight: 1.6, background: C.card, borderRadius: 12, padding: "14px 18px", border: "1px solid " + C.bdr, textAlign: "left" }}>
+                <span style={{ color: C.accent, fontWeight: 600, fontSize: 12 }}>Kullanılan Sekanslar:</span><br />
+                T1 (IP/OOP) · T2 (HASTE ± fat-sat) · DWI/ADC · T1-FS Dinamik · T2-FS/STIR
+              </div>
+              <button onClick={goStart} style={Object.assign({}, B, { background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", color: "#fff", fontSize: 16, padding: "14px 44px", borderRadius: 12, boxShadow: "0 4px 24px " + C.glow })}>
+                İncelemeye Başla →
+              </button>
+            </div>
+            <style>{"@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}"}</style>
+          </div>
+        );
+      }
+
+      // ═══ REPORT SCREEN ═══
+      if (phase === "report") {
+        var buildSide = function(gl, les, en, ST, sd) {
+          var gr = [];
+          if (en === "absent") return { status: "absent", gr: [], lb: [] };
+          ST.filter(function(s) { return s.rp && s.sec === "gland"; }).forEach(function(s) {
+            var a = gl[s.id];
+            if (a != null) {
+              gr.push({ label: s.rl || s.q, value: fmtVal(s, a, null) || String(a), type: s.type });
+            }
+          });
+          if (en === "normal") return { status: "normal", gr: gr, lb: [] };
+          var lb = les.map(function(l, i) {
+            var rows = [];
+            ST.filter(function(s) { return s.rp && s.sec === "les"; }).forEach(function(s) {
+              var a = l[s.id];
+              if (a != null && a !== "") {
+                var f = fmtVal(s, a, l);
+                if (f) rows.push({ label: s.rl || s.q, value: f, type: s.type });
+              }
+            });
+            return { idx: i + 1, rows: rows, diag: evalDiag(l, sd) };
+          });
+          return { status: "lesions", gr: gr, lb: lb };
+        };
+
+        var rR = buildSide(rGl, rLes, rEnd, RIGHT_STEPS, "right");
+        var lR = buildSide(lGl, lLes, lEnd, LEFT_STEPS, "left");
+
+        var renderSide = function(title, icon, data, acColor) {
+          return (
+            <div style={{ marginBottom: 36 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 12, borderBottom: "2px solid " + acColor + "30" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: acColor + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: acColor }}>{icon}</div>
+                <h3 style={{ color: C.text, fontSize: 17, fontWeight: 700, margin: 0 }}>{title}</h3>
+              </div>
+              {data.status === "absent" && (
+                <div style={{ background: C.card, borderRadius: 10, padding: "16px 20px", border: "1px solid " + C.bdr, color: C.dim, fontSize: 14 }}>
+                  İzlenmedi (Opere? / Agenezi?)
+                </div>
+              )}
+              {data.status === "normal" && (
+                <div>
+                  {data.gr.length > 0 && (
+                    <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden", marginBottom: 12 }}>
+                      <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr }}>
+                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>Gland Bulguları</span>
+                      </div>
+                      {data.gr.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={r.type === "calc_csi" || r.type === "calc_si"} />; })}
+                    </div>
+                  )}
+                  <div style={{ background: C.ok + "10", borderRadius: 10, padding: "14px 20px", border: "1px solid " + C.ok + "30", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ color: C.ok, fontSize: 18 }}>✓</span>
+                    <span style={{ color: C.ok, fontSize: 14, fontWeight: 600 }}>Normal yapı ve sinyal intensitede adrenal gland saptanmıştır.</span>
+                  </div>
+                </div>
+              )}
+              {data.status === "lesions" && (
+                <div>
+                  {data.gr.length > 0 && (
+                    <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden", marginBottom: 16 }}>
+                      <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr }}>
+                        <span style={{ color: acColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>Gland Bulguları</span>
+                      </div>
+                      {data.gr.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={false} />; })}
+                    </div>
+                  )}
+                  {data.lb.map(function(lb) {
+                    return (
+                      <div key={lb.idx} style={{ marginBottom: 24 }}>
+                        <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.bdr, overflow: "hidden" }}>
+                          <div style={{ padding: "10px 16px", background: C.cardAlt, borderBottom: "1px solid " + C.bdr, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ color: C.warn, fontSize: 12, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>{"Lezyon " + lb.idx + " — Bulgular"}</span>
+                            <span style={{ color: C.muted, fontSize: 11 }}>{lb.rows.length + " parametre"}</span>
+                          </div>
+                          {lb.rows.map(function(r, i) { return <ReportRow key={i} label={r.label} value={r.value} even={i % 2 === 0} highlight={r.type === "calc_csi" || r.type === "calc_si"} />; })}
+                        </div>
+                        <DiagBlock diagnoses={lb.diag} lesIdx={lb.idx} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        return (
+          <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, " + C.bg + ", #0d1b2a, #131a2e)", fontFamily: "'Segoe UI', sans-serif", padding: "20px 12px" }}>
+            <div style={{ maxWidth: 780, margin: "0 auto" }}>
+              <div style={{ textAlign: "center", marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid " + C.bdr }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: C.card, borderRadius: 40, padding: "8px 20px", border: "1px solid " + C.bdr, marginBottom: 16 }}>
+                  <span style={{ color: C.dim, fontSize: 12, fontWeight: 600, letterSpacing: "0.5px" }}>ADRENAL GLAND DİNAMİK MR</span>
+                </div>
+                <h1 style={{ color: C.text, fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.5px" }}>Karar Destek Raporu</h1>
+                <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
+                  {new Date().toLocaleDateString("tr-TR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
+                <div style={{ background: C.card, borderRadius: 10, padding: "14px 18px", border: "1px solid " + C.bdr, borderLeft: "3px solid " + C.accent }}>
+                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>SAĞ ADRENAL</div>
+                  <div style={{ color: rEnd === "normal" ? C.ok : rEnd === "absent" ? C.dim : C.warn, fontSize: 14, fontWeight: 700 }}>
+                    {rEnd === "absent" ? "İzlenmedi" : rEnd === "normal" ? "Normal" : rLes.length + " Lezyon"}
+                  </div>
+                </div>
+                <div style={{ background: C.card, borderRadius: 10, padding: "14px 18px", border: "1px solid " + C.bdr, borderLeft: "3px solid " + C.ok }}>
+                  <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, letterSpacing: "0.4px", marginBottom: 4 }}>SOL ADRENAL</div>
+                  <div style={{ color: lEnd === "normal" ? C.ok : lEnd === "absent" ? C.dim : C.warn, fontSize: 14, fontWeight: 700 }}>
+                    {lEnd === "absent" ? "İzlenmedi" : lEnd === "normal" ? "Normal" : lLes.length + " Lezyon"}
+                  </div>
+                </div>
+              </div>
+              {renderSide("Sağ Adrenal Gland", "▶", rR, C.accent)}
+              <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + C.bdr + ", transparent)", margin: "8px 0 32px" }} />
+              {renderSide("Sol Adrenal Gland", "◀", lR, C.ok)}
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", paddingTop: 16, borderTop: "1px solid " + C.bdr, marginTop: 8 }}>
+                <button onClick={copyReport} style={Object.assign({}, B, { background: copied ? C.ok : C.accent, color: "#0c0e1a", minWidth: 160 })}>
+                  {copied ? "✓ Kopyalandı!" : "📋 Raporu Kopyala"}
+                </button>
+                <button onClick={printReport} style={Object.assign({}, B, { background: "transparent", color: C.accent, border: "1px solid " + C.accent })}>
+                  📄 PDF Rapor
+                </button>
+                <button onClick={function() { setPhase("start"); }} style={Object.assign({}, B, { background: "transparent", color: C.dim, border: "1px solid " + C.bdr })}>
+                  ↺ Yeni İnceleme
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ═══ QUESTION SCREEN ═══
+      var sLbl = phase === "right" ? "SAĞ ADRENAL" : "SOL ADRENAL";
+      var lNum = (phase === "right" ? rLes.length : lLes.length) + 1;
+      var inL = st && !isGl(sid) && sid !== "RS24" && sid !== "LS24";
+
+      var renderInput = function() {
+        if (!st) return null;
+
+        if (st.type === "single") {
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {st.opts.map(function(o, i) {
+                return (
+                  <button key={i} onClick={function() { doAnswer(o); }}
+                    style={Object.assign({}, B, { background: C.card, color: C.text, border: "1px solid " + C.bdr, textAlign: "left", padding: "12px 16px", borderRadius: 10, fontWeight: 400, fontSize: 14 })}
+                    onMouseEnter={function(e) { e.currentTarget.style.background = C.cardAlt; e.currentTarget.style.borderColor = C.accent; }}
+                    onMouseLeave={function(e) { e.currentTarget.style.background = C.card; e.currentTarget.style.borderColor = C.bdr; }}>
+                    {o}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        }
+
+        if (st.type === "multi") {
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {st.opts.map(function(o, i) {
+                var sel = ml.indexOf(o) >= 0;
+                return (
+                  <button key={i} onClick={function() { setMl(function(p) { return sel ? p.filter(function(x) { return x !== o; }) : p.concat([o]); }); }}
+                    style={Object.assign({}, B, { background: sel ? C.glow : C.card, color: sel ? C.accent : C.text, border: "1px solid " + (sel ? C.accent : C.bdr), textAlign: "left", padding: "12px 16px", borderRadius: 10, fontWeight: sel ? 600 : 400, fontSize: 14 })}>
+                    {(sel ? "☑ " : "☐ ") + o}
+                  </button>
+                );
+              })}
+              <button onClick={function() { if (ml.length) doAnswer(ml); }} disabled={!ml.length}
+                style={Object.assign({}, B, { background: ml.length ? "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")" : C.trk, color: ml.length ? "#fff" : C.muted, marginTop: 6, borderRadius: 10, padding: "12px 24px" })}>
+                Onayla →
+              </button>
+            </div>
+          );
+        }
+
+        if (st.type === "number") {
+          return (
+            <div style={{ display: "flex", gap: 10 }}>
+              <input type="number" placeholder={st.placeholder || "Değer"} value={tmp.v || ""}
+                onChange={function(e) { setTmp({ v: e.target.value }); }}
+                onKeyDown={function(e) { if (e.key === "Enter" && tmp.v) doAnswer(tmp.v); }}
+                style={{ flex: 1, padding: "12px 16px", borderRadius: 10, background: C.card, border: "1px solid " + C.bdr, color: C.text, fontSize: 16, outline: "none", fontFamily: "'Segoe UI', sans-serif" }}
+                onFocus={function(e) { e.target.style.borderColor = C.accent; }}
+                onBlur={function(e) { e.target.style.borderColor = C.bdr; }} />
+              <button onClick={function() { if (tmp.v) doAnswer(tmp.v); }} disabled={!tmp.v}
+                style={Object.assign({}, B, { background: tmp.v ? "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")" : C.trk, color: tmp.v ? "#fff" : C.muted, borderRadius: 10, padding: "12px 24px" })}>
+                →
+              </button>
+            </div>
+          );
+        }
+
+        if (st.type === "size") {
+          return (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input type="number" placeholder="a" value={tmp.a || ""}
+                onChange={function(e) { setTmp(function(p) { return Object.assign({}, p, { a: e.target.value }); }); }}
+                style={{ flex: 1, padding: "12px 14px", borderRadius: 10, background: C.card, border: "1px solid " + C.bdr, color: C.text, fontSize: 16, outline: "none", textAlign: "center", fontFamily: "'Segoe UI', sans-serif" }}
+                onFocus={function(e) { e.target.style.borderColor = C.accent; }}
+                onBlur={function(e) { e.target.style.borderColor = C.bdr; }} />
+              <span style={{ color: C.muted, fontSize: 18 }}>×</span>
+              <input type="number" placeholder="b" value={tmp.b || ""}
+                onChange={function(e) { setTmp(function(p) { return Object.assign({}, p, { b: e.target.value }); }); }}
+                style={{ flex: 1, padding: "12px 14px", borderRadius: 10, background: C.card, border: "1px solid " + C.bdr, color: C.text, fontSize: 16, outline: "none", textAlign: "center", fontFamily: "'Segoe UI', sans-serif" }}
+                onFocus={function(e) { e.target.style.borderColor = C.accent; }}
+                onBlur={function(e) { e.target.style.borderColor = C.bdr; }} />
+              <span style={{ color: C.muted, fontSize: 12 }}>mm</span>
+              <button onClick={function() { if (tmp.a && tmp.b) doAnswer({ a: tmp.a, b: tmp.b }); }} disabled={!tmp.a || !tmp.b}
+                style={Object.assign({}, B, { background: tmp.a && tmp.b ? "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")" : C.trk, color: tmp.a && tmp.b ? "#fff" : C.muted, borderRadius: 10, padding: "12px 20px" })}>
+                →
+              </button>
+            </div>
+          );
+        }
+
+        if (st.type === "calc_csi" || st.type === "calc_si") {
+          var isCSI = st.type === "calc_csi";
+          var s = getSigs();
+          return (
+            <div style={{ background: C.card, borderRadius: 12, padding: 20, border: "1px solid " + C.accent + "30" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14, fontSize: 12 }}>
+                <div style={{ color: C.dim }}>{"Lezyon OP: "}<span style={{ color: C.text }}>{s.lOP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{"Lezyon IP: "}<span style={{ color: C.text }}>{s.lIP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{"Dalak OP: "}<span style={{ color: C.text }}>{s.sOP || "—"}</span></div>
+                <div style={{ color: C.dim }}>{"Dalak IP: "}<span style={{ color: C.text }}>{s.sIP || "—"}</span></div>
+              </div>
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <div style={{ color: C.muted, fontSize: 11, marginBottom: 4 }}>
+                  {isCSI ? "(Lezyon OP / Dalak OP) / (Lezyon IP / Dalak IP)" : "((Lezyon IP - Lezyon OP) / Lezyon IP) x 100"}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: C.accent, textShadow: "0 0 20px " + C.glow }}>{autoV}</div>
+              </div>
+              <button onClick={function() {
+                var store = Object.assign({}, cur);
+                if (isCSI) store[sid + "_csi"] = autoV !== "Hesaplanamadi" ? parseFloat(autoV) : null;
+                else store[sid + "_si"] = autoV !== "Hesaplanamadi" ? parseFloat(autoV.replace("%", "")) : null;
+                setCur(store);
+                doAnswer(autoV);
+              }} style={Object.assign({}, B, { background: "linear-gradient(135deg, " + C.accent + ", " + C.accentDk + ")", color: "#fff", width: "100%", marginTop: 12, borderRadius: 10 })}>
+                Devam →
+              </button>
+            </div>
+          );
+        }
+
+        return null;
+      };
+
+      return (
+        <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, " + C.bg + ", #0d1b2a, #1b2838)", fontFamily: "'Segoe UI', sans-serif", padding: 16 }}>
+          <div style={{ maxWidth: 540, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "0 4px" }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{
+                  padding: "4px 12px", borderRadius: 20,
+                  background: (phase === "right" ? C.accent : C.ok) + "18",
+                  color: phase === "right" ? C.accent : C.ok,
+                  fontSize: 12, fontWeight: 700
+                }}>{sLbl}</div>
+                {inL && <div style={{ padding: "4px 10px", borderRadius: 20, background: C.warn + "18", color: C.warn, fontSize: 11, fontWeight: 600 }}>{"Lezyon " + lNum}</div>}
+              </div>
+              <div style={{ color: C.muted, fontSize: 12 }}>{st ? st.label : ""}</div>
+            </div>
+            <div style={{ height: 3, background: C.trk, borderRadius: 2, marginBottom: 20, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: prog + "%", background: "linear-gradient(90deg, " + C.accent + ", " + C.accentDk + ")", borderRadius: 2, transition: "width .4s ease" }} />
+            </div>
+            <div key={sid} style={{ background: C.card, borderRadius: 14, padding: "24px 20px", border: "1px solid " + C.bdr, marginBottom: 14, boxShadow: "0 8px 32px rgba(0,0,0,.3)" }}>
+              <h3 style={{ color: C.text, fontSize: 15, fontWeight: 600, marginBottom: 18, lineHeight: 1.5 }}>{st ? st.q : ""}</h3>
+              {renderInput()}
+            </div>
+            {hist.length > 0 && (
+              <button onClick={goBack}
+                style={Object.assign({}, B, { background: "transparent", color: C.muted, border: "1px solid " + C.bdr, width: "100%", borderRadius: 10 })}
+                onMouseEnter={function(e) { e.currentTarget.style.color = C.accent; e.currentTarget.style.borderColor = C.accent; }}
+                onMouseLeave={function(e) { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.bdr; }}>
+                ← Geri
+              </button>
+            )}
+          </div>
+          <style>{"@keyframes sl{from{opacity:0;transform:translateX(" + (aDir === "f" ? "30" : "-30") + "px)}to{opacity:1;transform:translateX(0)}}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}"}</style>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>

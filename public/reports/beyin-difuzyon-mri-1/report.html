@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyin Difüzyon MRI Karar Destek</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f0e17;--surface:#1a1a2e;--surface2:#16213e;--border:#2a2a4a;
+  --purple:#7f5af0;--purple-dim:#5a3fba;--purple-glow:rgba(127,90,240,.15);
+  --text:#e0e0e0;--text-dim:#8888a8;--text-bright:#ffffff;
+  --green:#2cb67d;--red:#e53170;--yellow:#f0c040;--orange:#ff8a00;--blue:#3da9fc;
+  --radius:8px;
+}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+h1{text-align:center;padding:18px 10px 6px;font-size:1.35rem;color:var(--purple);letter-spacing:.5px}
+.subtitle{text-align:center;color:var(--text-dim);font-size:.82rem;margin-bottom:14px}
+.container{width:100%;max-width:720px;padding:0 12px 30px}
+.step{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:10px;animation:fadeIn .25s}
+.step.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.step-title{font-size:1.05rem;color:var(--purple);margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.step-counter{text-align:center;color:var(--text-dim);font-size:.78rem;margin-top:10px}
+label.opt{display:block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin:6px 0;cursor:pointer;transition:.15s}
+label.opt:hover{border-color:var(--purple-dim)}
+label.opt.selected{border-color:var(--purple);background:var(--purple-glow)}
+label.opt input{display:none}
+label.opt .lbl{font-size:.92rem}
+label.opt .desc{font-size:.78rem;color:var(--text-dim);margin-top:3px}
+.nav{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.btn{padding:9px 22px;border:none;border-radius:6px;cursor:pointer;font-size:.88rem;transition:.15s}
+.btn-primary{background:var(--purple);color:#fff}
+.btn-primary:hover{background:var(--purple-dim)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--purple-dim)}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* Checkbox multi-select */
+label.chk{display:flex;align-items:flex-start;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin:6px 0;cursor:pointer;transition:.15s}
+label.chk:hover{border-color:var(--purple-dim)}
+label.chk.selected{border-color:var(--purple);background:var(--purple-glow)}
+label.chk input[type=checkbox]{accent-color:var(--purple);margin-top:3px;flex-shrink:0}
+
+/* Number input */
+.num-group{display:flex;align-items:center;gap:10px;margin:8px 0}
+.num-group input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.95rem;width:120px}
+.num-group input[type=number]:focus{outline:none;border-color:var(--purple)}
+.num-group .unit{color:var(--text-dim);font-size:.85rem}
+
+/* Results */
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-top:10px}
+.diff-bar-wrap{margin:8px 0}
+.diff-row{display:flex;align-items:center;gap:10px;margin:5px 0}
+.diff-name{width:200px;font-size:.85rem;text-align:right;flex-shrink:0}
+.diff-bar-bg{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
+.diff-bar{height:100%;border-radius:4px;transition:width .5s ease}
+.diff-pct{font-size:.78rem;color:var(--text-dim);width:45px;text-align:right}
+
+.report-section{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.report-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
+.report-table th{background:var(--purple);color:#fff;padding:8px 10px;text-align:left;font-weight:600}
+.report-table td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.report-table tr:nth-child(even) td{background:rgba(127,90,240,.04)}
+.report-table tr:nth-child(odd) td{background:var(--surface2)}
+
+.yorum{background:var(--purple-glow);border-left:3px solid var(--purple);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0;margin-top:14px;font-size:.88rem;line-height:1.55}
+.yorum-title{font-weight:700;color:var(--purple);margin-bottom:6px}
+
+.severity-high{color:var(--red)}
+.severity-med{color:var(--orange)}
+.severity-low{color:var(--green)}
+
+.toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.toolbar .btn{font-size:.82rem;padding:7px 16px}
+
+/* Print overlay */
+.print-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto}
+.print-overlay.show{display:block}
+.print-sheet{max-width:210mm;margin:20px auto;background:#fff;color:#111;padding:30px 35px;min-height:297mm;font-family:'Segoe UI',sans-serif;font-size:11pt;line-height:1.5}
+.print-sheet h2{color:#333;font-size:14pt;border-bottom:2px solid #7f5af0;padding-bottom:4px;margin:16px 0 8px}
+.print-sheet table{width:100%;border-collapse:collapse;font-size:10pt;margin:8px 0}
+.print-sheet table th{background:#7f5af0;color:#fff;padding:6px 8px;text-align:left}
+.print-sheet table td{padding:5px 8px;border-bottom:1px solid #ddd}
+.print-sheet table tr:nth-child(even) td{background:#f5f3ff}
+.print-sheet .yorum-print{background:#f0ebff;border-left:3px solid #7f5af0;padding:10px 14px;margin:10px 0;font-size:10pt}
+.print-toolbar{position:sticky;top:0;background:#222;padding:10px;text-align:center;z-index:10000;display:flex;gap:8px;justify-content:center}
+.print-toolbar .btn{font-size:.82rem}
+@media print{
+  .print-toolbar{display:none!important}
+  .print-overlay{background:#fff!important}
+  .print-sheet{margin:0;box-shadow:none;min-height:auto}
+}
+</style>
+</head>
+<body>
+<h1>🧠 Beyin Difüzyon MRI Karar Destek Sistemi</h1>
+<p class="subtitle">Difüzyon Ağırlıklı Görüntüleme &amp; ADC Analizi</p>
+<div class="container" id="app"></div>
+<div class="print-overlay" id="printOverlay">
+  <div class="print-toolbar">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Yazdır</button>
+    <button class="btn btn-primary" onclick="copyReport()">📋 Kopyala</button>
+    <button class="btn btn-secondary" onclick="closePrint()">✕ Kapat</button>
+  </div>
+  <div class="print-sheet" id="printSheet"></div>
+</div>
+
+<script>
+// === PATHOLOGY DATABASE ===
+const PATHOLOGIES = [
+  {
+    id:'akut_iskemik',name:'Akut İskemik İnme',
+    dwi:'belirgin_hiperintens',adc:'dusuk',
+    loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
+    enhance:'yok',morph:['vaskuler_teritor'],
+    clinical:['akut_norolojik_defisit','hemiparezi'],
+    desc:'Erken dönemde güçlü difüzyon kısıtlanması. Vasküler teritoryale uygun dağılım.',
+    severity:'high'
+  },
+  {
+    id:'beyin_absesi',name:'Beyin Absesi',
+    dwi:'cok_hiperintens',adc:'cok_dusuk',
+    loc:['subkortikal','beyaz_cevher','bazal_ganglion'],
+    enhance:'rim',morph:['rim_enhancement','periferal_odem'],
+    clinical:['ates','basagrisi','norolojik_defisit'],
+    desc:'Merkezde çok belirgin difüzyon kısıtlanması, güçlü restriksiyon. Rim kontrastlanma tipiktir.',
+    severity:'high'
+  },
+  {
+    id:'epidermoid',name:'Epidermoid Kist',
+    dwi:'hiperintens',adc:'dusuk',
+    loc:['serebellopontin','suprasellar','intraventrikuler'],
+    enhance:'yok',morph:['duzgun_sinir','kistik'],
+    clinical:[],
+    desc:'DWI hiperintens, ADC düşük — difüzyon kısıtlanması gösterir. Araknoid kistten ayrımda kritik bulgudur.',
+    severity:'med'
+  },
+  {
+    id:'yuksek_grade_glioma',name:'Yüksek Gradeli Glioma',
+    dwi:'heterojen_hiperintens',adc:'dusuk_orta',
+    loc:['beyaz_cevher','subkortikal','kortikal'],
+    enhance:'heterojen',morph:['nekroz','periferal_odem','irregüler_sinir'],
+    clinical:['basagrisi','nobet','norolojik_defisit'],
+    desc:'Heterojen difüzyon kısıtlanması. Solid komponentte ADC düşük, nekrotik alanlarda yüksek olabilir.',
+    severity:'high'
+  },
+  {
+    id:'glioblastoma',name:'Glioblastoma (WHO Grade 4)',
+    dwi:'heterojen_hiperintens',adc:'dusuk_orta',
+    loc:['beyaz_cevher','subkortikal','kortikal'],
+    enhance:'rim',morph:['nekroz','rim_enhancement','periferal_odem','irregüler_sinir','korpus_kallosum_gecisi'],
+    clinical:['basagrisi','nobet','hemiparezi','norolojik_defisit'],
+    desc:'Heterojen sinyal. Solid alanlarda ADC düşük, nekrotik bölgelerde yüksek. Kelebek paterni (korpus kallozum geçişi) tipiktir.',
+    severity:'high'
+  },
+  {
+    id:'primer_lenfoma',name:'Primer SSS Lenfoması',
+    dwi:'belirgin_hiperintens',adc:'cok_dusuk',
+    loc:['periventrikuler','bazal_ganglion','korpus_kallosum','subkortikal'],
+    enhance:'homojen',morph:['periventrikuler','homojen_kontrastlanma'],
+    clinical:['norolojik_defisit','kognitif_bozukluk'],
+    desc:'Belirgin difüzyon kısıtlanması, çok düşük ADC. Periventriküler yerleşim ve homojen kontrastlanma karakteristiktir.',
+    severity:'high'
+  },
+  {
+    id:'metastaz',name:'Metastaz',
+    dwi:'degisken',adc:'orta',
+    loc:['kortikal','subkortikal','serebellum','bazal_ganglion'],
+    enhance:'rim',morph:['multipl','rim_enhancement','periferal_odem'],
+    clinical:['bilinen_malignite','basagrisi'],
+    desc:'Difüzyon bulguları değişken. Solid komponentte kısıtlanma olabilir. Multipl lezyonlar ve bilinen malignite öyküsü önemlidir.',
+    severity:'high'
+  },
+  {
+    id:'menenjioma',name:'Menenjioma',
+    dwi:'hafif_hiperintens',adc:'dusuk_orta',
+    loc:['ekstra_aksiyel','konveksite','falks','sfenoid'],
+    enhance:'homojen',morph:['ekstra_aksiyel','dural_tail','homojen_kontrastlanma','duzgun_sinir'],
+    clinical:[],
+    desc:'Hafif-orta difüzyon kısıtlanması. Ekstra-aksiyal yerleşim, dural tail, homojen kontrastlanma tipiktir.',
+    severity:'low'
+  },
+  {
+    id:'demyelinizan',name:'Akut Demyelinizan Lezyon',
+    dwi:'hafif_hiperintens',adc:'orta_yuksek',
+    loc:['periventrikuler','beyaz_cevher','subkortikal'],
+    enhance:'inkomplet_ring',morph:['periventrikuler','open_ring'],
+    clinical:['genc_hasta','relaps_remisyon'],
+    desc:'Hafif difüzyon artışı, ADC genellikle korunmuş veya yüksek. Aktif plakta inkomplet halka kontrastlanma (open ring) görülebilir.',
+    severity:'med'
+  },
+  {
+    id:'ms_plak',name:'MS Plağı',
+    dwi:'izointens',adc:'normal_yuksek',
+    loc:['periventrikuler','jukstakortikal','infratentoryal','beyaz_cevher'],
+    enhance:'yok',morph:['dawson_finger','periventrikuler','ovoidal'],
+    clinical:['genc_hasta','relaps_remisyon'],
+    desc:'Genelde difüzyon kısıtlanması göstermez. Akut plakta hafif difüzyon değişikliği olabilir. Dawson parmakları tipik morfolojik bulgudur.',
+    severity:'low'
+  },
+  {
+    id:'ensefalit',name:'Ensefalit',
+    dwi:'hiperintens',adc:'dusuk_orta',
+    loc:['temporal','limbik','kortikal','insular'],
+    enhance:'heterojen',morph:['kortikal_odem','temporal_tutulum'],
+    clinical:['ates','konfuzyon','nobet','basagrisi'],
+    desc:'Kortikal ve subkortikal difüzyon kısıtlanması, ödem bulguları. Herpes ensefalitinde temporal lob tutulumu tipiktir.',
+    severity:'high'
+  },
+  {
+    id:'cjd',name:'Creutzfeldt-Jakob Hastalığı (CJD)',
+    dwi:'belirgin_hiperintens',adc:'dusuk',
+    loc:['kortikal','bazal_ganglion'],
+    enhance:'yok',morph:['kortikal_ribbon','bazal_ganglion_tutulumu'],
+    clinical:['hizli_demans','miyoklonus','konfuzyon'],
+    desc:'Kortikal ribbon pattern ve bazal ganglionlarda tipik difüzyon kısıtlanması. Hızlı progresif demans ile birlikte patognomoniktir.',
+    severity:'high'
+  },
+  {
+    id:'subakut_inme',name:'Subakut İnme',
+    dwi:'hiperintens',adc:'pseudonormal',
+    loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
+    enhance:'giral',morph:['vaskuler_teritor'],
+    clinical:['norolojik_defisit'],
+    desc:'DWI hiperintens kalırken ADC psödonormalizasyon gösterir (1–2 hafta). T2 shine-through etkisi değerlendirilmelidir.',
+    severity:'med'
+  },
+  {
+    id:'kronik_enfarkt',name:'Kronik Enfarkt',
+    dwi:'hipointens',adc:'yuksek',
+    loc:['kortikal','subkortikal','bazal_ganglion','beyaz_cevher'],
+    enhance:'yok',morph:['vaskuler_teritor','ensefalomalazi'],
+    clinical:[],
+    desc:'DWI hipointens, ADC yüksek. Difüzyon kısıtlanması yoktur, doku kaybı (ensefalomalazi) mevcuttur.',
+    severity:'low'
+  }
+];
+
+// === WIZARD STEPS ===
+const STEPS = [
+  {
+    id:'dwi',title:'Adım 1: DWI Sinyal Karakteri',type:'radio',
+    question:'Lezyon DWI\'da nasıl bir sinyal gösteriyor?',
+    options:[
+      {v:'cok_hiperintens',l:'Çok hiperintens',d:'Belirgin parlak sinyal (abse, lenfoma)'},
+      {v:'belirgin_hiperintens',l:'Belirgin hiperintens',d:'Parlak sinyal (akut iskemi, CJD)'},
+      {v:'hiperintens',l:'Hiperintens',d:'Artmış sinyal'},
+      {v:'heterojen_hiperintens',l:'Heterojen hiperintens',d:'Karışık parlak alanlar (tümör)'},
+      {v:'hafif_hiperintens',l:'Hafif hiperintens',d:'Hafif sinyal artışı'},
+      {v:'izointens',l:'İzointens',d:'Normal sinyal'},
+      {v:'hipointens',l:'Hipointens',d:'Düşük sinyal'},
+      {v:'degisken',l:'Değişken',d:'Karışık/belirgin olmayan patern'}
+    ]
+  },
+  {
+    id:'adc',title:'Adım 2: ADC Haritası Değerlendirmesi',type:'radio',
+    question:'ADC haritasında sinyal nasıl?',
+    options:[
+      {v:'cok_dusuk',l:'Çok düşük',d:'Belirgin karanlık — güçlü restriksiyon'},
+      {v:'dusuk',l:'Düşük',d:'Karanlık sinyal — restriksiyon mevcut'},
+      {v:'dusuk_orta',l:'Düşük-orta',d:'Hafif azalmış sinyal'},
+      {v:'orta',l:'Orta',d:'Orta düzey sinyal'},
+      {v:'orta_yuksek',l:'Orta-yüksek',d:'Hafif artmış (T2 shine-through olası)'},
+      {v:'normal_yuksek',l:'Normal-yüksek',d:'Korunmuş ADC, restriksiyon yok'},
+      {v:'yuksek',l:'Yüksek',d:'Parlak sinyal — restriksiyon yok'},
+      {v:'pseudonormal',l:'Psödonormalizasyon',d:'Subakut fazda normale dönen ADC'}
+    ]
+  },
+  {
+    id:'loc',title:'Adım 3: Lezyon Lokalizasyonu',type:'checkbox',
+    question:'Lezyonun lokalizasyonu (birden fazla seçilebilir):',
+    options:[
+      {v:'kortikal',l:'Kortikal'},
+      {v:'subkortikal',l:'Subkortikal'},
+      {v:'beyaz_cevher',l:'Beyaz cevher (derin)'},
+      {v:'periventrikuler',l:'Periventriküler'},
+      {v:'bazal_ganglion',l:'Bazal ganglionlar'},
+      {v:'temporal',l:'Temporal lob'},
+      {v:'limbik',l:'Limbik sistem'},
+      {v:'insular',l:'İnsular korteks'},
+      {v:'serebellum',l:'Serebellum'},
+      {v:'serebellopontin',l:'Serebellopontin açı'},
+      {v:'suprasellar',l:'Suprasellar'},
+      {v:'intraventrikuler',l:'İntraventriküler'},
+      {v:'ekstra_aksiyel',l:'Ekstra-aksiyal'},
+      {v:'konveksite',l:'Konveksite'},
+      {v:'falks',l:'Falks / parasagittal'},
+      {v:'sfenoid',l:'Sfenoid kanat'},
+      {v:'korpus_kallosum',l:'Korpus kallozum'},
+      {v:'jukstakortikal',l:'Jukstakortikal'},
+      {v:'infratentoryal',l:'İnfratentoryal'}
+    ]
+  },
+  {
+    id:'enhance',title:'Adım 4: Kontrastlanma Paterni',type:'radio',
+    question:'Kontrastlı serilerde lezyon nasıl kontrastlanıyor?',
+    options:[
+      {v:'yok',l:'Kontrastlanma yok'},
+      {v:'homojen',l:'Homojen kontrastlanma'},
+      {v:'heterojen',l:'Heterojen kontrastlanma'},
+      {v:'rim',l:'Rim (halka) kontrastlanma'},
+      {v:'inkomplet_ring',l:'İnkomplet halka (open ring)'},
+      {v:'giral',l:'Giral kontrastlanma'},
+      {v:'dural_tail',l:'Dural tail'}
+    ]
+  },
+  {
+    id:'morph',title:'Adım 5: Morfolojik Özellikler',type:'checkbox',
+    question:'Ek morfolojik bulgular (birden fazla seçilebilir):',
+    options:[
+      {v:'vaskuler_teritor',l:'Vasküler teritoryale uygun'},
+      {v:'periferal_odem',l:'Periferal ödem'},
+      {v:'nekroz',l:'Nekroz alanları'},
+      {v:'rim_enhancement',l:'Rim enhancement'},
+      {v:'irregüler_sinir',l:'İrregüler sınırlar'},
+      {v:'duzgun_sinir',l:'Düzgün sınırlar'},
+      {v:'kistik',l:'Kistik komponent'},
+      {v:'multipl',l:'Multipl lezyonlar'},
+      {v:'homojen_kontrastlanma',l:'Homojen kontrastlanma'},
+      {v:'open_ring',l:'Open ring sign'},
+      {v:'dawson_finger',l:'Dawson parmakları'},
+      {v:'ovoidal',l:'Ovoidal şekil'},
+      {v:'periventrikuler',l:'Periventriküler dağılım'},
+      {v:'ekstra_aksiyel',l:'Ekstra-aksiyal yerleşim'},
+      {v:'dural_tail',l:'Dural tail'},
+      {v:'kortikal_ribbon',l:'Kortikal ribbon pattern'},
+      {v:'kortikal_odem',l:'Kortikal ödem'},
+      {v:'bazal_ganglion_tutulumu',l:'Bazal ganglion tutulumu'},
+      {v:'temporal_tutulum',l:'Temporal lob tutulumu'},
+      {v:'korpus_kallosum_gecisi',l:'Korpus kallozum geçişi (kelebek)'},
+      {v:'ensefalomalazi',l:'Ensefalomalazi'}
+    ]
+  },
+  {
+    id:'clinical',title:'Adım 6: Klinik Bilgiler',type:'checkbox',
+    question:'Eşlik eden klinik bulgular (birden fazla seçilebilir):',
+    options:[
+      {v:'akut_norolojik_defisit',l:'Akut nörolojik defisit (<24 saat)'},
+      {v:'norolojik_defisit',l:'Nörolojik defisit (subakut/kronik)'},
+      {v:'hemiparezi',l:'Hemiparezi / motor kayıp'},
+      {v:'basagrisi',l:'Baş ağrısı'},
+      {v:'nobet',l:'Nöbet / epilepsi'},
+      {v:'ates',l:'Ateş / enfeksiyon bulguları'},
+      {v:'konfuzyon',l:'Konfüzyon / bilinç değişikliği'},
+      {v:'hizli_demans',l:'Hızlı progresif demans'},
+      {v:'miyoklonus',l:'Miyoklonus'},
+      {v:'kognitif_bozukluk',l:'Kognitif bozukluk'},
+      {v:'bilinen_malignite',l:'Bilinen malignite'},
+      {v:'genc_hasta',l:'Genç hasta (<40 yaş)'},
+      {v:'relaps_remisyon',l:'Relaps-remisyon öyküsü'}
+    ]
+  },
+  {
+    id:'adc_val',title:'Adım 7: ADC Değeri (Opsiyonel)',type:'number',
+    question:'Ölçülen ADC değeri (varsa):',
+    field:{label:'ADC',unit:'× 10⁻³ mm²/s',min:0,max:4,step:0.01,placeholder:'Örn: 0.65'}
+  }
+];
+
+// === STATE ===
+let current = 0;
+let answers = {};
+let lesions = []; // [{answers, label}]
+
+function init(){
+  const app = document.getElementById('app');
+  let html = '';
+  STEPS.forEach((s,i)=>{
+    html += `<div class="step" id="step_${i}" ${i===0?'':''}>${renderStep(s,i)}</div>`;
+  });
+  html += `<div class="step" id="step_result"></div>`;
+  html += `<div class="step" id="step_ask_more"></div>`;
+  html += `<div class="step-counter" id="counter"></div>`;
+  app.innerHTML = html;
+  showStep(0);
+}
+
+function renderStep(s,idx){
+  let h = `<div class="step-title">${s.title}</div><p style="margin-bottom:12px;font-size:.9rem">${s.question}</p>`;
+  if(s.type==='radio'){
+    s.options.forEach(o=>{
+      h+=`<label class="opt" onclick="selectRadio(${idx},'${o.v}',this)">
+        <input type="radio" name="step${idx}" value="${o.v}">
+        <div class="lbl">${o.l}</div>${o.d?`<div class="desc">${o.d}</div>`:''}
+      </label>`;
+    });
+  } else if(s.type==='checkbox'){
+    s.options.forEach(o=>{
+      h+=`<label class="chk" onclick="toggleCheck(${idx},'${o.v}',this,event)">
+        <input type="checkbox" value="${o.v}">
+        <div><div class="lbl">${o.l}</div></div>
+      </label>`;
+    });
+  } else if(s.type==='number'){
+    h+=`<div class="num-group"><input type="number" id="numInput_${idx}" min="${s.field.min}" max="${s.field.max}" step="${s.field.step}" placeholder="${s.field.placeholder}" oninput="numChange(${idx},this.value)"><span class="unit">${s.field.unit}</span></div>`;
+  }
+  h+=`<div class="nav">`;
+  if(idx>0) h+=`<button class="btn btn-secondary" onclick="goStep(${idx-1})">← Geri</button>`;
+  if(idx<STEPS.length-1) h+=`<button class="btn btn-primary" onclick="goStep(${idx+1})">İleri →</button>`;
+  else h+=`<button class="btn btn-primary" onclick="saveLesion()">Lezyonu Kaydet →</button>`;
+  h+=`</div>`;
+  return h;
+}
+
+function selectRadio(idx,val,el){
+  answers[STEPS[idx].id]=val;
+  el.closest('.step').querySelectorAll('label.opt').forEach(l=>l.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleCheck(idx,val,el,ev){
+  const key=STEPS[idx].id;
+  if(!answers[key])answers[key]=[];
+  const cb=el.querySelector('input[type=checkbox]');
+  if(ev.target!==cb){cb.checked=!cb.checked;}
+  if(cb.checked){
+    if(!answers[key].includes(val))answers[key].push(val);
+    el.classList.add('selected');
+  }else{
+    answers[key]=answers[key].filter(x=>x!==val);
+    el.classList.remove('selected');
+  }
+}
+
+function numChange(idx,val){
+  answers[STEPS[idx].id]=val?parseFloat(val):null;
+}
+
+function goStep(n){
+  showStep(n);
+}
+
+function showStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(n>=STEPS.length?'step_result':`step_${n}`);
+  if(el)el.classList.add('active');
+  current=n;
+  const total=STEPS.length;
+  document.getElementById('counter').textContent=n<total?`Adım ${n+1} / ${total}`:'Sonuç';
+}
+
+// === SCORING ENGINE ===
+function calcScores(ans){
+  const a=ans||answers;
+  const results=[];
+  PATHOLOGIES.forEach(p=>{
+    let score=0,maxScore=0,details=[];
+
+    // DWI match (weight 30)
+    maxScore+=30;
+    const dwi=a.dwi||'';
+    if(dwi===p.dwi){score+=30;details.push({k:'DWI',v:'Tam uyum',s:30});}
+    else if(dwiPartial(dwi,p.dwi)){score+=15;details.push({k:'DWI',v:'Kısmi uyum',s:15});}
+    else{details.push({k:'DWI',v:'Uyumsuz',s:0});}
+
+    // ADC match (weight 30)
+    maxScore+=30;
+    const adc=a.adc||'';
+    if(adc===p.adc){score+=30;details.push({k:'ADC',v:'Tam uyum',s:30});}
+    else if(adcPartial(adc,p.adc)){score+=15;details.push({k:'ADC',v:'Kısmi uyum',s:15});}
+    else{details.push({k:'ADC',v:'Uyumsuz',s:0});}
+
+    // Location match (weight 20)
+    maxScore+=20;
+    const loc=a.loc||[];
+    if(loc.length>0 && p.loc.length>0){
+      const inter=loc.filter(l=>p.loc.includes(l)).length;
+      const ls=Math.round(20*(inter/p.loc.length));
+      score+=ls;details.push({k:'Lokalizasyon',v:`${inter}/${p.loc.length} uyum`,s:ls});
+    }else{details.push({k:'Lokalizasyon',v:'Bilgi yok',s:0});}
+
+    // Enhancement (weight 10)
+    maxScore+=10;
+    const enh=a.enhance||'';
+    if(enh===p.enhance){score+=10;details.push({k:'Kontrastlanma',v:'Tam uyum',s:10});}
+    else if(enh==='dural_tail'&&p.enhance==='homojen'&&p.id==='menenjioma'){score+=8;details.push({k:'Kontrastlanma',v:'Kısmi uyum',s:8});}
+    else{details.push({k:'Kontrastlanma',v:'Uyumsuz',s:0});}
+
+    // Morphology (weight 10)
+    maxScore+=10;
+    const morph=a.morph||[];
+    if(morph.length>0 && p.morph.length>0){
+      const inter=morph.filter(m=>p.morph.includes(m)).length;
+      const ms=Math.round(10*(inter/p.morph.length));
+      score+=ms;details.push({k:'Morfoloji',v:`${inter}/${p.morph.length} uyum`,s:ms});
+    }else{details.push({k:'Morfoloji',v:'Bilgi yok',s:0});}
+
+    // Clinical (weight bonus 10)
+    const clin=a.clinical||[];
+    if(clin.length>0 && p.clinical.length>0){
+      maxScore+=10;
+      const inter=clin.filter(c=>p.clinical.includes(c)).length;
+      const cs=Math.round(10*(inter/p.clinical.length));
+      score+=cs;details.push({k:'Klinik',v:`${inter}/${p.clinical.length} uyum`,s:cs});
+    }
+
+    // ADC value bonus
+    const adcVal=a.adc_val;
+    if(adcVal!=null){
+      if((p.adc==='cok_dusuk'&&adcVal<0.5)||(p.adc==='dusuk'&&adcVal>=0.4&&adcVal<0.8)||(p.adc==='dusuk_orta'&&adcVal>=0.6&&adcVal<1.0)||(p.adc==='orta'&&adcVal>=0.8&&adcVal<1.2)||(p.adc==='orta_yuksek'&&adcVal>=1.0&&adcVal<1.5)||(p.adc==='normal_yuksek'&&adcVal>=1.2)||(p.adc==='yuksek'&&adcVal>=1.5)){
+        score+=5;maxScore+=5;details.push({k:'ADC Değeri',v:`${adcVal} uyumlu`,s:5});
+      }
+    }
+
+    const pct=maxScore>0?Math.round(100*score/maxScore):0;
+    results.push({...p,score,maxScore,pct,details});
+  });
+  results.sort((a,b)=>b.pct-a.pct);
+  return results;
+}
+
+function dwiPartial(sel,target){
+  const g={
+    'cok_hiperintens':['belirgin_hiperintens','hiperintens'],
+    'belirgin_hiperintens':['cok_hiperintens','hiperintens'],
+    'hiperintens':['belirgin_hiperintens','hafif_hiperintens','heterojen_hiperintens'],
+    'heterojen_hiperintens':['hiperintens','degisken'],
+    'hafif_hiperintens':['hiperintens','izointens'],
+    'izointens':['hafif_hiperintens'],
+    'degisken':['heterojen_hiperintens','hiperintens','hafif_hiperintens']
+  };
+  return (g[sel]||[]).includes(target);
+}
+
+function adcPartial(sel,target){
+  const g={
+    'cok_dusuk':['dusuk'],
+    'dusuk':['cok_dusuk','dusuk_orta'],
+    'dusuk_orta':['dusuk','orta'],
+    'orta':['dusuk_orta','orta_yuksek'],
+    'orta_yuksek':['orta','normal_yuksek'],
+    'normal_yuksek':['orta_yuksek','yuksek'],
+    'yuksek':['normal_yuksek'],
+    'pseudonormal':['orta','dusuk_orta','orta_yuksek']
+  };
+  return (g[sel]||[]).includes(target);
+}
+
+function barColor(pct){
+  if(pct>=70)return'var(--red)';
+  if(pct>=45)return'var(--orange)';
+  if(pct>=25)return'var(--yellow)';
+  return'var(--text-dim)';
+}
+
+function sevLabel(s){
+  if(s==='high')return'<span class="severity-high">● Yüksek</span>';
+  if(s==='med')return'<span class="severity-med">● Orta</span>';
+  return'<span class="severity-low">● Düşük</span>';
+}
+
+// === LESION LOOP ===
+function saveLesion(){
+  const label=`Lezyon ${lesions.length+1}`;
+  lesions.push({
+    label,
+    answers:{
+      ...answers,
+      loc:answers.loc?[...answers.loc]:[],
+      morph:answers.morph?[...answers.morph]:[],
+      clinical:answers.clinical?[...answers.clinical]:[]
+    }
+  });
+  showAskMore();
+}
+
+function showAskMore(){
+  const last=lesions[lesions.length-1];
+  const el=document.getElementById('step_ask_more');
+  el.innerHTML=`
+    <div class="step-title" style="color:var(--green)">✔ ${last.label} Kaydedildi</div>
+    <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:18px">Toplam <b style="color:var(--text)">${lesions.length}</b> lezyon kayıtlı.</p>
+    <p style="font-size:1rem;margin-bottom:14px">Başka lezyon var mı?</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="addAnotherLesion()" style="flex:1;min-width:160px">➕ Evet, Yeni Lezyon Ekle</button>
+      <button class="btn btn-secondary" onclick="finalizeLesions()" style="flex:1;min-width:160px;border-color:var(--green);color:var(--green)">📋 Hayır, Raporu Göster</button>
+    </div>
+    <div class="nav" style="margin-top:16px">
+      <button class="btn btn-secondary" onclick="editLastLesion()">← Geri Dön / Düzenle</button>
+    </div>
+  `;
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  current=-1;
+  document.getElementById('counter').textContent=`${lesions.length} lezyon kaydedildi`;
+}
+
+function addAnotherLesion(){
+  answers={};
+  document.querySelectorAll('label.opt,label.chk').forEach(l=>l.classList.remove('selected'));
+  document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(i=>i.checked=false);
+  document.querySelectorAll('input[type=number]').forEach(i=>i.value='');
+  showStep(0);
+}
+
+function editLastLesion(){
+  // Pop last lesion back into answers and return to last step
+  if(lesions.length>0){
+    const last=lesions.pop();
+    answers=last.answers;
+    // Go to last step (step 6 = ADC value)
+    showStep(STEPS.length-1);
+  }
+}
+
+function finalizeLesions(){
+  showResults();
+}
+
+// === RESULTS ===
+function showResults(){
+  const all=lesions.length>0?lesions:[{label:'Lezyon 1',answers}];
+
+  let h=`<div class="step-title">Ayırıcı Tanı Sonuçları</div>`;
+  if(all.length>1){
+    h+=`<p style="font-size:.85rem;color:var(--text-dim);margin-bottom:14px">Toplam <b>${all.length}</b> lezyon analiz edildi.</p>`;
+  }
+
+  all.forEach((les,li)=>{
+    const res=calcScores(les.answers);
+    const top=res.filter(r=>r.pct>0);
+    const best=top[0];
+
+    if(all.length>1){
+      h+=`<div style="margin:16px 0 8px;padding:8px 14px;background:var(--purple-glow);border-left:3px solid var(--purple);border-radius:0 6px 6px 0;font-weight:700;color:var(--purple)">🔵 ${les.label}</div>`;
+    }
+
+    h+=`<div class="diff-bar-wrap">`;
+    top.forEach(r=>{
+      h+=`<div class="diff-row">
+        <div class="diff-name">${r.name}</div>
+        <div class="diff-bar-bg"><div class="diff-bar" style="width:${r.pct}%;background:${barColor(r.pct)}"></div></div>
+        <div class="diff-pct">%${r.pct}</div>
+      </div>`;
+    });
+    h+=`</div>`;
+
+    h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">Detaylı Uyum Tablosu</div>`;
+    const show=top.slice(0,5);
+    h+=`<table class="report-table"><thead><tr><th>Patoloji</th><th>Skor</th><th>Uyum</th><th>Klinik Önemi</th></tr></thead><tbody>`;
+    show.forEach(r=>{
+      h+=`<tr><td>${r.name}</td><td>%${r.pct}</td><td>${r.details.map(d=>`${d.k}: ${d.v}`).join(', ')}</td><td>${sevLabel(r.severity)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+
+    h+=`<div class="yorum"><div class="yorum-title">YORUM — ${les.label}</div>`;
+    if(best&&best.pct>=50){
+      h+=`Bulgular en yüksek oranda <b>${best.name}</b> (%${best.pct} uyum) ile uyumludur. ${best.desc}`;
+      if(top[1]&&top[1].pct>=40){
+        h+=`<br><br>Ayırıcı tanıda <b>${top[1].name}</b> (%${top[1].pct}) da göz önünde bulundurulmalıdır.`;
+      }
+    }else if(best){
+      h+=`Mevcut bulgularla en yakın eşleşme <b>${best.name}</b> (%${best.pct}) olmakla birlikte uyum oranı düşüktür. Ek sekanslar ve klinik korelasyon önerilir.`;
+    }else{
+      h+=`Girilen bulgularla anlamlı bir eşleşme saptanmamıştır. Ek sekanslar ve klinik korelasyon önerilir.`;
+    }
+    const adcVal=les.answers.adc_val;
+    if(adcVal!=null){
+      h+=`<br><br><b>ADC Değeri:</b> ${adcVal} × 10⁻³ mm²/s — `;
+      if(adcVal<0.5)h+=`<span class="severity-high">Belirgin restriksiyon</span> (abse, lenfoma, akut iskemi düşünülmeli)`;
+      else if(adcVal<0.8)h+=`<span class="severity-high">Restriksiyon mevcut</span> (iskemi, yüksek sellülarite)`;
+      else if(adcVal<1.2)h+=`<span class="severity-med">Orta düzey</span> (kısmi restriksiyon veya T2 shine-through)`;
+      else h+=`<span class="severity-low">Restriksiyon yok</span> (T2 shine-through, kronik lezyon)`;
+    }
+    h+=`</div>`;
+  });
+
+  // Reference table
+  h+=`<div class="report-section"><div class="step-title" style="font-size:.95rem">Referans: Difüzyon MRI Patoloji Tablosu</div>`;
+  h+=`<table class="report-table"><thead><tr><th>Patoloji</th><th>DWI</th><th>ADC</th><th>Açıklama</th></tr></thead><tbody>`;
+  PATHOLOGIES.forEach(p=>{
+    h+=`<tr><td>${p.name}</td><td>${dwiLabel(p.dwi)}</td><td>${adcLabel(p.adc)}</td><td style="font-size:.8rem">${p.desc.substring(0,80)}…</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+
+  h+=`<div class="toolbar">
+    <button class="btn btn-primary" onclick="openPrint()">🖨️ Yazdır / Dışa Aktar</button>
+    <button class="btn btn-secondary" onclick="resetAll()">↻ Yeni Analiz</button>
+  </div>`;
+
+  const el=document.getElementById('step_result');
+  el.innerHTML=h;
+  showStep(STEPS.length);
+}
+
+function dwiLabel(v){
+  const m={'cok_hiperintens':'Çok hiperintens','belirgin_hiperintens':'Belirgin hiperintens','hiperintens':'Hiperintens','heterojen_hiperintens':'Heterojen hiperintens','hafif_hiperintens':'Hafif hiperintens','izointens':'İzointens','hipointens':'Hipointens','degisken':'Değişken'};
+  return m[v]||v;
+}
+function adcLabel(v){
+  const m={'cok_dusuk':'Çok düşük','dusuk':'Düşük','dusuk_orta':'Düşük-orta','orta':'Orta','orta_yuksek':'Orta-yüksek','normal_yuksek':'Normal-yüksek','yuksek':'Yüksek','pseudonormal':'Psödonormalizasyon'};
+  return m[v]||v;
+}
+
+// === PRINT / EXPORT ===
+function openPrint(){
+  const all=lesions.length>0?lesions:[{label:'Lezyon 1',answers}];
+  const now=new Date().toLocaleString('tr-TR');
+
+  let h=`<h1 style="color:#7f5af0;font-size:16pt;margin-bottom:2px">Beyin Difüzyon MRI — Karar Destek Raporu</h1>`;
+  h+=`<p style="color:#666;font-size:9pt;margin-bottom:14px">Tarih: ${now} | Toplam lezyon: ${all.length}</p>`;
+
+  all.forEach((les,li)=>{
+    const ans=les.answers;
+    const res=calcScores(ans);
+    const top=res.filter(r=>r.pct>0).slice(0,8);
+    const best=top[0];
+
+    if(all.length>1){
+      h+=`<h2 style="background:#7f5af0;color:#fff;padding:6px 10px;border-radius:4px;font-size:12pt">${les.label}</h2>`;
+    }
+
+    h+=`<h2>Bulgular</h2><table><tbody>`;
+    h+=`<tr><td><b>DWI Sinyali</b></td><td>${dwiLabel(ans.dwi||'')}</td></tr>`;
+    h+=`<tr><td><b>ADC Haritası</b></td><td>${adcLabel(ans.adc||'')}</td></tr>`;
+    const locLabels=(ans.loc||[]).map(v=>{const o=STEPS[2].options.find(x=>x.v===v);return o?o.l:v;});
+    h+=`<tr><td><b>Lokalizasyon</b></td><td>${locLabels.join(', ')||'—'}</td></tr>`;
+    const enhLabel=STEPS[3].options.find(o=>o.v===ans.enhance);
+    h+=`<tr><td><b>Kontrastlanma</b></td><td>${enhLabel?enhLabel.l:'—'}</td></tr>`;
+    const morphLabels=(ans.morph||[]).map(v=>{const o=STEPS[4].options.find(x=>x.v===v);return o?o.l:v;});
+    h+=`<tr><td><b>Morfoloji</b></td><td>${morphLabels.join(', ')||'—'}</td></tr>`;
+    const clinLabels=(ans.clinical||[]).map(v=>{const o=STEPS[5].options.find(x=>x.v===v);return o?o.l:v;});
+    h+=`<tr><td><b>Klinik</b></td><td>${clinLabels.join(', ')||'—'}</td></tr>`;
+    if(ans.adc_val!=null) h+=`<tr><td><b>ADC Değeri</b></td><td>${ans.adc_val} × 10⁻³ mm²/s</td></tr>`;
+    h+=`</tbody></table>`;
+
+    h+=`<h2>Ayırıcı Tanı Sıralaması</h2><table><thead><tr><th>Patoloji</th><th>Uyum %</th><th>Klinik Önemi</th></tr></thead><tbody>`;
+    top.forEach(r=>{
+      const sv=r.severity==='high'?'Yüksek':r.severity==='med'?'Orta':'Düşük';
+      h+=`<tr><td>${r.name}</td><td>%${r.pct}</td><td>${sv}</td></tr>`;
+    });
+    h+=`</tbody></table>`;
+
+    h+=`<div class="yorum-print"><b>YORUM${all.length>1?' — '+les.label:''}:</b> `;
+    if(best&&best.pct>=50){
+      h+=`Bulgular en yüksek oranda ${best.name} (%${best.pct}) ile uyumludur. ${best.desc}`;
+    }else if(best){
+      h+=`En yakın eşleşme ${best.name} (%${best.pct}) olmakla birlikte uyum düşüktür. Ek değerlendirme önerilir.`;
+    }
+    h+=`</div>`;
+  });
+
+  h+=`<p style="color:#999;font-size:8pt;margin-top:20px;border-top:1px solid #ddd;padding-top:8px">Bu rapor klinik karar destek amaçlıdır. Kesin tanı klinik ve radyolojik korelasyon gerektirir.</p>`;
+
+  document.getElementById('printSheet').innerHTML=h;
+  document.getElementById('printOverlay').classList.add('show');
+}
+
+function closePrint(){document.getElementById('printOverlay').classList.remove('show')}
+
+function copyReport(){
+  const sheet=document.getElementById('printSheet');
+  const range=document.createRange();
+  range.selectNodeContents(sheet);
+  const sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try{document.execCommand('copy');alert('Rapor panoya kopyalandı.');}catch(e){alert('Kopyalama başarısız.');}
+  sel.removeAllRanges();
+}
+
+function resetAll(){
+  answers={};
+  lesions=[];
+  document.querySelectorAll('label.opt,label.chk').forEach(l=>l.classList.remove('selected'));
+  document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(i=>i.checked=false);
+  document.querySelectorAll('input[type=number]').forEach(i=>i.value='');
+  showStep(0);
+}
+
+init();
+</script>
+</body>
+</html>

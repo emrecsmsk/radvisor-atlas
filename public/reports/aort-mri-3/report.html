@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aort MRI Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0f0f14;--bg2:#16161e;--bg3:#1c1c28;--bg4:#24243a;
+--purple:#8b5cf6;--purple2:#a78bfa;--purple3:#6d28d9;--purple-glow:rgba(139,92,246,.15);
+--text:#e2e2ee;--text2:#9999b0;--text3:#6666a0;
+--border:#2a2a40;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--cyan:#06b6d4;
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app-wrap{max-width:900px;margin:0 auto;padding:20px}
+.header{text-align:center;padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--purple2),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+.header p{color:var(--text2);font-size:.82rem;margin-top:4px}
+/* Progress */
+.progress-bar{display:flex;gap:3px;margin-bottom:24px;padding:0 4px}
+.progress-seg{height:4px;flex:1;border-radius:2px;background:var(--bg4);transition:background .3s}
+.progress-seg.done{background:var(--purple)}
+.progress-seg.active{background:var(--purple2);box-shadow:0 0 8px var(--purple-glow)}
+/* Step Card */
+.step-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 32px;min-height:320px;position:relative}
+.step-title{font-size:1.1rem;font-weight:600;color:var(--purple2);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.step-title .num{background:var(--purple3);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.step-desc{color:var(--text2);font-size:.82rem;margin-bottom:20px}
+/* Form Elements */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-group input[type=text],.form-group input[type=number],.form-group select,.form-group textarea{
+width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--purple)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* Radio/Check */
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.opt-btn{padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.85rem;color:var(--text2);transition:all .2s;text-align:center;user-select:none}
+.opt-btn:hover{border-color:var(--purple);color:var(--text)}
+.opt-btn.sel{background:var(--purple-glow);border-color:var(--purple);color:var(--purple2);font-weight:600}
+/* Checkbox row */
+.chk-grid{display:flex;flex-wrap:wrap;gap:8px}
+.chk-btn{padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--text2);transition:all .2s}
+.chk-btn.sel{background:var(--purple-glow);border-color:var(--purple);color:var(--purple2)}
+/* Buttons */
+.btn-row{display:flex;justify-content:space-between;margin-top:24px}
+.btn{padding:10px 28px;border:none;border-radius:8px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-prev{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.btn-prev:hover{border-color:var(--purple);color:var(--text)}
+.btn-next{background:linear-gradient(135deg,var(--purple3),var(--purple));color:#fff}
+.btn-next:hover{opacity:.9;transform:translateY(-1px)}
+.btn-next:disabled{opacity:.4;cursor:not-allowed;transform:none}
+/* Conditional section */
+.cond-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:12px}
+.cond-box .cond-title{font-size:.85rem;font-weight:600;color:var(--amber);margin-bottom:10px}
+/* Report */
+.report-wrap{background:#fff;color:#111;border-radius:12px;padding:32px;font-size:.88rem;line-height:1.7}
+.report-wrap h2{font-size:1.15rem;color:#111;border-bottom:2px solid var(--purple);padding-bottom:6px;margin:20px 0 12px}
+.report-wrap h3{font-size:.95rem;color:var(--purple3);margin:14px 0 8px}
+.report-table{width:100%;border-collapse:collapse;margin:10px 0 18px}
+.report-table th{background:#f0ecfb;color:var(--purple3);text-align:left;padding:8px 10px;font-weight:600;font-size:.8rem;border:1px solid #e0d8f0}
+.report-table td{padding:7px 10px;border:1px solid #e8e8f0;font-size:.82rem}
+.report-table tr:nth-child(even) td{background:#faf9ff}
+.report-table tr:nth-child(odd) td{background:#fff}
+.yorum-box{background:#f6f3ff;border-left:4px solid var(--purple);padding:14px 18px;border-radius:0 8px 8px 0;margin:12px 0}
+.yorum-box .yorum-title{font-weight:700;color:var(--purple3);font-size:.85rem;margin-bottom:6px}
+.yorum-box p{font-size:.82rem;color:#333;margin:3px 0}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:700;margin-left:6px}
+.badge-normal{background:#dcfce7;color:#166534}
+.badge-warning{background:#fef3c7;color:#92400e}
+.badge-danger{background:#fee2e2;color:#991b1b}
+/* Export Buttons */
+.export-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.export-btn{padding:10px 22px;border:none;border-radius:8px;font-family:inherit;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s}
+.export-print{background:var(--purple);color:#fff}
+.export-copy{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.export-html{background:var(--green);color:#fff}
+/* Print */
+@media print{
+body{background:#fff !important}
+.app-wrap{max-width:100%}
+.header,.progress-bar,.btn-row,.export-row,.step-card{display:none !important}
+.report-wrap{display:block !important;box-shadow:none;padding:20px}
+}
+/* Patoloji tablosu */
+.pat-table{width:100%;border-collapse:collapse;font-size:.72rem;margin:10px 0}
+.pat-table th{background:var(--purple3);color:#fff;padding:6px 8px;text-align:center;font-size:.68rem;border:1px solid #5530a0}
+.pat-table td{padding:5px 7px;border:1px solid #e0d8f0;text-align:center;font-size:.7rem}
+.pat-table tr:nth-child(even) td{background:#faf9ff}
+.pat-table td:first-child{text-align:left;font-weight:600;min-width:120px}
+/* Scroll helper */
+.scroll-x{overflow-x:auto}
+/* Alert */
+.alert-info{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.8rem;color:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback,useMemo} = React;
+
+/* ─── Pathology Profiles ─── */
+const PATHOLOGIES=[
+{name:"Aterosklerotik Stenoz",t1:"Duvar kalınlaşması, plak",t2:"Değişken",ip_op:"Değişmez",dwi:"Genelde negatif",adc:"Normal",art:"Lümen daralması",ven:"Persistan daralma",late:"Aynı"},
+{name:"Arteriyel Tromboz",t1:"Subakut dönemde hiperintens",t2:"Heterojen",ip_op:"Değişmez",dwi:"Restriksiyon olabilir",adc:"Düşük",art:"Dolum defekti",ven:"Persistan",late:"Persistan"},
+{name:"Arteriyel Diseksiyon",t1:"İntramural hematom hiperintens",t2:"Çift lümen görünümü",ip_op:"Değişmez",dwi:"Değişken",adc:"Değişken",art:"İntimal flap",ven:"Çift lümen",late:"Persistan"},
+{name:"Anevrizma",t1:"Trombus varsa hiperintens",t2:"Heterojen",ip_op:"Değişmez",dwi:"Genelde yok",adc:"Normal",art:"Lümen genişlemesi",ven:"Kontrast dolumu",late:"Persistan"},
+{name:"Pseudoanevrizma",t1:"Heterojen",t2:"Hiperintens",ip_op:"Değişmez",dwi:"Değişken",adc:"Değişken",art:"Kontrastla dolan kese",ven:"Devam",late:"Devam"},
+{name:"Vaskülit (Takayasu vb.)",t1:"Duvar kalınlaşması",t2:"Duvar hiperintens",ip_op:"Değişmez",dwi:"İnflamasyon restriksiyonu",adc:"Düşük",art:"Duvar kontrastı",ven:"Devam",late:"Persistan"},
+{name:"AVM",t1:"Akım boşluğu",t2:"Akım boşluğu",ip_op:"Değişmez",dwi:"Yok",adc:"Normal",art:"Erken venöz dolum",ven:"Dilate venler",late:"Persistan"},
+{name:"Emboli",t1:"Trombüs sinyali",t2:"Heterojen",ip_op:"Değişmez",dwi:"Restriksiyon olabilir",adc:"Düşük",art:"Ani dolum defekti",ven:"Persistan",late:"Persistan"},
+];
+
+/* ─── Branch detail sub-questions (reusable for arteries) ─── */
+const ARTERY_NAMES = {celiac:"Çöliak Arter",sma:"SMA (Superior Mezenterik Arter)",renalR:"Sağ Renal Arter",renalL:"Sol Renal Arter",iliakR:"Sağ İliak Arter",iliakL:"Sol İliak Arter"};
+
+/* ─── Steps Definition ─── */
+const STEPS=[
+{id:"patient",title:"Hasta Bilgileri"},
+{id:"konum",title:"Aort Konumu"},
+{id:"kalibrasyon",title:"Kalibrasyon Ölçümleri"},
+{id:"ektazi",title:"Ektazi Detayları",conditional:true},
+{id:"trombus",title:"Trombüs Değerlendirmesi"},
+{id:"duvar",title:"Duvar Özellikleri"},
+{id:"flep",title:"Flep / Diseksiyon"},
+{id:"leak",title:"Leak Değerlendirmesi"},
+{id:"celiac",title:"Çöliak Arter"},
+{id:"sma",title:"SMA"},
+{id:"renalR",title:"Sağ Renal Arter"},
+{id:"renalL",title:"Sol Renal Arter"},
+{id:"iliakR",title:"Sağ İliak Arter"},
+{id:"iliakL",title:"Sol İliak Arter"},
+{id:"report",title:"Rapor"},
+];
+
+/* ─── Helpers ─── */
+const empty=()=>({});
+const hasEktazi=(d)=>{
+ const c=parseFloat(d.capCeliac)||0, i=parseFloat(d.capInfrarenal)||0, b=parseFloat(d.capBifurk)||0;
+ return c>30||i>30||b>30;
+};
+
+/* ─── Main App ─── */
+function App(){
+ const [step,setStep]=useState(0);
+ const [data,setData]=useState({
+  patientName:"",patientAge:"",patientGender:"",patientProtocol:"",
+  konum:"Normal Konum",
+  capCeliac:"",capInfrarenal:"",capBifurk:"",
+  // ektazi
+  ektBasRel:"yukari",ektBasMm:"",ektBitRel:"asagi",ektBitMm:"",ektDerece:"",
+  // trombus
+  trombusVar:"yok",tromSaatFrom:"",tromSaatTo:"",tromUzunluk:"",tromKalinlik:"",
+  // duvar
+  duvar:[],
+  duvarDetay:{},
+  // flep
+  flepVar:"yok",flepBasRel:"yukari",flepBasMm:"",flepBitRel:"asagi",flepBitMm:"",
+  // leak
+  leakVar:"yok",leakMiktar:"",
+  // arteries (each: cap, darlikVar, darlikMesafe, darlikCap, darlikMm, trombusVar)
+  celiac_cap:"",celiac_darlik:"yok",celiac_mesafe:"",celiac_darlikCap:"",celiac_darlikMm:"",celiac_trombus:"yok",
+  sma_cap:"",sma_darlik:"yok",sma_mesafe:"",sma_darlikCap:"",sma_darlikMm:"",sma_trombus:"yok",
+  renalR_cap:"",renalR_darlik:"yok",renalR_mesafe:"",renalR_darlikCap:"",renalR_darlikMm:"",renalR_trombus:"yok",
+  renalL_cap:"",renalL_darlik:"yok",renalL_mesafe:"",renalL_darlikCap:"",renalL_darlikMm:"",renalL_trombus:"yok",
+  iliakR_cap:"",iliakR_darlik:"yok",iliakR_mesafe:"",iliakR_darlikCap:"",iliakR_darlikMm:"",iliakR_trombus:"yok",
+  iliakL_cap:"",iliakL_darlik:"yok",iliakL_mesafe:"",iliakL_darlikCap:"",iliakL_darlikMm:"",iliakL_trombus:"yok",
+ });
+
+ const set=(k,v)=>setData(p=>({...p,[k]:v}));
+
+ /* Determine effective steps (skip ektazi if not needed) */
+ const effectiveSteps=useMemo(()=>{
+  if(step<=2) return STEPS; // haven't passed kalibrasyon yet
+  return hasEktazi(data)?STEPS:STEPS.filter(s=>s.id!=="ektazi");
+ },[data,step]);
+
+ const curStep=effectiveSteps[step];
+ const totalSteps=effectiveSteps.length;
+
+ const goNext=()=>{
+  if(step<totalSteps-1){
+   let next=step+1;
+   // skip ektazi if no ektazi
+   if(effectiveSteps[next]?.id==="ektazi" && !hasEktazi(data)) next++;
+   setStep(Math.min(next,totalSteps-1));
+  }
+ };
+ const goPrev=()=>{
+  if(step>0){
+   let prev=step-1;
+   if(effectiveSteps[prev]?.id==="ektazi" && !hasEktazi(data)) prev--;
+   setStep(Math.max(prev,0));
+  }
+ };
+
+ /* ─── Artery Step Renderer ─── */
+ const renderArtery=(prefix,label)=>(
+  <>
+   <div className="step-desc">{label} değerlendirmesi</div>
+   <div className="form-row">
+    <div className="form-group">
+     <label>Çap (mm)</label>
+     <input type="number" value={data[prefix+"_cap"]} onChange={e=>set(prefix+"_cap",e.target.value)} placeholder="mm"/>
+    </div>
+    <div className="form-group">
+     <label>Darlık var mı?</label>
+     <div className="opt-grid">
+      {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_darlik"]===v?" sel":"")} onClick={()=>set(prefix+"_darlik",v)}>{v==="yok"?"Yok":"Var"}</div>)}
+     </div>
+    </div>
+   </div>
+   {data[prefix+"_darlik"]==="var"&&(
+    <div className="cond-box">
+     <div className="cond-title">Darlık Detayları</div>
+     <div className="form-row3">
+      <div className="form-group">
+       <label>Aorttan ayrıldıktan kaç mm sonra</label>
+       <input type="number" value={data[prefix+"_mesafe"]} onChange={e=>set(prefix+"_mesafe",e.target.value)} placeholder="mm"/>
+      </div>
+      <div className="form-group">
+       <label>Darlık çapı (mm)</label>
+       <input type="number" value={data[prefix+"_darlikCap"]} onChange={e=>set(prefix+"_darlikCap",e.target.value)} placeholder="mm"/>
+      </div>
+      <div className="form-group">
+       <label>Darlık uzunluğu (mm)</label>
+       <input type="number" value={data[prefix+"_darlikMm"]} onChange={e=>set(prefix+"_darlikMm",e.target.value)} placeholder="mm"/>
+      </div>
+     </div>
+    </div>
+   )}
+   <div className="form-group" style={{marginTop:12}}>
+    <label>Trombüs var mı?</label>
+    <div className="opt-grid">
+     {["yok","var"].map(v=><div key={v} className={"opt-btn"+(data[prefix+"_trombus"]===v?" sel":"")} onClick={()=>set(prefix+"_trombus",v)}>{v==="yok"?"Yok":"Var"}</div>)}
+    </div>
+   </div>
+  </>
+ );
+
+ /* ─── Stenosis % calc ─── */
+ const stenosisPct=(cap,darlikCap)=>{
+  const c=parseFloat(cap),d=parseFloat(darlikCap);
+  if(!c||!d||c<=0)return null;
+  return Math.round(((c-d)/c)*100);
+ };
+
+ /* ─── YORUM Generator ─── */
+ const generateYorum=()=>{
+  const findings=[];
+  // Konum
+  if(data.konum!=="Normal Konum") findings.push(`Aort konumu: ${data.konum} - anatomik varyant.`);
+  // Ektazi/Anevrizma
+  const caps=[{n:"Çöliak kesim",v:data.capCeliac},{n:"İnfrarenal kesim",v:data.capInfrarenal},{n:"Bifurkasyon öncesi",v:data.capBifurk}];
+  caps.forEach(c=>{const mm=parseFloat(c.v);if(mm>30){
+   findings.push(mm>=50?`${c.n}: ${mm} mm - anevrizma düzeyinde genişleme.`:`${c.n}: ${mm} mm - ektazik.`);
+  }});
+  // Trombus
+  if(data.trombusVar==="var") findings.push(`Aort lümeninde trombüs (${data.tromUzunluk||"?"} mm uzunluğunda, ${data.tromKalinlik||"?"} mm kalınlığında). Emboli riski açısından klinik korelasyon önerilir.`);
+  // Duvar
+  if(data.duvar.includes("Kalsifiye")){
+   const d=data.duvarDetay["Kalsifiye"]||{};
+   let txt="Aort duvarında kalsifikasyon";
+   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
+   if(d.uzunluk) txt+=`, ${d.uzunluk} mm uzunluğunda`;
+   if(d.kalinlik) txt+=`, duvar kalınlığı ${d.kalinlik} mm`;
+   txt+=" - aterosklerotik değişiklikler.";
+   if(d.ek) txt+=` ${d.ek}.`;
+   findings.push(txt);
+  }
+  if(data.duvar.includes("Ülsere")){
+   const d=data.duvarDetay["Ülsere"]||{};
+   let txt="Aort duvarında ülserasyon";
+   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
+   if(d.uzunluk) txt+=`, çapı ${d.uzunluk} mm`;
+   if(d.derinlik) txt+=`, derinliği ${d.derinlik} mm`;
+   if(d.kalinlik) txt+=`, ${d.kalinlik} adet`;
+   txt+=" - penetran aterosklerotik ülser açısından değerlendirilmelidir.";
+   if(d.ek) txt+=` ${d.ek}.`;
+   findings.push(txt);
+  }
+  if(data.duvar.includes("Düzensiz")){
+   const d=data.duvarDetay["Düzensiz"]||{};
+   let txt="Aort duvarında düzensizlik";
+   if(d.segment) txt+=` (${d.segment} düzeyinde)`;
+   if(d.uzunluk) txt+=`, ${d.uzunluk} mm uzunluğunda etkilenim`;
+   if(d.kalinlik) txt+=`, duvar kalınlığı ${d.kalinlik} mm`;
+   txt+=" - plak veya duvar patolojisi.";
+   if(d.ek) txt+=` ${d.ek}.`;
+   findings.push(txt);
+  }
+  // Flep
+  if(data.flepVar==="var") findings.push("İntimal flep görünümü mevcut - aort diseksiyonu ile uyumlu. Stanford/DeBakey sınıflaması açısından değerlendirilmelidir.");
+  // Leak
+  if(data.leakVar==="var") findings.push(`Kontrast leak tespit edildi (${data.leakMiktar||"miktar belirtilmedi"}). Aktif kanama veya endoleak açısından değerlendirilmelidir.`);
+  // Arteries
+  Object.keys(ARTERY_NAMES).forEach(prefix=>{
+   if(data[prefix+"_darlik"]==="var"){
+    const pct=stenosisPct(data[prefix+"_cap"],data[prefix+"_darlikCap"]);
+    const label=ARTERY_NAMES[prefix];
+    findings.push(`${label}: Darlık mevcut${pct!==null?` (yaklaşık %${pct} stenoz)`:""}.`);
+   }
+   if(data[prefix+"_trombus"]==="var") findings.push(`${ARTERY_NAMES[prefix]} lümeninde trombüs.`);
+  });
+  if(findings.length===0) findings.push("Aort ve dallarında anlamlı patoloji saptanmamıştır.");
+  return findings;
+ };
+
+ /* ─── Differential suggestion ─── */
+ const suggestDifferential=()=>{
+  const matches=[];
+  if(data.duvar.includes("Kalsifiye")||data.duvar.includes("Ülsere")||Object.keys(ARTERY_NAMES).some(p=>data[p+"_darlik"]==="var"))
+   matches.push("Aterosklerotik Stenoz");
+  if(data.trombusVar==="var"||Object.keys(ARTERY_NAMES).some(p=>data[p+"_trombus"]==="var"))
+   matches.push("Arteriyel Tromboz","Emboli");
+  if(data.flepVar==="var") matches.push("Arteriyel Diseksiyon");
+  if(hasEktazi(data)){
+   const maxCap=Math.max(parseFloat(data.capCeliac)||0,parseFloat(data.capInfrarenal)||0,parseFloat(data.capBifurk)||0);
+   matches.push(maxCap>=50?"Anevrizma":"Anevrizma (ektazi düzeyinde)");
+  }
+  if(data.leakVar==="var") matches.push("Pseudoanevrizma");
+  if(data.duvar.includes("Düzensiz")&&data.duvar.includes("Kalsifiye")) matches.push("Vaskülit (Takayasu vb.)");
+  return [...new Set(matches)];
+ };
+
+ /* ─── Report HTML ─── */
+ const buildReportHTML=()=>{
+  const yorumlar=generateYorum();
+  const diffs=suggestDifferential();
+  const matchedPat=PATHOLOGIES.filter(p=>diffs.some(d=>d.includes(p.name.split(" ")[0])));
+
+  let html=`<div style="font-family:'IBM Plex Sans',sans-serif;color:#111;line-height:1.7;font-size:14px">`;
+  html+=`<h2 style="border-bottom:2px solid #6d28d9;padding-bottom:6px">AORT MRI İNCELEME RAPORU</h2>`;
+  // Hasta
+  html+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">Hasta Adı</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">Yaş</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#faf9ff"><td style="padding:4px 10px;font-weight:600">Cinsiyet</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">Protokol</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
+  // Aort genel
+  html+=`<h3 style="color:#6d28d9;margin:14px 0 8px">Aort Genel Değerlendirme</h3>`;
+  html+=`<table style="width:100%;border-collapse:collapse;margin:8px 0">`;
+  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">Parametre</th><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:13px">Değer</th></tr>`;
+  const rows=[
+   ["Konum",data.konum],
+   ["Çöliak kesim çapı",data.capCeliac?data.capCeliac+" mm":"-"],
+   ["İnfrarenal kesim çapı",data.capInfrarenal?data.capInfrarenal+" mm":"-"],
+   ["İliak bifurkasyon öncesi çapı",data.capBifurk?data.capBifurk+" mm":"-"],
+   ["Duvar",data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"],
+   ["Trombüs",data.trombusVar==="var"?`Var (saat ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} mm uzunluk, ${data.tromKalinlik||"?"} mm kalınlık)`:"Yok"],
+   ["Flep",data.flepVar==="var"?"Var":"Yok"],
+   ["Leak",data.leakVar==="var"?`Var (${data.leakMiktar||"miktar belirtilmedi"})`:"Yok"],
+  ];
+  rows.forEach((r,i)=>{html+=`<tr style="background:${i%2===0?"#fff":"#faf9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:13px">${r[0]}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:13px">${r[1]}</td></tr>`;});
+  // Duvar detay satırları
+  data.duvar.filter(d=>d!=="Düzenli").forEach(d=>{
+   const det=data.duvarDetay[d]||{};
+   const parts=[];
+   if(det.segment) parts.push(`Segment: ${det.segment}`);
+   if(d==="Kalsifiye"){
+    if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
+    if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+   } else if(d==="Ülsere"){
+    if(det.uzunluk) parts.push(`Çap: ${det.uzunluk} mm`);
+    if(det.derinlik) parts.push(`Derinlik: ${det.derinlik} mm`);
+    if(det.kalinlik) parts.push(`Sayı: ${det.kalinlik}`);
+   } else if(d==="Düzensiz"){
+    if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
+    if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+   }
+   if(det.ek) parts.push(det.ek);
+   if(parts.length>0){
+    html+=`<tr style="background:#faf9ff"><td style="padding:4px 10px 4px 24px;border:1px solid #e8e8f0;font-size:12px;color:#666">↳ ${d}</td><td style="padding:4px 10px;border:1px solid #e8e8f0;font-size:12px">${parts.join(" • ")}</td></tr>`;
+   }
+  });
+  html+=`</table>`;
+  // Ektazi detail
+  if(hasEktazi(data)){
+   html+=`<h3 style="color:#6d28d9">Ektazi Detayları</h3>`;
+   html+=`<p style="font-size:13px">Başlangıç: Sol renal arterden ${data.ektBasMm||"?"} mm ${data.ektBasRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
+   html+=`Bitiş: Sol renal arterden ${data.ektBitMm||"?"} mm ${data.ektBitRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
+   html+=`Aortu kapsama derecesi: ${data.ektDerece||"?"}&deg;</p>`;
+  }
+  // Flep detail
+  if(data.flepVar==="var"){
+   html+=`<h3 style="color:#6d28d9">Flep Detayları</h3>`;
+   html+=`<p style="font-size:13px">Başlangıç: Sol renal arterden ${data.flepBasMm||"?"} mm ${data.flepBasRel==="yukari"?"yukarıda":"aşağıda"}<br>`;
+   html+=`Bitiş: Sol renal arterden ${data.flepBitMm||"?"} mm ${data.flepBitRel==="yukari"?"yukarıda":"aşağıda"}</p>`;
+  }
+  // Arteries
+  html+=`<h3 style="color:#6d28d9">Dal Arterleri</h3>`;
+  html+=`<table style="width:100%;border-collapse:collapse;margin:8px 0">`;
+  html+=`<tr style="background:#f0ecfb"><th style="padding:7px 10px;text-align:left;border:1px solid #e0d8f0;font-size:12px">Arter</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Çap</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Darlık</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Stenoz %</th><th style="padding:7px 10px;text-align:center;border:1px solid #e0d8f0;font-size:12px">Trombüs</th></tr>`;
+  Object.keys(ARTERY_NAMES).forEach((p,i)=>{
+   const pct=stenosisPct(data[p+"_cap"],data[p+"_darlikCap"]);
+   html+=`<tr style="background:${i%2===0?"#fff":"#faf9ff"}">`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:12px">${ARTERY_NAMES[p]}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_cap"]?data[p+"_cap"]+" mm":"-"}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_darlik"]==="var"?"Var":"Yok"}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${pct!==null?"%"+pct:"-"}</td>`;
+   html+=`<td style="padding:6px 10px;border:1px solid #e8e8f0;text-align:center;font-size:12px">${data[p+"_trombus"]==="var"?"Var":"Yok"}</td>`;
+   html+=`</tr>`;
+  });
+  html+=`</table>`;
+  // YORUM
+  html+=`<div style="background:#f6f3ff;border-left:4px solid #6d28d9;padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0">`;
+  html+=`<div style="font-weight:700;color:#6d28d9;font-size:14px;margin-bottom:8px">YORUM</div>`;
+  yorumlar.forEach(y=>{html+=`<p style="font-size:13px;color:#333;margin:4px 0">• ${y}</p>`;});
+  html+=`</div>`;
+
+  html+=`</div>`;
+  return html;
+ };
+
+ /* ─── Export Handlers ─── */
+ const handlePrint=()=>window.print();
+ const handleCopy=()=>{
+  const el=document.getElementById("report-content");
+  if(!el)return;
+  const range=document.createRange();
+  range.selectNodeContents(el);
+  const sel=window.getSelection();
+  sel.removeAllRanges();sel.addRange(range);
+  document.execCommand("copy");
+  sel.removeAllRanges();
+  alert("Rapor panoya kopyalandı!");
+ };
+ const handleHTML=()=>{
+  const html=buildReportHTML();
+  const full=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Aort MRI Raporu</title></head><body>${html}</body></html>`;
+  const blob=new Blob([full],{type:"text/html"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="aort_mri_raporu.html";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+ };
+
+ /* ─── Duvar Detay helpers ─── */
+ const DUVAR_SEGMENTS=["Supraçöliak","Çöliak seviyesi","İnfrarenal","Bifurkasyon öncesi","Yaygın"];
+ const setDetay=(typ,field,val)=>{
+  setData(p=>{
+   const dd={...p.duvarDetay};
+   if(!dd[typ]) dd[typ]={segment:"",uzunluk:"",kalinlik:"",derinlik:"",ek:""};
+   dd[typ]={...dd[typ],[field]:val};
+   return {...p,duvarDetay:dd};
+  });
+ };
+ const getDetay=(typ,field)=>{
+  return (data.duvarDetay[typ]&&data.duvarDetay[typ][field])||"";
+ };
+
+ /* ─── Render Steps ─── */
+ const renderStep=()=>{
+  if(!curStep) return null;
+  switch(curStep.id){
+   case "patient": return(
+    <>
+     <div className="step-desc">Hasta demografik bilgileri</div>
+     <div className="form-row">
+      <div className="form-group"><label>Hasta Adı</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder="Ad Soyad"/></div>
+      <div className="form-group"><label>Yaş</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder="Yaş"/></div>
+     </div>
+     <div className="form-row">
+      <div className="form-group"><label>Cinsiyet</label>
+       <div className="opt-grid">{["Erkek","Kadın"].map(v=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{v}</div>)}</div>
+      </div>
+      <div className="form-group"><label>Protokol</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder="MR Anjio / MR Aort vb."/></div>
+     </div>
+    </>
+   );
+   case "konum": return(
+    <>
+     <div className="step-desc">Aortun anatomik konumunu seçiniz</div>
+     <div className="opt-grid">
+      {["Normal Konum","Sağ Yerleşimli","Duplike","Tortiyoze"].map(v=>
+       <div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{v}</div>
+      )}
+     </div>
+    </>
+   );
+   case "kalibrasyon": return(
+    <>
+     <div className="step-desc">Aort çap ölçümlerini giriniz (30 mm üzeri ektazi kabul edilir)</div>
+     <div className="form-row3">
+      <div className="form-group"><label>Çöliak kesim çapı (mm)</label><input type="number" value={data.capCeliac} onChange={e=>set("capCeliac",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>İnfrarenal kesim çapı (mm)</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>İliak bif. öncesi çapı (mm)</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
+     </div>
+     {hasEktazi(data)&&<div className="alert-info">Ektazi tespit edildi (&gt;30 mm). Sonraki adımda ektazi detayları sorulacaktır.</div>}
+    </>
+   );
+   case "ektazi": return(
+    <>
+     <div className="step-desc">Ektazi başlangıç/bitiş lokalizasyonu ve kapsama derecesi</div>
+     <div className="form-row">
+      <div className="form-group"><label>Başlangıç - Sol renal artere göre</label>
+       <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBasRel===v?" sel":"")} onClick={()=>set("ektBasRel",v)}>{l}</div>)}</div>
+      </div>
+      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.ektBasMm} onChange={e=>set("ektBasMm",e.target.value)} placeholder="mm"/></div>
+     </div>
+     <div className="form-row">
+      <div className="form-group"><label>Bitiş - Sol renal artere göre</label>
+       <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.ektBitRel===v?" sel":"")} onClick={()=>set("ektBitRel",v)}>{l}</div>)}</div>
+      </div>
+      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.ektBitMm} onChange={e=>set("ektBitMm",e.target.value)} placeholder="mm"/></div>
+     </div>
+     <div className="form-group"><label>Aortu kaç derece kapsıyor</label><input type="number" value={data.ektDerece} onChange={e=>set("ektDerece",e.target.value)} placeholder="Derece (°)"/></div>
+    </>
+   );
+   case "trombus": return(
+    <>
+     <div className="step-desc">Aort lümeninde trombüs değerlendirmesi</div>
+     <div className="form-group"><label>Trombüs var mı?</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.trombusVar===v?" sel":"")} onClick={()=>set("trombusVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     </div>
+     {data.trombusVar==="var"&&(
+      <div className="cond-box">
+       <div className="cond-title">Trombüs Detayları</div>
+       <div className="form-row">
+        <div className="form-group"><label>Saat pozisyonu (başlangıç)</label><input type="text" value={data.tromSaatFrom} onChange={e=>set("tromSaatFrom",e.target.value)} placeholder="ör: 2"/></div>
+        <div className="form-group"><label>Saat pozisyonu (bitiş)</label><input type="text" value={data.tromSaatTo} onChange={e=>set("tromSaatTo",e.target.value)} placeholder="ör: 5"/></div>
+       </div>
+       <div className="form-row">
+        <div className="form-group"><label>Trombüs uzunluğu (mm)</label><input type="number" value={data.tromUzunluk} onChange={e=>set("tromUzunluk",e.target.value)} placeholder="mm"/></div>
+        <div className="form-group"><label>Trombüs kalınlığı (mm)</label><input type="number" value={data.tromKalinlik} onChange={e=>set("tromKalinlik",e.target.value)} placeholder="mm"/></div>
+       </div>
+      </div>
+     )}
+    </>
+   );
+   case "duvar": return(
+    <>
+     <div className="step-desc">Aort duvar özelliklerini seçiniz (çoklu seçim). Seçilen patolojiler için detay bilgileri aşağıda sorulacaktır.</div>
+     <div className="chk-grid">
+      {["Düzenli","Kalsifiye","Ülsere","Düzensiz"].map(v=>{
+       const sel=data.duvar.includes(v);
+       return <div key={v} className={"chk-btn"+(sel?" sel":"")} onClick={()=>{
+        set("duvar",sel?data.duvar.filter(x=>x!==v):[...data.duvar,v]);
+       }}>{v}</div>;
+      })}
+     </div>
+     {data.duvar.includes("Kalsifiye")&&(
+      <div className="cond-box" style={{marginTop:14}}>
+       <div className="cond-title">Kalsifikasyon Detayları</div>
+       <div className="form-group"><label>Segment</label>
+        <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
+         const isSel=getDetay("Kalsifiye","segment").split(", ").filter(Boolean).includes(s);
+         return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
+          const cur=getDetay("Kalsifiye","segment").split(", ").filter(Boolean);
+          const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
+          setDetay("Kalsifiye","segment",nv.join(", "));
+         }}>{s}</div>;
+        })}</div>
+       </div>
+       <div className="form-row" style={{marginTop:8}}>
+        <div className="form-group"><label>Kalsifikasyon uzunluğu (mm)</label>
+         <input type="number" value={getDetay("Kalsifiye","uzunluk")} onChange={e=>setDetay("Kalsifiye","uzunluk",e.target.value)} placeholder="mm"/>
+        </div>
+        <div className="form-group"><label>Duvar kalınlığı (mm)</label>
+         <input type="number" value={getDetay("Kalsifiye","kalinlik")} onChange={e=>setDetay("Kalsifiye","kalinlik",e.target.value)} placeholder="mm"/>
+        </div>
+       </div>
+       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
+        <input type="text" value={getDetay("Kalsifiye","ek")} onChange={e=>setDetay("Kalsifiye","ek",e.target.value)} placeholder="Sirküler / nonsirküler, plak morfolojisi vb."/>
+       </div>
+      </div>
+     )}
+     {data.duvar.includes("Ülsere")&&(
+      <div className="cond-box" style={{marginTop:14}}>
+       <div className="cond-title">Ülserasyon Detayları</div>
+       <div className="form-group"><label>Segment</label>
+        <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
+         const isSel=getDetay("Ülsere","segment").split(", ").filter(Boolean).includes(s);
+         return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
+          const cur=getDetay("Ülsere","segment").split(", ").filter(Boolean);
+          const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
+          setDetay("Ülsere","segment",nv.join(", "));
+         }}>{s}</div>;
+        })}</div>
+       </div>
+       <div className="form-row3" style={{marginTop:8}}>
+        <div className="form-group"><label>Ülser çapı (mm)</label>
+         <input type="number" value={getDetay("Ülsere","uzunluk")} onChange={e=>setDetay("Ülsere","uzunluk",e.target.value)} placeholder="mm"/>
+        </div>
+        <div className="form-group"><label>Derinlik (mm)</label>
+         <input type="number" value={getDetay("Ülsere","derinlik")} onChange={e=>setDetay("Ülsere","derinlik",e.target.value)} placeholder="mm"/>
+        </div>
+        <div className="form-group"><label>Ülser sayısı</label>
+         <input type="number" value={getDetay("Ülsere","kalinlik")} onChange={e=>setDetay("Ülsere","kalinlik",e.target.value)} placeholder="Adet"/>
+        </div>
+       </div>
+       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
+        <input type="text" value={getDetay("Ülsere","ek")} onChange={e=>setDetay("Ülsere","ek",e.target.value)} placeholder="Penetran aterosklerotik ülser şüphesi vb."/>
+       </div>
+      </div>
+     )}
+     {data.duvar.includes("Düzensiz")&&(
+      <div className="cond-box" style={{marginTop:14}}>
+       <div className="cond-title">Duvar Düzensizliği Detayları</div>
+       <div className="form-group"><label>Segment</label>
+        <div className="chk-grid">{DUVAR_SEGMENTS.map(s=>{
+         const isSel=getDetay("Düzensiz","segment").split(", ").filter(Boolean).includes(s);
+         return <div key={s} className={"chk-btn"+(isSel?" sel":"")} onClick={()=>{
+          const cur=getDetay("Düzensiz","segment").split(", ").filter(Boolean);
+          const nv=isSel?cur.filter(x=>x!==s):[...cur,s];
+          setDetay("Düzensiz","segment",nv.join(", "));
+         }}>{s}</div>;
+        })}</div>
+       </div>
+       <div className="form-row" style={{marginTop:8}}>
+        <div className="form-group"><label>Etkilenen uzunluk (mm)</label>
+         <input type="number" value={getDetay("Düzensiz","uzunluk")} onChange={e=>setDetay("Düzensiz","uzunluk",e.target.value)} placeholder="mm"/>
+        </div>
+        <div className="form-group"><label>Duvar kalınlığı (mm)</label>
+         <input type="number" value={getDetay("Düzensiz","kalinlik")} onChange={e=>setDetay("Düzensiz","kalinlik",e.target.value)} placeholder="mm"/>
+        </div>
+       </div>
+       <div className="form-group" style={{marginTop:8}}><label>Ek açıklama</label>
+        <input type="text" value={getDetay("Düzensiz","ek")} onChange={e=>setDetay("Düzensiz","ek",e.target.value)} placeholder="Plak, intramural hematom, duvar ödemi vb."/>
+       </div>
+      </div>
+     )}
+    </>
+   );
+   case "flep": return(
+    <>
+     <div className="step-desc">İntimal flep / diseksiyon değerlendirmesi</div>
+     <div className="form-group"><label>Flep görünümü var mı?</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.flepVar===v?" sel":"")} onClick={()=>set("flepVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     </div>
+     {data.flepVar==="var"&&(
+      <div className="cond-box">
+       <div className="cond-title">Flep Lokalizasyonu</div>
+       <div className="form-row">
+        <div className="form-group"><label>Başlangıç - Sol renal artere göre</label>
+         <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBasRel===v?" sel":"")} onClick={()=>set("flepBasRel",v)}>{l}</div>)}</div>
+        </div>
+        <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.flepBasMm} onChange={e=>set("flepBasMm",e.target.value)} placeholder="mm"/></div>
+       </div>
+       <div className="form-row">
+        <div className="form-group"><label>Bitiş - Sol renal artere göre</label>
+         <div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(data.flepBitRel===v?" sel":"")} onClick={()=>set("flepBitRel",v)}>{l}</div>)}</div>
+        </div>
+        <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={data.flepBitMm} onChange={e=>set("flepBitMm",e.target.value)} placeholder="mm"/></div>
+       </div>
+      </div>
+     )}
+    </>
+   );
+   case "leak": return(
+    <>
+     <div className="step-desc">Kontrast leak değerlendirmesi</div>
+     <div className="form-group"><label>Leak var mı?</label>
+      <div className="opt-grid">{["yok","var"].map(v=><div key={v} className={"opt-btn"+(data.leakVar===v?" sel":"")} onClick={()=>set("leakVar",v)}>{v==="yok"?"Yok":"Var"}</div>)}</div>
+     </div>
+     {data.leakVar==="var"&&(
+      <div className="cond-box">
+       <div className="cond-title">Leak Detayları</div>
+       <div className="form-group"><label>Leak miktarı / tanımı</label>
+        <input type="text" value={data.leakMiktar} onChange={e=>set("leakMiktar",e.target.value)} placeholder="Az miktarda / Belirgin vb."/>
+       </div>
+      </div>
+     )}
+    </>
+   );
+   case "celiac": return renderArtery("celiac","Çöliak Arter");
+   case "sma": return renderArtery("sma","SMA (Superior Mezenterik Arter)");
+   case "renalR": return renderArtery("renalR","Sağ Renal Arter");
+   case "renalL": return renderArtery("renalL","Sol Renal Arter");
+   case "iliakR": return renderArtery("iliakR","Sağ İliak Arter");
+   case "iliakL": return renderArtery("iliakL","Sol İliak Arter");
+   case "report": {
+    const yorumlar=generateYorum();
+    const diffs=suggestDifferential();
+    const matchedPat=PATHOLOGIES.filter(p=>diffs.some(d=>d.includes(p.name.split(" ")[0])));
+    return(
+     <>
+      <div className="export-row" style={{marginBottom:16}}>
+       <button className="export-btn export-print" onClick={handlePrint}>Yazdır / PDF</button>
+       <button className="export-btn export-copy" onClick={handleCopy}>Kopyala</button>
+       <button className="export-btn export-html" onClick={handleHTML}>HTML İndir</button>
+      </div>
+      <div className="report-wrap" id="report-content">
+       <h2>AORT MRI İNCELEME RAPORU</h2>
+       <table className="report-table">
+        <tbody>
+         <tr><td style={{fontWeight:600,width:150}}>Hasta Adı</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>Yaş</td><td>{data.patientAge||"-"}</td></tr>
+         <tr><td style={{fontWeight:600}}>Cinsiyet</td><td>{data.patientGender||"-"}</td><td style={{fontWeight:600}}>Protokol</td><td>{data.patientProtocol||"-"}</td></tr>
+        </tbody>
+       </table>
+       <h3>Aort Genel Değerlendirme</h3>
+       <table className="report-table">
+        <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+        <tbody>
+         <tr><td style={{fontWeight:600}}>Konum</td><td>{data.konum}</td></tr>
+         <tr><td style={{fontWeight:600}}>Çöliak kesim çapı</td><td>{data.capCeliac?data.capCeliac+" mm":"-"}{parseFloat(data.capCeliac)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capCeliac)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>İnfrarenal kesim çapı</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>İliak bif. öncesi çapı</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+         <tr><td style={{fontWeight:600}}>Duvar</td><td>{data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"}</td></tr>
+         {data.duvar.filter(d=>d!=="Düzenli").map(d=>{
+          const det=data.duvarDetay[d]||{};
+          const parts=[];
+          if(det.segment) parts.push(`Segment: ${det.segment}`);
+          if(d==="Kalsifiye"){
+           if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
+           if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+          } else if(d==="Ülsere"){
+           if(det.uzunluk) parts.push(`Çap: ${det.uzunluk} mm`);
+           if(det.derinlik) parts.push(`Derinlik: ${det.derinlik} mm`);
+           if(det.kalinlik) parts.push(`Sayı: ${det.kalinlik}`);
+          } else if(d==="Düzensiz"){
+           if(det.uzunluk) parts.push(`Uzunluk: ${det.uzunluk} mm`);
+           if(det.kalinlik) parts.push(`Duvar kalınlığı: ${det.kalinlik} mm`);
+          }
+          if(det.ek) parts.push(det.ek);
+          return parts.length>0?<tr key={d}><td style={{fontWeight:600,paddingLeft:24,fontSize:".78rem",color:"#666"}}>↳ {d}</td><td style={{fontSize:".82rem"}}>{parts.join(" • ")}</td></tr>:null;
+         })}
+         <tr><td style={{fontWeight:600}}>Trombüs</td><td>{data.trombusVar==="var"?`Var (saat ${data.tromSaatFrom||"?"}-${data.tromSaatTo||"?"}, ${data.tromUzunluk||"?"} mm uzunluk, ${data.tromKalinlik||"?"} mm kalınlık)`:"Yok"}</td></tr>
+         <tr><td style={{fontWeight:600}}>Flep</td><td>{data.flepVar==="var"?"Var":"Yok"}</td></tr>
+         <tr><td style={{fontWeight:600}}>Leak</td><td>{data.leakVar==="var"?`Var (${data.leakMiktar||"miktar belirtilmedi"})`:"Yok"}</td></tr>
+        </tbody>
+       </table>
+       {hasEktazi(data)&&<>
+        <h3>Ektazi Detayları</h3>
+        <p style={{fontSize:".85rem"}}>Başlangıç: Sol renal arterden {data.ektBasMm||"?"} mm {data.ektBasRel==="yukari"?"yukarıda":"aşağıda"}<br/>
+        Bitiş: Sol renal arterden {data.ektBitMm||"?"} mm {data.ektBitRel==="yukari"?"yukarıda":"aşağıda"}<br/>
+        Aortu kapsama derecesi: {data.ektDerece||"?"}&deg;</p>
+       </>}
+       {data.flepVar==="var"&&<>
+        <h3>Flep Detayları</h3>
+        <p style={{fontSize:".85rem"}}>Başlangıç: Sol renal arterden {data.flepBasMm||"?"} mm {data.flepBasRel==="yukari"?"yukarıda":"aşağıda"}<br/>
+        Bitiş: Sol renal arterden {data.flepBitMm||"?"} mm {data.flepBitRel==="yukari"?"yukarıda":"aşağıda"}</p>
+       </>}
+       <h3>Dal Arterleri</h3>
+       <div className="scroll-x">
+        <table className="report-table">
+         <thead><tr><th>Arter</th><th style={{textAlign:"center"}}>Çap</th><th style={{textAlign:"center"}}>Darlık</th><th style={{textAlign:"center"}}>Stenoz %</th><th style={{textAlign:"center"}}>Trombüs</th></tr></thead>
+         <tbody>
+          {Object.keys(ARTERY_NAMES).map(p=>{
+           const pct=stenosisPct(data[p+"_cap"],data[p+"_darlikCap"]);
+           return <tr key={p}>
+            <td style={{fontWeight:600}}>{ARTERY_NAMES[p]}</td>
+            <td style={{textAlign:"center"}}>{data[p+"_cap"]?data[p+"_cap"]+" mm":"-"}</td>
+            <td style={{textAlign:"center"}}>{data[p+"_darlik"]==="var"?<><span style={{color:"#dc2626"}}>Var</span>{data[p+"_mesafe"]&&<span style={{fontSize:".75rem",color:"#666"}}> ({data[p+"_mesafe"]} mm)</span>}</>:"Yok"}</td>
+            <td style={{textAlign:"center"}}>{pct!==null?<span style={{color:pct>70?"#dc2626":pct>50?"#d97706":"#16a34a",fontWeight:600}}>%{pct}</span>:"-"}</td>
+            <td style={{textAlign:"center"}}>{data[p+"_trombus"]==="var"?<span style={{color:"#dc2626"}}>Var</span>:"Yok"}</td>
+           </tr>;
+          })}
+         </tbody>
+        </table>
+       </div>
+       <div className="yorum-box">
+        <div className="yorum-title">YORUM</div>
+        {yorumlar.map((y,i)=><p key={i}>• {y}</p>)}
+       </div>
+
+      </div>
+     </>
+    );
+   }
+   default: return null;
+  }
+ };
+
+ return(
+  <div className="app-wrap">
+   <div className="header">
+    <h1>Aort MRI Karar Destek Sistemi</h1>
+    <p style={{color:"var(--text3)",fontSize:".78rem",marginTop:4}}>Radyoloji Karar Destek</p>
+   </div>
+   <div className="progress-bar">
+    {effectiveSteps.map((s,i)=><div key={s.id} className={"progress-seg"+(i<step?" done":"")+(i===step?" active":"")}/>)}
+   </div>
+   <div className="step-card">
+    {curStep&&curStep.id!=="report"&&(
+     <div className="step-title">
+      <span className="num">{step+1}</span>
+      {curStep.title}
+     </div>
+    )}
+    {renderStep()}
+    {curStep&&curStep.id!=="report"&&(
+     <div className="btn-row">
+      <button className="btn btn-prev" onClick={goPrev} disabled={step===0}>Geri</button>
+      <button className="btn btn-next" onClick={goNext}>{step===totalSteps-2?"Rapor Oluştur":"İleri"}</button>
+     </div>
+    )}
+    {curStep&&curStep.id==="report"&&(
+     <div className="btn-row">
+      <button className="btn btn-prev" onClick={goPrev}>Düzenle</button>
+     </div>
+    )}
+   </div>
+  </div>
+ );
+}
+
+ReactDOM.render(<App/>,document.getElementById("root"));
+</script>
+</body>
+</html>

@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Omuz MRG — Çok Lezyonlu Karar Destek</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --bg0:#0b1220; --bg1:#0f172a; --bg2:#1e293b; --bg3:#273449;
+    --txt:#e2e8f0; --txt2:#94a3b8; --muted:#64748b;
+    --line:#334155;
+    --accent:#14b8a6;  /* teal */
+    --accent2:#2dd4bf;
+    --amber:#f59e0b;
+    --amber2:#fbbf24;
+    --red:#ef4444; --green:#10b981; --blue:#3b82f6; --violet:#8b5cf6;
+    --shadow:0 4px 18px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg0);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+  body{min-height:100vh;}
+  .app{max-width:1200px;margin:0 auto;padding:14px 18px 80px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:14px;border:1px solid var(--line);margin-bottom:16px;box-shadow:var(--shadow)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent) 0%,var(--amber) 100%);color:#062028;font-weight:800;font-size:18px;box-shadow:0 4px 12px rgba(20,184,166,.35)}
+  .brand h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.2px}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--txt2)}
+  .progress-wrap{flex:1;max-width:520px;margin:0 22px}
+  .progress-label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--txt2);margin-bottom:4px}
+  .progress{height:8px;background:var(--bg3);border-radius:99px;overflow:hidden}
+  .progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--amber));transition:width .3s}
+  .actions{display:flex;gap:8px}
+  .btn{background:var(--bg2);border:1px solid var(--line);color:var(--txt);padding:9px 14px;border-radius:9px;font-size:13px;cursor:pointer;transition:all .15s;font-weight:500}
+  .btn:hover:not(:disabled){background:var(--bg3);border-color:var(--accent)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#0d9488);border-color:var(--accent);color:#062028;font-weight:700}
+  .btn-primary:hover:not(:disabled){filter:brightness(1.1)}
+  .btn-amber{background:linear-gradient(135deg,var(--amber),#d97706);border-color:var(--amber);color:#1a0f00;font-weight:700}
+  .btn-amber:hover:not(:disabled){filter:brightness(1.1)}
+  .btn-ghost{background:transparent}
+  .btn-sm{padding:6px 10px;font-size:12px}
+  .card{background:var(--bg1);border:1px solid var(--line);border-radius:14px;padding:22px 26px;box-shadow:var(--shadow)}
+  .step-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .step-no{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--amber));color:#062028;font-weight:800;font-size:16px;flex-shrink:0}
+  .step-title{font-size:17px;font-weight:700;margin:0}
+  .step-sub{font-size:12.5px;color:var(--txt2);margin:2px 0 0}
+  h3.sec{margin:18px 0 10px;font-size:14px;font-weight:700;color:var(--accent2);letter-spacing:.4px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  h3.sec::before{content:"";display:block;width:3px;height:16px;background:linear-gradient(var(--accent),var(--amber));border-radius:2px}
+  h3.sec.amber{color:var(--amber2)}
+  .grid{display:grid;gap:10px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+  @media (max-width:720px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+  .opt{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:9px;cursor:pointer;transition:all .15s;font-size:13.5px;user-select:none}
+  .opt:hover{border-color:var(--accent);background:var(--bg3)}
+  .opt.sel{border-color:var(--accent);background:rgba(20,184,166,.12);box-shadow:inset 0 0 0 1px var(--accent)}
+  .opt.sel.amber-sel{border-color:var(--amber);background:rgba(245,158,11,.12);box-shadow:inset 0 0 0 1px var(--amber)}
+  .opt .dot{width:16px;height:16px;border:2px solid var(--muted);border-radius:50%;flex-shrink:0;margin-top:1px;position:relative}
+  .opt.sel .dot{border-color:var(--accent)}
+  .opt.sel .dot::after{content:"";position:absolute;inset:2px;background:var(--accent);border-radius:50%}
+  .opt.sel.amber-sel .dot{border-color:var(--amber)}
+  .opt.sel.amber-sel .dot::after{background:var(--amber)}
+  .opt .chk{width:16px;height:16px;border:2px solid var(--muted);border-radius:4px;flex-shrink:0;margin-top:1px;position:relative;transition:all .15s}
+  .opt.sel .chk{border-color:var(--accent);background:var(--accent)}
+  .opt.sel .chk::after{content:"✓";position:absolute;left:1px;top:-3px;color:#062028;font-size:13px;font-weight:900}
+  .opt-label{flex:1;line-height:1.45}
+  .opt-label small{display:block;color:var(--txt2);font-size:11.5px;margin-top:2px}
+  .txt,.num,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13.5px;font-family:inherit}
+  .txt:focus,.num:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(20,184,166,.2)}
+  textarea{resize:vertical;min-height:68px}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .field label{font-size:12.5px;color:var(--txt2);font-weight:600}
+  .hint{background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.3);color:#99f6e4;padding:10px 13px;border-radius:8px;font-size:12.5px;margin:10px 0}
+  .warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#fde68a;padding:10px 13px;border-radius:8px;font-size:12.5px;margin:10px 0}
+  .danger{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px 13px;border-radius:8px;font-size:12.5px;margin:10px 0}
+  .nav{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+  .lesion-card{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg1) 100%);border:1px solid var(--accent);border-radius:12px;padding:14px 18px;margin-bottom:14px;position:relative}
+  .lesion-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(var(--accent),var(--amber));border-radius:12px 0 0 12px}
+  .lesion-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .lesion-title{font-weight:700;color:var(--accent2);font-size:14px}
+  .chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600;margin-right:6px;margin-top:3px}
+  .chip-teal{background:rgba(20,184,166,.18);color:#5eead4;border:1px solid rgba(20,184,166,.4)}
+  .chip-amber{background:rgba(245,158,11,.18);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+  .chip-red{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+  .chip-green{background:rgba(16,185,129,.18);color:#6ee7b7;border:1px solid rgba(16,185,129,.4)}
+  .lesion-list{margin:10px 0 0;padding:0;list-style:none}
+  .lesion-list li{padding:8px 10px;background:var(--bg2);border-radius:6px;margin-bottom:5px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12.5px}
+  .bar-row .name{flex:1;min-width:140px}
+  .bar-row .bar{flex:2;height:9px;background:var(--bg3);border-radius:99px;overflow:hidden}
+  .bar-row .bar>span{display:block;height:100%;border-radius:99px;transition:width .4s}
+  .bar-row .pct{width:48px;text-align:right;color:var(--txt2);font-variant-numeric:tabular-nums;font-weight:600}
+  .bar-row .bar.top>span{background:linear-gradient(90deg,var(--accent),var(--amber))}
+  .bar-row .bar.mid>span{background:#3b82f6}
+  .bar-row .bar.low>span{background:#64748b}
+
+  /* Report overlay */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.76);backdrop-filter:blur(4px);z-index:9000;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 10px}
+  .report-wrap{background:white;color:#111;border-radius:14px;max-width:900px;width:100%;padding:38px 46px;box-shadow:0 30px 90px rgba(0,0,0,.6);font-family:"Times New Roman","Georgia",serif;font-size:14px;line-height:1.55;margin-bottom:30px}
+  .report-header{border-bottom:3px double #1e293b;padding-bottom:10px;margin-bottom:14px}
+  .report-header h2{margin:0;font-size:20px;text-align:center;letter-spacing:1px;color:#0f172a}
+  .report-header p{margin:3px 0 0;text-align:center;font-size:12.5px;color:#475569;font-family:Arial,sans-serif}
+  .rbox{border:1.5px solid #0f172a;border-radius:6px;margin:10px 0;background:white;break-inside:avoid}
+  .rbox-head{background:linear-gradient(90deg,#0f172a,#1e293b);color:white;padding:5px 12px;font-weight:700;font-size:13px;letter-spacing:.5px;font-family:Arial,sans-serif;border-radius:5px 5px 0 0}
+  .rbox-head.teal{background:linear-gradient(90deg,#0f766e,#14b8a6)}
+  .rbox-head.amber{background:linear-gradient(90deg,#b45309,#f59e0b)}
+  .rbox-head.slate{background:linear-gradient(90deg,#334155,#64748b)}
+  .rbox-body{padding:8px 14px}
+  .zrow{display:grid;grid-template-columns:170px 1fr;padding:5px 10px;font-size:13px}
+  .zrow:nth-child(odd){background:#f1f5f9}
+  .zrow:nth-child(even){background:white}
+  .zrow .zk{font-weight:700;color:#0f172a;font-family:Arial,sans-serif;font-size:12.5px}
+  .zrow .zv{color:#1e293b}
+  .yorum{background:#fef3c7;border-left:5px solid #f59e0b;border-radius:0 6px 6px 0;padding:12px 18px;margin:14px 0;font-size:13.5px}
+  .yorum b{display:block;margin-bottom:6px;color:#78350f;letter-spacing:.5px;font-family:Arial,sans-serif;font-size:13px;text-transform:uppercase}
+  .dx-table{border-collapse:collapse;width:100%;margin-top:8px;font-size:13px}
+  .dx-table th{background:#0f172a;color:white;padding:6px 10px;text-align:left;font-family:Arial,sans-serif;font-size:12px;letter-spacing:.4px}
+  .dx-table td{border-bottom:1px solid #cbd5e1;padding:6px 10px}
+  .dx-table tr:nth-child(even) td{background:#f8fafc}
+  .dx-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .sig{margin-top:22px;padding-top:10px;border-top:1px solid #cbd5e1;text-align:right;font-size:12.5px;color:#475569}
+  .overlay-actions{position:fixed;top:14px;right:20px;display:flex;gap:8px;z-index:9100}
+
+  /* zebra strip helpers for report */
+  .zbullet{padding:4px 10px;margin:2px 0;font-size:13px}
+  .zbullet:nth-child(odd){background:#f1f5f9}
+  .zbullet:nth-child(even){background:white}
+
+  /* print */
+  @media print{
+    body{background:white}
+    body *{visibility:hidden}
+    .report-wrap,.report-wrap *{visibility:visible}
+    .report-wrap{position:absolute;left:0;top:0;width:100%;box-shadow:none;border-radius:0;padding:18px 22px;margin:0}
+    .overlay-actions{display:none !important}
+  }
+  .kbd{display:inline-block;padding:2px 7px;background:var(--bg3);border-radius:4px;border:1px solid var(--line);font-size:11px;font-family:monospace;color:var(--txt2)}
+  .side-tabs{display:flex;gap:4px;margin-bottom:12px;background:var(--bg2);padding:4px;border-radius:10px;border:1px solid var(--line)}
+  .side-tab{flex:1;padding:9px 12px;border-radius:7px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--txt2);transition:all .15s}
+  .side-tab.active{background:linear-gradient(135deg,var(--accent),var(--amber));color:#062028}
+  .sticker{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;background:var(--bg3);border:1px solid var(--line);font-size:11.5px;color:var(--txt2);font-weight:600}
+  .sticker b{color:var(--accent2)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useRef,useEffect} = React;
+
+/* ====================================================================
+   OMUZ MRG — KARAR DESTEK SİSTEMİ v1.0
+   Mimari: Çok-lezyonlu loop, else-if ağırlıklı skorlama,
+           finalize()→idx=-1 reset, DOM overlay export,
+           Zebra + kutulu rapor formatı (diz/dirsek/el-bilek ile uyumlu)
+   ==================================================================== */
+
+/* Sabit listeler */
+const SIDE = ["Sağ","Sol"];
+const SEX = ["Kadın","Erkek"];
+const RC_TENDONS = [
+  {id:"supra", name:"Supraspinatus"},
+  {id:"infra", name:"İnfraspinatus"},
+  {id:"subsc", name:"Subskapularis"},
+  {id:"teres", name:"Teres minor"},
+];
+const BIGLIANI = [
+  {id:"t1", label:"Tip I — Düz",      txt:"Düz akromion (Tip I)"},
+  {id:"t2", label:"Tip II — Kurvilineer", txt:"Kurvilineer akromion (Tip II)"},
+  {id:"t3", label:"Tip III — Kancamsı", txt:"Kanca şeklinde akromion (Tip III) — subakromial sıkışmaya predispoze"},
+  {id:"t4", label:"Tip IV — Konveks", txt:"Konveks akromion (Tip IV)"},
+];
+const GOUTALLIER = [
+  {id:0, label:"Grade 0", txt:"normal kas (yağlı infiltrasyon yok)"},
+  {id:1, label:"Grade 1", txt:"seyrek yağ çizgileri"},
+  {id:2, label:"Grade 2", txt:"yağ < kas hacmi"},
+  {id:3, label:"Grade 3", txt:"yağ = kas hacmi"},
+  {id:4, label:"Grade 4", txt:"yağ > kas hacmi"},
+];
+const PATTE = [
+  {id:1, label:"Patte I",  txt:"tendon ucu humerus başı seviyesinde (retraksiyon yok/minimal)"},
+  {id:2, label:"Patte II", txt:"tendon ucu humerus başı ile glenoid arasında"},
+  {id:3, label:"Patte III",txt:"tendon ucu glenoid seviyesinde veya medialinde (belirgin retraksiyon)"},
+];
+const LABRAL_QUADRANTS = [
+  {id:"sup", name:"Süperior"},
+  {id:"ant-sup", name:"Anterosuperior"},
+  {id:"ant", name:"Anterior"},
+  {id:"ant-inf", name:"Anteroinferior"},
+  {id:"inf", name:"İnferior"},
+  {id:"post-inf", name:"Posteroinferior"},
+  {id:"post", name:"Posterior"},
+  {id:"post-sup", name:"Posterosuperior"},
+];
+const SLAP_TYPES = [
+  {id:"s1", name:"SLAP Tip I", txt:"süperior labrumda dejeneratif fibrilasyon; biseps ankoru sağlam"},
+  {id:"s2", name:"SLAP Tip II", txt:"süperior labrum ve biseps ankorunun glenoidden ayrılması (en sık)"},
+  {id:"s3", name:"SLAP Tip III", txt:"süperior labrumun kova sapı yırtığı; biseps ankoru intakt"},
+  {id:"s4", name:"SLAP Tip IV", txt:"süperior labrumun kova sapı yırtığı + biseps tendonuna uzanım"},
+  {id:"s5", name:"SLAP Tip V", txt:"SLAP II + anteroinferior Bankart lezyonu"},
+  {id:"s6", name:"SLAP Tip VI", txt:"süperior labrumda flep yırtığı"},
+  {id:"s7", name:"SLAP Tip VII", txt:"SLAP II + MGHL'ye uzanım"},
+];
+const ANT_LABRAL_VARIANTS = [
+  {id:"bankart",   name:"Bankart (klasik)",     txt:"anteroinferior labroligamentöz kompleksin glenoidden soyulması (periost YIRTIK)"},
+  {id:"bony",      name:"Bony Bankart",         txt:"anteroinferior glenoid kırığı ile birlikte labroligamentöz avülsiyon"},
+  {id:"alpsa",     name:"ALPSA",                txt:"anterior labroligamentöz periosteal sleeve avülsiyonu (periost İNTAKT; labrum mediale deplase)"},
+  {id:"perthes",   name:"Perthes",              txt:"anterior labrum glenoidden ayrılmış ancak periost intakt; anatomik pozisyonda (MR artrografi ile belirgin)"},
+  {id:"glad",      name:"GLAD",                 txt:"anteroinferior labrum yırtığı + bitişik glenoid kıkırdak defekti"},
+  {id:"hagl",      name:"HAGL",                 txt:"inferior glenohumeral ligamanın humeral avülsiyonu (J-sign)"},
+];
+const POST_LABRAL_VARIANTS = [
+  {id:"rev-bankart", name:"Reverse Bankart",    txt:"posteroinferior labral yırtık (posterior instabilite)"},
+  {id:"kim",         name:"Kim lezyonu",        txt:"posteroinferior labrumda inkomplet, gizli yırtık"},
+  {id:"post-alpsa",  name:"Posterior ALPSA",    txt:"posterior labroligamentöz periosteal sleeve avülsiyonu"},
+];
+
+/* ====== Patoloji veri tabanı ve ağırlıklı skorlama ====== */
+/* Anahtar: key, isim, kategori, feature üretici fonksiyon */
+
+const PATHO = [
+  {key:"supra_tendinop", name:"Supraspinatus tendinopati", cat:"manşet"},
+  {key:"supra_partial",  name:"Supraspinatus parsiyel yırtığı", cat:"manşet"},
+  {key:"supra_full",     name:"Supraspinatus tam kat yırtığı", cat:"manşet"},
+  {key:"infra_tear",     name:"İnfraspinatus yırtığı", cat:"manşet"},
+  {key:"subsc_tear",     name:"Subskapularis yırtığı", cat:"manşet"},
+  {key:"massive_rct",    name:"Masif rotator manşet yırtığı", cat:"manşet"},
+  {key:"calc_tendinit",  name:"Kalsifik tendinit", cat:"manşet"},
+  {key:"impingement",    name:"Subakromial sıkışma sendromu", cat:"sıkışma"},
+  {key:"biceps_tendinop",name:"Biceps tendinopatisi / tenosinovit", cat:"biceps"},
+  {key:"biceps_tear",    name:"Biceps uzun başı yırtığı", cat:"biceps"},
+  {key:"biceps_instab",  name:"Biceps tendon subluksasyonu/dislokasyonu", cat:"biceps"},
+  {key:"slap",           name:"SLAP lezyonu", cat:"labrum"},
+  {key:"bankart",        name:"Bankart lezyonu (anterior instabilite)", cat:"labrum"},
+  {key:"bony_bankart",   name:"Kemik Bankart / glenoid kemik kaybı", cat:"labrum"},
+  {key:"alpsa",          name:"ALPSA lezyonu", cat:"labrum"},
+  {key:"hill_sachs",     name:"Hill-Sachs lezyonu", cat:"labrum"},
+  {key:"rev_bankart",    name:"Reverse Bankart (posterior instabilite)", cat:"labrum"},
+  {key:"rev_hill_sachs", name:"Reverse Hill-Sachs (McLaughlin)", cat:"labrum"},
+  {key:"frozen",         name:"Adeziv kapsülit (donuk omuz)", cat:"kapsül"},
+  {key:"gh_oa",          name:"Glenohumeral osteoartrit", cat:"dejeneratif"},
+  {key:"ac_oa",          name:"Akromioklaviküler eklem osteoartriti", cat:"dejeneratif"},
+  {key:"bursit",         name:"Subakromial-subdeltoid bursit", cat:"bursa"},
+  {key:"paralab_cyst",   name:"Paralabral kist / spinoglenoid çentik kisti", cat:"diğer"},
+  {key:"avn",            name:"Humerus başı avasküler nekrozu", cat:"kemik"},
+  {key:"septic",         name:"Septik artrit", cat:"inflamatuar"},
+  {key:"pvns",           name:"Pigmente villonodüler sinovit (PVNS)", cat:"sinoviyal"},
+];
+
+const CAT_COLOR = {
+  "manşet":"#14b8a6","sıkışma":"#f59e0b","biceps":"#8b5cf6",
+  "labrum":"#ef4444","kapsül":"#3b82f6","dejeneratif":"#64748b",
+  "bursa":"#10b981","diğer":"#94a3b8","kemik":"#d97706",
+  "inflamatuar":"#dc2626","sinoviyal":"#7c3aed"
+};
+
+/* ================================================================== */
+/* Skorlama motoru:                                                     */
+/*  - Her patoloji için feature listesi {feat, w, label, present}       */
+/*  - Toplam skor = Σ(present ? w : 0)                                  */
+/*  - max olası = Σ(w)                                                  */
+/*  - % = Math.min(100, round(100 * skor / max))                        */
+/*  - else if zinciri ile signal karakterizasyonu                        */
+/* ================================================================== */
+
+function buildFeatureMap(data, lesions) {
+  // lesions: rotator cuff lezyonları array
+  const F = {};
+
+  // Hangi tendonda ne var?
+  const tendonState = {};
+  RC_TENDONS.forEach(t => tendonState[t.id] = { any:false, tendinop:false, partial:false, full:false, size:null, retrac:null, goutallier:null, calcific:false });
+  (lesions||[]).forEach(L => {
+    if (!L || !L.tendon) return;
+    const st = tendonState[L.tendon];
+    if (!st) return;
+    st.any = true;
+    if (L.continuity === "tendinop") st.tendinop = true;
+    else if (L.continuity === "partial") st.partial = true;
+    else if (L.continuity === "full")    st.full = true;
+    if (L.full_size)   st.size      = L.full_size;
+    if (L.retraction)  st.retrac    = L.retraction;
+    if (L.goutallier !== undefined && L.goutallier !== "") st.goutallier = Number(L.goutallier);
+    if (L.calcific)    st.calcific  = true;
+  });
+
+  // === SUPRASPINATUS TENDİNOPATİ ===
+  F.supra_tendinop = [
+    { w: 30, label:"Supraspinatus tendonunda sinyal artışı (parsiyel yırtık yok)", present: tendonState.supra.tendinop && !tendonState.supra.partial && !tendonState.supra.full },
+    { w: 15, label:"Tendon kalınlaşması/heterojenitesi", present: data.supra_thick === "evet" },
+    { w: 12, label:"Kritik zon yerleşimi", present: data.supra_location === "kritik" },
+    { w: 10, label:"T2 sinyal artışı tam kat uzanım göstermiyor", present: tendonState.supra.tendinop },
+    { w: 8,  label:"Subakromial bursada eşlik eden efüzyon yok veya minimal", present: data.bursa_effusion === "yok" || data.bursa_effusion === "minimal" },
+    { w: 10, label:"Akromion morfolojisi Tip II/III", present: data.acromion_type === "t2" || data.acromion_type === "t3" },
+  ];
+
+  // === SUPRASPINATUS PARSİYEL YIRTIK ===
+  F.supra_partial = [
+    { w: 35, label:"Supraspinatus tendonunda parsiyel (artiküler/bursal/intratendinöz) yırtık", present: tendonState.supra.partial },
+    { w: 15, label:"T2 sinyal artışı tendonun bir yüzünde lokalize", present: tendonState.supra.partial },
+    { w: 10, label:"Tendon yüksekliğinde kısmi azalma", present: data.supra_thin === "evet" },
+    { w: 10, label:"Kritik zon yerleşimi (insersiyo 1-2 cm proksimali)", present: data.supra_location === "kritik" || data.supra_location === "footprint" },
+    { w: 10, label:"Subakromial bursada sıvı", present: data.bursa_effusion === "orta" || data.bursa_effusion === "belirgin" },
+    { w: 10, label:"Akromion Tip II/III morfolojisi", present: data.acromion_type === "t2" || data.acromion_type === "t3" },
+  ];
+
+  // === SUPRASPINATUS TAM KAT YIRTIK ===
+  F.supra_full = [
+    { w: 40, label:"Supraspinatus tendonunda tam kat defekt (her iki yüz arasında sıvı sinyali)", present: tendonState.supra.full },
+    { w: 15, label:"Tendon retraksiyonu (Patte II/III)", present: tendonState.supra.retrac === 2 || tendonState.supra.retrac === 3 },
+    { w: 10, label:"Defekt boyutu ≥1 cm", present: tendonState.supra.size && tendonState.supra.size !== "small" },
+    { w: 10, label:"Subakromial-subdeltoid bursada belirgin sıvı", present: data.bursa_effusion === "belirgin" },
+    { w: 10, label:"Supraspinatus kasında yağlı infiltrasyon (Goutallier ≥2)", present: tendonState.supra.goutallier >= 2 },
+    { w: 8,  label:"Akromiohumeral mesafede daralma (<7 mm)", present: data.acromio_humeral === "daralmis" },
+  ];
+
+  // === İNFRASPİNATUS YIRTIK ===
+  F.infra_tear = [
+    { w: 40, label:"İnfraspinatus tendonunda parsiyel/tam kat yırtık", present: tendonState.infra.any && (tendonState.infra.partial || tendonState.infra.full) },
+    { w: 15, label:"Tendon yapısında sinyal artışı ve incelme", present: tendonState.infra.tendinop || tendonState.infra.partial },
+    { w: 15, label:"İnfraspinatus kasında atrofi / Goutallier ≥2", present: tendonState.infra.goutallier >= 2 },
+    { w: 10, label:"Supraspinatus yırtığına posteriora uzanım", present: tendonState.supra.full && tendonState.infra.any },
+  ];
+
+  // === SUBSKAPULARİS YIRTIK ===
+  F.subsc_tear = [
+    { w: 40, label:"Subskapularis tendonunda yırtık (üst lif/alt lif)", present: tendonState.subsc.any && (tendonState.subsc.partial || tendonState.subsc.full) },
+    { w: 15, label:"Lesser tuberosityde edema / kemik sinyal değişikliği", present: data.lesser_tub_edema === "evet" },
+    { w: 15, label:"Biceps uzun başı tendon subluksasyonu / medial dislokasyonu (asıcı ligaman defekti)", present: data.biceps_position === "sublukse" || data.biceps_position === "dislok_med" },
+    { w: 10, label:"Bicipital oluktan biceps tendonunun kaybı (dislokasyon)", present: data.biceps_position === "dislok_med" },
+    { w: 10, label:"Subskapularis kasında yağlı infiltrasyon", present: tendonState.subsc.goutallier >= 2 },
+  ];
+
+  // === MASİF RCT ===
+  const fullCount = RC_TENDONS.filter(t => tendonState[t.id].full).length;
+  F.massive_rct = [
+    { w: 35, label:"≥2 tendonda tam kat yırtık", present: fullCount >= 2 },
+    { w: 20, label:"Supraspinatus yırtığında Patte III retraksiyon (glenoid seviyesi)", present: tendonState.supra.retrac === 3 },
+    { w: 15, label:"Herhangi bir manşet kasında Goutallier ≥3 yağlı infiltrasyon", present: Object.values(tendonState).some(s => s.goutallier >= 3) },
+    { w: 10, label:"Humerus başının superiora migrasyonu / akromiohumeral mesafe <6 mm", present: data.acromio_humeral === "daralmis" },
+    { w: 10, label:"Glenohumeral dejeneratif değişiklikler (cuff artropatisi)", present: data.cuff_arthropathy === "evet" },
+    { w: 10, label:"Subakromial-subdeltoid bursada belirgin sıvı / eklem sıvısı ile komünikasyon", present: data.bursa_effusion === "belirgin" && data.effusion_amount !== "yok" },
+  ];
+
+  // === KALSİFİK TENDİNİT ===
+  F.calc_tendinit = [
+    { w: 45, label:"Manşet tendonu içinde fokal hipointens kalsifikasyon (tüm sekanslarda düşük sinyal)", present: Object.values(tendonState).some(s => s.calcific) || data.calcification_present === "evet" },
+    { w: 20, label:"Kalsifikasyon çevresinde ödem / T2 sinyal artışı (rezorpsiyon fazı)", present: data.calcific_edema === "evet" },
+    { w: 15, label:"Subakromial bursada tepkisel sıvı", present: data.bursa_effusion === "orta" || data.bursa_effusion === "belirgin" },
+    { w: 10, label:"Tendon bütünlüğü büyük oranda korunmuş", present: !tendonState.supra.full && !tendonState.infra.full && !tendonState.subsc.full },
+  ];
+
+  // === SUBAKROMİAL SIKIŞMA ===
+  F.impingement = [
+    { w: 25, label:"Tip III kancamsı akromion", present: data.acromion_type === "t3" },
+    { w: 15, label:"Tip II kurvilineer akromion", present: data.acromion_type === "t2" },
+    { w: 15, label:"Akromiohumeral mesafede daralma (<7 mm)", present: data.acromio_humeral === "daralmis" },
+    { w: 15, label:"AC eklem hipertrofisi / inferiora osteofit uzanımı", present: data.ac_osteophyte === "evet" },
+    { w: 15, label:"Supraspinatus kritik zonunda sinyal artışı", present: tendonState.supra.tendinop || tendonState.supra.partial },
+    { w: 10, label:"Subakromial-subdeltoid bursada sıvı/kalınlaşma", present: data.bursa_effusion === "orta" || data.bursa_effusion === "belirgin" },
+    { w: 8,  label:"Os acromiale varlığı", present: data.os_acromiale === "evet" },
+  ];
+
+  // === BİCEPS TENDİNOPATİ / TENOSİNOVİT ===
+  F.biceps_tendinop = [
+    { w: 30, label:"Biceps uzun başı tendonunda sinyal artışı / kalınlaşma", present: data.biceps_signal === "artmis" },
+    { w: 25, label:"Bicipital oluk çevresinde sıvı (tenosinovit)", present: data.biceps_sheath === "belirgin" },
+    { w: 10, label:"Bicipital oluk çevresinde minimal sıvı", present: data.biceps_sheath === "minimal" },
+    { w: 15, label:"Eşlik eden supraspinatus yırtığı/tendinopatisi", present: tendonState.supra.any || tendonState.supra.tendinop },
+    { w: 10, label:"Tendon bütünlüğü korunmuş", present: data.biceps_continuity === "intakt" },
+  ];
+
+  // === BİCEPS YIRTIK ===
+  F.biceps_tear = [
+    { w: 40, label:"Biceps uzun başı tendonunda tam kat yırtık", present: data.biceps_continuity === "tam" },
+    { w: 20, label:"Biceps uzun başı tendonunda parsiyel yırtık", present: data.biceps_continuity === "parsiyel" },
+    { w: 15, label:"Bicipital olukta tendon kaybı / Popeye işareti", present: data.biceps_continuity === "tam" && data.biceps_popeye === "evet" },
+    { w: 15, label:"Eşlik eden rotator manşet yırtığı", present: tendonState.supra.full || tendonState.subsc.full || tendonState.infra.full },
+    { w: 10, label:"Bicipital olukta sıvı ve retrakte tendon uçları", present: data.biceps_continuity === "parsiyel" || data.biceps_continuity === "tam" },
+  ];
+
+  // === BİCEPS İNSTABİLİTE ===
+  F.biceps_instab = [
+    { w: 40, label:"Biceps uzun başı tendonunun bicipital olukta medial subluksasyonu", present: data.biceps_position === "sublukse" },
+    { w: 45, label:"Biceps uzun başı tendonunun medial dislokasyonu (subskapularis üstünde/altında)", present: data.biceps_position === "dislok_med" },
+    { w: 20, label:"Subskapularis üst lif yırtığı / asıcı ligaman defekti", present: tendonState.subsc.any },
+    { w: 15, label:"Lesser tuberositeye uzanan sinyal değişikliği", present: data.lesser_tub_edema === "evet" },
+  ];
+
+  // === SLAP ===
+  const hasSlap = (data.labralTears||[]).some(t => t.category === "slap");
+  F.slap = [
+    { w: 45, label:"Süperior labrumda biceps ankoru civarı yırtık sinyali", present: hasSlap },
+    { w: 15, label:"Sulkus sülkusun arkasına uzanan kontrast/sıvı sinyali", present: hasSlap && (data.labralTears||[]).some(t => t.subtype === "s2" || t.subtype === "s5") },
+    { w: 15, label:"Paralabral kist (spinoglenoid çentik)", present: data.paralabral_cyst === "spinoglenoid" },
+    { w: 10, label:"Eşlik eden biceps tendon anormalliği", present: data.biceps_signal === "artmis" || data.biceps_continuity !== "intakt" },
+    { w: 10, label:"Kova sapı / flep komponenti", present: hasSlap && (data.labralTears||[]).some(t => ["s3","s4","s6"].includes(t.subtype)) },
+  ];
+
+  // === BANKART ===
+  const hasBankart = (data.labralTears||[]).some(t => t.category === "ant" && t.subtype === "bankart");
+  F.bankart = [
+    { w: 45, label:"Anteroinferior labrumda avülsiyon / Bankart lezyonu (3-6 konum)", present: hasBankart },
+    { w: 15, label:"Anterior skapular periost yırtığı", present: hasBankart },
+    { w: 15, label:"Eşlik eden Hill-Sachs lezyonu (humerus başı posterolateralinde kompresyon defekti)", present: data.hill_sachs === "evet" },
+    { w: 10, label:"Anterior kapsüler laksite / MGHL/IGHL bozukluk", present: data.ighl_torn === "evet" },
+    { w: 8,  label:"Dislokasyon öyküsü (travma)", present: data.trauma === "evet" && data.dislocation_hx === "evet" },
+  ];
+
+  // === KEMİK BANKART ===
+  const hasBony = (data.labralTears||[]).some(t => t.subtype === "bony");
+  F.bony_bankart = [
+    { w: 50, label:"Anteroinferior glenoid kenarında fraktür/kemik kaybı", present: hasBony || data.glenoid_bone_loss === "evet" },
+    { w: 20, label:"Anterior labral avülsiyon", present: hasBankart || hasBony },
+    { w: 15, label:"Glenoid kemik kaybı >20%", present: data.glenoid_bone_loss_severity === "ciddi" },
+    { w: 10, label:"Hill-Sachs lezyonu (eşlik)", present: data.hill_sachs === "evet" },
+  ];
+
+  // === ALPSA ===
+  const hasAlpsa = (data.labralTears||[]).some(t => t.subtype === "alpsa");
+  F.alpsa = [
+    { w: 55, label:"Anteroinferior labroligamentöz kompleksin intakt periost ile mediale yer değiştirmesi (ALPSA)", present: hasAlpsa },
+    { w: 15, label:"Kronik dislokasyon/tekrarlayan instabilite öyküsü", present: data.dislocation_hx === "evet" },
+    { w: 10, label:"Hill-Sachs lezyonu", present: data.hill_sachs === "evet" },
+  ];
+
+  // === HILL-SACHS ===
+  F.hill_sachs = [
+    { w: 50, label:"Humerus başının posterolateralinde kompresyon defekti (Hill-Sachs)", present: data.hill_sachs === "evet" },
+    { w: 20, label:"Eşlik eden Bankart / ALPSA / anterior labral lezyon", present: hasBankart || hasAlpsa || hasBony },
+    { w: 15, label:"Anterior dislokasyon öyküsü", present: data.dislocation_hx === "evet" },
+    { w: 10, label:"Defekt boyutu >12 mm / engage Hill-Sachs", present: data.hill_sachs_size === "buyuk" },
+  ];
+
+  // === REVERSE BANKART ===
+  const hasRevB = (data.labralTears||[]).some(t => t.subtype === "rev-bankart");
+  F.rev_bankart = [
+    { w: 50, label:"Posterior (7-9 konum) labral yırtık / Reverse Bankart", present: hasRevB },
+    { w: 20, label:"Eşlik eden reverse Hill-Sachs (humerus başı anteromedial defekti)", present: data.rev_hill_sachs === "evet" },
+    { w: 15, label:"Posterior kapsüler laksite", present: data.post_capsule_lax === "evet" },
+    { w: 10, label:"Posterior dislokasyon / dislokasyon öyküsü", present: data.post_dislocation_hx === "evet" },
+  ];
+
+  // === REVERSE HILL-SACHS ===
+  F.rev_hill_sachs = [
+    { w: 50, label:"Humerus başının anteromedial yüzeyinde kompresyon defekti", present: data.rev_hill_sachs === "evet" },
+    { w: 25, label:"Eşlik eden reverse Bankart / posterior labral yırtık", present: hasRevB },
+    { w: 15, label:"Posterior dislokasyon öyküsü (konvülziyon/elektrik çarpması)", present: data.post_dislocation_hx === "evet" },
+  ];
+
+  // === ADEZİV KAPSÜLİT ===
+  F.frozen = [
+    { w: 30, label:"Aksiller reses kapsüler kalınlaşma (>4 mm)", present: data.axillary_thickening === "evet" },
+    { w: 20, label:"Rotator interval yağ dokusunun silinmesi / T2 sinyal artışı", present: data.rotator_interval === "silinmis" },
+    { w: 15, label:"Koracohumeral ligaman kalınlaşması (>4 mm)", present: data.chl_thickening === "evet" },
+    { w: 15, label:"Kontrast sonrası sinovit (eşlik ederse)", present: data.post_contrast_enh === "sinovit" },
+    { w: 10, label:"Klinik: ağrılı hareket kısıtlılığı / diyabet öyküsü", present: data.clinical_frozen === "evet" },
+    { w: 10, label:"Büyük eklem efüzyonu yok", present: data.effusion_amount === "yok" || data.effusion_amount === "minimal" },
+  ];
+
+  // === GLENOHUMERAL OA ===
+  F.gh_oa = [
+    { w: 25, label:"Humeral başı ve/veya glenoidde kondral kayıp", present: data.cartilage_gh === "orta" || data.cartilage_gh === "belirgin" },
+    { w: 20, label:"Glenohumeral osteofitler", present: data.gh_osteofit === "evet" },
+    { w: 15, label:"Subkondral kist / skleroz", present: data.subchondral_change === "evet" },
+    { w: 15, label:"Glenohumeral eklem aralığında daralma", present: data.gh_narrow === "evet" },
+    { w: 10, label:"Eklem efüzyonu", present: data.effusion_amount === "orta" || data.effusion_amount === "belirgin" },
+    { w: 10, label:"Labral dejenerasyon (yırtık olmaksızın sinyal artışı)", present: data.labral_degen === "evet" },
+  ];
+
+  // === AC EKLEM OA ===
+  F.ac_oa = [
+    { w: 35, label:"AC eklemde dejeneratif değişiklikler (osteofit, subkondral değişiklik)", present: data.ac_osteofit === "evet" || data.ac_arthrosis === "evet" },
+    { w: 20, label:"AC eklem hipertrofisi / kapsüler kalınlaşma", present: data.ac_hypertrophy === "evet" },
+    { w: 15, label:"Akromion/klavikula altında inferior osteofit (sıkışmayı besleyen)", present: data.ac_osteophyte === "evet" },
+    { w: 15, label:"AC eklemde kemik iliği ödemi", present: data.ac_edema === "evet" },
+    { w: 10, label:"Eklem aralığında daralma", present: data.ac_narrow === "evet" },
+  ];
+
+  // === BURSİT ===
+  F.bursit = [
+    { w: 40, label:"Subakromial-subdeltoid bursada belirgin sıvı", present: data.bursa_effusion === "belirgin" },
+    { w: 25, label:"Subakromial-subdeltoid bursada orta miktarda sıvı", present: data.bursa_effusion === "orta" },
+    { w: 15, label:"Bursal duvarda kalınlaşma", present: data.bursa_wall === "kalin" },
+    { w: 15, label:"Kontrast sonrası duvarsal boyanma (eşlik ederse)", present: data.post_contrast_enh === "sinovit" || data.post_contrast_enh === "bursal" },
+    { w: 10, label:"Eşlik eden manşet yırtığı veya kalsifik tendinit (sekonder bursit)", present: tendonState.supra.full || tendonState.supra.partial || Object.values(tendonState).some(s => s.calcific) },
+  ];
+
+  // === PARALABRAL KİST ===
+  F.paralab_cyst = [
+    { w: 45, label:"Spinoglenoid çentikte paralabral kist", present: data.paralabral_cyst === "spinoglenoid" },
+    { w: 40, label:"Suprascapular çentikte paralabral kist", present: data.paralabral_cyst === "suprascapular" },
+    { w: 30, label:"Başka lokalizasyonda paralabral kist", present: data.paralabral_cyst === "diger" },
+    { w: 20, label:"Eşlik eden posterosuperior labral yırtık (SLAP)", present: hasSlap },
+    { w: 15, label:"İnfraspinatus kasında denervasyon / ödem ve atrofi", present: data.infraspinatus_denerv === "evet" },
+  ];
+
+  // === AVN ===
+  F.avn = [
+    { w: 45, label:"Humerus başı subkondral kemikte çift çizgi işareti (T2)", present: data.avn_double_line === "evet" },
+    { w: 20, label:"Subkondral kemik iliği ödemi ve yağlı sinyal değişikliği", present: data.avn_marrow_change === "evet" },
+    { w: 15, label:"Subkondral kollaps (ilerlemiş evre)", present: data.avn_collapse === "evet" },
+    { w: 10, label:"Bilinen risk faktörü (steroid, alkol, orak hücre, radyoterapi)", present: data.avn_risk === "evet" },
+    { w: 10, label:"Eklem kıkırdak kaybı / sekonder OA", present: data.cartilage_gh === "belirgin" },
+  ];
+
+  // === SEPTİK ARTRİT ===
+  F.septic = [
+    { w: 35, label:"Belirgin eklem efüzyonu + sinoviyal kalınlaşma", present: data.effusion_amount === "belirgin" && data.post_contrast_enh === "sinovit" },
+    { w: 20, label:"Kontrast sonrası yoğun sinoviyal boyanma", present: data.post_contrast_enh === "sinovit" },
+    { w: 20, label:"Periartiküler yumuşak doku ödemi / selülit", present: data.periarticular_edema === "evet" },
+    { w: 15, label:"Klinik: ateş, lokal ısı artışı, lökositoz", present: data.clinical_septic === "evet" },
+    { w: 15, label:"Eklem kıkırdağı ve subkondral kemikte erken erozyon", present: data.septic_erosion === "evet" },
+  ];
+
+  // === PVNS ===
+  F.pvns = [
+    { w: 45, label:"Sinoviyal kalınlaşma içinde hemosiderin kaynaklı düşük T1/T2 sinyal", present: data.synovial_hemosiderin === "evet" },
+    { w: 20, label:"Gradyan ekoda belirgin blooming artefaktı", present: data.blooming === "evet" },
+    { w: 15, label:"Kronik tekrarlayan hemartroz", present: data.hemarthros === "evet" },
+    { w: 10, label:"Kemik erozyonu / subkondral kist", present: data.septic_erosion === "evet" || data.subchondral_change === "evet" },
+  ];
+
+  return F;
+}
+
+function computeScores(F) {
+  const out = [];
+  Object.keys(F).forEach(k => {
+    const feats = F[k];
+    let score = 0, max = 0;
+    feats.forEach(f => { max += f.w; if (f.present) score += f.w; });
+    const raw = max ? Math.min(100, Math.round(100 * score / max)) : 0;
+    out.push({ key:k, score: raw, features: feats.filter(f => f.present) });
+  });
+  return out;
+}
+
+/* ========== Yardımcı UI bileşenleri ========== */
+
+function OptBox({selected, onClick, children, small, amber}) {
+  return <div className={`opt ${selected?"sel":""} ${amber?"amber-sel":""}`} onClick={onClick}>
+    <div className="dot"></div>
+    <div className="opt-label">{children}</div>
+  </div>;
+}
+function ChkBox({selected, onClick, children}) {
+  return <div className={`opt ${selected?"sel":""}`} onClick={onClick}>
+    <div className="chk"></div>
+    <div className="opt-label">{children}</div>
+  </div>;
+}
+function Radio({value, onChange, options, cols}) {
+  return <div className={`grid grid-${cols||2}`}>
+    {options.map(o => <OptBox key={o.id} selected={value===o.id} onClick={()=>onChange(o.id)}>
+      <b>{o.label}</b>
+      {o.hint && <small>{o.hint}</small>}
+    </OptBox>)}
+  </div>;
+}
+
+/* ========== Rapor oluşturucu ========== */
+
+function generateReport(data, lesions, labralTears, scores) {
+  const d = data;
+  const sides = d.side || "Sağ";
+  const today = new Date().toLocaleDateString("tr-TR");
+
+  // Teknik
+  const seq = [];
+  if (d.seq_t1) seq.push("Aksiyel, koronal oblik, sagital oblik T1A");
+  if (d.seq_t2) seq.push("Aksiyel, koronal oblik, sagital oblik T2A");
+  if (d.seq_pd) seq.push("PD yağ baskılı");
+  if (d.seq_stir) seq.push("STIR");
+  if (d.seq_fs) seq.push("Yağ baskılı T2A");
+  if (d.seq_artro) seq.push("MR artrografi (direkt intraartiküler gadolinyum)");
+  if (d.seq_post) seq.push("Kontrast sonrası yağ baskılı T1A");
+
+  // Kemik bulguları
+  const bone = [];
+  if (d.greater_tub_edema === "evet") bone.push("Büyük tüberkülde kemik iliği ödemi izlenmektedir.");
+  if (d.lesser_tub_edema === "evet")  bone.push("Küçük tüberkülde kemik iliği ödemi izlenmektedir.");
+  if (d.hill_sachs === "evet") {
+    const sz = d.hill_sachs_size === "buyuk" ? "(defekt boyutu >12 mm, engage-edici nitelikte olabilir)" : "";
+    bone.push(`Humerus başı posterolateralinde kompresyon defekti (Hill-Sachs lezyonu) ${sz}.`);
+  }
+  if (d.rev_hill_sachs === "evet") bone.push("Humerus başı anteromedial yüzeyinde kompresyon defekti (reverse Hill-Sachs / McLaughlin lezyonu) izlenmektedir.");
+  if (d.glenoid_bone_loss === "evet") {
+    const sev = d.glenoid_bone_loss_severity === "ciddi" ? "ciddi (>20%)" : (d.glenoid_bone_loss_severity === "orta" ? "orta" : "hafif");
+    bone.push(`Anteroinferior glenoid kenarında ${sev} boyutta kemik kaybı (kemik Bankart lezyonu ile uyumlu) izlenmektedir.`);
+  }
+  if (d.avn_marrow_change === "evet" || d.avn_double_line === "evet") {
+    bone.push("Humerus başında avasküler nekroz ile uyumlu subkondral kemik iliği sinyal değişikliği" + (d.avn_double_line==="evet" ? " (çift çizgi işareti pozitif)" : "") + (d.avn_collapse==="evet" ? " ve subkondral kollaps" : "") + " izlenmektedir.");
+  }
+  if (bone.length === 0) bone.push("Kemik yapılarda sinyal ve morfoloji normal sınırlardadır.");
+
+  // Akromion & AC
+  const acromion = [];
+  const acrType = BIGLIANI.find(b => b.id === d.acromion_type);
+  if (acrType) acromion.push(acrType.txt + ".");
+  if (d.os_acromiale === "evet") acromion.push("Os akromiale varyasyonu izlenmektedir.");
+  if (d.acromio_humeral === "daralmis") acromion.push("Akromiohumeral mesafe daralmıştır (<7 mm); manşet artropatisi/üst humeral migrasyon ile uyumludur.");
+  else if (d.acromio_humeral === "normal") acromion.push("Akromiohumeral mesafe korunmuştur.");
+  if (d.ac_osteofit === "evet" || d.ac_arthrosis === "evet") acromion.push("Akromioklaviküler eklemde dejeneratif değişiklikler mevcuttur.");
+  if (d.ac_hypertrophy === "evet") acromion.push("AC eklem kapsüler hipertrofisi izlenmektedir.");
+  if (d.ac_osteophyte === "evet") acromion.push("AC ekleminden inferiora uzanan osteofit; subakromial alana basınç oluşturmaktadır.");
+  if (d.ac_edema === "evet") acromion.push("AC eklem civarı kemik iliği ödemi izlenmektedir.");
+  if (acromion.length === 0) acromion.push("Akromion morfolojisi ve AC eklem normal sınırlardadır.");
+
+  // Rotator manşet (her tendon)
+  const rcSections = RC_TENDONS.map(t => {
+    const tL = (lesions||[]).filter(L => L.tendon === t.id);
+    if (tL.length === 0) {
+      return {name: t.name, lines: ["Tendonda sinyal ve morfoloji doğaldır."]};
+    }
+    const lines = [];
+    tL.forEach(L => {
+      const locMap = {"kritik":"kritik zon (insersiyonun 1-2 cm proksimali)","footprint":"footprint (insersiyonel bölge)","mtj":"muskulotendinöz bileşke","tum":"difüz"};
+      const loc = locMap[L.location] || "tendon gövdesi";
+      if (L.continuity === "tendinop") {
+        lines.push(`${t.name} tendonu ${loc}de sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.`);
+      } else if (L.continuity === "partial") {
+        const faceMap = {"artikuler":"artiküler yüzeyinde","bursal":"bursal yüzeyinde","intratendinoz":"intratendinöz"};
+        const face = faceMap[L.partial_face] || "bir yüzünde";
+        const pctTxt = L.partial_thickness ? ` (tendon kalınlığının yaklaşık %${L.partial_thickness}'i)` : "";
+        lines.push(`${t.name} tendonunun ${loc}de, ${face} parsiyel kat yırtık${pctTxt} izlenmektedir.`);
+      } else if (L.continuity === "full") {
+        const sizeMap = {"small":"küçük (<1 cm)","medium":"orta (1–3 cm)","large":"geniş (3–5 cm)","massive":"masif (>5 cm)"};
+        const sz = sizeMap[L.full_size] || "";
+        const retracMap = {1:"Patte I (minimal retraksiyon)", 2:"Patte II (humerus başı–glenoid arası retraksiyon)", 3:"Patte III (glenoid seviyesinde retraksiyon)"};
+        const retrac = L.retraction ? `, ${retracMap[L.retraction]}` : "";
+        lines.push(`${t.name} tendonunda ${loc}de tam kat yırtık (${sz} boyutlu${retrac}) izlenmektedir.`);
+      }
+      if (L.calcific) lines.push(`${t.name} tendonu lifleri içinde kalsifik fokus izlenmektedir.`);
+      if (L.goutallier !== undefined && L.goutallier !== "" && Number(L.goutallier) > 0) {
+        const g = GOUTALLIER.find(x => x.id === Number(L.goutallier));
+        if (g) lines.push(`${t.name} kasında yağlı dejenerasyon (${g.label}: ${g.txt}).`);
+      }
+    });
+    return {name: t.name, lines};
+  });
+
+  // Biceps
+  const biceps = [];
+  if (d.biceps_continuity === "intakt" && d.biceps_signal === "normal" && d.biceps_sheath === "yok" && (d.biceps_position==="normal" || !d.biceps_position)) {
+    biceps.push("Biceps uzun başı tendonu bicipital olukta normal lokalizasyonda, sinyal ve konturu korunmuştur.");
+  } else {
+    if (d.biceps_signal === "artmis") biceps.push("Biceps uzun başı tendonunda sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.");
+    if (d.biceps_sheath === "minimal") biceps.push("Biceps kılıfında minimal sıvı.");
+    else if (d.biceps_sheath === "belirgin") biceps.push("Biceps kılıfında belirgin sıvı (tenosinovit ile uyumlu).");
+    if (d.biceps_continuity === "parsiyel") biceps.push("Biceps uzun başı tendonunda parsiyel yırtık alanları seçilmektedir.");
+    else if (d.biceps_continuity === "tam") {
+      biceps.push("Biceps uzun başı tendonunda tam kat yırtık; tendon bicipital oluktan kaybolmuştur.");
+      if (d.biceps_popeye === "evet") biceps.push("Distalde kas karnında retraksiyon (Popeye işareti) izlenmektedir.");
+    }
+    if (d.biceps_position === "sublukse") biceps.push("Biceps uzun başı tendonu bicipital olukta medial subluksasyon göstermektedir.");
+    else if (d.biceps_position === "dislok_med") biceps.push("Biceps uzun başı tendonu medial dislokasyon göstermiş; bicipital oluk boş izlenmektedir.");
+  }
+
+  // Labrum
+  const labrum = [];
+  if (!labralTears || labralTears.length === 0) {
+    labrum.push("Glenoid labrumda sinyal ve morfoloji tüm kadranlarda korunmuştur.");
+  } else {
+    labralTears.forEach(L => {
+      const q = LABRAL_QUADRANTS.find(x => x.id === L.quadrant);
+      const qn = q ? q.name.toLowerCase() : "lokalize";
+      if (L.category === "slap") {
+        const t = SLAP_TYPES.find(x => x.id === L.subtype);
+        labrum.push(`Süperior labrumda ${t ? `${t.name} (${t.txt})` : "SLAP lezyonu"} izlenmektedir.`);
+      } else if (L.category === "ant") {
+        const t = ANT_LABRAL_VARIANTS.find(x => x.id === L.subtype);
+        labrum.push(`Anteroinferior labrumda ${t ? `${t.name}: ${t.txt}` : "anterior labral yırtık"} izlenmektedir.`);
+      } else if (L.category === "post") {
+        const t = POST_LABRAL_VARIANTS.find(x => x.id === L.subtype);
+        labrum.push(`Posterior labrumda ${t ? `${t.name}: ${t.txt}` : "posterior labral yırtık"} izlenmektedir.`);
+      } else if (L.category === "simple") {
+        labrum.push(`${q ? q.name : "İlgili"} kadranda labral yırtık/dejenerasyon sinyali izlenmektedir.`);
+      }
+      if (L.paralabralCyst) {
+        labrum.push(`Eşlik eden paralabral kist (${qn} yerleşimli) izlenmektedir.`);
+      }
+    });
+  }
+
+  // Ligamanlar
+  const lig = [];
+  if (d.ighl_torn === "evet") lig.push("İnferior glenohumeral ligaman (IGHL) devamlılığında bozulma izlenmektedir.");
+  if (d.mghl_abn === "evet") lig.push("Orta glenohumeral ligaman (MGHL) sinyal değişikliği göstermektedir.");
+  if (d.sghl_abn === "evet") lig.push("Süperior glenohumeral ligaman (SGHL) anormalliği izlenmektedir.");
+  if (d.chl_thickening === "evet") lig.push("Korakohumeral ligaman kalınlaşmıştır (>4 mm); adeziv kapsülit bulgusu.");
+  if (d.rotator_interval === "silinmis") lig.push("Rotator interval yağ dokusu silinmiş ve T2 sinyal artışı izlenmektedir.");
+  if (d.post_capsule_lax === "evet") lig.push("Posterior kapsül laksitesi mevcuttur.");
+  if (lig.length === 0) lig.push("Glenohumeral ligamanlar ve kapsüler yapılar normal sınırlardadır.");
+
+  // Kıkırdak
+  const cart = [];
+  if (d.cartilage_gh === "normal" || !d.cartilage_gh) cart.push("Glenohumeral eklem kıkırdağı korunmuştur.");
+  else if (d.cartilage_gh === "hafif") cart.push("Glenohumeral eklem kıkırdağında hafif incelme/fibrilasyon.");
+  else if (d.cartilage_gh === "orta") cart.push("Glenohumeral eklem kıkırdağında orta derecede kayıp.");
+  else if (d.cartilage_gh === "belirgin") cart.push("Glenohumeral eklem kıkırdağında belirgin kayıp.");
+  if (d.subchondral_change === "evet") cart.push("Subkondral kemikte skleroz ve kistik değişiklikler izlenmektedir.");
+  if (d.gh_osteofit === "evet") cart.push("Glenohumeral eklem kenarlarında osteofitler mevcuttur.");
+  if (d.gh_narrow === "evet") cart.push("Glenohumeral eklem aralığında daralma izlenmektedir.");
+
+  // Efüzyon & bursa
+  const fluidLines = [];
+  const effMap = {"yok":"Glenohumeral eklemde efüzyon izlenmemektedir.",
+    "minimal":"Glenohumeral eklemde minimal miktarda efüzyon.",
+    "orta":"Glenohumeral eklemde orta miktarda efüzyon.",
+    "belirgin":"Glenohumeral eklemde belirgin miktarda efüzyon."};
+  fluidLines.push(effMap[d.effusion_amount] || effMap["yok"]);
+  if (d.axillary_thickening === "evet") fluidLines.push("Aksiller reseste kapsüler kalınlaşma (>4 mm) izlenmektedir.");
+  const bursaMap = {"yok":"Subakromial-subdeltoid bursada sıvı izlenmemektedir.",
+    "minimal":"Subakromial-subdeltoid bursada minimal sıvı.",
+    "orta":"Subakromial-subdeltoid bursada orta miktarda sıvı (bursit ile uyumlu).",
+    "belirgin":"Subakromial-subdeltoid bursada belirgin sıvı (bursit)."};
+  fluidLines.push(bursaMap[d.bursa_effusion] || bursaMap["yok"]);
+  if (d.bursa_wall === "kalin") fluidLines.push("Bursal duvarda kalınlaşma.");
+  if (d.post_contrast_enh === "sinovit") fluidLines.push("Kontrast sonrası yaygın sinoviyal boyanma (sinovit).");
+  else if (d.post_contrast_enh === "bursal") fluidLines.push("Kontrast sonrası bursal duvarsal boyanma.");
+  else if (d.post_contrast_enh === "fokal") fluidLines.push("Kontrast sonrası fokal boyanma izlenmektedir.");
+
+  // Kas & diğer
+  const muscle = [];
+  RC_TENDONS.forEach(t => {
+    const L = (lesions||[]).filter(l => l.tendon === t.id && l.goutallier !== undefined && l.goutallier !== "" && Number(l.goutallier)>0)[0];
+    if (L) {
+      const g = GOUTALLIER.find(x => x.id === Number(L.goutallier));
+      muscle.push(`${t.name} kası: ${g.label} (${g.txt}).`);
+    }
+  });
+  if (d.deltoid_abn === "evet") muscle.push("Deltoid kasında sinyal değişikliği izlenmektedir.");
+  if (d.quadrilateral_space === "evet") muscle.push("Kuadrilateral bölgede teres minor kası denervasyon bulguları (ödem/atrofi); kuadrilateral bölge sendromu düşünülmelidir.");
+  if (d.infraspinatus_denerv === "evet") muscle.push("İnfraspinatus kasında denervasyon paterni (ödem ve/veya atrofi); suprascapular nöropati açısından değerlendirilmelidir.");
+  if (muscle.length === 0) muscle.push("Rotator manşet kas kompleksinde sinyal ve volüm doğaldır.");
+
+  // Paralabral kist
+  const cyst = [];
+  if (d.paralabral_cyst === "spinoglenoid") cyst.push("Spinoglenoid çentikte paralabral kist; suprascapular sinire bası yapabilir.");
+  else if (d.paralabral_cyst === "suprascapular") cyst.push("Suprascapular çentikte paralabral kist.");
+  else if (d.paralabral_cyst === "diger") cyst.push("Labrum komşuluğunda paralabral kist izlenmektedir.");
+
+  // Diğer
+  const other = [];
+  if (d.synovial_hemosiderin === "evet") other.push("Sinoviyal kalınlaşma içinde tüm sekanslarda hipointens alanlar (hemosiderin); PVNS açısından düşündürücüdür.");
+  if (d.blooming === "evet") other.push("GRE sekansta belirgin blooming artefaktı.");
+  if (d.calcification_present === "evet" && !(lesions||[]).some(l=>l.calcific)) other.push("Manşet tendonunda kalsifik fokus izlenmektedir.");
+  if (d.mass_present === "evet") other.push("Periartiküler/eklem içi yer kaplayıcı lezyon izlenmekte olup ileri değerlendirme önerilir.");
+  if (d.periarticular_edema === "evet") other.push("Periartiküler yumuşak doku ödemi/inflamatuar değişiklikler mevcuttur.");
+  if (d.freetext && d.freetext.trim()) other.push(d.freetext.trim());
+
+  /* ====== YORUM ====== */
+  const topScores = [...scores].sort((a,b) => b.score - a.score).filter(s => s.score >= 15);
+  let yorum = "";
+  if (topScores.length === 0) {
+    yorum = `${sides} omuz MRG incelemede belirgin patoloji saptanmamıştır. Klinik bulgular eşliğinde değerlendirilmesi önerilir.`;
+  } else {
+    const top = topScores[0];
+    const name = PATHO.find(p => p.key === top.key)?.name || top.key;
+    const parts = [];
+    parts.push(`${sides} omuz MRG'de en olası tanı: ${name} (uyum %${top.score}).`);
+    if (topScores.length >= 2) {
+      const others = topScores.slice(1,3).map(s => `${PATHO.find(p=>p.key===s.key)?.name} (%${s.score})`).join(", ");
+      parts.push(`Ayırıcı tanıda ayrıca ${others} göz önünde bulundurulmalıdır.`);
+    }
+    // Patoloji özgü yorum cümleleri
+    if (top.key === "massive_rct") parts.push("Masif rotator manşet yırtığı mevcut olup cerrahi değerlendirme (tendon transferi veya ters omuz artroplastisi) planı açısından MSK ortopedi konsültasyonu önerilir.");
+    else if (top.key === "supra_full") parts.push("Supraspinatus tam kat yırtığı mevcut olup kas yağlı dejenerasyon durumu ve retraksiyon derecesi cerrahi onarılabilirlik açısından önemlidir.");
+    else if (top.key === "frozen") parts.push("Adeziv kapsülit bulguları mevcuttur. Aktif hareket kısıtlılığı ve ağrı ile birlikte klinik korelasyon önerilir.");
+    else if (top.key === "bankart" || top.key === "bony_bankart" || top.key === "alpsa") parts.push("Anterior glenohumeral instabilite bulguları mevcuttur. Glenoid kemik kaybı oranı ve Hill-Sachs lezyonu boyutu, artroskopik Bankart onarımı ile kemik augmentasyonu (Latarjet) arasında seçim yapılmasında belirleyicidir.");
+    else if (top.key === "slap") parts.push("SLAP lezyonu bulguları mevcuttur. Biseps ankoru ile ilişki ve paralabral kist varlığı operatif planı etkileyebilir.");
+    else if (top.key === "calc_tendinit") parts.push("Kalsifik tendinit bulguları mevcuttur. Tedavi (barbotaj, perkütan aspirasyon) planlaması için klinik evre değerlendirilmelidir.");
+    else if (top.key === "avn") parts.push("Humerus başı avasküler nekrozu açısından ileri evreleme (Ficat-Arlet), risk faktörü sorgulaması ve erken ortopedi konsültasyonu önerilir.");
+    else if (top.key === "septic") parts.push("Septik artrit şüphesi acil değerlendirme gerektirir; eklem aspirasyonu ve kültür planlanmalıdır.");
+    else if (top.key === "paralab_cyst") parts.push("Paralabral kist, altta yatan labral yırtığa sekonder olup nöropatik semptomların (suprascapular sinir) değerlendirilmesi gerekir.");
+    yorum = parts.join(" ");
+  }
+
+  return {
+    headerInfo: {
+      side: sides,
+      age: d.age || "",
+      sex: d.sex || "",
+      date: today,
+      clinical: d.clinical || "",
+    },
+    seq,
+    bone, acromion, rcSections, biceps, labrum, lig, cart, fluidLines, muscle, cyst, other,
+    yorum,
+    topScores,
+  };
+}
+
+/* ============ ANA UYGULAMA ============ */
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [data, setData] = useState({
+    side:"", age:"", sex:"", clinical:"", trauma:"",
+    seq_t1:true, seq_t2:true, seq_pd:true, seq_stir:false, seq_fs:true, seq_artro:false, seq_post:false,
+    acromion_type:"", os_acromiale:"", acromio_humeral:"",
+    ac_osteofit:"", ac_arthrosis:"", ac_hypertrophy:"", ac_osteophyte:"", ac_edema:"", ac_narrow:"",
+    greater_tub_edema:"", lesser_tub_edema:"", hill_sachs:"", hill_sachs_size:"",
+    rev_hill_sachs:"", glenoid_bone_loss:"", glenoid_bone_loss_severity:"",
+    avn_marrow_change:"", avn_double_line:"", avn_collapse:"", avn_risk:"",
+    supra_thick:"", supra_thin:"", supra_location:"",
+    calcification_present:"", calcific_edema:"",
+    biceps_signal:"", biceps_sheath:"", biceps_continuity:"intakt", biceps_popeye:"", biceps_position:"normal",
+    sghl_abn:"", mghl_abn:"", ighl_torn:"", chl_thickening:"", rotator_interval:"",
+    cartilage_gh:"", subchondral_change:"", gh_osteofit:"", gh_narrow:"",
+    effusion_amount:"", bursa_effusion:"", bursa_wall:"", post_contrast_enh:"",
+    axillary_thickening:"",
+    dislocation_hx:"", post_dislocation_hx:"", post_capsule_lax:"",
+    labral_degen:"",
+    paralabral_cyst:"", infraspinatus_denerv:"", deltoid_abn:"", quadrilateral_space:"",
+    synovial_hemosiderin:"", blooming:"", hemarthros:"", septic_erosion:"", periarticular_edema:"",
+    clinical_frozen:"", clinical_septic:"",
+    cuff_arthropathy:"",
+    mass_present:"",
+    freetext:"",
+    // loops
+    labralTears: [],
+  });
+  const [lesions, setLesions] = useState([]);      // rotator cuff
+  const [lesionIdx, setLesionIdx] = useState(-1);
+  const [lesionSub, setLesionSub] = useState(0);
+  const [labralIdx, setLabralIdx] = useState(-1);
+  const [labralSub, setLabralSub] = useState(0);
+  const [showReport, setShowReport] = useState(false);
+
+  const TOTAL_STEPS = 22;
+  const update = (k,v) => setData(d => ({...d, [k]:v}));
+
+  /* ==== Lezyon loop yardımcıları ==== */
+  const RC_SUBSTEPS = 5; // 0:tendon,1:konum,2:kontinüite,3:parsiyel/tam detay,4:goutallier+kalsifik
+  const LAB_SUBSTEPS = 3; // 0:kadran,1:kategori,2:subtype+cyst
+
+  function startRCLesion() {
+    const L = { id: Date.now(), tendon:"", location:"", continuity:"", partial_face:"", partial_thickness:"", full_size:"", retraction:null, goutallier:"", calcific:false };
+    setLesions(ls => [...ls, L]);
+    setLesionIdx(lesions.length);
+    setLesionSub(0);
+  }
+  function updateCurrentLesion(patch) {
+    setLesions(ls => ls.map((L,i) => i===lesionIdx ? {...L, ...patch} : L));
+  }
+  function finalizeRCLesion() {
+    setLesionIdx(-1);
+    setLesionSub(0);
+  }
+  function removeLesion(i) {
+    setLesions(ls => ls.filter((_,j) => j!==i));
+  }
+
+  function startLabralTear() {
+    const L = { id: Date.now(), quadrant:"", category:"", subtype:"", paralabralCyst:false };
+    const newArr = [...(data.labralTears||[]), L];
+    update("labralTears", newArr);
+    setLabralIdx(newArr.length - 1);
+    setLabralSub(0);
+  }
+  function updateCurrentLabral(patch) {
+    update("labralTears", (data.labralTears||[]).map((L,i)=> i===labralIdx ? {...L, ...patch} : L));
+  }
+  function finalizeLabralTear() {
+    setLabralIdx(-1);
+    setLabralSub(0);
+  }
+  function removeLabral(i) {
+    update("labralTears", (data.labralTears||[]).filter((_,j)=> j!==i));
+  }
+
+  /* ==== Skorlama ==== */
+  const scores = useMemo(() => {
+    const F = buildFeatureMap(data, lesions);
+    return computeScores(F);
+  }, [data, lesions]);
+
+  /* ==== Navigasyon ==== */
+  function canNext() {
+    if (step === 0) return !!data.side && !!data.age && !!data.sex;
+    if (step === 7 && lesionIdx !== -1) {
+      const L = lesions[lesionIdx];
+      if (!L) return false;
+      if (lesionSub === 0) return !!L.tendon;
+      if (lesionSub === 1) return !!L.location;
+      if (lesionSub === 2) return !!L.continuity;
+      if (lesionSub === 3) {
+        if (L.continuity === "partial") return !!L.partial_face;
+        if (L.continuity === "full")    return !!L.full_size && L.retraction !== null;
+        return true;
+      }
+      if (lesionSub === 4) return true;
+    }
+    if (step === 9 && labralIdx !== -1) {
+      const L = (data.labralTears||[])[labralIdx];
+      if (!L) return false;
+      if (labralSub === 0) return !!L.quadrant;
+      if (labralSub === 1) return !!L.category;
+      if (labralSub === 2) {
+        if (L.category === "simple") return true;
+        return !!L.subtype;
+      }
+    }
+    return true;
+  }
+
+  function goNext() {
+    // Rotator cuff lezyon loop
+    if (step === 7 && lesionIdx !== -1) {
+      if (lesionSub < RC_SUBSTEPS - 1) { setLesionSub(s => s+1); return; }
+      // son altstep — bitir
+      finalizeRCLesion();
+      return;
+    }
+    // Labral tear loop
+    if (step === 9 && labralIdx !== -1) {
+      if (labralSub < LAB_SUBSTEPS - 1) { setLabralSub(s => s+1); return; }
+      finalizeLabralTear();
+      return;
+    }
+    if (step < TOTAL_STEPS - 1) setStep(s => s+1);
+    else setShowReport(true);
+  }
+
+  function goPrev() {
+    // Lezyon loop içindeyken
+    if (step === 7 && lesionIdx !== -1) {
+      if (lesionSub > 0) { setLesionSub(s => s-1); return; }
+      // en baş altstepteyiz — lezyon kaldırılmış sayılır
+      setLesions(ls => ls.filter((_,i)=> i!==lesionIdx));
+      setLesionIdx(-1);
+      setLesionSub(0);
+      return;
+    }
+    if (step === 9 && labralIdx !== -1) {
+      if (labralSub > 0) { setLabralSub(s => s-1); return; }
+      update("labralTears", (data.labralTears||[]).filter((_,i)=> i!==labralIdx));
+      setLabralIdx(-1);
+      setLabralSub(0);
+      return;
+    }
+    if (step > 0) setStep(s => s-1);
+  }
+
+  /* ==== Export ==== */
+  function copyReportText() {
+    const el = document.getElementById("report-text-content");
+    if (!el) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try { document.execCommand("copy"); alert("Rapor panoya kopyalandı."); }
+    catch(e) { alert("Kopyalama başarısız."); }
+    sel.removeAllRanges();
+  }
+  function downloadHTML() {
+    const el = document.querySelector(".report-wrap");
+    if (!el) return;
+    const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Omuz MRG Raporu</title><style>
+      body{font-family:"Times New Roman",serif;max-width:800px;margin:20px auto;padding:20px;color:#111;background:white}
+      .rbox{border:1.5px solid #0f172a;border-radius:6px;margin:10px 0}
+      .rbox-head{background:#0f172a;color:white;padding:5px 12px;font-weight:700;font-size:13px;letter-spacing:.5px;font-family:Arial,sans-serif;border-radius:5px 5px 0 0}
+      .rbox-head.teal{background:#0f766e} .rbox-head.amber{background:#b45309} .rbox-head.slate{background:#334155}
+      .rbox-body{padding:8px 14px}
+      .zrow{display:grid;grid-template-columns:170px 1fr;padding:5px 10px;font-size:13px}
+      .zrow:nth-child(odd){background:#f1f5f9} .zrow:nth-child(even){background:white}
+      .zrow .zk{font-weight:700;color:#0f172a;font-family:Arial,sans-serif;font-size:12.5px}
+      .zbullet{padding:4px 10px;margin:2px 0;font-size:13px}
+      .zbullet:nth-child(odd){background:#f1f5f9} .zbullet:nth-child(even){background:white}
+      .yorum{background:#fef3c7;border-left:5px solid #f59e0b;border-radius:0 6px 6px 0;padding:12px 18px;margin:14px 0}
+      .yorum b{display:block;margin-bottom:6px;color:#78350f;text-transform:uppercase;font-family:Arial,sans-serif;font-size:13px}
+      h2{text-align:center;border-bottom:3px double #0f172a;padding-bottom:10px}
+      .sig{margin-top:22px;text-align:right;font-size:12.5px;color:#475569;border-top:1px solid #cbd5e1;padding-top:10px}
+    </style></head><body>${el.innerHTML}</body></html>`;
+    const blob = new Blob([html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `omuz-mrg-raporu-${new Date().toISOString().slice(0,10)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 100);
+  }
+  function printReport() { window.print(); }
+
+  /* ==== Step renderer ==== */
+  function renderStep() {
+    const d = data;
+    // Step 0 — Hasta ve klinik bilgi
+    if (step === 0) return <>
+      <h3 className="sec">Hasta Bilgileri</h3>
+      <div className="grid grid-3">
+        <div className="field"><label>Yaş</label>
+          <input className="num" type="number" value={d.age} onChange={e=>update("age", e.target.value)} placeholder="örn. 54" />
+        </div>
+        <div className="field"><label>Cinsiyet</label>
+          <div className="grid grid-2">
+            {SEX.map(s => <OptBox key={s} selected={d.sex===s} onClick={()=>update("sex",s)}>{s}</OptBox>)}
+          </div>
+        </div>
+        <div className="field"><label>İncelenen Taraf</label>
+          <div className="grid grid-2">
+            {SIDE.map(s => <OptBox key={s} selected={d.side===s} onClick={()=>update("side",s)} amber>{s}</OptBox>)}
+          </div>
+        </div>
+      </div>
+      <h3 className="sec">Klinik Bilgi</h3>
+      <div className="field"><label>Klinik endikasyon / şikayet</label>
+        <textarea value={d.clinical} onChange={e=>update("clinical", e.target.value)} placeholder="Örn: Kronik ağrı, aktif abdüksiyonda zayıflık, 2 yıl önce düşme öyküsü..." />
+      </div>
+      <div className="grid grid-2">
+        <div className="field"><label>Travma öyküsü</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.trauma==="yok"} onClick={()=>update("trauma","yok")}>Yok</OptBox>
+            <OptBox selected={d.trauma==="evet"} onClick={()=>update("trauma","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Dislokasyon öyküsü</label>
+          <div className="grid grid-3">
+            <OptBox selected={d.dislocation_hx==="yok"} onClick={()=>{update("dislocation_hx","yok"); update("post_dislocation_hx","yok");}}>Yok</OptBox>
+            <OptBox selected={d.dislocation_hx==="evet"} onClick={()=>update("dislocation_hx","evet")}>Anterior</OptBox>
+            <OptBox selected={d.post_dislocation_hx==="evet"} onClick={()=>update("post_dislocation_hx","evet")}>Posterior</OptBox>
+          </div>
+        </div>
+      </div>
+    </>;
+
+    // Step 1 — Sekanslar
+    if (step === 1) return <>
+      <h3 className="sec">Uygulanan MR Sekansları</h3>
+      <div className="hint">Uygulanan tüm sekansları seçin — rapor tekniği bölümünde listelenecek.</div>
+      <div className="grid grid-2">
+        <ChkBox selected={d.seq_t1} onClick={()=>update("seq_t1", !d.seq_t1)}>T1A (aksiyel, koronal obl., sagital obl.)</ChkBox>
+        <ChkBox selected={d.seq_t2} onClick={()=>update("seq_t2", !d.seq_t2)}>T2A (aksiyel, koronal obl., sagital obl.)</ChkBox>
+        <ChkBox selected={d.seq_pd} onClick={()=>update("seq_pd", !d.seq_pd)}>PD yağ baskılı</ChkBox>
+        <ChkBox selected={d.seq_fs} onClick={()=>update("seq_fs", !d.seq_fs)}>Yağ baskılı T2A</ChkBox>
+        <ChkBox selected={d.seq_stir} onClick={()=>update("seq_stir", !d.seq_stir)}>STIR</ChkBox>
+        <ChkBox selected={d.seq_artro} onClick={()=>update("seq_artro", !d.seq_artro)}>MR Artrografi (direkt)</ChkBox>
+        <ChkBox selected={d.seq_post} onClick={()=>update("seq_post", !d.seq_post)}>Kontrast sonrası yağ baskılı T1A</ChkBox>
+      </div>
+    </>;
+
+    // Step 2 — Akromion & AC
+    if (step === 2) return <>
+      <h3 className="sec">Akromion Morfolojisi</h3>
+      <div className="grid grid-2">
+        {BIGLIANI.map(b => <OptBox key={b.id} selected={d.acromion_type===b.id} onClick={()=>update("acromion_type", b.id)}>
+          <b>{b.label}</b>
+        </OptBox>)}
+      </div>
+      <div className="grid grid-2" style={{marginTop:10}}>
+        <div className="field"><label>Os acromiale varlığı</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.os_acromiale==="yok"} onClick={()=>update("os_acromiale","yok")}>Yok</OptBox>
+            <OptBox selected={d.os_acromiale==="evet"} onClick={()=>update("os_acromiale","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Akromiohumeral mesafe</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.acromio_humeral==="normal"} onClick={()=>update("acromio_humeral","normal")}>Normal (≥7 mm)</OptBox>
+            <OptBox selected={d.acromio_humeral==="daralmis"} onClick={()=>update("acromio_humeral","daralmis")} amber>Daralmış (&lt;7 mm)</OptBox>
+          </div>
+        </div>
+      </div>
+      <h3 className="sec amber">Akromioklaviküler Eklem</h3>
+      <div className="grid grid-2">
+        <ChkBox selected={d.ac_osteofit==="evet"} onClick={()=>update("ac_osteofit", d.ac_osteofit==="evet" ? "yok":"evet")}>Osteofit formasyonu</ChkBox>
+        <ChkBox selected={d.ac_arthrosis==="evet"} onClick={()=>update("ac_arthrosis", d.ac_arthrosis==="evet" ? "yok":"evet")}>Eklem içi dejeneratif değişiklik</ChkBox>
+        <ChkBox selected={d.ac_hypertrophy==="evet"} onClick={()=>update("ac_hypertrophy", d.ac_hypertrophy==="evet" ? "yok":"evet")}>Kapsüler hipertrofi</ChkBox>
+        <ChkBox selected={d.ac_osteophyte==="evet"} onClick={()=>update("ac_osteophyte", d.ac_osteophyte==="evet" ? "yok":"evet")}>İnferior osteofit uzanımı</ChkBox>
+        <ChkBox selected={d.ac_edema==="evet"} onClick={()=>update("ac_edema", d.ac_edema==="evet" ? "yok":"evet")}>AC eklemde kemik iliği ödemi</ChkBox>
+        <ChkBox selected={d.ac_narrow==="evet"} onClick={()=>update("ac_narrow", d.ac_narrow==="evet" ? "yok":"evet")}>Eklem aralığında daralma</ChkBox>
+      </div>
+    </>;
+
+    // Step 3 — Kemik
+    if (step === 3) return <>
+      <h3 className="sec">Kemik İliği ve Morfoloji</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Büyük tüberkül kemik iliği ödemi</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.greater_tub_edema==="yok"} onClick={()=>update("greater_tub_edema","yok")}>Yok</OptBox>
+            <OptBox selected={d.greater_tub_edema==="evet"} onClick={()=>update("greater_tub_edema","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Küçük tüberkül kemik iliği ödemi</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.lesser_tub_edema==="yok"} onClick={()=>update("lesser_tub_edema","yok")}>Yok</OptBox>
+            <OptBox selected={d.lesser_tub_edema==="evet"} onClick={()=>update("lesser_tub_edema","evet")}>Var</OptBox>
+          </div>
+        </div>
+      </div>
+      <h3 className="sec amber">Humerus Başı Avasküler Nekroz Değerlendirmesi</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Subkondral kemik iliği sinyal değişikliği</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.avn_marrow_change==="yok"} onClick={()=>update("avn_marrow_change","yok")}>Yok</OptBox>
+            <OptBox selected={d.avn_marrow_change==="evet"} onClick={()=>update("avn_marrow_change","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Çift çizgi işareti (T2)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.avn_double_line==="yok"} onClick={()=>update("avn_double_line","yok")}>Yok</OptBox>
+            <OptBox selected={d.avn_double_line==="evet"} onClick={()=>update("avn_double_line","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Subkondral kollaps</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.avn_collapse==="yok"} onClick={()=>update("avn_collapse","yok")}>Yok</OptBox>
+            <OptBox selected={d.avn_collapse==="evet"} onClick={()=>update("avn_collapse","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>AVN için risk faktörü (steroid/alkol/vs.)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.avn_risk==="yok"} onClick={()=>update("avn_risk","yok")}>Yok</OptBox>
+            <OptBox selected={d.avn_risk==="evet"} onClick={()=>update("avn_risk","evet")}>Var</OptBox>
+          </div>
+        </div>
+      </div>
+    </>;
+
+    // Step 4 — Hill-Sachs / Bony Bankart / Reverse
+    if (step === 4) return <>
+      <h3 className="sec">Hill-Sachs Lezyonu</h3>
+      <div className="field"><label>Humerus başı posterolateralinde kompresyon defekti</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.hill_sachs==="yok"} onClick={()=>update("hill_sachs","yok")}>Yok</OptBox>
+          <OptBox selected={d.hill_sachs==="evet"} onClick={()=>update("hill_sachs","evet")} amber>Var</OptBox>
+        </div>
+      </div>
+      {d.hill_sachs==="evet" && <div className="field"><label>Defekt boyutu</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.hill_sachs_size==="kucuk"} onClick={()=>update("hill_sachs_size","kucuk")}>Küçük (&lt;12 mm)</OptBox>
+          <OptBox selected={d.hill_sachs_size==="buyuk"} onClick={()=>update("hill_sachs_size","buyuk")} amber>Büyük (≥12 mm, engage edici olabilir)</OptBox>
+        </div>
+      </div>}
+
+      <h3 className="sec">Glenoid Kemik Kaybı (Bony Bankart)</h3>
+      <div className="field"><label>Anteroinferior glenoid kemik kaybı / fraktür</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.glenoid_bone_loss==="yok"} onClick={()=>update("glenoid_bone_loss","yok")}>Yok</OptBox>
+          <OptBox selected={d.glenoid_bone_loss==="evet"} onClick={()=>update("glenoid_bone_loss","evet")} amber>Var</OptBox>
+        </div>
+      </div>
+      {d.glenoid_bone_loss==="evet" && <div className="field"><label>Kemik kaybı şiddeti</label>
+        <div className="grid grid-3">
+          <OptBox selected={d.glenoid_bone_loss_severity==="hafif"} onClick={()=>update("glenoid_bone_loss_severity","hafif")}>Hafif (&lt;10%)</OptBox>
+          <OptBox selected={d.glenoid_bone_loss_severity==="orta"} onClick={()=>update("glenoid_bone_loss_severity","orta")}>Orta (10-20%)</OptBox>
+          <OptBox selected={d.glenoid_bone_loss_severity==="ciddi"} onClick={()=>update("glenoid_bone_loss_severity","ciddi")} amber>Ciddi (&gt;20%)</OptBox>
+        </div>
+      </div>}
+
+      <h3 className="sec amber">Reverse Hill-Sachs (McLaughlin)</h3>
+      <div className="field"><label>Humerus başı anteromedialinde kompresyon defekti</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.rev_hill_sachs==="yok"} onClick={()=>update("rev_hill_sachs","yok")}>Yok</OptBox>
+          <OptBox selected={d.rev_hill_sachs==="evet"} onClick={()=>update("rev_hill_sachs","evet")} amber>Var (konvülziyon/elektrik şok öyküsü sorgulanır)</OptBox>
+        </div>
+      </div>
+    </>;
+
+    // Step 5 — Supraspinatus ön değerlendirme + kalsifikasyon
+    if (step === 5) return <>
+      <h3 className="sec">Supraspinatus Genel Değerlendirme</h3>
+      <div className="hint">Sonraki adımda her tendon için ayrı ayrı lezyon ekleyeceksiniz. Bu adım genel morfolojik ön değerlendirmedir.</div>
+      <div className="grid grid-2">
+        <div className="field"><label>Tendon kalınlaşması / heterojenite</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.supra_thick==="yok"} onClick={()=>update("supra_thick","yok")}>Yok</OptBox>
+            <OptBox selected={d.supra_thick==="evet"} onClick={()=>update("supra_thick","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Tendon yüksekliğinde azalma</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.supra_thin==="yok"} onClick={()=>update("supra_thin","yok")}>Yok</OptBox>
+            <OptBox selected={d.supra_thin==="evet"} onClick={()=>update("supra_thin","evet")}>Var</OptBox>
+          </div>
+        </div>
+      </div>
+      <div className="field"><label>Predominant sinyal değişikliği lokalizasyonu</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.supra_location==="kritik"} onClick={()=>update("supra_location","kritik")}>Kritik zon (insersiyo 1-2 cm proksimal)</OptBox>
+          <OptBox selected={d.supra_location==="footprint"} onClick={()=>update("supra_location","footprint")}>Footprint (insersiyonel)</OptBox>
+          <OptBox selected={d.supra_location==="mtj"} onClick={()=>update("supra_location","mtj")}>Muskulotendinöz bileşke</OptBox>
+          <OptBox selected={d.supra_location==="tum"} onClick={()=>update("supra_location","tum")}>Difüz / birden çok alan</OptBox>
+        </div>
+      </div>
+
+      <h3 className="sec amber">Kalsifik Tendinit Değerlendirmesi</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Tendonda kalsifik fokus</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.calcification_present==="yok"} onClick={()=>update("calcification_present","yok")}>Yok</OptBox>
+            <OptBox selected={d.calcification_present==="evet"} onClick={()=>update("calcification_present","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Kalsifikasyon çevresi ödem (rezorpsiyon fazı)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.calcific_edema==="yok"} onClick={()=>update("calcific_edema","yok")}>Yok</OptBox>
+            <OptBox selected={d.calcific_edema==="evet"} onClick={()=>update("calcific_edema","evet")}>Var</OptBox>
+          </div>
+        </div>
+      </div>
+      <div className="field"><label>Manşet artropatisi bulguları (süperior humeral migrasyon, kronik yırtık)</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.cuff_arthropathy==="yok"} onClick={()=>update("cuff_arthropathy","yok")}>Yok</OptBox>
+          <OptBox selected={d.cuff_arthropathy==="evet"} onClick={()=>update("cuff_arthropathy","evet")}>Var</OptBox>
+        </div>
+      </div>
+    </>;
+
+    // Step 6 — Manşet loop girişi
+    if (step === 6) return <>
+      <h3 className="sec">Rotator Manşet Lezyonları</h3>
+      <div className="hint">Her patolojik bulgu için ayrı lezyon ekleyin (aynı tendon içinde birden fazla yerleşim varsa ayrı lezyon olarak kaydedebilirsiniz). Sonrasında &quot;Tendondan başka lezyon yok&quot; seçeneği ile devam edin.</div>
+      {lesions.length > 0 && <div>
+        <h3 className="sec amber">Kaydedilen Lezyonlar</h3>
+        {lesions.map((L,i) => {
+          const t = RC_TENDONS.find(x => x.id === L.tendon);
+          return <div key={L.id} className="lesion-card">
+            <div className="lesion-head">
+              <div className="lesion-title">Lezyon #{i+1} — {t ? t.name : "(tendon seçilmedi)"}</div>
+              <button className="btn btn-sm" onClick={()=>removeLesion(i)}>Sil</button>
+            </div>
+            <div>
+              {L.continuity === "tendinop" && <span className="chip chip-teal">Tendinopati</span>}
+              {L.continuity === "partial" && <span className="chip chip-amber">Parsiyel yırtık</span>}
+              {L.continuity === "full" && <span className="chip chip-red">Tam kat yırtık</span>}
+              {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
+              {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+            </div>
+          </div>;
+        })}
+      </div>}
+      <button className="btn btn-primary" onClick={()=>{setStep(7); startRCLesion();}}>+ Yeni Rotator Manşet Lezyonu Ekle</button>
+      {lesions.length > 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Başka lezyon yok, devam et →</button>}
+      {lesions.length === 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Rotator manşette patolojik bulgu yok, devam et →</button>}
+    </>;
+
+    // Step 7 — Manşet lezyon loop (alt adımlar)
+    if (step === 7) {
+      if (lesionIdx === -1) {
+        // loop biter, manşet özeti + devam butonu
+        return <>
+          <h3 className="sec">Rotator Manşet Lezyonları Kaydedildi</h3>
+          {lesions.length === 0 && <div className="hint">Kayıtlı lezyon yok.</div>}
+          {lesions.map((L,i) => {
+            const t = RC_TENDONS.find(x => x.id === L.tendon);
+            return <div key={L.id} className="lesion-card">
+              <div className="lesion-head">
+                <div className="lesion-title">#{i+1} — {t ? t.name : "?"}</div>
+                <button className="btn btn-sm" onClick={()=>removeLesion(i)}>Sil</button>
+              </div>
+              <div>
+                {L.continuity === "tendinop" && <span className="chip chip-teal">Tendinopati</span>}
+                {L.continuity === "partial" && <span className="chip chip-amber">Parsiyel ({L.partial_face})</span>}
+                {L.continuity === "full" && <span className="chip chip-red">Tam kat ({L.full_size})</span>}
+                {L.retraction && <span className="chip chip-red">Patte {L.retraction}</span>}
+                {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
+                {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+              </div>
+            </div>;
+          })}
+          <button className="btn btn-primary" onClick={()=>startRCLesion()}>+ Başka Lezyon Ekle</button>
+          <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Devam et →</button>
+        </>;
+      }
+      const L = lesions[lesionIdx];
+      if (!L) return null;
+      // alt adım 0: tendon
+      if (lesionSub === 0) return <>
+        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+        <h3 className="sec">Hangi tendon?</h3>
+        <div className="grid grid-2">
+          {RC_TENDONS.map(t => <OptBox key={t.id} selected={L.tendon===t.id} onClick={()=>updateCurrentLesion({tendon:t.id})}>
+            <b>{t.name}</b>
+          </OptBox>)}
+        </div>
+      </>;
+      // alt adım 1: lokalizasyon
+      if (lesionSub === 1) return <>
+        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+        <h3 className="sec">Tendon içinde lokalizasyon</h3>
+        <div className="grid grid-2">
+          <OptBox selected={L.location==="footprint"} onClick={()=>updateCurrentLesion({location:"footprint"})}>Footprint (insersiyonel)</OptBox>
+          <OptBox selected={L.location==="kritik"} onClick={()=>updateCurrentLesion({location:"kritik"})}>Kritik zon (insersiyo 1-2 cm proksimali)</OptBox>
+          <OptBox selected={L.location==="mtj"} onClick={()=>updateCurrentLesion({location:"mtj"})}>Muskulotendinöz bileşke</OptBox>
+          <OptBox selected={L.location==="tum"} onClick={()=>updateCurrentLesion({location:"tum"})}>Difüz / birden çok alan</OptBox>
+        </div>
+      </>;
+      // alt adım 2: kontinüite
+      if (lesionSub === 2) return <>
+        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+        <h3 className="sec">Tendon bütünlüğü</h3>
+        <div className="grid grid-2">
+          <OptBox selected={L.continuity==="tendinop"} onClick={()=>updateCurrentLesion({continuity:"tendinop", partial_face:"", partial_thickness:"", full_size:"", retraction:null})}>
+            <b>Tendinopati</b><small>Sinyal artışı, yırtık yok</small>
+          </OptBox>
+          <OptBox selected={L.continuity==="partial"} onClick={()=>updateCurrentLesion({continuity:"partial", full_size:"", retraction:null})}>
+            <b>Parsiyel yırtık</b><small>Tendon kalınlığının bir kısmı</small>
+          </OptBox>
+          <OptBox selected={L.continuity==="full"} onClick={()=>updateCurrentLesion({continuity:"full", partial_face:"", partial_thickness:""})}>
+            <b>Tam kat yırtık</b><small>Artiküler-bursal geçişli sıvı</small>
+          </OptBox>
+        </div>
+      </>;
+      // alt adım 3: detay
+      if (lesionSub === 3) {
+        if (L.continuity === "tendinop") {
+          return <>
+            <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+            <h3 className="sec">Tendinopati için ek detay yok</h3>
+            <div className="hint">Bu adımda ek detay gerekmiyor. Sonraki adıma geçin.</div>
+          </>;
+        }
+        if (L.continuity === "partial") return <>
+          <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+          <h3 className="sec">Parsiyel Yırtık — Yüz</h3>
+          <div className="grid grid-3">
+            <OptBox selected={L.partial_face==="artikuler"} onClick={()=>updateCurrentLesion({partial_face:"artikuler"})}>Artiküler yüz</OptBox>
+            <OptBox selected={L.partial_face==="bursal"} onClick={()=>updateCurrentLesion({partial_face:"bursal"})}>Bursal yüz</OptBox>
+            <OptBox selected={L.partial_face==="intratendinoz"} onClick={()=>updateCurrentLesion({partial_face:"intratendinoz"})}>İntratendinöz</OptBox>
+          </div>
+          <div className="field"><label>Tendon kalınlığının yaklaşık kaç %'si? (opsiyonel)</label>
+            <input className="num" type="number" min="0" max="99" value={L.partial_thickness} onChange={e=>updateCurrentLesion({partial_thickness:e.target.value})} placeholder="örn. 40" />
+          </div>
+        </>;
+        if (L.continuity === "full") return <>
+          <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+          <h3 className="sec">Tam Kat Yırtık — Boyut & Retraksiyon</h3>
+          <div className="field"><label>Defekt boyutu (Cofield/DeOrio)</label>
+            <div className="grid grid-2">
+              <OptBox selected={L.full_size==="small"} onClick={()=>updateCurrentLesion({full_size:"small"})}>Küçük (&lt;1 cm)</OptBox>
+              <OptBox selected={L.full_size==="medium"} onClick={()=>updateCurrentLesion({full_size:"medium"})}>Orta (1–3 cm)</OptBox>
+              <OptBox selected={L.full_size==="large"} onClick={()=>updateCurrentLesion({full_size:"large"})} amber>Geniş (3–5 cm)</OptBox>
+              <OptBox selected={L.full_size==="massive"} onClick={()=>updateCurrentLesion({full_size:"massive"})} amber>Masif (&gt;5 cm)</OptBox>
+            </div>
+          </div>
+          <div className="field"><label>Tendon retraksiyonu (Patte)</label>
+            <div className="grid grid-3">
+              {PATTE.map(p => <OptBox key={p.id} selected={L.retraction===p.id} onClick={()=>updateCurrentLesion({retraction:p.id})}>
+                <b>{p.label}</b><small>{p.txt}</small>
+              </OptBox>)}
+            </div>
+          </div>
+        </>;
+      }
+      // alt adım 4: goutallier & kalsifik
+      if (lesionSub === 4) return <>
+        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
+        <h3 className="sec">Kas Yağlı Dejenerasyonu (Goutallier)</h3>
+        <div className="grid grid-3">
+          {GOUTALLIER.map(g => <OptBox key={g.id} selected={Number(L.goutallier)===g.id} onClick={()=>updateCurrentLesion({goutallier:g.id})}>
+            <b>{g.label}</b><small>{g.txt}</small>
+          </OptBox>)}
+        </div>
+        <h3 className="sec amber">Kalsifik Fokus</h3>
+        <ChkBox selected={L.calcific} onClick={()=>updateCurrentLesion({calcific: !L.calcific})}>Bu tendon liflerinde kalsifik fokus var</ChkBox>
+      </>;
+    }
+
+    // Step 8 — Biceps tendon
+    if (step === 8) return <>
+      <h3 className="sec">Biceps Uzun Başı Tendonu</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Tendon sinyali</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.biceps_signal==="normal"} onClick={()=>update("biceps_signal","normal")}>Normal</OptBox>
+            <OptBox selected={d.biceps_signal==="artmis"} onClick={()=>update("biceps_signal","artmis")}>Artmış (tendinopati)</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Biceps kılıfı sıvısı</label>
+          <div className="grid grid-3">
+            <OptBox selected={d.biceps_sheath==="yok"} onClick={()=>update("biceps_sheath","yok")}>Yok</OptBox>
+            <OptBox selected={d.biceps_sheath==="minimal"} onClick={()=>update("biceps_sheath","minimal")}>Minimal</OptBox>
+            <OptBox selected={d.biceps_sheath==="belirgin"} onClick={()=>update("biceps_sheath","belirgin")}>Belirgin (tenosinovit)</OptBox>
+          </div>
+        </div>
+      </div>
+      <div className="field"><label>Tendon bütünlüğü</label>
+        <div className="grid grid-3">
+          <OptBox selected={d.biceps_continuity==="intakt"} onClick={()=>update("biceps_continuity","intakt")}>İntakt</OptBox>
+          <OptBox selected={d.biceps_continuity==="parsiyel"} onClick={()=>update("biceps_continuity","parsiyel")}>Parsiyel yırtık</OptBox>
+          <OptBox selected={d.biceps_continuity==="tam"} onClick={()=>update("biceps_continuity","tam")} amber>Tam kat yırtık</OptBox>
+        </div>
+      </div>
+      {d.biceps_continuity==="tam" && <div className="field"><label>Popeye işareti (distal kas karnı retraksiyonu)</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.biceps_popeye==="yok"} onClick={()=>update("biceps_popeye","yok")}>Yok</OptBox>
+          <OptBox selected={d.biceps_popeye==="evet"} onClick={()=>update("biceps_popeye","evet")}>Var</OptBox>
+        </div>
+      </div>}
+      <div className="field"><label>Bicipital olukta pozisyon</label>
+        <div className="grid grid-3">
+          <OptBox selected={d.biceps_position==="normal"} onClick={()=>update("biceps_position","normal")}>Normal pozisyon</OptBox>
+          <OptBox selected={d.biceps_position==="sublukse"} onClick={()=>update("biceps_position","sublukse")} amber>Medial subluksasyon</OptBox>
+          <OptBox selected={d.biceps_position==="dislok_med"} onClick={()=>update("biceps_position","dislok_med")} amber>Medial dislokasyon</OptBox>
+        </div>
+      </div>
+    </>;
+
+    // Step 9 — Labrum loop girişi & loop
+    if (step === 9) {
+      // loop içindeyse
+      if (labralIdx !== -1) {
+        const L = (data.labralTears||[])[labralIdx];
+        if (!L) return null;
+        if (labralSub === 0) return <>
+          <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+          <h3 className="sec">Yırtık Lokalizasyonu (Kadran)</h3>
+          <div className="grid grid-4">
+            {LABRAL_QUADRANTS.map(q => <OptBox key={q.id} selected={L.quadrant===q.id} onClick={()=>updateCurrentLabral({quadrant:q.id})}>
+              {q.name}
+            </OptBox>)}
+          </div>
+        </>;
+        if (labralSub === 1) return <>
+          <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+          <h3 className="sec">Yırtık Kategorisi</h3>
+          <div className="grid grid-2">
+            <OptBox selected={L.category==="slap"} onClick={()=>updateCurrentLabral({category:"slap", subtype:""})}>
+              <b>SLAP (Süperior)</b><small>Biceps ankoru ile ilişkili</small>
+            </OptBox>
+            <OptBox selected={L.category==="ant"} onClick={()=>updateCurrentLabral({category:"ant", subtype:""})}>
+              <b>Anterior (Bankart spektrumu)</b><small>Bankart, kemik Bankart, ALPSA, Perthes, GLAD, HAGL</small>
+            </OptBox>
+            <OptBox selected={L.category==="post"} onClick={()=>updateCurrentLabral({category:"post", subtype:""})}>
+              <b>Posterior</b><small>Reverse Bankart, Kim</small>
+            </OptBox>
+            <OptBox selected={L.category==="simple"} onClick={()=>updateCurrentLabral({category:"simple", subtype:""})}>
+              <b>Basit labral yırtık / dejenerasyon</b><small>Spesifik alt tip tanımlanmamış</small>
+            </OptBox>
+          </div>
+        </>;
+        if (labralSub === 2) {
+          if (L.category === "slap") return <>
+            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+            <h3 className="sec">SLAP Alt Tipi</h3>
+            <div className="grid grid-2">
+              {SLAP_TYPES.map(s => <OptBox key={s.id} selected={L.subtype===s.id} onClick={()=>updateCurrentLabral({subtype:s.id})}>
+                <b>{s.name}</b><small>{s.txt}</small>
+              </OptBox>)}
+            </div>
+            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+          </>;
+          if (L.category === "ant") return <>
+            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+            <h3 className="sec">Anterior Labral Varyant</h3>
+            <div className="grid grid-2">
+              {ANT_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={L.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
+                <b>{v.name}</b><small>{v.txt}</small>
+              </OptBox>)}
+            </div>
+            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+          </>;
+          if (L.category === "post") return <>
+            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+            <h3 className="sec">Posterior Labral Varyant</h3>
+            <div className="grid grid-2">
+              {POST_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={L.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
+                <b>{v.name}</b><small>{v.txt}</small>
+              </OptBox>)}
+            </div>
+            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+          </>;
+          // simple
+          return <>
+            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
+            <h3 className="sec">Basit Labral Yırtık</h3>
+            <div className="hint">Spesifik alt tip tanımlanmadı; lokalize sinyal değişikliği olarak raporlanacak.</div>
+            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+          </>;
+        }
+      }
+
+      // loop dışında — özet + yeni ekle
+      return <>
+        <h3 className="sec">Glenoid Labrum Lezyonları</h3>
+        <div className="hint">Her yırtık için kadran ve tip seçin. Bankart/SLAP/ALPSA vb. ayrı ayrı kaydedilebilir.</div>
+        {(data.labralTears||[]).length > 0 && <div>
+          <h3 className="sec amber">Kaydedilen Labral Yırtıklar</h3>
+          {(data.labralTears||[]).map((L,i) => {
+            const q = LABRAL_QUADRANTS.find(x => x.id === L.quadrant);
+            let tName = "";
+            if (L.category === "slap") tName = SLAP_TYPES.find(x=>x.id===L.subtype)?.name || "SLAP";
+            else if (L.category === "ant") tName = ANT_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Anterior";
+            else if (L.category === "post") tName = POST_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Posterior";
+            else tName = "Basit";
+            return <div key={L.id} className="lesion-card">
+              <div className="lesion-head">
+                <div className="lesion-title">Yırtık #{i+1} — {q?.name} — {tName}</div>
+                <button className="btn btn-sm" onClick={()=>removeLabral(i)}>Sil</button>
+              </div>
+              {L.paralabralCyst && <span className="chip chip-amber">Paralabral kist (+)</span>}
+            </div>;
+          })}
+        </div>}
+        <div>
+          <button className="btn btn-primary" onClick={()=>startLabralTear()}>+ Yeni Labral Yırtık Ekle</button>
+          <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(10)}>
+            {(data.labralTears||[]).length === 0 ? "Labral yırtık yok, devam et →" : "Başka yırtık yok, devam et →"}
+          </button>
+        </div>
+
+        <h3 className="sec">Ek Labral Bulgular</h3>
+        <div className="field"><label>Labral dejenerasyon (yırtık olmadan)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.labral_degen==="yok"} onClick={()=>update("labral_degen","yok")}>Yok</OptBox>
+            <OptBox selected={d.labral_degen==="evet"} onClick={()=>update("labral_degen","evet")}>Var (sinyal artışı)</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Paralabral kist lokalizasyonu</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.paralabral_cyst==="yok"} onClick={()=>update("paralabral_cyst","yok")}>Yok</OptBox>
+            <OptBox selected={d.paralabral_cyst==="spinoglenoid"} onClick={()=>update("paralabral_cyst","spinoglenoid")} amber>Spinoglenoid çentik</OptBox>
+            <OptBox selected={d.paralabral_cyst==="suprascapular"} onClick={()=>update("paralabral_cyst","suprascapular")} amber>Suprascapular çentik</OptBox>
+            <OptBox selected={d.paralabral_cyst==="diger"} onClick={()=>update("paralabral_cyst","diger")}>Diğer</OptBox>
+          </div>
+        </div>
+      </>;
+    }
+
+    // Step 10 — Ligaman & kapsül
+    if (step === 10) return <>
+      <h3 className="sec">Glenohumeral Ligamanlar</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>SGHL (süperior glenohumeral lig.)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.sghl_abn==="normal"} onClick={()=>update("sghl_abn","normal")}>Normal</OptBox>
+            <OptBox selected={d.sghl_abn==="evet"} onClick={()=>update("sghl_abn","evet")}>Anormal</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>MGHL (orta glenohumeral lig.)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.mghl_abn==="normal"} onClick={()=>update("mghl_abn","normal")}>Normal</OptBox>
+            <OptBox selected={d.mghl_abn==="evet"} onClick={()=>update("mghl_abn","evet")}>Anormal</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>IGHL (inferior glenohumeral lig.)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.ighl_torn==="normal"} onClick={()=>update("ighl_torn","normal")}>Normal</OptBox>
+            <OptBox selected={d.ighl_torn==="evet"} onClick={()=>update("ighl_torn","evet")} amber>Yırtık / HAGL</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Korakohumeral ligaman (CHL)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.chl_thickening==="normal"} onClick={()=>update("chl_thickening","normal")}>Normal</OptBox>
+            <OptBox selected={d.chl_thickening==="evet"} onClick={()=>update("chl_thickening","evet")}>Kalınlaşmış (&gt;4 mm)</OptBox>
+          </div>
+        </div>
+      </div>
+      <h3 className="sec amber">Kapsül & Rotator İnterval</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Rotator interval</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.rotator_interval==="normal"} onClick={()=>update("rotator_interval","normal")}>Normal</OptBox>
+            <OptBox selected={d.rotator_interval==="silinmis"} onClick={()=>update("rotator_interval","silinmis")}>Silinmiş / sinyal artmış</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Aksiller reseste kapsüler kalınlaşma (&gt;4 mm)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.axillary_thickening==="yok"} onClick={()=>update("axillary_thickening","yok")}>Yok</OptBox>
+            <OptBox selected={d.axillary_thickening==="evet"} onClick={()=>update("axillary_thickening","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Posterior kapsül laksitesi</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.post_capsule_lax==="yok"} onClick={()=>update("post_capsule_lax","yok")}>Yok</OptBox>
+            <OptBox selected={d.post_capsule_lax==="evet"} onClick={()=>update("post_capsule_lax","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Klinik: ağrılı hareket kısıtlılığı</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.clinical_frozen==="yok"} onClick={()=>update("clinical_frozen","yok")}>Yok</OptBox>
+            <OptBox selected={d.clinical_frozen==="evet"} onClick={()=>update("clinical_frozen","evet")}>Var (adeziv kapsülit düşündürücü)</OptBox>
+          </div>
+        </div>
+      </div>
+    </>;
+
+    // Step 11 — Kıkırdak & OA
+    if (step === 11) return <>
+      <h3 className="sec">Glenohumeral Eklem Kıkırdağı</h3>
+      <div className="grid grid-4">
+        <OptBox selected={d.cartilage_gh==="normal"} onClick={()=>update("cartilage_gh","normal")}>Normal</OptBox>
+        <OptBox selected={d.cartilage_gh==="hafif"} onClick={()=>update("cartilage_gh","hafif")}>Hafif kayıp</OptBox>
+        <OptBox selected={d.cartilage_gh==="orta"} onClick={()=>update("cartilage_gh","orta")}>Orta kayıp</OptBox>
+        <OptBox selected={d.cartilage_gh==="belirgin"} onClick={()=>update("cartilage_gh","belirgin")} amber>Belirgin kayıp</OptBox>
+      </div>
+      <h3 className="sec">Dejeneratif Değişiklikler</h3>
+      <div className="grid grid-2">
+        <ChkBox selected={d.subchondral_change==="evet"} onClick={()=>update("subchondral_change", d.subchondral_change==="evet"?"yok":"evet")}>Subkondral kist/skleroz</ChkBox>
+        <ChkBox selected={d.gh_osteofit==="evet"} onClick={()=>update("gh_osteofit", d.gh_osteofit==="evet"?"yok":"evet")}>Glenohumeral osteofit</ChkBox>
+        <ChkBox selected={d.gh_narrow==="evet"} onClick={()=>update("gh_narrow", d.gh_narrow==="evet"?"yok":"evet")}>Eklem aralığında daralma</ChkBox>
+      </div>
+    </>;
+
+    // Step 12 — Efüzyon & bursa & kontrast
+    if (step === 12) return <>
+      <h3 className="sec">Eklem Efüzyonu</h3>
+      <div className="grid grid-4">
+        <OptBox selected={d.effusion_amount==="yok"} onClick={()=>update("effusion_amount","yok")}>Yok</OptBox>
+        <OptBox selected={d.effusion_amount==="minimal"} onClick={()=>update("effusion_amount","minimal")}>Minimal</OptBox>
+        <OptBox selected={d.effusion_amount==="orta"} onClick={()=>update("effusion_amount","orta")}>Orta</OptBox>
+        <OptBox selected={d.effusion_amount==="belirgin"} onClick={()=>update("effusion_amount","belirgin")} amber>Belirgin</OptBox>
+      </div>
+      <h3 className="sec amber">Subakromial-Subdeltoid Bursa</h3>
+      <div className="grid grid-4">
+        <OptBox selected={d.bursa_effusion==="yok"} onClick={()=>update("bursa_effusion","yok")}>Sıvı yok</OptBox>
+        <OptBox selected={d.bursa_effusion==="minimal"} onClick={()=>update("bursa_effusion","minimal")}>Minimal</OptBox>
+        <OptBox selected={d.bursa_effusion==="orta"} onClick={()=>update("bursa_effusion","orta")}>Orta</OptBox>
+        <OptBox selected={d.bursa_effusion==="belirgin"} onClick={()=>update("bursa_effusion","belirgin")} amber>Belirgin</OptBox>
+      </div>
+      <div className="field" style={{marginTop:10}}><label>Bursal duvar</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.bursa_wall==="normal"} onClick={()=>update("bursa_wall","normal")}>Normal</OptBox>
+          <OptBox selected={d.bursa_wall==="kalin"} onClick={()=>update("bursa_wall","kalin")}>Kalınlaşmış</OptBox>
+        </div>
+      </div>
+      {d.seq_post && <div className="field"><label>Kontrast sonrası boyanma</label>
+        <div className="grid grid-4">
+          <OptBox selected={d.post_contrast_enh==="yok"} onClick={()=>update("post_contrast_enh","yok")}>Yok</OptBox>
+          <OptBox selected={d.post_contrast_enh==="fokal"} onClick={()=>update("post_contrast_enh","fokal")}>Fokal</OptBox>
+          <OptBox selected={d.post_contrast_enh==="bursal"} onClick={()=>update("post_contrast_enh","bursal")}>Bursal duvar</OptBox>
+          <OptBox selected={d.post_contrast_enh==="sinovit"} onClick={()=>update("post_contrast_enh","sinovit")} amber>Yaygın sinovit</OptBox>
+        </div>
+      </div>}
+    </>;
+
+    // Step 13 — Kas & nörovasküler
+    if (step === 13) return <>
+      <h3 className="sec">Kas Değerlendirmesi</h3>
+      <div className="hint">Rotator manşet kaslarında yağlı dejenerasyon her lezyon kaydında ayrıca girilmiştir. Bu adım ek nörovasküler/denervasyon bulgularına odaklıdır.</div>
+      <div className="grid grid-2">
+        <div className="field"><label>Deltoid kası anormalliği</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.deltoid_abn==="yok"} onClick={()=>update("deltoid_abn","yok")}>Yok</OptBox>
+            <OptBox selected={d.deltoid_abn==="evet"} onClick={()=>update("deltoid_abn","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Teres minor denervasyonu (kuadrilateral bölge sendromu)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.quadrilateral_space==="yok"} onClick={()=>update("quadrilateral_space","yok")}>Yok</OptBox>
+            <OptBox selected={d.quadrilateral_space==="evet"} onClick={()=>update("quadrilateral_space","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>İnfraspinatus denervasyonu (suprascapular nöropati)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.infraspinatus_denerv==="yok"} onClick={()=>update("infraspinatus_denerv","yok")}>Yok</OptBox>
+            <OptBox selected={d.infraspinatus_denerv==="evet"} onClick={()=>update("infraspinatus_denerv","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+      </div>
+    </>;
+
+    // Step 14 — PVNS / İnflamatuar / Septik
+    if (step === 14) return <>
+      <h3 className="sec">Sinoviyal & İnflamatuar Bulgular</h3>
+      <div className="grid grid-2">
+        <div className="field"><label>Sinoviyal kalınlaşmada hemosiderin (düşük T1/T2)</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.synovial_hemosiderin==="yok"} onClick={()=>update("synovial_hemosiderin","yok")}>Yok</OptBox>
+            <OptBox selected={d.synovial_hemosiderin==="evet"} onClick={()=>update("synovial_hemosiderin","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>GRE blooming artefaktı</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.blooming==="yok"} onClick={()=>update("blooming","yok")}>Yok</OptBox>
+            <OptBox selected={d.blooming==="evet"} onClick={()=>update("blooming","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Hemartroz / tekrarlayan hemoraji</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.hemarthros==="yok"} onClick={()=>update("hemarthros","yok")}>Yok</OptBox>
+            <OptBox selected={d.hemarthros==="evet"} onClick={()=>update("hemarthros","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Subkondral kemikte erken erozyon</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.septic_erosion==="yok"} onClick={()=>update("septic_erosion","yok")}>Yok</OptBox>
+            <OptBox selected={d.septic_erosion==="evet"} onClick={()=>update("septic_erosion","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Periartiküler yumuşak doku ödemi/selülit</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.periarticular_edema==="yok"} onClick={()=>update("periarticular_edema","yok")}>Yok</OptBox>
+            <OptBox selected={d.periarticular_edema==="evet"} onClick={()=>update("periarticular_edema","evet")}>Var</OptBox>
+          </div>
+        </div>
+        <div className="field"><label>Klinik: ateş / lökositoz / lokal ısı artışı</label>
+          <div className="grid grid-2">
+            <OptBox selected={d.clinical_septic==="yok"} onClick={()=>update("clinical_septic","yok")}>Yok</OptBox>
+            <OptBox selected={d.clinical_septic==="evet"} onClick={()=>update("clinical_septic","evet")} amber>Var</OptBox>
+          </div>
+        </div>
+      </div>
+    </>;
+
+    // Step 15 — Kitle / mass (opsiyonel)
+    if (step === 15) return <>
+      <h3 className="sec">Kitle / Yer Kaplayıcı Lezyon</h3>
+      <div className="field"><label>Periartiküler veya eklem içi kitle lezyonu</label>
+        <div className="grid grid-2">
+          <OptBox selected={d.mass_present==="yok"} onClick={()=>update("mass_present","yok")}>Yok</OptBox>
+          <OptBox selected={d.mass_present==="evet"} onClick={()=>update("mass_present","evet")} amber>Var — ileri değerlendirme önerilir</OptBox>
+        </div>
+      </div>
+    </>;
+
+    // Step 16 — Serbest metin
+    if (step === 16) return <>
+      <h3 className="sec">Ek / Serbest Metin Bulgular</h3>
+      <div className="field"><label>Yukarıdaki yapılandırılmış girdilere eklenecek ek bulgular</label>
+        <textarea value={d.freetext} onChange={e=>update("freetext", e.target.value)} placeholder="Örn: Pektoralis majorda travmatik avülsiyon, kronik bursit sekeli, scapulothoracic bursit..." />
+      </div>
+    </>;
+
+    // Step 17–20 — Özet ekranlar (gözden geçirme)
+    if (step === 17) return <>
+      <h3 className="sec">Lezyon Özeti — Rotator Manşet</h3>
+      {lesions.length === 0 && <div className="hint">Kayıtlı rotator manşet lezyonu yok.</div>}
+      {lesions.map((L,i) => {
+        const t = RC_TENDONS.find(x=>x.id===L.tendon);
+        return <div key={L.id} className="lesion-card">
+          <div className="lesion-title">#{i+1} — {t?.name}</div>
+          <div>
+            {L.continuity==="tendinop" && <span className="chip chip-teal">Tendinopati</span>}
+            {L.continuity==="partial" && <span className="chip chip-amber">Parsiyel — {L.partial_face}</span>}
+            {L.continuity==="full" && <span className="chip chip-red">Tam kat — {L.full_size}</span>}
+            {L.retraction && <span className="chip chip-red">Patte {L.retraction}</span>}
+            {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
+            {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+          </div>
+        </div>;
+      })}
+    </>;
+
+    if (step === 18) return <>
+      <h3 className="sec">Lezyon Özeti — Labrum</h3>
+      {(data.labralTears||[]).length === 0 && <div className="hint">Kayıtlı labral yırtık yok.</div>}
+      {(data.labralTears||[]).map((L,i) => {
+        const q = LABRAL_QUADRANTS.find(x=>x.id===L.quadrant);
+        let tName = "";
+        if (L.category === "slap") tName = SLAP_TYPES.find(x=>x.id===L.subtype)?.name || "SLAP";
+        else if (L.category === "ant") tName = ANT_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Anterior";
+        else if (L.category === "post") tName = POST_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Posterior";
+        else tName = "Basit yırtık";
+        return <div key={L.id} className="lesion-card">
+          <div className="lesion-title">#{i+1} — {q?.name} kadran — {tName}</div>
+          {L.paralabralCyst && <span className="chip chip-amber">Paralabral kist (+)</span>}
+        </div>;
+      })}
+    </>;
+
+    // Step 19 — Ayırıcı tanı paneli
+    if (step === 19) return <>
+      <h3 className="sec">Ayırıcı Tanı Olasılıkları</h3>
+      <div className="hint">Olasılıklar, girilen bulguların ağırlıklı skorlamasıyla hesaplanmıştır (yalnızca klinik korelasyon ile değerlendirilmelidir).</div>
+      {[...scores].filter(s => s.score > 0).sort((a,b)=>b.score-a.score).map(s => {
+        const p = PATHO.find(x => x.key === s.key);
+        const color = CAT_COLOR[p?.cat] || "#64748b";
+        const barClass = s.score >= 60 ? "top" : (s.score >= 30 ? "mid" : "low");
+        return <div key={s.key} className="bar-row">
+          <div className="name"><span className="dx-dot" style={{background:color,display:"inline-block",width:10,height:10,borderRadius:"50%",marginRight:7}}></span>{p?.name}</div>
+          <div className={"bar "+barClass}><span style={{width:s.score+"%"}}></span></div>
+          <div className="pct">%{s.score}</div>
+        </div>;
+      })}
+      {scores.filter(s => s.score > 0).length === 0 && <div className="hint">Henüz yeterli pozitif bulgu girilmedi.</div>}
+    </>;
+
+    // Step 20 — Son gözden geçirme
+    if (step === 20) return <>
+      <h3 className="sec">Son Gözden Geçirme</h3>
+      <div className="hint">Rapor oluşturulmadan önce aşağıdaki özeti kontrol edin. Gerekirse geri dönüp değişiklik yapabilirsiniz.</div>
+      <div className="grid grid-2">
+        <div><b>Taraf:</b> {d.side} | <b>Yaş:</b> {d.age} | <b>Cinsiyet:</b> {d.sex}</div>
+        <div><b>Travma:</b> {d.trauma || "?"} | <b>Dislokasyon:</b> {d.dislocation_hx || "?"}</div>
+      </div>
+      <div><b>Akromion:</b> {BIGLIANI.find(b=>b.id===d.acromion_type)?.label || "?"}</div>
+      <div><b>Rotator manşet lezyonu:</b> {lesions.length}</div>
+      <div><b>Labral yırtık:</b> {(data.labralTears||[]).length}</div>
+      <div><b>Hill-Sachs:</b> {d.hill_sachs || "?"} | <b>Bony Bankart:</b> {d.glenoid_bone_loss || "?"}</div>
+    </>;
+
+    // Step 21 — Rapor üret
+    if (step === 21) return <>
+      <h3 className="sec">Rapor Üretimi</h3>
+      <div className="hint">Zebra + kutulu formatta rapor hazır. &quot;Raporu Oluştur&quot; butonu ile görüntüleyebilir; ardından yazdırma, panoya kopyalama veya HTML olarak indirme yapabilirsiniz.</div>
+      <button className="btn btn-primary" onClick={()=>setShowReport(true)}>Raporu Oluştur / Göster</button>
+    </>;
+
+    return null;
+  }
+
+  const report = useMemo(() => generateReport(data, lesions, data.labralTears || [], scores), [data, lesions, scores]);
+
+  /* ==== Topbar ==== */
+  const pct = Math.round(100 * (step+1) / TOTAL_STEPS);
+  const stepLabels = [
+    "Hasta Bilgileri",
+    "Sekanslar",
+    "Akromion & AC Eklem",
+    "Kemik & AVN",
+    "Hill-Sachs & Bony Bankart",
+    "Supraspinatus & Kalsifik",
+    "Rotator Manşet Lezyonları",
+    "Manşet Lezyon Detayı (loop)",
+    "Biceps Tendonu",
+    "Glenoid Labrum (loop)",
+    "Ligaman & Kapsül",
+    "Kıkırdak & OA",
+    "Efüzyon & Bursa",
+    "Kas & Nörovasküler",
+    "Sinoviyal & İnflamatuar",
+    "Kitle / Yer Kaplayıcı",
+    "Serbest Metin",
+    "Özet — Rotator Manşet",
+    "Özet — Labrum",
+    "Ayırıcı Tanı Paneli",
+    "Son Gözden Geçirme",
+    "Rapor Üretimi",
+  ];
+
+  return <div className="app">
+    <div className="topbar">
+      <div className="brand">
+        <div className="logo">Ω</div>
+        <div>
+          <h1>Omuz MRG — Karar Destek Sistemi</h1>
+          <p>Çok-lezyonlu mimari · Ağırlıklı skorlama · Zebra + kutulu rapor formatı</p>
+        </div>
+      </div>
+      <div className="progress-wrap">
+        <div className="progress-label">
+          <span>Adım {step+1}/{TOTAL_STEPS}: {stepLabels[step]}</span>
+          <span>%{pct}</span>
+        </div>
+        <div className="progress"><span style={{width:pct+"%"}}></span></div>
+      </div>
+    </div>
+
+    <div className="card">
+      <div className="step-head">
+        <div className="step-no">{step+1}</div>
+        <div>
+          <h3 className="step-title">{stepLabels[step]}</h3>
+          <p className="step-sub">
+            {step === 7 && lesionIdx !== -1 && `Rotator manşet lezyon alt adımı ${lesionSub+1}/${RC_SUBSTEPS}`}
+            {step === 9 && labralIdx !== -1 && `Labral yırtık alt adımı ${labralSub+1}/${LAB_SUBSTEPS}`}
+            {!(step === 7 && lesionIdx !== -1) && !(step === 9 && labralIdx !== -1) && "Gerekli alanları doldurun ve İleri ile devam edin."}
+          </p>
+        </div>
+      </div>
+
+      {renderStep()}
+
+      <div className="nav">
+        <button className="btn" onClick={goPrev} disabled={step===0 && lesionIdx===-1 && labralIdx===-1}>← Geri</button>
+        <button className={step === TOTAL_STEPS-1 ? "btn btn-amber" : "btn btn-primary"} onClick={goNext} disabled={!canNext()}>
+          {step === TOTAL_STEPS-1 ? "Raporu Aç" : "İleri →"}
+        </button>
+      </div>
+    </div>
+
+    {showReport && <ReportOverlay report={report} data={data} scores={scores} onClose={()=>setShowReport(false)}
+      onCopy={copyReportText} onPrint={printReport} onDownload={downloadHTML} />}
+  </div>;
+}
+
+/* ========== Rapor Overlay ========== */
+function ReportOverlay({report, data, scores, onClose, onCopy, onPrint, onDownload}) {
+  const h = report.headerInfo;
+  const sortedScores = [...scores].filter(s => s.score > 0).sort((a,b)=>b.score-a.score).slice(0,6);
+
+  return <div className="overlay" onClick={onClose}>
+    <div className="overlay-actions" onClick={e=>e.stopPropagation()}>
+      <button className="btn" onClick={onPrint}>🖨 Yazdır</button>
+      <button className="btn" onClick={onCopy}>📋 Kopyala</button>
+      <button className="btn btn-primary" onClick={onDownload}>⬇ HTML İndir</button>
+      <button className="btn" onClick={onClose}>✕ Kapat</button>
+    </div>
+    <div className="report-wrap" onClick={e=>e.stopPropagation()} id="report-text-content">
+      <div className="report-header">
+        <h2>OMUZ MANYETİK REZONANS GÖRÜNTÜLEME RAPORU</h2>
+        <p>İncelenen taraf: {h.side} Omuz · Yaş: {h.age} · Cinsiyet: {h.sex} · Tarih: {h.date}</p>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head slate">KLİNİK BİLGİ</div>
+        <div className="rbox-body">{h.clinical || "Klinik bilgi belirtilmemiştir."}</div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head slate">İNCELEME TEKNİĞİ</div>
+        <div className="rbox-body">
+          {report.seq.length === 0 && <div>Teknik belirtilmemiştir.</div>}
+          {report.seq.map((s,i) => <div key={i} className="zbullet">{s}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">BULGULAR — KEMİK YAPILAR</div>
+        <div className="rbox-body">
+          {report.bone.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">AKROMİON & AKROMİOKLAVİKÜLER EKLEM</div>
+        <div className="rbox-body">
+          {report.acromion.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head teal">ROTATOR MANŞET</div>
+        <div className="rbox-body" style={{padding:0}}>
+          {report.rcSections.map((sec,i)=>(
+            <div key={i} style={{borderTop:i>0?"1px solid #cbd5e1":"none"}}>
+              <div className="zrow"><div className="zk">{sec.name}</div><div className="zv">
+                {sec.lines.map((ln,j) => <div key={j}>{ln}</div>)}
+              </div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head teal">BİCEPS TENDONU</div>
+        <div className="rbox-body">
+          {report.biceps.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head amber">GLENOİD LABRUM</div>
+        <div className="rbox-body">
+          {report.labrum.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">GLENOHUMERAL LİGAMANLAR & KAPSÜL</div>
+        <div className="rbox-body">
+          {report.lig.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">EKLEM KIKIRDAĞI & DEJENERATİF DEĞİŞİKLİKLER</div>
+        <div className="rbox-body">
+          {report.cart.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">EKLEM SIVISI & SUBAKROMİAL-SUBDELTOİD BURSA</div>
+        <div className="rbox-body">
+          {report.fluidLines.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      <div className="rbox">
+        <div className="rbox-head">KAS YAPILARI & NÖROVASKÜLER</div>
+        <div className="rbox-body">
+          {report.muscle.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+          {report.cyst.map((b,i)=><div key={"c"+i} className="zbullet">{b}</div>)}
+        </div>
+      </div>
+
+      {report.other.length > 0 && <div className="rbox">
+        <div className="rbox-head">DİĞER BULGULAR</div>
+        <div className="rbox-body">
+          {report.other.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
+        </div>
+      </div>}
+
+      <div className="yorum">
+        <b>Yorum</b>
+        {report.yorum}
+      </div>
+
+      {sortedScores.length > 0 && <div className="rbox">
+        <div className="rbox-head slate">AYIRICI TANI OLASILIKLARI</div>
+        <div className="rbox-body" style={{padding:0}}>
+          <table className="dx-table">
+            <thead><tr><th style={{width:"60%"}}>Tanı</th><th>Kategori</th><th style={{width:90,textAlign:"right"}}>Uyum</th></tr></thead>
+            <tbody>
+              {sortedScores.map(s => {
+                const p = PATHO.find(x=>x.key===s.key);
+                const color = CAT_COLOR[p?.cat] || "#64748b";
+                return <tr key={s.key}>
+                  <td><span className="dx-dot" style={{background:color}}></span>{p?.name}</td>
+                  <td style={{textTransform:"capitalize"}}>{p?.cat}</td>
+                  <td style={{textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:700}}>%{s.score}</td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>}
+
+      <div className="sig">
+        Raporlayan Radyolog: ________________________<br/>
+        İmza &amp; Tarih: {h.date}
+      </div>
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hipofiz MRI Karar Destek Sistemi</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0f0e17;--surface:#1a1929;--surface2:#232136;--surface3:#2d2b48;
+--accent:#9d7aed;--accent2:#7c5ce0;--accent-glow:rgba(157,122,237,.15);
+--text:#e8e4f0;--text2:#a9a3bf;--text3:#706b87;
+--green:#5ce0a8;--red:#ed6a7a;--yellow:#f0c858;--blue:#58b8f0;--orange:#f0985c;
+--radius:10px;--radius-sm:6px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+.app{max-width:860px;margin:0 auto;padding:20px}
+
+/* HEADER */
+.header{text-align:center;padding:28px 20px 18px;border-bottom:1px solid var(--surface3);margin-bottom:24px}
+.header h1{font-size:1.55rem;font-weight:700;letter-spacing:.5px;background:linear-gradient(135deg,var(--accent),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .sub{color:var(--text3);font-size:.82rem;margin-top:4px}
+
+/* PROGRESS */
+.progress-bar{display:flex;gap:4px;margin-bottom:22px;padding:0 4px}
+.progress-bar .seg{flex:1;height:5px;border-radius:3px;background:var(--surface3);transition:background .3s}
+.progress-bar .seg.done{background:var(--accent)}
+.progress-bar .seg.active{background:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
+
+/* STEP CARD */
+.step-card{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);padding:26px 28px;min-height:280px;display:none;animation:fadeIn .3s ease}
+.step-card.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.step-title{font-size:1.1rem;font-weight:600;color:var(--accent);margin-bottom:6px}
+.step-desc{color:var(--text2);font-size:.84rem;margin-bottom:18px}
+
+/* OPTIONS */
+.opt-group{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface2);border:1px solid transparent;border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;font-size:.92rem;color:var(--text)}
+.opt:hover{border-color:var(--accent);background:var(--surface3)}
+.opt.selected{border-color:var(--accent);background:var(--accent-glow);box-shadow:0 0 12px rgba(157,122,237,.1)}
+.opt .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.opt.selected .dot{border-color:var(--accent);background:var(--accent)}
+.opt.selected .dot::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff}
+.opt .chk{width:18px;height:18px;border-radius:4px;border:2px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:11px;color:transparent}
+.opt.selected .chk{border-color:var(--accent);background:var(--accent);color:#fff}
+
+/* INPUT */
+.input-row{display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.input-row label{color:var(--text2);font-size:.85rem;min-width:100px}
+.num-input{background:var(--surface2);border:1px solid var(--surface3);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:.92rem;width:120px;outline:none;transition:border .2s}
+.num-input:focus{border-color:var(--accent)}
+select.num-input{width:auto;min-width:160px;cursor:pointer}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;margin-top:22px;gap:12px}
+.btn{padding:10px 28px;border-radius:var(--radius-sm);font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-prev{background:var(--surface3);color:var(--text2)}.btn-prev:hover{background:var(--surface2);color:var(--text)}
+.btn-next{background:var(--accent);color:#fff}.btn-next:hover{background:var(--accent2);box-shadow:0 2px 12px rgba(157,122,237,.3)}
+.btn-next:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+
+/* RESULT */
+.result-section{display:none;animation:fadeIn .4s ease}
+.result-section.active{display:block}
+.dx-bar-wrap{margin-bottom:8px}
+.dx-label{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:3px}
+.dx-label .name{color:var(--text)}
+.dx-label .pct{color:var(--accent);font-weight:600}
+.dx-bar{height:22px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.dx-bar .fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.25,.8,.25,1)}
+
+.report-box{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--radius);padding:22px 26px;margin-top:18px;font-size:.88rem;line-height:1.7}
+.report-box h3{color:var(--accent);font-size:1rem;margin-bottom:10px;font-weight:600}
+.report-box .rline{padding:3px 0;border-bottom:1px solid var(--surface3)}
+.report-box .rline:nth-child(even){background:rgba(157,122,237,.03)}
+.report-box .rline b{color:var(--text)}
+.report-box .rline span{color:var(--text2)}
+.yorum-box{margin-top:14px;padding:14px 18px;background:rgba(157,122,237,.06);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:.86rem;color:var(--text2)}
+.yorum-box strong{color:var(--accent)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.toolbar .btn{font-size:.82rem;padding:8px 18px}
+.btn-print{background:var(--green);color:#0f0e17}
+.btn-copy{background:var(--blue);color:#0f0e17}
+.btn-reset{background:var(--red);color:#fff}
+
+/* PRINT OVERLAY */
+.print-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;overflow-y:auto;padding:20px}
+.print-overlay.show{display:block}
+.print-sheet{max-width:780px;margin:0 auto;background:#fff;color:#111;padding:40px 48px;border-radius:8px;font-size:13px;line-height:1.7;font-family:'Segoe UI',sans-serif}
+.print-sheet h2{text-align:center;font-size:16px;border-bottom:2px solid #9d7aed;padding-bottom:8px;margin-bottom:16px;color:#333}
+.print-sheet table{width:100%;border-collapse:collapse;margin:10px 0}
+.print-sheet th,.print-sheet td{border:1px solid #ccc;padding:5px 8px;text-align:left;font-size:12px}
+.print-sheet th{background:#f0ecf8;font-weight:600}
+.print-sheet tr:nth-child(even) td{background:#faf9fc}
+.print-sheet .yorum-print{margin-top:12px;padding:10px 14px;background:#f5f0ff;border-left:3px solid #9d7aed;font-size:12px}
+.print-close{position:fixed;top:12px;right:20px;z-index:10000;background:var(--red);color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.85rem}
+.print-toolbar{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.print-toolbar .btn{font-size:.82rem}
+
+@media print{
+body>*:not(.print-overlay){display:none!important}
+.print-overlay{position:static;background:#fff;padding:0}
+.print-close,.print-toolbar{display:none!important}
+.print-sheet{box-shadow:none;border-radius:0;padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+<h1>Hipofiz MRI Karar Destek Sistemi</h1>
+<div class="sub">Sellar / Parasellar Lezyon Değerlendirme &bull; Yapılandırılmış Raporlama</div>
+</div>
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- STEPS CONTAINER -->
+<div id="stepsContainer"></div>
+
+<!-- NAVIGATION -->
+<div class="nav" id="navBar" style="display:none">
+<button class="btn btn-prev" id="btnPrev" onclick="goPrev()">&#8592; Geri</button>
+<button class="btn btn-next" id="btnNext" onclick="goNext()">İleri &#8594;</button>
+</div>
+
+<!-- ASK MORE -->
+<div id="askMoreSection" style="display:none;animation:fadeIn .3s ease"></div>
+
+<!-- RESULT -->
+<div class="result-section" id="resultSection">
+<div id="dxBars"></div>
+<div class="report-box" id="reportBox"></div>
+<div class="toolbar">
+<button class="btn btn-print" onclick="openPrint()">Yazdır / PDF</button>
+<button class="btn btn-copy" onclick="copyReport()">Kopyala</button>
+<button class="btn btn-reset" onclick="resetAll()">Yeni Değerlendirme</button>
+</div>
+</div>
+</div>
+
+<!-- PRINT OVERLAY -->
+<div class="print-overlay" id="printOverlay">
+<button class="print-close" onclick="closePrint()">Kapat</button>
+<div class="print-toolbar">
+<button class="btn btn-print" onclick="window.print()">Yazdır</button>
+<button class="btn btn-copy" onclick="copyReport()">Kopyala</button>
+</div>
+<div class="print-sheet" id="printSheet"></div>
+</div>
+
+<script>
+/* ===== DATA ===== */
+const PATHOLOGIES = [
+  {
+    id:'mikroadenom', name:'Pitüiter Mikroadenom',
+    criteria:{t1:'hipointens',t2:'hafif_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'hafif_dusuk',art:'gec_kontrast',ven:'geciken_dolum',size:'mikro',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:1,horm:1,malig:0},
+    color:'#9d7aed',
+    yorum:'Dinamik kontrastlı serilerde normal hipofiz parankimine göre geç kontrastlanan, iyi sınırlı, <10 mm lezyon pitüiter mikroadenom ile uyumludur. Fonksiyonel değerlendirme açısından hormonal panel önerilir.'
+  },
+  {
+    id:'makroadenom', name:'Pitüiter Makroadenom',
+    criteria:{t1:'izo_heterojen',t2:'hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'orta_dusuk',art:'heterojen_kontrast',ven:'persistan',size:'makro',loc_intra:1,loc_supra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:1,malig:0},
+    color:'#7c5ce0',
+    yorum:'Sella genişleten, suprasellar uzanım gösteren, heterojen kontrastlanan kitle pitüiter makroadenom ile uyumludur. Kitle etkisi (kiazma basısı, kavernöz sinüs invazyonu) değerlendirilmelidir. Knosp sınıflaması uygulanmalıdır.'
+  },
+  {
+    id:'rathke', name:'Rathke Yarık Kisti',
+    criteria:{t1:'degisken_hiper',t2:'hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'yok_veya_rim',ven:'rim',size:'any',loc_intra:1,kist:1,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
+    color:'#58b8f0',
+    yorum:'İntrasellar, iyi sınırlı, kontrastlanmayan veya ince rim kontrastlanması gösteren kistik lezyon Rathke yarık kisti ile uyumludur. Protein içeriğine bağlı T1 sinyal değişkenliği karakteristiktir. İntrakistik nodül varlığı tanıyı destekler.'
+  },
+  {
+    id:'kranio', name:'Kraniofaringioma',
+    criteria:{t1:'degisken_hiper',t2:'hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'solid_erken',ven:'persistan',size:'makro',loc_supra:1,kist:1,kanama:0,kalsifikasyon:1,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0,yas_cocuk:1},
+    color:'#f0c858',
+    yorum:'Suprasellar yerleşimli, kistik-solid yapıda, kalsifikasyon içeren, solid komponentte belirgin kontrastlanan kitle kraniofaringioma ile uyumludur. Adamantinomatöz ve papiller alt tipler değerlendirilmelidir.'
+  },
+  {
+    id:'apopleksi', name:'Pitüiter Apopleksi',
+    criteria:{t1:'hiperintens_kanama',t2:'degisken',chem:'yok',dwi:'restriksiyon_olabilir',adc:'dusuk',art:'az_heterojen',ven:'degisken',size:'any',loc_intra:1,kist:0,kanama:1,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:1,malig:0,akut:1},
+    color:'#ed6a7a',
+    yorum:'Sellar kitle içinde hemorajik sinyal değişiklikleri (T1 hiperintensitesi) pitüiter apopleksi ile uyumludur. Akut klinik tablo (ciddi baş ağrısı, görme bozukluğu, hormonal yetmezlik) eşlik ediyorsa acil cerrahi konsültasyon önerilir.'
+  },
+  {
+    id:'hipofizit', name:'Hipofizit',
+    criteria:{t1:'izointens',t2:'hafif_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'orta',art:'homojen_hizli',ven:'persistan',size:'any',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:1,stalk_deviye:0,horm:1,malig:0,otoimmun:1},
+    color:'#5ce0a8',
+    yorum:'Diffüz hipofiz büyümesi, stalk kalınlaşması ve homojen-yoğun kontrastlanma hipofizit ile uyumludur. İmmünoterapi ilişkili hipofizit ayırıcı tanıda düşünülmelidir. Posterior hipofiz parlak noktası kaybı eşlik edebilir.'
+  },
+  {
+    id:'meningiom', name:'Meningiom (Sellar/Parasellar)',
+    criteria:{t1:'izointens',t2:'izo_hiperintens',chem:'yok',dwi:'hafif_restriksiyon',adc:'dusuk_orta',art:'yogun_erken_dural',ven:'persistan',size:'any',loc_para:1,kist:0,kanama:0,kalsifikasyon:0,dural:1,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
+    color:'#f0985c',
+    yorum:'Parasellar yerleşimli, yoğun homojen kontrastlanan, dural kuyruk işareti gösteren ekstra-aksiyel kitle meningiom ile uyumludur. Kavernöz sinüs ve internal karotid arter ilişkisi değerlendirilmelidir.'
+  },
+  {
+    id:'metastaz', name:'Pitüiter Metastaz',
+    criteria:{t1:'izointens',t2:'hiperintens',chem:'yok',dwi:'belirgin_restriksiyon',adc:'dusuk',art:'guclu_erken',ven:'persistan',size:'any',loc_intra:1,loc_stalk:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:1,stalk_deviye:0,horm:0,malig:1},
+    color:'#e05c8a',
+    yorum:'Bilinen malignite öyküsü olan hastada, infundibulum tutulumu gösteren, belirgin difüzyon kısıtlılığı olan lezyon pitüiter metastaz ile uyumludur. Diabetes insipidus eşlik ediyorsa metastaz olasılığı artar.'
+  },
+  {
+    id:'empty_sella', name:'Empty Sella Sendromu',
+    criteria:{t1:'bos_sinyal',t2:'bos_sinyal',chem:'yok',dwi:'restriksiyon_yok',adc:'yuksek',art:'rim_ince',ven:'ayni',size:'any',loc_intra:1,kist:0,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0,empty:1},
+    color:'#88c8e8',
+    yorum:'Sellanın BOS sinyali ile dolu olması ve hipofiz dokusunun sella tabanında ince bir şerit halinde izlenmesi empty sella sendromu ile uyumludur. Primer ve sekonder formlar ayrılmalıdır.'
+  },
+  {
+    id:'basit_kist', name:'Pitüiter Basit Kist',
+    criteria:{t1:'hipointens',t2:'cok_hiperintens',chem:'yok',dwi:'restriksiyon_yok',adc:'cok_yuksek',art:'yok',ven:'yok',size:'mikro',loc_intra:1,kist:1,kanama:0,kalsifikasyon:0,dural:0,stalk_kalin:0,stalk_deviye:0,horm:0,malig:0},
+    color:'#a0d8c0',
+    yorum:'İntrasellar, T1 hipointens / T2 belirgin hiperintens, kontrastlanma göstermeyen, difüzyon kısıtlılığı olmayan basit kistik lezyon pitüiter basit kist (pars intermedia kisti) ile uyumludur.'
+  }
+];
+
+/* ===== STEPS ===== */
+const STEPS = [
+  {
+    id:'loc', title:'Lezyon Lokalizasyonu', desc:'Lezyonun yerleşim bölgesini seçiniz (birden fazla seçilebilir).', type:'multi',
+    options:[
+      {val:'intrasellar', label:'İntrasellar'},
+      {val:'suprasellar', label:'Suprasellar uzanım'},
+      {val:'parasellar', label:'Parasellar / Kavernöz sinüs'},
+      {val:'infundibular', label:'İnfundibulum / Stalk tutulumu'}
+    ]
+  },
+  {
+    id:'size', title:'Lezyon Boyutu', desc:'Lezyonun en büyük çapını belirtiniz.', type:'radio',
+    options:[
+      {val:'mikro', label:'< 10 mm (Mikroadenom boyut)'},
+      {val:'makro', label:'10–40 mm (Makroadenom boyut)'},
+      {val:'dev', label:'> 40 mm (Dev adenom boyut)'},
+      {val:'empty', label:'Sellada kitle yok / BOS dolu'}
+    ]
+  },
+  {
+    id:'side', title:'Lezyon Tarafı', desc:'Lezyonun sella içindeki lateralizasyonunu seçiniz.', type:'radio',
+    options:[
+      {val:'Sağ', label:'Sağ'},
+      {val:'Sol', label:'Sol'},
+      {val:'Bilateral', label:'Bilateral / Orta hat'},
+      {val:'Santral', label:'Santral'}
+    ]
+  },
+  {
+    id:'dims', title:'Lezyon Boyutları (mm)', desc:'Lezyonun iki aksini milimetre cinsinden giriniz (opsiyonel).', type:'dims'
+  },
+  {
+    id:'contour', title:'Lezyon Konturu', desc:'Lezyonun sınır özelliğini seçiniz.', type:'radio',
+    options:[
+      {val:'Düzenli', label:'Düzenli / İyi sınırlı'},
+      {val:'Düzensiz', label:'Düzensiz / Lobüle'},
+      {val:'Silik', label:'Silik / Belirsiz sınır'}
+    ]
+  },
+  {
+    id:'inner', title:'İç Yapı', desc:'Lezyonun iç sinyal yapısını seçiniz.', type:'radio',
+    options:[
+      {val:'Homojen', label:'Homojen'},
+      {val:'Heterojen', label:'Heterojen'}
+    ]
+  },
+  {
+    id:'t1', title:'T1 Ağırlıklı Sinyal Karakteri', desc:'Lezyonun prekontrast T1 sinyalini seçiniz.', type:'radio',
+    options:[
+      {val:'hipointens', label:'Hipointens'},
+      {val:'izointens', label:'İzointens (normal hipofiz ile aynı)'},
+      {val:'hiperintens_kanama', label:'Hiperintens (kanama / protein şüphesi)'},
+      {val:'degisken_hiper', label:'Değişken / heterojen (kistik alanlar hiperintens)'},
+      {val:'izo_heterojen', label:'İzointens / heterojen'},
+      {val:'bos_sinyal', label:'BOS sinyali ile aynı (hipointens)'}
+    ]
+  },
+  {
+    id:'t2', title:'T2 Ağırlıklı Sinyal Karakteri', desc:'Lezyonun T2 sinyalini seçiniz.', type:'radio',
+    options:[
+      {val:'hipointens', label:'Hipointens'},
+      {val:'hafif_hiperintens', label:'Hafif hiperintens'},
+      {val:'hiperintens', label:'Hiperintens'},
+      {val:'cok_hiperintens', label:'Çok hiperintens (sıvı sinyali)'},
+      {val:'izo_hiperintens', label:'İzointens – hafif hiperintens'},
+      {val:'degisken', label:'Değişken / heterojen'},
+      {val:'bos_sinyal', label:'BOS sinyali'}
+    ]
+  },
+  {
+    id:'dwi', title:'DWI / ADC Bulguları', desc:'Difüzyon ağırlıklı görüntüleme bulgularını seçiniz.', type:'radio',
+    options:[
+      {val:'restriksiyon_yok', label:'Difüzyon kısıtlılığı yok (ADC yüksek)'},
+      {val:'hafif_restriksiyon', label:'Hafif difüzyon kısıtlılığı (ADC hafif düşük)'},
+      {val:'restriksiyon_olabilir', label:'Difüzyon kısıtlılığı olabilir (ADC düşük)'},
+      {val:'belirgin_restriksiyon', label:'Belirgin difüzyon kısıtlılığı (ADC düşük)'}
+    ]
+  },
+  {
+    id:'kontrast', title:'Kontrastlanma Paterni', desc:'Dinamik kontrastlı serilerde kontrastlanma paternini seçiniz.', type:'radio',
+    options:[
+      {val:'yok', label:'Kontrastlanma yok'},
+      {val:'yok_veya_rim', label:'Kontrastlanma yok veya ince rim'},
+      {val:'rim_ince', label:'İnce rim kontrastlanması'},
+      {val:'gec_kontrast', label:'Normal hipofize göre geç kontrastlanma'},
+      {val:'heterojen_kontrast', label:'Heterojen kontrastlanma'},
+      {val:'homojen_hizli', label:'Homojen ve hızlı (yoğun) kontrastlanma'},
+      {val:'yogun_erken_dural', label:'Yoğun erken kontrastlanma + dural tail'},
+      {val:'guclu_erken', label:'Güçlü erken kontrastlanma'},
+      {val:'solid_erken', label:'Solid komponentte erken kontrastlanma (kistik alan kontrastlanmıyor)'},
+      {val:'az_heterojen', label:'Kontrastlanma az veya heterojen'}
+    ]
+  },
+  {
+    id:'ek', title:'Ek Morfolojik Bulgular', desc:'Eşlik eden bulguları seçiniz (birden fazla seçilebilir).', type:'multi',
+    options:[
+      {val:'kist', label:'Kistik komponent'},
+      {val:'kanama', label:'Hemorajik komponent'},
+      {val:'kalsifikasyon', label:'Kalsifikasyon'},
+      {val:'dural', label:'Dural kuyruk işareti (dural tail)'},
+      {val:'stalk_kalin', label:'Stalk (infundibulum) kalınlaşması'},
+      {val:'stalk_deviye', label:'Stalk deviasyonu'},
+      {val:'parlak_nokta_kaybi', label:'Posterior hipofiz parlak noktası kaybı'},
+      {val:'kiazma_basi', label:'Optik kiazma basısı / yukarı itilmesi'},
+      {val:'kav_invazyon', label:'Kavernöz sinüs invazyonu'},
+      {val:'yok_ek', label:'Ek morfolojik bulgu yok'}
+    ]
+  },
+  {
+    id:'klinik', title:'Klinik Bilgiler', desc:'Mevcut klinik bilgileri seçiniz (birden fazla seçilebilir).', type:'multi',
+    options:[
+      {val:'horm', label:'Hormonal bozukluk / hipersekresyon bulguları'},
+      {val:'gorme', label:'Görme alanı defekti'},
+      {val:'bas_agrisi', label:'Baş ağrısı (akut / kronik)'},
+      {val:'di', label:'Diabetes insipidus'},
+      {val:'malig', label:'Bilinen malignite öyküsü'},
+      {val:'otoimmun', label:'Otoimmün hastalık / immünoterapi'},
+      {val:'cocuk', label:'Çocuk / adolesan hasta'},
+      {val:'akut', label:'Akut klinik prezentasyon'},
+      {val:'yok_klinik', label:'Klinik bilgi mevcut değil'}
+    ]
+  }
+];
+
+let currentStep = 0;
+const answers = {};
+let lesions = [];
+
+/* ===== RENDER ===== */
+function init(){
+  const pb = document.getElementById('progressBar');
+  pb.innerHTML = STEPS.map((_,i)=>`<div class="seg" data-i="${i}"></div>`).join('');
+  const sc = document.getElementById('stepsContainer');
+  sc.innerHTML = STEPS.map((s,i)=>{
+    let inner = `<div class="step-title">${i+1}. ${s.title}</div><div class="step-desc">${s.desc||''}</div>`;
+    if(s.type==='dims'){
+      inner += `<div class="input-row" style="margin-bottom:14px"><label>En büyük aks (mm)</label><input type="number" class="num-input" id="inp_dim1" min="1" max="300" placeholder="Örn: 12" oninput="answers.dim1=this.value?parseFloat(this.value):null"></div>`;
+      inner += `<div class="input-row"><label>İkinci aks (mm)</label><input type="number" class="num-input" id="inp_dim2" min="1" max="300" placeholder="Örn: 8" oninput="answers.dim2=this.value?parseFloat(this.value):null"></div>`;
+    } else {
+      inner += `<div class="opt-group" id="opts_${s.id}">`;
+      s.options.forEach(o=>{
+        const marker = s.type==='multi'?'chk':'dot';
+        inner += `<div class="opt" data-step="${s.id}" data-val="${o.val}" onclick="toggle(this,'${s.id}','${o.val}','${s.type}')"><div class="${marker}">&#10003;</div><span>${o.label}</span></div>`;
+      });
+      inner += '</div>';
+    }
+    return `<div class="step-card" id="step_${i}">${inner}</div>`;
+  }).join('');
+  showStep(0);
+}
+
+function showStep(n){
+  currentStep = n;
+  document.querySelectorAll('.step-card').forEach((el,i)=>el.classList.toggle('active',i===n));
+  document.querySelectorAll('.progress-bar .seg').forEach((el,i)=>{el.classList.toggle('done',i<n);el.classList.toggle('active',i===n)});
+  const nav = document.getElementById('navBar');
+  nav.style.display = 'flex';
+  document.getElementById('btnPrev').style.visibility = n===0?'hidden':'visible';
+  const isLast = n===STEPS.length-1;
+  const btn = document.getElementById('btnNext');
+  btn.textContent = isLast?'Lezyonu Kaydet ✓':'İleri →';
+  document.getElementById('resultSection').classList.remove('active');
+  document.getElementById('askMoreSection').style.display='none';
+}
+
+function toggle(el, stepId, val, type){
+  if(type==='radio'){
+    document.querySelectorAll(`[data-step="${stepId}"]`).forEach(e=>e.classList.remove('selected'));
+    el.classList.add('selected');
+    answers[stepId] = val;
+  } else {
+    el.classList.toggle('selected');
+    if(!answers[stepId]) answers[stepId]=[];
+    const arr = answers[stepId];
+    const idx = arr.indexOf(val);
+    if(idx>-1) arr.splice(idx,1); else arr.push(val);
+  }
+}
+
+function goNext(){
+  if(currentStep < STEPS.length-1){showStep(currentStep+1);}
+  else{saveLesion();}
+}
+function goPrev(){
+  if(currentStep>0) showStep(currentStep-1);
+}
+
+/* ===== LESION LOOP ===== */
+function saveLesion(){
+  const label = `Lezyon ${lesions.length+1}`;
+  lesions.push({
+    label,
+    data:{
+      ...answers,
+      loc:  answers.loc  ? [...answers.loc]  : [],
+      ek:   answers.ek   ? [...answers.ek]   : [],
+      klinik: answers.klinik ? [...answers.klinik] : []
+    }
+  });
+  const last = lesions[lesions.length-1];
+  const d = last.data;
+  const dimTxt = d.dim1!=null ? `${d.dim1}${d.dim2!=null?' × '+d.dim2:''} mm` : '—';
+
+  const sizeLabel = (STEPS.find(s=>s.id==='size')?.options||[]).find(o=>o.val===d.size)?.label || d.size||'—';
+
+  document.querySelectorAll('.step-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('navBar').style.display='none';
+  document.querySelectorAll('.progress-bar .seg').forEach(seg=>{seg.classList.add('done');seg.classList.remove('active')});
+
+  const el = document.getElementById('askMoreSection');
+  el.innerHTML = `
+    <div class="report-box" style="margin-top:0">
+      <h3 style="color:var(--green)">✔ ${last.label} Kaydedildi</h3>
+      <div class="rline"><b>Boyut kategorisi:</b> <span>${sizeLabel}</span></div>
+      <div class="rline"><b>Taraf:</b> <span>${d.side||'—'}</span></div>
+      <div class="rline"><b>Boyutlar:</b> <span>${dimTxt}</span></div>
+      <div class="rline"><b>Kontur:</b> <span>${d.contour||'—'}</span></div>
+      <div class="rline"><b>İç yapı:</b> <span>${d.inner||'—'}</span></div>
+    </div>
+    <p style="color:var(--text2);font-size:.85rem;margin:14px 0 6px">Toplam <b style="color:var(--text)">${lesions.length}</b> lezyon kayıtlı.</p>
+    <p style="font-size:1rem;margin-bottom:14px;color:var(--text)">Başka lezyon var mı?</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-next" onclick="addAnotherLesion()" style="flex:1;min-width:180px">➕ Evet, Yeni Lezyon Ekle</button>
+      <button class="btn" onclick="finalizeLesions()" style="flex:1;min-width:180px;background:var(--green);color:#0f0e17">📋 Hayır, Değerlendir</button>
+    </div>
+    <div style="display:flex;justify-content:flex-start">
+      <button class="btn btn-prev" onclick="editLastLesion()" style="font-size:.82rem;padding:8px 18px">← Geri / Düzenle</button>
+    </div>
+  `;
+  el.style.display='block';
+}
+
+function addAnotherLesion(){
+  ['loc','size','side','dim1','dim2','contour','inner','t1','t2','dwi','kontrast','ek','klinik'].forEach(k=>delete answers[k]);
+  answers.loc=[];answers.ek=[];answers.klinik=[];
+  document.querySelectorAll('.opt.selected').forEach(el=>el.classList.remove('selected'));
+  const d1=document.getElementById('inp_dim1'), d2=document.getElementById('inp_dim2');
+  if(d1) d1.value='';
+  if(d2) d2.value='';
+  document.getElementById('askMoreSection').style.display='none';
+  showStep(0);
+}
+
+function editLastLesion(){
+  if(lesions.length>0){
+    const last = lesions.pop();
+    Object.keys(answers).forEach(k=>delete answers[k]);
+    Object.assign(answers, last.data);
+    document.getElementById('askMoreSection').style.display='none';
+    showStep(STEPS.length-1);
+  }
+}
+
+function finalizeLesions(){
+  document.getElementById('askMoreSection').style.display='none';
+  calculate();
+}
+
+/* ===== SCORING ENGINE ===== */
+function calcLesionScores(data){
+  const loc = data.loc||[];
+  const size = data.size||'';
+  const t1 = data.t1||'';
+  const t2 = data.t2||'';
+  const dwi = data.dwi||'';
+  const kontrast = data.kontrast||'';
+  const ek = data.ek||[];
+  const klinik = data.klinik||[];
+
+  const scores = {};
+  PATHOLOGIES.forEach(p=>{
+    let s=0, w=0;
+    const c=p.criteria;
+
+    // T1 (weight 12)
+    w+=12;
+    if(t1===c.t1) s+=12;
+    else if(t1&&c.t1){
+      if((t1==='izointens'&&c.t1==='izo_heterojen')||(t1==='izo_heterojen'&&c.t1==='izointens')) s+=8;
+      else if((t1==='hipointens'&&c.t1==='bos_sinyal')||(t1==='bos_sinyal'&&c.t1==='hipointens')) s+=9;
+      else if(t1==='degisken_hiper'&&c.t1==='hiperintens_kanama') s+=6;
+      else s+=2;
+    }
+
+    // T2 (weight 12)
+    w+=12;
+    if(t2===c.t2) s+=12;
+    else if(t2&&c.t2){
+      if((t2==='hiperintens'&&c.t2==='hafif_hiperintens')||(t2==='hafif_hiperintens'&&c.t2==='hiperintens')) s+=8;
+      else if((t2==='hiperintens'&&c.t2==='izo_hiperintens')||(t2==='izo_hiperintens'&&c.t2==='hiperintens')) s+=7;
+      else if((t2==='cok_hiperintens'&&c.t2==='hiperintens')||(t2==='hiperintens'&&c.t2==='cok_hiperintens')) s+=6;
+      else if((t2==='bos_sinyal'&&c.t2==='cok_hiperintens')||(t2==='cok_hiperintens'&&c.t2==='bos_sinyal')) s+=8;
+      else s+=2;
+    }
+
+    // DWI (weight 10)
+    w+=10;
+    if(dwi===c.dwi) s+=10;
+    else if(dwi&&c.dwi){
+      const dwiMap={'restriksiyon_yok':0,'hafif_restriksiyon':1,'restriksiyon_olabilir':2,'belirgin_restriksiyon':3};
+      const d1=dwiMap[dwi]??1, d2=dwiMap[c.dwi]??1;
+      const diff=Math.abs(d1-d2);
+      s += diff===0?10:diff===1?7:diff===2?3:1;
+    }
+
+    // Kontrast (weight 18)
+    w+=18;
+    if(kontrast===c.art) s+=18;
+    else if(kontrast&&c.art){
+      const kontrastSimilar={
+        'gec_kontrast':['heterojen_kontrast','az_heterojen'],
+        'heterojen_kontrast':['gec_kontrast','solid_erken','az_heterojen'],
+        'homojen_hizli':['yogun_erken_dural','guclu_erken'],
+        'yogun_erken_dural':['homojen_hizli','guclu_erken'],
+        'guclu_erken':['homojen_hizli','yogun_erken_dural','solid_erken'],
+        'yok':['yok_veya_rim','rim_ince'],
+        'yok_veya_rim':['yok','rim_ince'],
+        'rim_ince':['yok_veya_rim','yok'],
+        'solid_erken':['heterojen_kontrast','guclu_erken'],
+        'az_heterojen':['gec_kontrast','heterojen_kontrast']
+      };
+      if(kontrastSimilar[kontrast]&&kontrastSimilar[kontrast].includes(c.art)) s+=11;
+      else s+=3;
+    }
+
+    // Size (weight 10)
+    w+=10;
+    if(c.size==='any') s+=8;
+    else if(size===c.size) s+=10;
+    else if(size==='dev'&&c.size==='makro') s+=7;
+    else if(size==='empty'&&p.id==='empty_sella') s+=10;
+    else if(size==='empty') s+=0;
+    else s+=2;
+
+    // Location (weight 8)
+    w+=8;
+    let locScore=0, locHits=0;
+    if(loc.includes('intrasellar')&&c.loc_intra) locHits++;
+    if(loc.includes('suprasellar')&&c.loc_supra) locHits++;
+    if(loc.includes('parasellar')&&c.loc_para) locHits++;
+    if(loc.includes('infundibular')&&c.loc_stalk) locHits++;
+    if(loc.length>0) locScore = Math.min(8, (locHits/Math.max(loc.length,1))*8 + (locHits>0?2:0));
+    else locScore=4;
+    s+=Math.min(8,locScore);
+
+    // Ek bulgular (weight 14)
+    w+=14;
+    let ekS=0;
+    if(ek.includes('kist')&&c.kist) ekS+=3;
+    if(!ek.includes('kist')&&!c.kist) ekS+=1;
+    if(ek.includes('kist')&&!c.kist) ekS-=2;
+    if(ek.includes('kanama')&&c.kanama) ekS+=3;
+    if(ek.includes('kanama')&&!c.kanama) ekS-=2;
+    if(!ek.includes('kanama')&&c.kanama) ekS-=1;
+    if(ek.includes('kalsifikasyon')&&c.kalsifikasyon) ekS+=3;
+    if(ek.includes('kalsifikasyon')&&!c.kalsifikasyon) ekS-=2;
+    if(ek.includes('dural')&&c.dural) ekS+=4;
+    if(ek.includes('dural')&&!c.dural) ekS-=2;
+    if(ek.includes('stalk_kalin')&&c.stalk_kalin) ekS+=3;
+    if(ek.includes('stalk_kalin')&&!c.stalk_kalin) ekS-=1;
+    if(ek.includes('stalk_deviye')&&c.stalk_deviye) ekS+=2;
+    s+=Math.max(0,Math.min(14,ekS+5));
+
+    // Klinik (weight 16)
+    w+=16;
+    let klS=0;
+    if(klinik.includes('horm')&&c.horm) klS+=3;
+    if(klinik.includes('malig')&&c.malig) klS+=5;
+    if(klinik.includes('malig')&&!c.malig) klS-=2;
+    if(klinik.includes('otoimmun')&&c.otoimmun) klS+=4;
+    if(klinik.includes('otoimmun')&&!c.otoimmun) klS-=1;
+    if(klinik.includes('cocuk')&&c.yas_cocuk) klS+=4;
+    if(klinik.includes('akut')&&c.akut) klS+=4;
+    if(klinik.includes('akut')&&!c.akut) klS-=1;
+    if(klinik.includes('di')&&(p.id==='metastaz'||p.id==='hipofizit')) klS+=3;
+    if(size==='empty'&&p.id==='empty_sella') klS+=4;
+    s+=Math.max(0,Math.min(16,klS+6));
+
+    scores[p.id] = Math.max(0, Math.min(100, Math.round((s/w)*100)));
+  });
+
+  if(size==='empty'){
+    Object.keys(scores).forEach(k=>{if(k!=='empty_sella') scores[k]=Math.min(scores[k],20)});
+  }
+  return scores;
+}
+
+function calculate(){
+  const all = lesions.length>0 ? lesions : [{label:'Lezyon 1', data:{...answers, loc:answers.loc||[], ek:answers.ek||[], klinik:answers.klinik||[]}}];
+  window._allLesionResults = all.map(les=>({
+    label: les.label,
+    data: les.data,
+    scores: calcLesionScores(les.data)
+  }));
+  showResults(window._allLesionResults);
+}
+
+function showResults(allLes){
+  document.getElementById('navBar').style.display='none';
+  document.querySelectorAll('.step-card').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.progress-bar .seg').forEach(el=>{el.classList.add('done');el.classList.remove('active')});
+
+  let barsHtml = '';
+  allLes.forEach((les,li)=>{
+    const sorted = Object.entries(les.scores).sort((a,b)=>b[1]-a[1]);
+    const maxScore = sorted[0][1]||1;
+    if(allLes.length>1){
+      barsHtml += `<div style="margin:${li>0?'18px':0} 0 8px;padding:6px 12px;background:var(--accent-glow);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-weight:600;color:var(--accent);font-size:.9rem">🔵 ${les.label}</div>`;
+    }
+    barsHtml += sorted.map(([id,sc])=>{
+      const p=PATHOLOGIES.find(x=>x.id===id);
+      const w=Math.max(4,(sc/maxScore)*100);
+      return `<div class="dx-bar-wrap"><div class="dx-label"><span class="name">${p.name}</span><span class="pct">${sc}%</span></div><div class="dx-bar"><div class="fill" style="width:${w}%;background:${p.color}"></div></div></div>`;
+    }).join('');
+  });
+  document.getElementById('dxBars').innerHTML = barsHtml;
+
+  buildReport(allLes);
+  document.getElementById('resultSection').classList.add('active');
+}
+
+function getLabel(stepId, val){
+  const step = STEPS.find(s=>s.id===stepId);
+  if(!step||!step.options) return val;
+  const opt = step.options.find(o=>o.val===val);
+  return opt?opt.label:val;
+}
+function getMultiLabels(stepId, data){
+  const arr = data[stepId]||[];
+  return arr.map(v=>getLabel(stepId,v)).join(', ') || 'Belirtilmedi';
+}
+
+function buildReport(allLes){
+  let html = `<h3>YAPILANDIRILMIŞ HİPOFİZ MRI RAPORU</h3>`;
+  let printHtml = `<h2>HİPOFİZ MRI — YAPILANDIRILMIŞ RAPOR</h2><p style="text-align:center;color:#666;font-size:11px">Tarih: ${new Date().toLocaleDateString('tr-TR')}</p>`;
+
+  allLes.forEach((les,li)=>{
+    const d = les.data;
+    const sorted = Object.entries(les.scores).sort((a,b)=>b[1]-a[1]);
+    const top3 = sorted.slice(0,3);
+    const topP = PATHOLOGIES.find(x=>x.id===top3[0][0]);
+    const dimTxt = d.dim1!=null ? `${d.dim1}${d.dim2!=null?' × '+d.dim2:''} mm` : 'Belirtilmedi';
+
+    if(allLes.length>1){
+      html += `<h3 style="color:var(--accent);margin:${li>0?'22px':8}px 0 10px">🔵 ${les.label}</h3>`;
+      printHtml += `<h3 style="color:#4a0e78;margin:${li>0?'20px':8}px 0 6px;padding:4px 8px;background:#f3eef8">🔵 ${les.label}</h3>`;
+    }
+
+    const lines = [
+      ['Lokalizasyon', getMultiLabels('loc', d)],
+      ['Boyut kategorisi', getLabel('size', d.size)||'Belirtilmedi'],
+      ['Taraf', d.side||'Belirtilmedi'],
+      ['Boyutlar', dimTxt],
+      ['Kontur', d.contour||'Belirtilmedi'],
+      ['İç Yapı', d.inner||'Belirtilmedi'],
+      ['T1 Sinyal', getLabel('t1', d.t1)||'Belirtilmedi'],
+      ['T2 Sinyal', getLabel('t2', d.t2)||'Belirtilmedi'],
+      ['DWI / ADC', getLabel('dwi', d.dwi)||'Belirtilmedi'],
+      ['Kontrastlanma', getLabel('kontrast', d.kontrast)||'Belirtilmedi'],
+      ['Ek Bulgular', getMultiLabels('ek', d)],
+      ['Klinik Bilgi', getMultiLabels('klinik', d)]
+    ];
+
+    html += lines.map(([k,v])=>`<div class="rline"><b>${k}:</b> <span>${v}</span></div>`).join('');
+    html += `<h3 style="margin-top:18px">AYIRICI TANI${allLes.length>1?' — '+les.label:''}</h3>`;
+    top3.forEach(([id,sc],i)=>{
+      const p=PATHOLOGIES.find(x=>x.id===id);
+      html += `<div class="rline"><b>${i+1}. ${p.name}</b> <span style="color:var(--accent);float:right">${sc}%</span></div>`;
+    });
+    html += `<div class="yorum-box"><strong>YORUM${allLes.length>1?' — '+les.label:''}:</strong> ${topP.yorum}`;
+    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);html+=` Ayırıcı tanıda ${p2.name.toLowerCase()} de düşünülmelidir.`;}
+    html += `</div>`;
+
+    // Print HTML
+    printHtml += `<table><thead><tr><th style="width:30%">Parametre</th><th>Bulgu</th></tr></thead><tbody>`;
+    lines.forEach(([k,v])=>printHtml+=`<tr><td><b>${k}</b></td><td>${v}</td></tr>`);
+    printHtml += `</tbody></table>`;
+    printHtml += `<table><thead><tr><th style="width:10%">#</th><th>Tanı</th><th style="width:18%">Olasılık</th></tr></thead><tbody>`;
+    top3.forEach(([id,sc],i)=>{const p=PATHOLOGIES.find(x=>x.id===id);printHtml+=`<tr><td>${i+1}</td><td>${p.name}</td><td>${sc}%</td></tr>`});
+    printHtml += `</tbody></table>`;
+    printHtml += `<div class="yorum-print"><b>YORUM${allLes.length>1?' — '+les.label:''}:</b> ${topP.yorum}`;
+    if(top3.length>1&&top3[1][1]>50){const p2=PATHOLOGIES.find(x=>x.id===top3[1][0]);printHtml+=` Ayırıcı tanıda ${p2.name.toLowerCase()} de düşünülmelidir.`;}
+    printHtml += `</div>`;
+  });
+
+  document.getElementById('reportBox').innerHTML = html;
+  document.getElementById('printSheet').innerHTML = printHtml;
+}
+
+function openPrint(){document.getElementById('printOverlay').classList.add('show')}
+function closePrint(){document.getElementById('printOverlay').classList.remove('show')}
+
+function copyReport(){
+  const el = document.getElementById('reportBox');
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  document.execCommand('copy');
+  sel.removeAllRanges();
+  alert('Rapor panoya kopyalandı.');
+}
+
+function resetAll(){
+  Object.keys(answers).forEach(k=>delete answers[k]);
+  lesions = [];
+  document.querySelectorAll('.opt.selected').forEach(el=>el.classList.remove('selected'));
+  const d1=document.getElementById('inp_dim1'), d2=document.getElementById('inp_dim2');
+  if(d1) d1.value='';
+  if(d2) d2.value='';
+  document.getElementById('resultSection').classList.remove('active');
+  document.getElementById('askMoreSection').style.display='none';
+  showStep(0);
+}
+
+init();
+</script>
+</body>
+</html>

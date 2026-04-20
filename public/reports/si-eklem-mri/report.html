@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sakroiliak Eklem MRI</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0f14;--surf:#111820;--surf2:#192130;--surf3:#1e2a3a;
+  --acc:#00c9e0;--acc2:#7ee8f5;--acc3:#c8f5fb;
+  --txt:#e8f0fe;--txt2:#7a90a8;
+  --suc:#22d9a0;--warn:#f5a623;--dan:#f05565;
+  --brd:#1e2e42;
+}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+
+/* Header */
+.hdr{text-align:center;margin-bottom:28px;padding:24px 0 8px}
+.hdr-icon{font-size:2rem;margin-bottom:8px}
+.hdr h1{font-size:1.4rem;font-weight:800;letter-spacing:.4px;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr p{font-size:.8rem;color:var(--txt2);margin-top:5px;letter-spacing:.3px}
+
+/* Progress */
+.prog-wrap{margin-bottom:22px}
+.prog-bar-bg{background:var(--surf2);border-radius:8px;height:5px;overflow:hidden}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:8px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.prog-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prog-title{font-size:.75rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.8px}
+.prog-pct{font-size:.75rem;color:var(--txt2)}
+
+/* Card */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:14px;padding:24px;animation:fi .22s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card-step{font-size:.7rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.card-step::after{content:'';flex:1;height:1px;background:var(--brd)}
+.card h3{font-size:1.1rem;font-weight:700;color:var(--txt);margin-bottom:4px}
+.card-sub{font-size:.82rem;color:var(--txt2);margin-bottom:18px;line-height:1.5}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:7px}
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.opt{background:var(--surf2);border:1.5px solid var(--brd);border-radius:9px;padding:11px 14px;cursor:pointer;transition:.18s;display:flex;align-items:flex-start;gap:10px;text-align:left;width:100%}
+.opt:hover{border-color:var(--acc);background:var(--surf3)}
+.opt.sel{border-color:var(--acc);background:rgba(0,201,224,.1)}
+.dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--txt2);flex-shrink:0;margin-top:1px;transition:.18s;position:relative}
+.opt.sel .dot{border-color:var(--acc);background:var(--acc)}
+.opt.sel .dot::after{content:'';position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:#fff}
+.opt-l{font-size:.9rem;font-weight:600;color:var(--txt)}
+.opt-s{font-size:.75rem;color:var(--txt2);margin-top:2px}
+.opt.sel .opt-l{color:var(--acc3)}
+
+/* Grid layout for klinik step */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field-label{font-size:.75rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+
+/* Buttons */
+.btns{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.btn{padding:10px 22px;border-radius:9px;border:none;cursor:pointer;font-size:.88rem;font-weight:700;transition:.18s;letter-spacing:.2px}
+.btn-pri{background:var(--acc);color:#0b0f14}
+.btn-pri:hover{background:var(--acc2);transform:translateY(-1px)}
+.btn-sec{background:var(--surf2);color:var(--txt);border:1.5px solid var(--brd)}
+.btn-sec:hover{border-color:var(--acc);color:var(--acc)}
+.btn-suc{background:var(--suc);color:#0b0f14}
+.btn-suc:hover{filter:brightness(1.1)}
+.btn-dan{background:rgba(240,85,101,.15);color:var(--dan);border:1px solid var(--dan)}
+
+/* Side badges */
+.sbadge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:.7rem;font-weight:800;letter-spacing:.3px;vertical-align:middle;margin-left:4px}
+.sb-sag{background:rgba(0,201,224,.18);color:var(--acc2)}
+.sb-sol{background:rgba(34,217,160,.18);color:var(--suc)}
+.sb-bil{background:rgba(245,166,35,.18);color:var(--warn)}
+
+/* Report section headers */
+.sec-hdr{font-size:.7rem;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:6px}
+
+/* Report table */
+.rep-tbl{width:100%;border-collapse:collapse;font-size:.86rem;border-radius:8px;overflow:hidden}
+.rep-tbl td{padding:8px 12px;vertical-align:top;line-height:1.45}
+.rep-tbl tr:nth-child(odd) td{background:var(--surf2)}
+.rep-tbl tr:nth-child(even) td{background:var(--surf3)}
+.rep-tbl td:first-child{font-weight:600;color:var(--txt2);width:42%;white-space:nowrap;font-size:.82rem}
+.rep-tbl td:last-child{color:var(--txt)}
+
+/* Differential */
+.diff-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;margin-bottom:6px;background:var(--surf2);border:1px solid var(--brd)}
+.diff-rank{font-size:.75rem;color:var(--txt2);width:18px;text-align:center;flex-shrink:0}
+.diff-info{min-width:190px;flex-shrink:0}
+.diff-name{font-size:.88rem;font-weight:700;color:var(--txt)}
+.diff-bar-wrap{flex:1;background:var(--surf3);border-radius:4px;height:7px;overflow:hidden}
+.diff-bar{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px;transition:width .7s .1s}
+.diff-pct{font-size:.88rem;font-weight:800;color:var(--acc2);min-width:40px;text-align:right}
+.kat-tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:.68rem;font-weight:700;margin-top:3px}
+.kt-inf{background:rgba(0,201,224,.15);color:var(--acc2)}
+.kt-enf{background:rgba(240,85,101,.15);color:var(--dan)}
+.kt-dej{background:rgba(245,166,35,.15);color:var(--warn)}
+.kt-onk{background:rgba(34,217,160,.15);color:var(--suc)}
+.kt-trv{background:rgba(122,144,168,.15);color:var(--txt2)}
+.kt-met{background:rgba(245,166,35,.12);color:var(--warn)}
+
+/* YORUM */
+.yorum{background:linear-gradient(135deg,rgba(0,201,224,.07),rgba(0,201,224,.03));border-left:3px solid var(--acc);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:14px;font-size:.88rem;line-height:1.65;color:var(--txt)}
+.yorum strong{color:var(--acc2)}
+
+/* Lezyon list */
+.lez-list{margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+.lez-card{background:var(--surf2);border:1px solid var(--brd);border-radius:9px;padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.lez-body h4{font-size:.82rem;font-weight:700;color:var(--acc2);margin-bottom:3px}
+.lez-body p{font-size:.78rem;color:var(--txt2);line-height:1.4}
+.lez-del{background:none;border:none;color:var(--dan);cursor:pointer;font-size:.8rem;flex-shrink:0;padding:2px 6px;opacity:.7}
+.lez-del:hover{opacity:1}
+
+/* Export row */
+.exp-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--brd)}
+
+/* Print overlay */
+#printOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;overflow:auto;padding:32px;color:#000}
+@media print{body>*{display:none}#printOverlay{display:block !important;position:static}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="printOverlay"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ═══════════════════════════════════════════════════
+   PATHOLOGY DATABASE — 14 patoloji
+═══════════════════════════════════════════════════ */
+const PATHO_DB = [
+  {
+    id:'axSpA_AS', ad:'Aksiyel SpA / Ankilozan Spondilit', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.kemikOdem==='bilateral')s+=25; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=8;
+      if(d.kemikOdemSiddet==='siddetli')s+=8; else if(d.kemikOdemSiddet==='orta')s+=4;
+      if(d.erozyon==='bilateral_ileri')s+=20; else if(d.erozyon==='bilateral_belirgin')s+=18;
+      else if(d.erozyon==='bilateral_hafif')s+=12; else if(d.erozyon==='tek_belirgin'||d.erozyon==='tek_ileri')s+=8; else if(d.erozyon==='tek_hafif')s+=4;
+      if(d.skleroz==='iliak_dom')s+=12; else if(d.skleroz==='bilateral_esit')s+=8; else if(d.skleroz==='sakral_dom')s+=3;
+      if(d.kontrast==='belirgin')s+=12; else if(d.kontrast==='hafif')s+=7;
+      if(d.ankiloz==='kemik_tam')s+=20; else if(d.ankiloz==='kemik_parsiyel')s+=15; else if(d.ankiloz==='fibrous_tam')s+=10; else if(d.ankiloz==='fibrous_parsiyel')s+=6;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=10; else if(d.t1Sinyal==='hafif_dusuk')s+=5;
+      if(d.sinovyalSivi==='orta'||d.sinovyalSivi==='fazla')s+=5;
+      if(d.hlab27==='pozitif')s+=8;
+      if(d.yasGrubu==='genc')s+=5; else if(d.yasGrubu==='orta')s+=3;
+      if(d.lateralite==='bilateral')s+=5;
+      return Math.min(100,s);
+    }
+  },
+  {
+    id:'nrAxSpA', ad:'nr-axSpA (Non-radyografik SpA)', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.kemikOdem==='bilateral')s+=28; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=15;
+      if(d.kemikOdemSiddet==='siddetli')s+=8; else if(d.kemikOdemSiddet==='orta')s+=5;
+      if(d.kontrast==='belirgin')s+=18; else if(d.kontrast==='hafif')s+=10;
+      if(d.erozyon==='bilateral_hafif')s+=10; else if(d.erozyon==='tek_hafif')s+=6;
+      if(d.erozyon==='bilateral_belirgin'||d.erozyon==='bilateral_ileri')s-=8;
+      if(d.skleroz==='iliak_dom')s+=6;
+      if(d.ankiloz==='kemik_tam'||d.ankiloz==='kemik_parsiyel')s-=12;
+      if(d.hlab27==='pozitif')s+=12;
+      if(d.yasGrubu==='genc')s+=8;
+      if(d.klinik==='inflamatuar')s+=8;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'psoriatik', ad:'Psöriatik Artrit', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=18;
+      else if(d.kemikOdem==='bilateral')s+=8;
+      if(d.erozyon==='tek_belirgin'||d.erozyon==='tek_ileri')s+=18;
+      else if(d.erozyon==='bilateral_belirgin')s+=10;
+      else if(d.erozyon==='tek_hafif')s+=8;
+      if(d.skleroz==='bilateral_esit')s+=10; else if(d.skleroz==='iliak_dom')s+=7;
+      if(d.kontrast==='belirgin')s+=12; else if(d.kontrast==='sinoviyal')s+=8;
+      if(d.klinik==='inflamatuar')s+=12;
+      if(d.ankiloz==='kemik_parsiyel'||d.ankiloz==='kemik_tam')s+=8;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=8;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'reaktif', ad:'Reaktif Artrit', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=20;
+      else if(d.kemikOdem==='bilateral')s+=5;
+      if(d.kemikOdemSiddet==='orta'||d.kemikOdemSiddet==='siddetli')s+=10;
+      if(d.kontrast==='belirgin')s+=15; else if(d.kontrast==='sinoviyal')s+=10;
+      if(d.sinovyalSivi==='orta')s+=12; else if(d.sinovyalSivi==='fazla')s+=8;
+      if(d.erozyon==='tek_hafif'||d.erozyon==='tek_belirgin')s+=10;
+      if(d.klinik==='inflamatuar')s+=12;
+      if(d.yasGrubu==='genc')s+=10;
+      if(d.ankiloz!=='yok')s-=8;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'enteropatik', ad:'Enteropatik Artrit (IBD)', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.kemikOdem==='bilateral')s+=22; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=10;
+      if(d.kontrast==='belirgin')s+=12; else if(d.kontrast==='hafif')s+=7;
+      if(d.erozyon==='bilateral_hafif'||d.erozyon==='bilateral_belirgin')s+=14;
+      if(d.skleroz==='iliak_dom'||d.skleroz==='bilateral_esit')s+=10;
+      if(d.klinik==='inflamatuar')s+=10;
+      if(d.ankiloz==='kemik_parsiyel'||d.ankiloz==='kemik_tam')s+=10;
+      if(d.hlab27==='negatif')s+=5;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'septik', ad:'Septik Artrit / Osteomiyelit', kat:'Enfeksiyöz', cls:'kt-enf',
+    puan(d){
+      let s=0;
+      if(d.lateralite==='tek')s+=22;
+      if(d.yumusak==='abse')s+=30;
+      else if(d.yumusak==='periartikuler_odem')s+=12;
+      if(d.kontrast==='abse')s+=25; else if(d.kontrast==='belirgin')s+=18; else if(d.kontrast==='sinoviyal')s+=12;
+      if(d.sinovyalSivi==='abse')s+=20; else if(d.sinovyalSivi==='fazla')s+=15; else if(d.sinovyalSivi==='orta')s+=8;
+      if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=15;
+      if(d.dwi==='kisitlanma')s+=15;
+      if(d.klinik==='enfeksiyoz')s+=18;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=8;
+      if(d.kemikOdem==='bilateral')s-=12;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'okI', ad:'Osteitis Kondensans İlii', kat:'Diğer', cls:'kt-trv',
+    puan(d){
+      let s=0;
+      if(d.skleroz==='iliak_dom')s+=38;
+      else if(d.skleroz==='bilateral_esit')s+=15;
+      const eklemNormal = d.sagEklemAraligi==='normal'||d.solEklemAraligi==='normal';
+      if(eklemNormal)s+=15;
+      if(d.kemikOdem==='yok')s+=12; else if(d.kemikOdem==='bilateral')s-=10;
+      if(d.kontrast==='yok')s+=10;
+      if(d.erozyon==='yok')s+=12;
+      if(d.cinsiyet==='kadin')s+=10;
+      if(d.ankiloz==='yok')s+=5;
+      if(d.yasGrubu==='genc'||d.yasGrubu==='orta')s+=5;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'oa', ad:'Dejeneratif Osteoartrit', kat:'Dejeneratif', cls:'kt-dej',
+    puan(d){
+      let s=0;
+      if(d.sagEklemAraligi==='daralmis'||d.solEklemAraligi==='daralmis')s+=22;
+      if(d.skleroz==='bilateral_esit')s+=18; else if(d.skleroz==='sakral_dom')s+=10; else if(d.skleroz==='iliak_dom')s+=8;
+      if(d.t1Sinyal==='hafif_dusuk')s+=10;
+      if(d.kemikOdem==='bilateral')s+=8; else if(d.kemikOdem==='yok')s+=5;
+      if(d.ankiloz==='fibrous_parsiyel')s+=12;
+      if(d.yasGrubu==='yasli')s+=22; else if(d.yasGrubu==='orta')s+=10;
+      if(d.klinik==='belirsiz')s+=8;
+      if(d.erozyon==='yok')s+=6;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'stres', ad:'Stres / İnsüfisans Fraktürü', kat:'Travmatik', cls:'kt-trv',
+    puan(d){
+      let s=0;
+      if(d.klinik==='travmatik')s+=20;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=28; else if(d.t1Sinyal==='hafif_dusuk')s+=14;
+      if(d.kemikOdem==='bilateral')s+=18; // sakral H-sign
+      else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=10;
+      if(d.fokalLezyon==='evet')s+=15;
+      if(d.cinsiyet==='kadin')s+=8;
+      if(d.yasGrubu==='yasli')s+=10;
+      if(d.erozyon==='yok')s+=5;
+      if(d.kontrast==='yok'||d.kontrast==='hafif')s+=5;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'sapho', ad:'SAPHO Sendromu', kat:'İnflamatuar', cls:'kt-inf',
+    puan(d){
+      let s=0;
+      if(d.skleroz==='iliak_dom')s+=22; else if(d.skleroz==='bilateral_esit')s+=16;
+      if(d.kemikOdem==='bilateral')s+=15; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=8;
+      if(d.kontrast==='belirgin')s+=14; else if(d.kontrast==='periostal')s+=20;
+      if(d.klinik==='inflamatuar')s+=10;
+      if(d.erozyon==='bilateral_hafif'||d.erozyon==='bilateral_belirgin')s+=12;
+      if(d.t1Sinyal==='hafif_dusuk')s+=8;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'gut', ad:'Gut / Kristal Artropati', kat:'Metabolik', cls:'kt-met',
+    puan(d){
+      let s=0;
+      if(d.erozyon==='tek_belirgin'||d.erozyon==='bilateral_belirgin')s+=22;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=18;
+      if(d.sinovyalSivi==='orta'||d.sinovyalSivi==='fazla')s+=12;
+      if(d.kontrast==='hafif'||d.kontrast==='belirgin')s+=10;
+      if(d.fokalLezyon==='evet')s+=18; // tofus
+      if(d.klinik==='belirsiz')s+=5;
+      if(d.sagEklemAraligi==='daralmis'||d.solEklemAraligi==='daralmis')s+=10;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'metastaz', ad:'Tümör / Metastaz', kat:'Onkolojik', cls:'kt-onk',
+    puan(d){
+      let s=0;
+      if(d.fokalLezyon==='evet')s+=32;
+      if(d.yumusak==='kitle')s+=28;
+      if(d.t1Sinyal==='belirgin_dusuk')s+=16;
+      if(d.kemikOdem==='bilateral'||d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=10;
+      if(d.kontrast==='belirgin')s+=12;
+      if(d.klinik==='onkolojik')s+=22;
+      if(d.erozyon==='tek_ileri'||d.erozyon==='bilateral_ileri')s+=15;
+      if(d.dwi==='kisitlanma')s+=12;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'paget', ad:'Paget Hastalığı', kat:'Metabolik', cls:'kt-met',
+    puan(d){
+      let s=0;
+      if(d.t1Sinyal==='hafif_dusuk')s+=15; else if(d.t1Sinyal==='belirgin_dusuk')s+=8;
+      if(d.skleroz==='bilateral_esit'||d.skleroz==='iliak_dom')s+=18;
+      if(d.sagEklemAraligi==='daralmis'||d.solEklemAraligi==='daralmis')s+=10;
+      if(d.yasGrubu==='yasli')s+=22;
+      if(d.fokalLezyon==='evet')s+=15;
+      if(d.kontrast==='hafif')s+=8;
+      if(d.erozyon==='yok')s+=5;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+  {
+    id:'ligament', ad:'Ligamentöz / Kapsüler Yaralanma', kat:'Travmatik', cls:'kt-trv',
+    puan(d){
+      let s=0;
+      if(d.klinik==='travmatik')s+=28;
+      if(d.yumusak==='periartikuler_odem')s+=22;
+      if(d.sagEklemAraligi==='genislemis'||d.solEklemAraligi==='genislemis')s+=18;
+      if(d.kemikOdem==='yok')s+=12; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=5;
+      if(d.erozyon==='yok')s+=8;
+      if(d.kontrast==='hafif'||d.kontrast==='yok')s+=8;
+      if(d.ankiloz==='yok')s+=5;
+      if(d.skleroz==='yok')s+=5;
+      return Math.min(100,Math.max(0,s));
+    }
+  },
+];
+
+/* ═══════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════ */
+const RAPOR_STEP = 21;
+const LEZ_STEPS_COUNT = 6;
+
+function scoreAll(d){
+  return PATHO_DB.map(p=>({...p, s:p.puan(d)})).filter(p=>p.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
+}
+
+function Opt({label, sub, sel, onClick}){
+  return <div className={'opt'+(sel?' sel':'')} onClick={onClick}>
+    <div className="dot"/>
+    <div style={{flex:1}}>
+      <div className="opt-l">{label}</div>
+      {sub && <div className="opt-s">{sub}</div>}
+    </div>
+  </div>;
+}
+
+function ProgBar({v}){
+  return <div style={{flex:1,background:'var(--surf3)',borderRadius:4,height:7,overflow:'hidden'}}>
+    <div style={{width:v+'%',height:'100%',background:'linear-gradient(90deg,var(--acc),var(--acc2))',borderRadius:4,transition:'width .7s .1s'}}/>
+  </div>;
+}
+
+/* ═══════════════════════════════════════════════════
+   REPORT TEXT BUILDER
+═══════════════════════════════════════════════════ */
+function buildReportText(d, lez, results){
+  const T = (map,k) => map[k]||k||'—';
+  const ekMap = {normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze','':`—`};
+  const oemMap = {yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'};
+  const oemSMap = {hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın','':``,undefined:''};
+  const t1Map = {normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'};
+  const erMap = {yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'};
+  const sklMap = {yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'};
+  const kntMap = {yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin sübkondral',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'};
+  const sivMap = {yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse formasyonu'};
+  const ankMap = {yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü'};
+  const ysMap = {normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse formasyonu',kitle:'Yumuşak doku kitlesi'};
+  const dwiMap = {normal:'Normal',kisitlanma:'Difüzyon kısıtlanması',serbest:'Artmış difüzyon (serbest)'};
+
+  let lines = [];
+  lines.push('SAKROİLİAK EKLEM MRI RAPORU');
+  lines.push('─'.repeat(48));
+  lines.push(`Taraf: ${d.taraf==='bilateral'?'Bilateral':d.taraf==='sag'?'Sağ':'Sol'}`);
+  if(d.taraf==='bilateral'||d.taraf==='sag') lines.push(`Sağ eklem aralığı: ${T(ekMap,d.sagEklemAraligi)}`);
+  if(d.taraf==='bilateral'||d.taraf==='sol') lines.push(`Sol eklem aralığı: ${T(ekMap,d.solEklemAraligi)}`);
+  lines.push(`Kemik iliği ödemi (STIR/T2FS): ${T(oemMap,d.kemikOdem)}${oemSMap[d.kemikOdemSiddet]||''}`);
+  lines.push(`T1 subkondral sinyal: ${T(t1Map,d.t1Sinyal)}`);
+  lines.push(`Erozyon: ${T(erMap,d.erozyon)}`);
+  lines.push(`Skleroz: ${T(sklMap,d.skleroz)}`);
+  lines.push(`Kontrast tutulumu: ${T(kntMap,d.kontrast)}`);
+  lines.push(`Sinoviyal sıvı: ${T(sivMap,d.sinovyalSivi)}`);
+  lines.push(`Ankiloz/Füzyon: ${T(ankMap,d.ankiloz)}`);
+  lines.push(`Yumuşak doku: ${T(ysMap,d.yumusak)}`);
+  lines.push(`DWI: ${T(dwiMap,d.dwi)}`);
+  if(lez.length>0){
+    lines.push('');
+    lines.push('FOKAL LEZYONLAR:');
+    lez.forEach((l,i)=>{
+      lines.push(`  Lezyon ${i+1}: ${l.lokalizasyon||'?'}${l.boyut?' ('+l.boyut+')':''}${l.t1t2?' | '+l.t1t2:''}${l.lezKontrast?' | Kt: '+l.lezKontrast:''}${l.komsuyapi?' | '+l.komsuyapi:''}`);
+    });
+  }
+  lines.push('');
+  lines.push('─'.repeat(48));
+  lines.push('AYIRICI TANI (Ağırlıklı Skor):');
+  results.forEach((r,i)=>lines.push(`  ${i+1}. ${r.ad} [${r.kat}]  %${r.s}`));
+  return lines.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════
+   APP
+═══════════════════════════════════════════════════ */
+function App(){
+  const [step, setStep] = useState(0);
+  const [d, setD] = useState({
+    yasGrubu:'',cinsiyet:'',klinik:'',hlab27:'',
+    taraf:'bilateral',lateralite:'bilateral',
+    sagEklemAraligi:'',solEklemAraligi:'',
+    kemikOdem:'',kemikOdemSiddet:'',
+    t1Sinyal:'',erozyon:'',skleroz:'',
+    kontrast:'',sinovyalSivi:'',ankiloz:'',
+    yumusak:'',dwi:'',fokalLezyon:'',
+  });
+  const [lezyonlar, setLezyonlar] = useState([]);
+  const [curLez, setCurLez] = useState(null);
+  const [lezStep, setLezStep] = useState(-1);
+
+  const set = (k,v) => setD(p=>({...p,[k]:v}));
+  const inLez = lezStep >= 0;
+
+  useEffect(()=>{
+    set('lateralite', d.taraf==='bilateral'?'bilateral':'tek');
+  },[d.taraf]);
+
+  function skipCheck(s){
+    if(s===2 && d.taraf==='sol') return true;
+    if(s===3 && d.taraf==='sag') return true;
+    return false;
+  }
+
+  function goNext(){
+    if(inLez){
+      if(lezStep < LEZ_STEPS_COUNT-1){ setLezStep(s=>s+1); }
+      else {
+        setLezyonlar(p=>[...p,curLez]);
+        setCurLez(null); setLezStep(-1);
+        setStep(13); // back to lezyon check
+      }
+      return;
+    }
+    let nxt = step+1;
+    while(nxt < RAPOR_STEP && skipCheck(nxt)) nxt++;
+    setStep(nxt);
+  }
+
+  function goPrev(){
+    if(inLez){
+      if(lezStep > 0){ setLezStep(s=>s-1); }
+      else { setCurLez(null); setLezStep(-1); setStep(13); }
+      return;
+    }
+    let prv = step-1;
+    while(prv > 0 && skipCheck(prv)) prv--;
+    setStep(Math.max(0,prv));
+  }
+
+  function startLez(){
+    setCurLez({lokalizasyon:'',boyut:'',t1t2:'',lezDwi:'',lezKontrast:'',komsuyapi:''});
+    setLezStep(0);
+    set('fokalLezyon','evet');
+  }
+
+  function setLez(k,v){ setCurLez(p=>({...p,[k]:v})); }
+
+  const results = step>=RAPOR_STEP ? scoreAll(d) : [];
+
+  const totalVisibleSteps = RAPOR_STEP - (d.taraf!=='bilateral'?1:0);
+  const pct = inLez
+    ? Math.round(((13+(lezStep+1)/LEZ_STEPS_COUNT)/RAPOR_STEP)*100)
+    : Math.round((step/RAPOR_STEP)*100);
+
+  const STEP_NAMES = ['Klinik Bilgi','Taraf Seçimi','Sağ Eklem Aralığı','Sol Eklem Aralığı','Kemik İliği Ödemi','T1 Subkondral','Erozyon','Skleroz','Kontrast','Sinoviyal Sıvı','Ankiloz','Yumuşak Doku','DWI','Fokal Lezyon'];
+  const LEZ_NAMES = ['Lokalizasyon','Boyut','T1/T2 Sinyal','DWI/ADC','Kontrast','Komşu Yapı'];
+  const curStepName = inLez ? `Lezyon ${lezyonlar.length+1} – ${LEZ_NAMES[lezStep]}` : (STEP_NAMES[step]||'Rapor');
+
+  /* ─── RENDER ─── */
+  function render(){
+    if(step===RAPOR_STEP) return renderRapor();
+    if(inLez) return renderLezStep();
+    switch(step){
+      case 0: return renderKlinik();
+      case 1: return renderTaraf();
+      case 2: return renderSagEklem();
+      case 3: return renderSolEklem();
+      case 4: return renderKemikOdem();
+      case 5: return renderT1();
+      case 6: return renderErozyon();
+      case 7: return renderSkleroz();
+      case 8: return renderKontrast();
+      case 9: return renderSinoviyal();
+      case 10: return renderAnkiloz();
+      case 11: return renderYumusak();
+      case 12: return renderDwi();
+      case 13: return renderLezCheck();
+      default: return null;
+    }
+  }
+
+  /* ── Step 0 ── */
+  function renderKlinik(){
+    return <div className="card">
+      <div className="card-step">Adım 1</div>
+      <h3>Klinik Bilgi</h3>
+      <div className="card-sub">Hasta demografisi ve klinik ön tanıyı giriniz.</div>
+      <div className="grid2">
+        <div>
+          <div className="field-label">Yaş Grubu</div>
+          <div className="opts">
+            {[['genc','18–45 yaş','Genç erişkin'],['orta','45–60 yaş','Orta yaş'],['yasli','60+ yaş','İleri yaş']].map(([v,l,s])=>
+              <Opt key={v} label={l} sub={s} sel={d.yasGrubu===v} onClick={()=>set('yasGrubu',v)}/>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="field-label">Cinsiyet</div>
+          <div className="opts">
+            {[['erkek','Erkek'],['kadin','Kadın']].map(([v,l])=>
+              <Opt key={v} label={l} sel={d.cinsiyet===v} onClick={()=>set('cinsiyet',v)}/>
+            )}
+          </div>
+          <div className="field-label" style={{marginTop:14}}>HLA-B27</div>
+          <div className="opts">
+            {[['pozitif','Pozitif'],['negatif','Negatif'],['bilinmiyor','Bilinmiyor']].map(([v,l])=>
+              <Opt key={v} label={l} sel={d.hlab27===v} onClick={()=>set('hlab27',v)}/>
+            )}
+          </div>
+        </div>
+        <div style={{gridColumn:'1/-1'}}>
+          <div className="field-label">Klinik Ön Tanı</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7}}>
+            {[['inflamatuar','İnflamatuar','SpA, artrit'],['enfeksiyoz','Enfeksiyöz','Septik, abse'],['travmatik','Travmatik','Fraktür, yaralanma'],['onkolojik','Onkolojik','Tümör, met.'],['belirsiz','Belirsiz','—']].map(([v,l,s])=>
+              <Opt key={v} label={l} sub={s} sel={d.klinik===v} onClick={()=>set('klinik',v)}/>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="btns">
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 1 ── */
+  function renderTaraf(){
+    return <div className="card">
+      <div className="card-step">Adım 2</div>
+      <h3>Değerlendirilen Taraf</h3>
+      <div className="opts">
+        <Opt label={<>Bilateral <span className="sbadge sb-bil">Her iki taraf</span></>} sub="Sağ ve sol SI eklem birlikte değerlendiriliyor" sel={d.taraf==='bilateral'} onClick={()=>set('taraf','bilateral')}/>
+        <Opt label={<>Yalnızca Sağ <span className="sbadge sb-sag">SAĞ</span></>} sub="Sol SI eklem değerlendirilmiyor" sel={d.taraf==='sag'} onClick={()=>set('taraf','sag')}/>
+        <Opt label={<>Yalnızca Sol <span className="sbadge sb-sol">SOL</span></>} sub="Sağ SI eklem değerlendirilmiyor" sel={d.taraf==='sol'} onClick={()=>set('taraf','sol')}/>
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 2 ── */
+  function renderSagEklem(){
+    return <div className="card">
+      <div className="card-step">Adım 3 — <span className="sbadge sb-sag">SAĞ SI EKLEMİ</span></div>
+      <h3>Sağ Eklem Aralığı</h3>
+      <div className="opts">
+        {[['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.sagEklemAraligi===v} onClick={()=>set('sagEklemAraligi',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 3 ── */
+  function renderSolEklem(){
+    return <div className="card">
+      <div className="card-step">Adım {d.taraf==='bilateral'?'4':'3'} — <span className="sbadge sb-sol">SOL SI EKLEMİ</span></div>
+      <h3>Sol Eklem Aralığı</h3>
+      <div className="opts">
+        {[['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.solEklemAraligi===v} onClick={()=>set('solEklemAraligi',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 4 ── */
+  function renderKemikOdem(){
+    return <div className="card">
+      <div className="card-step">Adım 5</div>
+      <h3>Kemik İliği Ödemi (STIR / T2 Yağ Baskılı)</h3>
+      <div className="card-sub">ASAS aktif sakroiliit kriterleri: bilateral ≥ grade 1 veya tek taraflı ≥ grade 3 BME gerektirir.</div>
+      <div className="field-label">Lateralite</div>
+      <div className="opts">
+        {[['yok','Yok','Kemik iliği ödemi izlenmiyor'],['sag','Sağ SI eklem','Tek taraflı sağ'],['sol','Sol SI eklem','Tek taraflı sol'],['bilateral','Bilateral','Her iki eklemde mevcut']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.kemikOdem===v} onClick={()=>{set('kemikOdem',v);if(v==='yok')set('kemikOdemSiddet','');}}/>
+        )}
+      </div>
+      {d.kemikOdem && d.kemikOdem!=='yok' && <>
+        <div className="field-label" style={{marginTop:14}}>Şiddet</div>
+        <div className="opts">
+          {[['hafif','Hafif','Küçük odak, < 1 cm veya tek kesit'],['orta','Orta','≥ 2 ardışık kesit, 1–2 cm'],['siddetli','Belirgin / Yaygın','> 2 cm veya yaygın tutulum']].map(([v,l,s])=>
+            <Opt key={v} label={l} sub={s} sel={d.kemikOdemSiddet===v} onClick={()=>set('kemikOdemSiddet',v)}/>
+          )}
+        </div>
+      </>}
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 5 ── */
+  function renderT1(){
+    return <div className="card">
+      <div className="card-step">Adım 6</div>
+      <h3>T1 Subkondral Kemik Sinyali</h3>
+      <div className="opts">
+        <Opt label="Normal" sub="Kemik iliği yağ sinyali korunmuş" sel={d.t1Sinyal==='normal'} onClick={()=>set('t1Sinyal','normal')}/>
+        <Opt label="Hafif düşük" sub="Fokal T1 sinyal azalması, subkondral ödem/skleroz" sel={d.t1Sinyal==='hafif_dusuk'} onClick={()=>set('t1Sinyal','hafif_dusuk')}/>
+        <Opt label="Belirgin düşük" sub="Yaygın T1 sinyal kaybı – aktif BME, tümör veya fraktür" sel={d.t1Sinyal==='belirgin_dusuk'} onClick={()=>set('t1Sinyal','belirgin_dusuk')}/>
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 6 ── */
+  function renderErozyon(){
+    return <div className="card">
+      <div className="card-step">Adım 7</div>
+      <h3>Erozyon</h3>
+      <div className="card-sub">mNY kriterlerine göre: Grade ≥ 2 bilateral veya ≥ 3 tek taraflı radyografik sakroiliit.</div>
+      <div className="opts">
+        <Opt label="Yok" sel={d.erozyon==='yok'} onClick={()=>set('erozyon','yok')}/>
+        <Opt label="Tek taraflı – hafif" sub="< 2 mm, yüzeyel kemik defekti" sel={d.erozyon==='tek_hafif'} onClick={()=>set('erozyon','tek_hafif')}/>
+        <Opt label="Tek taraflı – belirgin" sub="≥ 2 mm veya birden fazla odak" sel={d.erozyon==='tek_belirgin'} onClick={()=>set('erozyon','tek_belirgin')}/>
+        <Opt label="Tek taraflı – ileri" sub="Geniş subkondral kemik kaybı" sel={d.erozyon==='tek_ileri'} onClick={()=>set('erozyon','tek_ileri')}/>
+        <Opt label="Bilateral – hafif" sub="Her iki eklemde yüzeyel erozyon" sel={d.erozyon==='bilateral_hafif'} onClick={()=>set('erozyon','bilateral_hafif')}/>
+        <Opt label="Bilateral – belirgin" sub="Her iki eklemde derin erozyon" sel={d.erozyon==='bilateral_belirgin'} onClick={()=>set('erozyon','bilateral_belirgin')}/>
+        <Opt label="Bilateral – ileri" sub="Her iki eklemde geniş kemik yıkımı" sel={d.erozyon==='bilateral_ileri'} onClick={()=>set('erozyon','bilateral_ileri')}/>
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 7 ── */
+  function renderSkleroz(){
+    return <div className="card">
+      <div className="card-step">Adım 8</div>
+      <h3>Skleroz (Subkondral Dansite Artışı)</h3>
+      <div className="opts">
+        <Opt label="Yok" sel={d.skleroz==='yok'} onClick={()=>set('skleroz','yok')}/>
+        <Opt label="İliak dominant" sub="İliak yüzde belirgin skleroz – OKI, SpA için tipik" sel={d.skleroz==='iliak_dom'} onClick={()=>set('skleroz','iliak_dom')}/>
+        <Opt label="Sakral dominant" sub="Sakral yüzde belirgin skleroz" sel={d.skleroz==='sakral_dom'} onClick={()=>set('skleroz','sakral_dom')}/>
+        <Opt label="Bilateral eşit" sub="Her iki yüzde benzer skleroz – OA, SAPHO" sel={d.skleroz==='bilateral_esit'} onClick={()=>set('skleroz','bilateral_esit')}/>
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 8 ── */
+  function renderKontrast(){
+    return <div className="card">
+      <div className="card-step">Adım 9</div>
+      <h3>Kontrast Tutulumu (Gd sonrası)</h3>
+      <div className="opts">
+        {[
+          ['yok','Kontrast verilmedi / Yok','Tutulum izlenmedi veya incelenmedi'],
+          ['hafif','Hafif sübkondral','Minimal aktif inflamasyon işareti'],
+          ['belirgin','Belirgin sübkondral','Aktif inflamasyon – axSpA bulgusu'],
+          ['sinoviyal','Sinoviyal tutulum','Eklem içi sinoviyal kontrast'],
+          ['periostal','Periostal tutulum','Periostit – SAPHO sendromu bulgusu'],
+          ['abse','Abse duvarı / halka','Enfeksiyöz süreç işareti'],
+        ].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.kontrast===v} onClick={()=>set('kontrast',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 9 ── */
+  function renderSinoviyal(){
+    return <div className="card">
+      <div className="card-step">Adım 10</div>
+      <h3>Sinoviyal Sıvı / Eklem İçi Koleksiyon</h3>
+      <div className="opts">
+        {[['yok','Yok'],['minimal','Minimal','Fizyolojik sınırda'],['orta','Orta miktar','Anlamlı efüzyon, kapsül distansiyonu'],['fazla','Fazla','Belirgin efüzyon'],['abse','Abse','T2 yüksek, DWI kısıtlanmalı – septik bulgu']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.sinovyalSivi===v} onClick={()=>set('sinovyalSivi',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 10 ── */
+  function renderAnkiloz(){
+    return <div className="card">
+      <div className="card-step">Adım 11</div>
+      <h3>Ankiloz / Füzyon</h3>
+      <div className="opts">
+        {[['yok','Yok'],['fibrous_parsiyel','Parsiyel fibröz','Kısmi fibröz doku köprüsü'],['fibrous_tam','Tam fibröz','Eklem aralığı fibröz dokuyla oblitere'],['kemik_parsiyel','Parsiyel kemik köprüsü','Bölgesel ossifikasyon/sindezmofit'],['kemik_tam','Tam kemik köprüsü','Tam ankiloz – eklem aralığı yok']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.ankiloz===v} onClick={()=>set('ankiloz',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 11 ── */
+  function renderYumusak(){
+    return <div className="card">
+      <div className="card-step">Adım 12</div>
+      <h3>Periartiküler Yumuşak Doku</h3>
+      <div className="opts">
+        {[['normal','Normal','Çevre yumuşak dokular normal'],['periartikuler_odem','Periartiküler ödem','Ligamentöz veya kapsüler tutulum'],['abse','Abse formasyonu','Periartiküler veya psoas absesi'],['kitle','Yumuşak doku kitlesi','Tümöral infiltrasyon şüphesi']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.yumusak===v} onClick={()=>set('yumusak',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 12 ── */
+  function renderDwi(){
+    return <div className="card">
+      <div className="card-step">Adım 13</div>
+      <h3>DWI / Difüzyon Görüntüleme</h3>
+      <div className="opts">
+        {[['normal','Normal / Uygulanmadı'],['kisitlanma','Difüzyon kısıtlanması','Yüksek DWI + düşük ADC → enfeksiyon / tümör'],['serbest','Artmış difüzyon','Yüksek ADC → ödem ağırlıklı süreç']].map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.dwi===v} onClick={()=>set('dwi',v)}/>
+        )}
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+      </div>
+    </div>;
+  }
+
+  /* ── Step 13 ── */
+  function renderLezCheck(){
+    return <div className="card">
+      <div className="card-step">Adım 14</div>
+      <h3>Fokal Kemik Lezyonu</h3>
+      <div className="card-sub">Sakrum, iliak kanat veya komşu kemiklerde fokal lezyon var mı?</div>
+      {lezyonlar.length>0 && <div className="lez-list">
+        {lezyonlar.map((l,i)=><div key={i} className="lez-card">
+          <div className="lez-body">
+            <h4>Lezyon {i+1} – {l.lokalizasyon||'Belirtilmedi'}</h4>
+            <p>{[l.boyut&&'Boyut: '+l.boyut, l.t1t2, l.lezKontrast&&'Kt: '+l.lezKontrast].filter(Boolean).join(' · ')}</p>
+          </div>
+          <button className="lez-del" onClick={()=>setLezyonlar(p=>p.filter((_,j)=>j!==i))}>✕ Sil</button>
+        </div>)}
+      </div>}
+      <div className="opts">
+        <Opt label="Evet – Lezyon ekle" sub="Fokal kemik lezyonu mevcut, ayrıntı girilecek" sel={false} onClick={startLez}/>
+        <Opt label={lezyonlar.length>0?"Tamamlandı – Rapora git":"Hayır, fokal lezyon yok"} sub={lezyonlar.length>0?`${lezyonlar.length} lezyon kaydedildi`:'Fokal lezyon saptanmadı'} sel={d.fokalLezyon==='hayir'} onClick={()=>{set('fokalLezyon','hayir');}}/>
+      </div>
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        {(d.fokalLezyon==='hayir'||lezyonlar.length>0) && <button className="btn btn-suc" onClick={()=>setStep(RAPOR_STEP)}>Rapora Git →</button>}
+      </div>
+    </div>;
+  }
+
+  /* ── Lezyon Loop ── */
+  function renderLezStep(){
+    return <div className="card">
+      <div className="card-step">Lezyon {lezyonlar.length+1} · Adım {lezStep+1}/6 – {LEZ_NAMES[lezStep]}</div>
+      <h3>{LEZ_NAMES[lezStep]}</h3>
+      {renderLezContent()}
+      <div className="btns">
+        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
+        <button className="btn btn-pri" onClick={goNext}>{lezStep<LEZ_STEPS_COUNT-1?'İleri →':'Lezyon Kaydet ✓'}</button>
+      </div>
+    </div>;
+  }
+
+  function renderLezContent(){
+    switch(lezStep){
+      case 0: return <div className="opts">
+        {[['Sakrum gövdesi','Orta hat, H-sign bölgesi'],['Sakral ala','Lateral sakral kitle/lezyon'],['İliak kanat','İliak kemik gövdesi'],['Anterior SI ligaman bölgesi','Ön bağ tutulumu'],['Posterior SI ligaman bölgesi','Arka güçlü ligaman'],['Presakral yumuşak doku','Ekstraartiküler uzanım']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.lokalizasyon===v} onClick={()=>setLez('lokalizasyon',v)}/>
+        )}
+      </div>;
+      case 1: return <div className="opts">
+        {[['< 10 mm','Küçük odak'],['10–30 mm','Orta boyut'],['30–50 mm','Büyük lezyon'],['>50 mm','Dev lezyon']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.boyut===v} onClick={()=>setLez('boyut',v)}/>
+        )}
+      </div>;
+      case 2: return <div className="opts">
+        {[['T1↓ T2↑ – aktif ödem','Kemik ödemi / aktif inflamasyon'],['T1↓ T2↓ – sklerotik/fibröz','Yoğun sklerotik veya fibröz doku'],['T1↑ T2↑ – yağ/lipomatöz','Lipomatöz içerik'],['T1↓ T2↑↑ – kistik/sıvı','Sıvı içerikli lezyon'],['T1 T2 heterojen','Miks sinyal karakteri'],['T1=T2 izointens','Kas ile izointens, özellik yok']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.t1t2===v} onClick={()=>setLez('t1t2',v)}/>
+        )}
+      </div>;
+      case 3: return <div className="opts">
+        {[['Kısıtlanma (DWI↑ ADC↓)','Enfeksiyon / tümör / abse'],['Serbest difüzyon (ADC↑)','Ödem / nekroz ağırlıklı'],['DWI uygulanmadı / normal','Değerlendirilemedi']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.lezDwi===v} onClick={()=>setLez('lezDwi',v)}/>
+        )}
+      </div>;
+      case 4: return <div className="opts">
+        {[['Yok','Tutulum izlenmedi'],['Homojen tutulum','Solid tutulum'],['Halka tutulum','Abse / nekrotik merkez'],['Periferik tutulum','Yavaş doldurma paterni'],['Heterojen tutulum','Kompleks lezyon']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.lezKontrast===v} onClick={()=>setLez('lezKontrast',v)}/>
+        )}
+      </div>;
+      case 5: return <div className="opts">
+        {[['Serbest / intraosseöz','Komşu yapılara etki yok'],['Nöral foramene uzanım','Sinir kökü bası'],['Eklem boşluğuna uzanım','Ekstraartiküler yayılım'],['Presakral bölgeye uzanım','Yumuşak doku invazyonu'],['Spinal kanala uzanım','Medulla spinalis bası riski']].map(([v,s])=>
+          <Opt key={v} label={v} sub={s} sel={curLez?.komsuyapi===v} onClick={()=>setLez('komsuyapi',v)}/>
+        )}
+      </div>;
+      default: return null;
+    }
+  }
+
+  /* ── RAPOR ── */
+  function renderRapor(){
+    const dp = {
+      sagEklemAraligi:{normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
+      solEklemAraligi:{normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
+      kemikOdem:{yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'},
+      kemikOdemSiddet:{hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın'},
+      t1Sinyal:{normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'},
+      erozyon:{yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'},
+      skleroz:{yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'},
+      kontrast:{yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'},
+      sinovyalSivi:{yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse'},
+      ankiloz:{yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü (ankiloz)'},
+      yumusak:{normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse',kitle:'Yumuşak doku kitlesi'},
+      dwi:{normal:'Normal',kisitlanma:'Kısıtlanma mevcut',serbest:'Artmış difüzyon'},
+    };
+    const R = (k) => (dp[k]&&dp[k][d[k]])||d[k]||'—';
+
+    const top = results[0];
+    function yorum(){
+      if(!top) return 'Girilen bulgular doğrultusunda yeterli ayırıcı tanı oluşturulamadı. Lütfen bulgularınızı tekrar gözden geçiriniz.';
+      switch(top.id){
+        case 'axSpA_AS': return 'Bilateral simetrik kemik iliği ödemi, erozyon ve/veya iliak dominant skleroz paternleri aksiyel spondiloartropati (Ankilozan Spondilit) ile uyumludur. mNY ve ASAS kriterleri doğrultusunda klinisyenle değerlendirme önerilir.';
+        case 'nrAxSpA': return 'Aktif inflamatuar bulgular (özellikle bilateral kemik ödemi ve kontrast tutulumu) yapısal hasar olmaksızın non-radyografik axSpA ile uyumludur. Klinik, laboratuvar ve HLA-B27 ile korelasyon gerektirir.';
+        case 'septik': return 'Tek taraflı yoğun kemik ödemi, sinoviyal koleksiyon ve periartiküler değişiklikler septik artrit/osteomiyelit açısından acil değerlendirme gerektirir. Klinik korelasyon ve laboratuvar tetkiki (CRP, prokalsitonin, kan kültürü) ile birlikte ele alınmalıdır.';
+        case 'okI': return 'İliak dominant skleroz ve normal eklem aralığı ile Osteitis Kondensans İlii bulguları izlenmektedir. Genellikle benign, postpartum veya mekanik strese bağlı bir tablo olup klinik korelasyon önerilir.';
+        case 'stres': return 'Sakral kemik iliği ödemi ve T1 sinyal değişiklikleri stres/insüfisans fraktürü ile uyumludur. Sakral H-sign varlığı değerlendirilmeli, ince kesit T1 koronal görüntü ile fraktür hattı ortaya koyulabilir.';
+        case 'metastaz': return 'Fokal kemik lezyonu ve ilişkili bulgular tümöral infiltrasyon/metastaz açısından incelenmelidir. Primer odak araştırılması, onkolojik değerlendirme ve gerekirse biyopsi planlanmalıdır.';
+        case 'oa': return 'Dejeneratif değişiklikler (eklem daralması, bilateral skleroz) osteoartrit ile uyumludur. Semptomların şiddetine göre klinik takip planlanabilir.';
+        case 'stres': return 'Travmatik veya insüfisans fraktürü bulguları izlenmektedir. Kemik mineral yoğunluğu değerlendirmesi (DEXA) önerilebilir.';
+        default: return `Baskın tanı ${top.ad} (%${top.s} uyum skoru) olmakla birlikte klinik ve laboratuvar bulgularıyla korelasyon önerilir.`;
+      }
+    }
+
+    function copyRep(){
+      const txt = buildReportText(d,lezyonlar,results);
+      if(navigator.clipboard){navigator.clipboard.writeText(txt);}
+      else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+      alert('Rapor panoya kopyalandı.');
+    }
+    function printRep(){
+      const el=document.getElementById('printOverlay');
+      el.innerHTML=`<pre style="font-family:monospace;font-size:12px;line-height:1.7;white-space:pre-wrap;color:#000">${buildReportText(d,lezyonlar,results)}</pre>`;
+      el.style.display='block'; window.print(); el.style.display='none';
+    }
+    function downloadRep(){
+      const txt=buildReportText(d,lezyonlar,results);
+      const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='SI_Eklem_MRI_Raporu.txt';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    }
+
+    return <div>
+      {/* Header */}
+      <div className="card" style={{marginBottom:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:'.7rem',fontWeight:800,color:'var(--acc)',textTransform:'uppercase',letterSpacing:'1px'}}>Rapor</div>
+            <div style={{fontSize:'1.15rem',fontWeight:800,color:'var(--txt)'}}>Sakroiliak Eklem MRI</div>
+            <div style={{fontSize:'.78rem',color:'var(--txt2)',marginTop:2}}>
+              {d.taraf==='bilateral'?<><span className="sbadge sb-bil">Bilateral</span></>:d.taraf==='sag'?<span className="sbadge sb-sag">Sağ</span>:<span className="sbadge sb-sol">Sol</span>}
+              {d.yasGrubu && <> · {d.yasGrubu==='genc'?'18–45 yaş':d.yasGrubu==='orta'?'45–60 yaş':'60+ yaş'}</>}
+              {d.cinsiyet && <> · {d.cinsiyet==='erkek'?'Erkek':'Kadın'}</>}
+              {d.hlab27==='pozitif' && <> · <span style={{color:'var(--warn)'}}>HLA-B27 +</span></>}
+            </div>
+          </div>
+          <button className="btn btn-sec" onClick={()=>{setStep(0);setLezyonlar([]);setLezStep(-1);setCurLez(null);setD({yasGrubu:'',cinsiyet:'',klinik:'',hlab27:'',taraf:'bilateral',lateralite:'bilateral',sagEklemAraligi:'',solEklemAraligi:'',kemikOdem:'',kemikOdemSiddet:'',t1Sinyal:'',erozyon:'',skleroz:'',kontrast:'',sinovyalSivi:'',ankiloz:'',yumusak:'',dwi:'',fokalLezyon:''});}}>↺ Yeniden</button>
+        </div>
+      </div>
+
+      {/* Bulgular */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="sec-hdr">MRI Bulguları</div>
+        <table className="rep-tbl">
+          <tbody>
+            {(d.taraf==='bilateral'||d.taraf==='sag')&&<tr><td>Sağ eklem aralığı</td><td>{R('sagEklemAraligi')}</td></tr>}
+            {(d.taraf==='bilateral'||d.taraf==='sol')&&<tr><td>Sol eklem aralığı</td><td>{R('solEklemAraligi')}</td></tr>}
+            <tr><td>Kemik iliği ödemi (STIR)</td><td>{R('kemikOdem')}{d.kemikOdem!=='yok'&&d.kemikOdemSiddet?(dp.kemikOdemSiddet[d.kemikOdemSiddet]||''):''}</td></tr>
+            <tr><td>T1 subkondral sinyal</td><td>{R('t1Sinyal')}</td></tr>
+            <tr><td>Erozyon</td><td>{R('erozyon')}</td></tr>
+            <tr><td>Skleroz</td><td>{R('skleroz')}</td></tr>
+            <tr><td>Kontrast tutulumu</td><td>{R('kontrast')}</td></tr>
+            <tr><td>Sinoviyal sıvı</td><td>{R('sinovyalSivi')}</td></tr>
+            <tr><td>Ankiloz / Füzyon</td><td>{R('ankiloz')}</td></tr>
+            <tr><td>Yumuşak doku</td><td>{R('yumusak')}</td></tr>
+            <tr><td>DWI</td><td>{R('dwi')}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Lezyonlar */}
+      {lezyonlar.length>0 && <div className="card" style={{marginBottom:12}}>
+        <div className="sec-hdr">Fokal Lezyonlar</div>
+        {lezyonlar.map((l,i)=><div key={i} style={{background:'var(--surf2)',borderRadius:9,padding:'10px 14px',marginBottom:7,border:'1px solid var(--brd)'}}>
+          <div style={{fontWeight:700,fontSize:'.85rem',color:'var(--acc2)',marginBottom:4}}>Lezyon {i+1} – {l.lokalizasyon||'Belirtilmedi'}</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2px 16px',fontSize:'.8rem',color:'var(--txt2)'}}>
+            {l.boyut&&<div>Boyut: {l.boyut}</div>}
+            {l.t1t2&&<div>Sinyal: {l.t1t2}</div>}
+            {l.lezDwi&&<div>DWI: {l.lezDwi}</div>}
+            {l.lezKontrast&&<div>Kontrast: {l.lezKontrast}</div>}
+            {l.komsuyapi&&<div style={{gridColumn:'1/-1'}}>Komşu yapı: {l.komsuyapi}</div>}
+          </div>
+        </div>)}
+      </div>}
+
+      {/* Diferansiyel Tanı */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="sec-hdr">Ayırıcı Tanı — Ağırlıklı Skor</div>
+        {results.map((r,i)=><div key={r.id} className="diff-item">
+          <div className="diff-rank">{i+1}</div>
+          <div className="diff-info">
+            <div className="diff-name">{r.ad}</div>
+            <span className={`kat-tag ${r.cls}`}>{r.kat}</span>
+          </div>
+          <ProgBar v={r.s}/>
+          <div className="diff-pct">%{r.s}</div>
+        </div>)}
+        <div className="yorum"><strong>YORUM: </strong>{yorum()}</div>
+      </div>
+
+      {/* Export */}
+      <div className="exp-row">
+        <button className="btn btn-sec" onClick={copyRep}>📋 Kopyala</button>
+        <button className="btn btn-sec" onClick={printRep}>🖨 Yazdır</button>
+        <button className="btn btn-sec" onClick={downloadRep}>⬇ TXT İndir</button>
+      </div>
+    </div>;
+  }
+
+  return <div className="app">
+    <div className="hdr">
+      <div className="hdr-icon">🦴</div>
+      <h1>Sakroiliak Eklem MRI</h1>
+      <p>14 patoloji · Bilateral değerlendirme · Çok lezyonlu · Ağırlıklı skorlama</p>
+    </div>
+    <div className="prog-wrap">
+      <div className="prog-label">
+        <span className="prog-title">{curStepName}</span>
+        <span className="prog-pct">%{pct}</span>
+      </div>
+      <div className="prog-bar-bg"><div className="prog-bar" style={{width:pct+'%'}}/></div>
+    </div>
+    {render()}
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

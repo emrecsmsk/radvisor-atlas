@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rektum &amp; Anüs MRI — Karar Destek Sistemi</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root{
+  --bg:#0f0f17;--card:#1a1a2e;--card2:#16213e;
+  --purple:#7c3aed;--purple2:#6d28d9;--purple3:#5b21b6;
+  --accent:#a78bfa;--text:#e2e8f0;--muted:#94a3b8;
+  --border:#2d2d4e;--green:#10b981;--yellow:#f59e0b;
+  --red:#ef4444;--blue:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.prog-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--border);z-index:200}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));transition:width .4s ease}
+.app-hdr{background:linear-gradient(135deg,var(--card),var(--card2));border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:3px;z-index:100}
+.hdr-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--purple),var(--accent));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.hdr-title{font-size:17px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--muted)}
+.step-badge{margin-left:auto;background:rgba(124,58,237,.25);border:1px solid rgba(124,58,237,.4);color:var(--accent);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.wiz{max-width:820px;margin:0 auto;padding:22px 16px 110px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.card-hdr{background:linear-gradient(135deg,var(--purple3),var(--purple2));padding:18px 22px}
+.card-num{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.card-title{font-size:19px;font-weight:700;color:#fff}
+.card-desc{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px}
+.card-body{padding:22px}
+.fg{margin-bottom:18px}
+.flabel{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.finput{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.finput:focus{border-color:var(--purple)}
+textarea.finput{resize:vertical;min-height:70px}
+.rgroup{display:flex;flex-wrap:wrap;gap:8px}
+.rbtn{display:flex;align-items:center;gap:8px;padding:9px 15px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;font-size:13px;user-select:none}
+.rbtn:hover{border-color:var(--purple);background:rgba(124,58,237,.1)}
+.rbtn.on{border-color:var(--purple);background:rgba(124,58,237,.2);color:var(--accent)}
+.rdot{width:15px;height:15px;border-radius:50%;border:2px solid var(--border);transition:all .2s;flex-shrink:0}
+.rbtn.on .rdot{border-color:var(--purple);background:var(--purple)}
+.cbox{width:15px;height:15px;border-radius:4px;border:2px solid var(--border);transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px}
+.rbtn.on .cbox{border-color:var(--purple);background:var(--purple);color:#fff}
+.sdiv{margin:18px 0 14px;display:flex;align-items:center;gap:10px}
+.sdiv-line{flex:1;height:1px;background:var(--border)}
+.sdiv-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.loop-tag{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:8px;padding:9px 15px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--accent)}
+.loop-dot{width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0}
+.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.tgl-row:hover{border-color:var(--purple)}
+.tgl{width:42px;height:23px;border-radius:12px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0}
+.tgl.on{background:var(--purple)}
+.tgl-th{width:19px;height:19px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+.tgl.on .tgl-th{left:21px}
+.nav-foot{position:fixed;bottom:0;left:0;right:0;background:rgba(15,15,23,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;z-index:100}
+.nbtn{padding:11px 26px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.nbtn:disabled{opacity:.4;cursor:default}
+.btn-prev{background:var(--card2);color:var(--text);border:1px solid var(--border)!important}
+.btn-prev:hover:not(:disabled){border-color:var(--purple)!important}
+.btn-next{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}
+.btn-next:hover{opacity:.9;transform:translateY(-1px)}
+/* Report */
+.rep-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+.rep-hdr{background:linear-gradient(135deg,#1e1b4b,#2d1b69);padding:22px 24px}
+.rep-title{font-size:17px;font-weight:700;color:#fff}
+.rep-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:3px}
+.rep-body{padding:22px}
+.rep-sec{margin-bottom:26px}
+.rep-sec-title{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.rep-tbl{width:100%;border-collapse:collapse}
+.rep-tbl tr:nth-child(even) td{background:rgba(124,58,237,.05)}
+.rep-tbl td{padding:8px 11px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
+.rep-tbl td:first-child{color:var(--muted);font-size:12px;width:36%;white-space:nowrap}
+.rep-tbl td:last-child{color:var(--text);font-weight:500}
+.yorum{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(91,33,182,.05));border:1px solid rgba(124,58,237,.3);border-radius:12px;padding:18px;margin-top:14px}
+.yorum-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.diff-item{margin-bottom:13px}
+.diff-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.diff-name{font-size:14px;font-weight:600}
+.diff-cat{font-size:10px;color:var(--muted);margin-left:7px}
+.diff-pct{font-size:13px;font-weight:800}
+.diff-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.diff-fill{height:100%;border-radius:3px;transition:width .7s ease}
+.crit-list{display:flex;flex-wrap:wrap;gap:5px}
+.crit-chip{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(124,58,237,.12);color:var(--accent);border:1px solid rgba(124,58,237,.2)}
+.mrc-badge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700}
+.mrc-temiz{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.mrc-tehdit{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.mrc-tutulmus{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.exp-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+.exp-btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text);transition:all .2s;display:flex;align-items:center;gap:7px}
+.exp-btn:hover{border-color:var(--purple);color:var(--accent)}
+.exp-btn.pri{background:var(--purple);border-color:var(--purple);color:#fff}
+.info-box{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
+.info-green{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#10b981}
+.info-yellow{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}}
+@media print{
+  .prog-bar,.app-hdr,.nav-foot,.exp-row{display:none!important}
+  body{background:#fff!important;color:#000!important}
+  .wiz{padding:0!important}
+  .rep-wrap{border:none!important;border-radius:0!important;background:#fff!important}
+  .rep-hdr{background:#1e1b4b!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .rep-body{padding:16px!important}
+  .rep-tbl td{color:#000!important;border-bottom:1px solid #ddd!important}
+  .rep-tbl td:first-child{color:#555!important}
+  .rep-tbl tr:nth-child(even) td{background:#f9f7ff!important}
+  .yorum{border:1px solid #ccc!important;background:#f5f3ff!important}
+  .diff-name,.diff-pct{color:#000!important}
+  .diff-cat,.rep-sec-title,.yorum-title{color:#5b21b6!important}
+  .diff-bg{background:#ddd!important}
+  .crit-chip{color:#5b21b6!important;border-color:#c4b5fd!important;background:#ede9fe!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect} = React;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PATOLOJİ PROFİLLERİ  (ODT tablosu + klinik bilgi)
+═══════════════════════════════════════════════════════════════════════════ */
+const PROFILES = [
+  {
+    id:'adeno', name:'Rektum Adenokarsinomu', cat:'Malign Epitelyal', clr:'#ef4444',
+    t1:['hafif_hipo','izo'], t2:['orta_hiper'], chem:['degismez'],
+    dwi:['belirgin','guclu'], adc:['dusuk'],
+    ivkm:['heterojen','guclu_het'], lok:['rektum','rektosigmoid'],
+    info:['T2: Orta hiperintens duvar kalınlaşması','DWI: Güçlü/belirgin kısıtlama','ADC: Düşük (<1.0)','IVKM: Heterojen persistan','Mezorektum & MRC invazyonu kritik — T staging için TME mesafesi ölç'],
+  },
+  {
+    id:'scc', name:'Anal Skuamöz Hücreli Karsinom', cat:'Malign Epitelyal', clr:'#f97316',
+    t1:['izo'], t2:['orta_hiper'], chem:['degismez'],
+    dwi:['var','belirgin'], adc:['dusuk'],
+    ivkm:['erken_guclu','heterojen'], lok:['anal','perianal'],
+    info:['Anal kanal / perianal yerleşim','T2: Orta hiperintens','IVKM: Erken güçlü heterojen kontrastlanma','İnguinal LN tutulumu sık — HPV ilişkili'],
+  },
+  {
+    id:'gist', name:'Rektal GIST', cat:'Mezenkimal Tümör', clr:'#eab308',
+    t1:['izo'], t2:['hiper','heterojen'], chem:['degismez'],
+    dwi:['var','belirgin'], adc:['dusuk','orta'],
+    ivkm:['guclu_het'], lok:['rektum'],
+    info:['T2: Hiperintens/heterojen — nekroz odakları tipik','IVKM: Güçlü heterojen kontrastlanma','Submukozal başlangıç, ekzofitik büyüme','c-KIT / DOG1 pozitifliği beklenir'],
+  },
+  {
+    id:'lenfoma', name:'Lenfoma', cat:'Hematolojik', clr:'#a855f7',
+    t1:['hipo'], t2:['hafif_hiper'], chem:['degismez'],
+    dwi:['guclu'], adc:['cok_dusuk'],
+    ivkm:['hafif_homo'], lok:['rektum','anal'],
+    info:['T1: Hipointens / T2: Hafif hiperintens — homojen yapı','DWI: Güçlü kısıtlama / ADC: Çok düşük','IVKM: Hafif homojen persistan','Geniş yayılım — sistemik tutulum araştır'],
+  },
+  {
+    id:'metastaz', name:'Metastaz', cat:'Sekonder Tümör', clr:'#dc2626',
+    t1:['hipo'], t2:['hiper','heterojen'], chem:['degismez'],
+    dwi:['var','belirgin'], adc:['dusuk'],
+    ivkm:['rim','heterojen'], lok:['rektum','perianal'],
+    info:['T1: Hipointens / T2: Heterojen hiperintens','IVKM: Rim veya heterojen kontrastlanma','Primer tümör öyküsü sorgulanmalı','Over, mide, mesane metastazları görece sık'],
+  },
+  {
+    id:'endometriozis', name:'Endometriozis (Rektovajinal)', cat:'İnfiltratif Benign', clr:'#ec4899',
+    t1:['hiper'], t2:['hipofibrozis','heterojen'], chem:['degismez'],
+    dwi:['hafif'], adc:['hafif_dusuk','orta'],
+    ivkm:['minimal','fibrotik'], lok:['rektum','retrorektal'],
+    info:['T1: Hiperintens odaklar — hemosiderin/kanama','T2: Hipointens fibrozis, "shading" bulgusu','IVKM: Minimal/geç fibrotik','Rektovajinal septum tutulumu tipik'],
+  },
+  {
+    id:'lipom', name:'Rektal Lipom', cat:'Benign Mezenkimal', clr:'#10b981',
+    t1:['hiper'], t2:['orta_hiper','hiper'], chem:['out_phase'],
+    dwi:['yok'], adc:['yuksek'],
+    ivkm:['kontrastlanmiyor'], lok:['rektum'],
+    info:['T1: Yağ ile izointens (hiperintens)','Chemical Shift: Out-phase sinyal KAYBI — PATOGNOMONİK','DWI: Kısıtlama yok / ADC: Yüksek','IVKM: Kontrastlanmıyor — benign lezyon'],
+  },
+  {
+    id:'abse', name:'Abse (Perianal / İskiorektal)', cat:'İnflamatuvar', clr:'#f59e0b',
+    t1:['hipo'], t2:['cok_hiper'], chem:['degismez'],
+    dwi:['guclu'], adc:['cok_dusuk'],
+    ivkm:['rim'], lok:['perianal','anal','iskiorektal'],
+    info:['T2: Çok hiperintens sıvı içerik (pü)','DWI: Güçlü kısıtlama / ADC: Çok düşük — viskoz pü','IVKM: Rim kontrastlanma (duvar)','Klinik: Ateş, lokal şişlik, ağrı'],
+  },
+  {
+    id:'fistul', name:'Fistül Traktı', cat:'İnflamatuvar', clr:'#3b82f6',
+    t1:['hipo'], t2:['hiper'], chem:['degismez'],
+    dwi:['hafif','var'], adc:['orta'],
+    ivkm:['rim','duvar'], lok:['perianal','anal'],
+    info:['T2: Hiperintens lineer/tübüler yapı','IVKM: Rim / duvar kontrastlanma','DWI: Hafif kısıtlama (aktif inflamasyon)','Parks sınıflaması için sfinkter ilişkisi kritik'],
+  },
+  {
+    id:'mukosel', name:'Mukosel / Kistik Lezyon', cat:'Benign Kistik', clr:'#06b6d4',
+    t1:['hipo'], t2:['cok_hiper'], chem:['degismez'],
+    dwi:['shine'], adc:['yuksek'],
+    ivkm:['kontrastlanmiyor'], lok:['rektum','retrorektal'],
+    info:['T1: Hipointens / T2: Çok hiperintens (su gibi)','DWI: Shine-through — yüksek ADC, gerçek kısıtlama YOK','IVKM: Kontrastlanmıyor','Düzgün sınırlı kistik yapı, ince kapsül'],
+  },
+  {
+    id:'duplikasyon', name:'Duplikasyon Kisti', cat:'Konjenital Kistik', clr:'#0ea5e9',
+    t1:['hipo'], t2:['cok_hiper'], chem:['degismez'],
+    dwi:['yok'], adc:['yuksek'],
+    ivkm:['ince_duvar'], lok:['rektum','retrorektal'],
+    info:['T2: Çok hiperintens (su) / DWI: Kısıtlama yok','IVKM: İnce duvar kontrastlanması','Genellikle retrorektal / presaral','Konjenital köken — genç yaş grubu'],
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKOR MOTORİ
+═══════════════════════════════════════════════════════════════════════════ */
+const W = {chem:5, dwi:4, t2:3, adc:3, t1:2, ivkm:2, lok:2};
+
+function calcDiff(k){
+  return PROFILES.map(p=>{
+    let sc=0, mx=0, matched=[];
+    [['t1',k.t1],['t2',k.t2],['chem',k.chem],['dwi',k.dwi],['adc',k.adc],['ivkm',k.ivkm]].forEach(([f,v])=>{
+      if(!p[f]||!v) return;
+      const w=W[f]||2; mx+=w;
+      if(p[f].includes(v)){sc+=w; matched.push(f.toUpperCase());}
+    });
+    if(k.lok&&p.lok){mx+=W.lok; if(p.lok.includes(k.lok)){sc+=W.lok; matched.push('LOK');}}
+    return {...p, pct: mx>0?Math.round(sc/mx*100):0, matched};
+  }).sort((a,b)=>b.pct-a.pct).filter(r=>r.pct>12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KÜÇÜK BİLEŞENLER
+═══════════════════════════════════════════════════════════════════════════ */
+function Radio({opts,val,chg}){
+  return <div className="rgroup">{opts.map(o=>(
+    <div key={o.v} className={`rbtn${val===o.v?' on':''}`} onClick={()=>chg(o.v)}>
+      <div className="rdot"/>{o.l}
+    </div>
+  ))}</div>;
+}
+function Multi({opts,val=[],chg}){
+  const tog=v=>chg(val.includes(v)?val.filter(x=>x!==v):[...val,v]);
+  return <div className="rgroup">{opts.map(o=>(
+    <div key={o.v} className={`rbtn${val.includes(o.v)?' on':''}`} onClick={()=>tog(o.v)}>
+      <div className="cbox">{val.includes(o.v)?'✓':''}</div>{o.l}
+    </div>
+  ))}</div>;
+}
+function Tgl({lbl,val,chg}){
+  return(
+    <div className="tgl-row" onClick={()=>chg(!val)}>
+      <span style={{fontSize:14}}>{lbl}</span>
+      <div className={`tgl${val?' on':''}`}><div className="tgl-th"/></div>
+    </div>
+  );
+}
+function Sdiv({lbl}){
+  return <div className="sdiv"><div className="sdiv-line"/><div className="sdiv-lbl">{lbl}</div><div className="sdiv-line"/></div>;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SABITLER
+═══════════════════════════════════════════════════════════════════════════ */
+const TOTAL=19;
+const mkK=()=>({lok:'',sev:'',saat:'',analD:'',kontur:'',bAP:'',bT:'',bCC:'',t1:'',t2:'',chem:'degismez',dwi:'',adc:'',ivkm:'',kontPat:'',cevre:'',organInv:[],mrcMm:'',tme:'',lnSay:'',lnBoy:'',lnYer:'',not:''});
+const mkF=()=>({saat:'',disAc:'',intMes:'',tip:'',dal:'',karsi:'yok',abse:'yok',infla:'yok',not:''});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANA UYGULAMA
+═══════════════════════════════════════════════════════════════════════════ */
+function App(){
+  const [step,setStep]=useState(0);
+  const [hasta,setHasta]=useState({ad:'',yas:'',cin:'',endik:'',cert:''});
+  const [tek,setTek]=useState({tesla:'1.5T',coil:'Vücut sarmal',sek:['T2_sag','T2_aks','DWI'],kont:false});
+  const [genel,setGenel]=useState({sfDis:'',sfIs:'',lev:'',rDuv:'',periYag:'',not:''});
+  const [lez,setLez]=useState({kitle:false,fistul:false});
+  const [kSay,setKSay]=useState(1);
+  const [kitleler,setKitleler]=useState([]);
+  const [ki,setKi]=useState(-1);
+  const [fSay,setFSay]=useState(1);
+  const [fistullar,setFistullar]=useState([]);
+  const [fi,setFi]=useState(-1);
+  const [ek,setEk]=useState({idrar:'',kemik:'',diger:'',not:''});
+
+  /* ── Navigasyon ─────────────────────────────────────────────────────────── */
+  function goNext(){
+    switch(step){
+      case 0: case 1: case 2: setStep(step+1); break;
+      case 3:
+        if(lez.kitle){setStep(4);}
+        else if(lez.fistul){setStep(12);}
+        else{setStep(17);}
+        break;
+      case 4:{
+        const init=Array.from({length:kSay},mkK);
+        setKitleler(init); setKi(0); setStep(5);
+        break;}
+      case 5: case 6: case 7: case 8: case 9: case 10: setStep(step+1); break;
+      case 11: finK(); break;
+      case 12:
+        if(lez.fistul&&fSay>0){
+          const init=Array.from({length:fSay},mkF);
+          setFistullar(init); setFi(0); setStep(13);
+        } else {setStep(17);}
+        break;
+      case 13: case 14: case 15: setStep(step+1); break;
+      case 16: finF(); break;
+      case 17: setStep(18); break;
+    }
+  }
+  function goPrev(){
+    switch(step){
+      case 0: break;
+      case 1: case 2: case 3: setStep(step-1); break;
+      case 4: setStep(3); break;
+      case 5:
+        if(ki>0){setKi(ki-1); setStep(11);}
+        else{setStep(4);}
+        break;
+      case 6: case 7: case 8: case 9: case 10: case 11: setStep(step-1); break;
+      case 12:
+        if(lez.kitle){setStep(4);}
+        else{setStep(3);}
+        break;
+      case 13:
+        if(fi>0){setFi(fi-1); setStep(16);}
+        else{setStep(12);}
+        break;
+      case 14: case 15: case 16: setStep(step-1); break;
+      case 17: setStep(12); break;
+      case 18: setStep(17); break;
+    }
+  }
+  function finK(){
+    const nx=ki+1;
+    if(nx<kSay){setKi(nx); setStep(5);}
+    else{setKi(-1); setStep(12);}
+  }
+  function finF(){
+    const nx=fi+1;
+    if(nx<fSay){setFi(nx); setStep(13);}
+    else{setFi(-1); setStep(17);}
+  }
+  function updK(f,v){
+    if(ki<0) return;
+    setKitleler(p=>{const a=[...p]; a[ki]={...a[ki],[f]:v}; return a;});
+  }
+  function updF(f,v){
+    if(fi<0) return;
+    setFistullar(p=>{const a=[...p]; a[fi]={...a[fi],[f]:v}; return a;});
+  }
+  const ck=ki>=0?(kitleler[ki]||mkK()):mkK();
+  const cf=fi>=0?(fistullar[fi]||mkF()):mkF();
+  const pct=Math.round(step/(TOTAL-1)*100);
+
+  /* ── S0: Hasta ─────────────────────────────────────────────────────────── */
+  function s0(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Adım 1 / {TOTAL}</div><div className="card-title">Hasta Bilgileri</div><div className="card-desc">Klinik bilgiler ve endikasyon</div></div>
+      <div className="card-body">
+        <div className="grid2">
+          <div className="fg"><label className="flabel">Ad Soyad / Protokol</label><input className="finput" value={hasta.ad} onChange={e=>setHasta(p=>({...p,ad:e.target.value}))} placeholder="Ad Soyad veya protokol no"/></div>
+          <div className="fg"><label className="flabel">Yaş</label><input className="finput" type="number" value={hasta.yas} onChange={e=>setHasta(p=>({...p,yas:e.target.value}))} placeholder="Yıl"/></div>
+        </div>
+        <div className="fg"><label className="flabel">Cinsiyet</label>
+          <Radio opts={[{v:'erkek',l:'Erkek'},{v:'kadin',l:'Kadın'}]} val={hasta.cin} chg={v=>setHasta(p=>({...p,cin:v}))}/>
+        </div>
+        <div className="fg"><label className="flabel">Endikasyon / Ön Tanı</label>
+          <textarea className="finput" value={hasta.endik} onChange={e=>setHasta(p=>({...p,endik:e.target.value}))} placeholder="Rektum kitlesi staging, perianal fistül, tedavi yanıtı izlemi..." rows={2}/>
+        </div>
+        <div className="fg"><label className="flabel">Cerrahi / Tedavi Öyküsü</label>
+          <input className="finput" value={hasta.cert} onChange={e=>setHasta(p=>({...p,cert:e.target.value}))} placeholder="Önceki rektum cerrahisi, kemoradyoterapi, sfinkter tamiri..."/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S1: Teknik ─────────────────────────────────────────────────────────── */
+  function s1(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Adım 2 / {TOTAL}</div><div className="card-title">MRI Teknik Bilgileri</div><div className="card-desc">Cihaz, sekanslar ve kontrast</div></div>
+      <div className="card-body">
+        <div className="grid2">
+          <div className="fg"><label className="flabel">Alan Gücü</label>
+            <Radio opts={[{v:'1.5T',l:'1.5 Tesla'},{v:'3T',l:'3 Tesla'}]} val={tek.tesla} chg={v=>setTek(p=>({...p,tesla:v}))}/>
+          </div>
+          <div className="fg"><label className="flabel">Coil</label>
+            <Radio opts={[{v:'Vücut sarmal',l:'Vücut sarmal'},{v:'Faz dizili',l:'Faz dizili'},{v:'Pelvik',l:'Pelvik'}]} val={tek.coil} chg={v=>setTek(p=>({...p,coil:v}))}/>
+          </div>
+        </div>
+        <div className="fg"><label className="flabel">Uygulanan Sekanslar</label>
+          <Multi opts={[
+            {v:'T2_sag',l:'T2 Sagittal'},{v:'T2_aks',l:'T2 Aksiyel / Oblique'},{v:'T2_kor',l:'T2 Koronal'},
+            {v:'T1_aks',l:'T1 Aksiyel'},{v:'DWI',l:'DWI'},{v:'T1_fatsat',l:'T1 Fat-sat'},
+            {v:'T1_kont',l:'T1 Kontrastlı'},{v:'DCE',l:'DCE / Dinamik'},
+          ]} val={tek.sek} chg={v=>setTek(p=>({...p,sek:v}))}/>
+        </div>
+        <Tgl lbl="İntravenöz Kontrast Madde (IVKM) Uygulandı" val={tek.kont} chg={v=>setTek(p=>({...p,kont:v}))}/>
+      </div>
+    </div>
+  );}
+
+  /* ── S2: Genel ──────────────────────────────────────────────────────────── */
+  function s2(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Adım 3 / {TOTAL}</div><div className="card-title">Genel Pelvik Değerlendirme</div><div className="card-desc">Sfinkter kompleksi, rektum duvarı ve perirektal doku</div></div>
+      <div className="card-body">
+        <Sdiv lbl="Sfinkter Kompleksi"/>
+        <div className="fg"><label className="flabel">Dış Sfinkter (Sfinkter Ani Eksternus)</label>
+          <Radio opts={[{v:'normal',l:'Normal'},{v:'incelme',l:'İncelme / Atrofi'},{v:'yirtik',l:'Yırtık / Defekt'},{v:'deger',l:'Değerlendirilemedi'}]} val={genel.sfDis} chg={v=>setGenel(p=>({...p,sfDis:v}))}/>
+        </div>
+        <div className="fg"><label className="flabel">İç Sfinkter (Sfinkter Ani İnternus)</label>
+          <Radio opts={[{v:'normal',l:'Normal'},{v:'incelme',l:'İncelme'},{v:'kalinlasma',l:'Kalınlaşma'},{v:'yirtik',l:'Yırtık / Defekt'}]} val={genel.sfIs} chg={v=>setGenel(p=>({...p,sfIs:v}))}/>
+        </div>
+        <div className="fg"><label className="flabel">Levator Ani</label>
+          <Radio opts={[{v:'normal',l:'Normal'},{v:'incelme',l:'İncelme / Atrofi'},{v:'defekt',l:'Defekt'}]} val={genel.lev} chg={v=>setGenel(p=>({...p,lev:v}))}/>
+        </div>
+        <Sdiv lbl="Rektum ve Perirektal Doku"/>
+        <div className="fg"><label className="flabel">Rektum Duvar Kalınlığı</label>
+          <Radio opts={[{v:'normal',l:'Normal (≤3 mm)'},{v:'hafif',l:'Hafif kalınlaşma'},{v:'belirgin',l:'Belirgin kalınlaşma (≥5 mm)'}]} val={genel.rDuv} chg={v=>setGenel(p=>({...p,rDuv:v}))}/>
+        </div>
+        <div className="fg"><label className="flabel">Perirektal Yağ Doku</label>
+          <Radio opts={[{v:'temiz',l:'Temiz'},{v:'stranding',l:'Yağ stranding (inflamasyon)'},{v:'kirli',l:'Kirli — invazyon şüphesi'}]} val={genel.periYag} chg={v=>setGenel(p=>({...p,periYag:v}))}/>
+        </div>
+        <div className="fg"><label className="flabel">Ek Notlar</label>
+          <textarea className="finput" value={genel.not} onChange={e=>setGenel(p=>({...p,not:e.target.value}))} rows={2} placeholder="Genel pelvik bulgular, komşu yapılar..."/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S3: Lezyon ─────────────────────────────────────────────────────────── */
+  function s3(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Adım 4 / {TOTAL}</div><div className="card-title">Lezyon Tespiti</div><div className="card-desc">Kitle ve/veya fistül varlığını işaretleyin</div></div>
+      <div className="card-body">
+        <Tgl lbl="🔴  Kitle / Solid Lezyon Saptandı" val={lez.kitle} chg={v=>setLez(p=>({...p,kitle:v}))}/>
+        <Tgl lbl="🔵  Fistül Traktı / Perianal Hastalık Saptandı" val={lez.fistul} chg={v=>setLez(p=>({...p,fistul:v}))}/>
+        {!lez.kitle&&!lez.fistul&&(
+          <div className="info-box info-green">Kitle ve fistül saptanmamış — ek bulgular adımına yönlendirilecek.</div>
+        )}
+      </div>
+    </div>
+  );}
+
+  /* ── S4: Kitle Sayısı ───────────────────────────────────────────────────── */
+  function s4(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle — Ön Ayar</div><div className="card-title">Kitle Sayısı</div><div className="card-desc">Değerlendirilecek kitle / lezyon sayısı</div></div>
+      <div className="card-body">
+        <div className="fg"><label className="flabel">Kaç Kitle?</label>
+          <Radio opts={[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},{v:5,l:'5+'}]} val={kSay} chg={v=>setKSay(Number(v))}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S5: Kitle Lokalizasyon ─────────────────────────────────────────────── */
+  function s5(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">Lokalizasyon</div><div className="card-desc">Anatomik konum ve saat kadranı</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} değerlendiriliyor</div>
+        <div className="fg"><label className="flabel">Anatomik Bölge</label>
+          <Radio opts={[
+            {v:'rektum',l:'Rektum'},{v:'rektosigmoid',l:'Rektosigmoid bileşke'},
+            {v:'anal',l:'Anal kanal'},{v:'perianal',l:'Perianal'},
+            {v:'iskiorektal',l:'İskiorektal fossa'},{v:'retrorektal',l:'Retrorektal / Presaral'},
+          ]} val={ck.lok} chg={v=>updK('lok',v)}/>
+        </div>
+        {(ck.lok==='rektum'||ck.lok==='rektosigmoid')&&(
+          <div className="fg"><label className="flabel">Rektum Seviyesi (Anal kenardan uzaklık)</label>
+            <Radio opts={[{v:'ust',l:'Üst rektum (>10 cm)'},{v:'orta',l:'Orta rektum (5–10 cm)'},{v:'alt',l:'Alt rektum (<5 cm)'}]} val={ck.sev} chg={v=>updK('sev',v)}/>
+          </div>
+        )}
+        <div className="fg"><label className="flabel">Süpin Pozisyonda Saat Kadranı</label>
+          <Radio opts={[
+            {v:'12',l:'12'},{v:'3',l:'3'},{v:'6',l:'6'},{v:'9',l:'9'},
+            {v:'12-3',l:'12–3'},{v:'3-6',l:'3–6'},{v:'6-9',l:'6–9'},{v:'9-12',l:'9–12'},
+            {v:'sirkumf',l:'Sirkümferansiyel'},
+          ]} val={ck.saat} chg={v=>updK('saat',v)}/>
+        </div>
+        {(ck.lok==='anal'||ck.lok==='perianal')&&(
+          <div className="fg"><label className="flabel">Anal Girişe Mesafe (cm)</label>
+            <input className="finput" type="number" step="0.5" value={ck.analD} onChange={e=>updK('analD',e.target.value)} placeholder="cm"/>
+          </div>
+        )}
+      </div>
+    </div>
+  );}
+
+  /* ── S6: Kitle Morfoloji ────────────────────────────────────────────────── */
+  function s6(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">Morfoloji</div><div className="card-desc">Boyut, kontur ve şekil özellikleri</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Morfoloji</div>
+        <div className="fg"><label className="flabel">Kontur</label>
+          <Radio opts={[{v:'duzgun',l:'Düzgün'},{v:'lobule',l:'Lobüle'},{v:'duzensiz',l:'Düzensiz / Speküle'}]} val={ck.kontur} chg={v=>updK('kontur',v)}/>
+        </div>
+        <Sdiv lbl="Boyutlar (mm)"/>
+        <div className="grid3">
+          <div className="fg"><label className="flabel">AP</label><input className="finput" type="number" value={ck.bAP} onChange={e=>updK('bAP',e.target.value)} placeholder="AP mm"/></div>
+          <div className="fg"><label className="flabel">Transvers</label><input className="finput" type="number" value={ck.bT} onChange={e=>updK('bT',e.target.value)} placeholder="T mm"/></div>
+          <div className="fg"><label className="flabel">Kraniyokaudal</label><input className="finput" type="number" value={ck.bCC} onChange={e=>updK('bCC',e.target.value)} placeholder="CC mm"/></div>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S7: T1 / T2 / Chem ─────────────────────────────────────────────────── */
+  function s7(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">Sinyal Özellikleri</div><div className="card-desc">T1A, T2A ve Chemical Shift bulguları</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Sinyal Karakterizasyonu</div>
+        <div className="fg"><label className="flabel">T1A Sinyali</label>
+          <Radio opts={[
+            {v:'hipo',l:'Hipointens'},{v:'hafif_hipo',l:'İzointens / Hafif hipointens'},
+            {v:'izo',l:'İzointens'},{v:'hiper',l:'Hiperintens (yağ/kanama)'},{v:'heterojen',l:'Heterojen'},
+          ]} val={ck.t1} chg={v=>updK('t1',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">T2A Sinyali</label>
+          <Radio opts={[
+            {v:'hipo',l:'Hipointens (fibröz/kalsifik)'},{v:'hafif_hiper',l:'Hafif hiperintens'},
+            {v:'orta_hiper',l:'Orta hiperintens'},{v:'hiper',l:'Hiperintens'},
+            {v:'cok_hiper',l:'Çok hiperintens (su gibi)'},{v:'heterojen',l:'Heterojen'},
+            {v:'hipofibrozis',l:'Heterojen / Hipointens fibrozis'},
+          ]} val={ck.t2} chg={v=>updK('t2',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Chemical Shift</label>
+          <Radio opts={[
+            {v:'degismez',l:'Değişmez — yağ değil'},
+            {v:'out_phase',l:'Out-phase sinyal kaybı ★  YAĞ İÇERİKLİ'},
+          ]} val={ck.chem} chg={v=>updK('chem',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S8: DWI / ADC ──────────────────────────────────────────────────────── */
+  function s8(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">DWI & ADC</div><div className="card-desc">Difüzyon ağırlıklı görüntüleme bulguları</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — DWI / ADC</div>
+        <div className="fg"><label className="flabel">DWI Kısıtlama Derecesi</label>
+          <Radio opts={[
+            {v:'yok',l:'Kısıtlama yok'},{v:'shine',l:'Shine-through (ADC yüksek)'},
+            {v:'hafif',l:'Hafif kısıtlama'},{v:'var',l:'Kısıtlama var'},
+            {v:'belirgin',l:'Belirgin kısıtlama'},{v:'guclu',l:'Güçlü kısıtlama'},
+          ]} val={ck.dwi} chg={v=>updK('dwi',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">ADC Harita Karakteri</label>
+          <Radio opts={[
+            {v:'yuksek',l:'Yüksek (>1.5 ×10⁻³ mm²/s)'},{v:'orta',l:'Orta (1.0–1.5)'},
+            {v:'hafif_dusuk',l:'Hafif düşük (0.9–1.0)'},{v:'dusuk',l:'Düşük (<1.0)'},
+            {v:'cok_dusuk',l:'Çok düşük (<0.7)'},
+          ]} val={ck.adc} chg={v=>updK('adc',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S9: IVKM ───────────────────────────────────────────────────────────── */
+  function s9(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">IVKM / Kontrast</div><div className="card-desc">İntravenöz kontrast madde sonrası bulgular</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Kontrast</div>
+        {!tek.kont&&<div className="info-box info-yellow">Kontrast uygulanmamış — bilgi varsa girin, yoksa ilerleyin.</div>}
+        <div className="fg"><label className="flabel">Kontrast Karakteri</label>
+          <Radio opts={[
+            {v:'kontrastlanmiyor',l:'Kontrastlanmıyor'},{v:'ince_duvar',l:'İnce duvar kontrastlanması'},
+            {v:'minimal',l:'Minimal'},{v:'hafif_homo',l:'Hafif homojen'},
+            {v:'rim',l:'Rim kontrastlanma'},{v:'duvar',l:'Duvar / Periferal'},
+            {v:'heterojen',l:'Heterojen'},{v:'erken_guclu',l:'Erken güçlü'},
+            {v:'guclu_het',l:'Güçlü heterojen (nekroz var)'},{v:'fibrotik',l:'Geç / Fibrotik'},
+          ]} val={ck.ivkm} chg={v=>updK('ivkm',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Kontrast Kinetik Paterni</label>
+          <Radio opts={[
+            {v:'yok',l:'Yok / Uygulanmadı'},{v:'persistan',l:'Persistan'},
+            {v:'wash_out',l:'Wash-out'},{v:'heterojen_dev',l:'Heterojen devam eder'},{v:'gec_faz',l:'Geç faz / Fibrotik'},
+          ]} val={ck.kontPat} chg={v=>updK('kontPat',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S10: Yayılım ───────────────────────────────────────────────────────── */
+  function s10(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">Lokal Yayılım</div><div className="card-desc">Çevre yağ doku, organ invazyonu, MRC ve TME</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Yayılım</div>
+        <div className="fg"><label className="flabel">Perirektal Yağ / Çevre Doku</label>
+          <Radio opts={[{v:'temiz',l:'Temiz'},{v:'kirli',l:'Kirli / İnfiltrasyon şüphesi'},{v:'invaze',l:'Belirgin invazyon'}]} val={ck.cevre} chg={v=>updK('cevre',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Komşu Organ İnvazyonu</label>
+          <Multi opts={[
+            {v:'sfinkter',l:'Sfinkter kompleksi'},{v:'mesane',l:'Mesane'},
+            {v:'prostat_uv',l:'Prostat / Uterus / Vajina'},{v:'seminal',l:'Seminal vezikül'},
+            {v:'levator',l:'Levator ani'},{v:'sakrum',l:'Sakrum / Koksiks'},
+          ]} val={ck.organInv} chg={v=>updK('organInv',v)}/>
+        </div>
+        <div className="grid2">
+          <div className="fg"><label className="flabel">MRC Mesafesi (mm)</label>
+            <input className="finput" type="number" step="0.5" value={ck.mrcMm} onChange={e=>updK('mrcMm',e.target.value)} placeholder="mm"/>
+          </div>
+          <div className="fg"><label className="flabel">TME Planı ile İlişki</label>
+            <Radio opts={[{v:'temiz',l:'Temiz (>1 mm)'},{v:'tehdit',l:'Tehdit (<1 mm)'},{v:'tutulmus',l:'Tutulmuş'}]} val={ck.tme} chg={v=>updK('tme',v)}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S11: Lenf Nodu ─────────────────────────────────────────────────────── */
+  function s11(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">Lenf Nodu Değerlendirmesi</div><div className="card-desc">Mezorektum ve bölgesel lenf nodları</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Lenf Nodu</div>
+        <div className="grid2">
+          <div className="fg"><label className="flabel">Mezorektum LN Sayısı</label>
+            <input className="finput" type="number" value={ck.lnSay} onChange={e=>updK('lnSay',e.target.value)} placeholder="0"/>
+          </div>
+          <div className="fg"><label className="flabel">En Büyük LN (mm)</label>
+            <input className="finput" type="number" value={ck.lnBoy} onChange={e=>updK('lnBoy',e.target.value)} placeholder="mm"/>
+          </div>
+        </div>
+        <div className="fg"><label className="flabel">LN Yerleşimi ve Özelliği</label>
+          <Radio opts={[
+            {v:'yok',l:'Saptanmadı'},{v:'mezorektum',l:'Mezorektum (normal boyut)'},
+            {v:'mezomrc',l:'Mezorektum — MRC yakın'},{v:'inguinal',l:'İnguinal'},
+            {v:'lateral',l:'Lateral pelvik'},{v:'suspeli',l:'Boyut / sinyal atipi (şüpheli)'},
+          ]} val={ck.lnYer} chg={v=>updK('lnYer',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Kitle Notları</label>
+          <textarea className="finput" value={ck.not} onChange={e=>updK('not',e.target.value)} rows={2} placeholder="Bu kitleye özel ek notlar..."/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S12: Fistül Sayısı ─────────────────────────────────────────────────── */
+  function s12(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Fistül — Ön Ayar</div><div className="card-title">Fistül Sayısı</div><div className="card-desc">Değerlendirilecek fistül traktı sayısı</div></div>
+      <div className="card-body">
+        {!lez.fistul?(
+          <div className="info-box info-green">Fistül saptanmamış. İleri butonuna basarak ek bulgulara geçin.</div>
+        ):(
+          <div className="fg"><label className="flabel">Fistül Traktı Sayısı</label>
+            <Radio opts={[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4+'}]} val={fSay} chg={v=>setFSay(Number(v))}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );}
+
+  /* ── S13: Fistül Lokalizasyon ───────────────────────────────────────────── */
+  function s13(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Fistül {fi+1} / {fSay}</div><div className="card-title">Fistül Lokalizasyonu</div><div className="card-desc">İnternal açılım saat kadranı ve dış açılım</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Fistül {fi+1} değerlendiriliyor</div>
+        <div className="fg"><label className="flabel">Süpin Pozisyonda Saat Kadranı (İnternal Açılım)</label>
+          <Radio opts={[
+            {v:'12',l:'12'},{v:'3',l:'3'},{v:'6',l:'6'},{v:'9',l:'9'},
+            {v:'12-3',l:'12–3'},{v:'3-6',l:'3–6'},{v:'6-9',l:'6–9'},{v:'9-12',l:'9–12'},
+          ]} val={cf.saat} chg={v=>updF('saat',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Dış Açılım Lokasyonu</label>
+          <Radio opts={[
+            {v:'sag',l:'Sağ perianal'},{v:'sol',l:'Sol perianal'},
+            {v:'anterior',l:'Anterior perine'},{v:'posterior',l:'Posterior perine'},
+            {v:'gluteus',l:'Gluteus'},{v:'intergluteal',l:'İntergluteal hat'},
+            {v:'skrotum',l:'Skrotum / Labium majus'},
+          ]} val={cf.disAc} chg={v=>updF('disAc',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S14: Fistül Tip ────────────────────────────────────────────────────── */
+  function s14(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Fistül {fi+1} / {fSay}</div><div className="card-title">Fistül Tipi & Dal Yapısı</div><div className="card-desc">Parks sınıflaması ve dal sayısı</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Fistül {fi+1} — Parks Sınıflaması</div>
+        <div className="fg"><label className="flabel">Parks Tipi</label>
+          <Radio opts={[
+            {v:'intersfinkteriK',l:'İntersfinkterik — sfinkterler arası'},
+            {v:'transsfinkteriK',l:'Transsfinkterik — dış sfinkterd. geçer'},
+            {v:'suprasfinkterik',l:'Suprasfinkterik — sfinkter üzerinden'},
+            {v:'ekstrasfinkterik',l:'Ekstrasfinkterik — sfinkter dışı'},
+          ]} val={cf.tip} chg={v=>updF('tip',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Dal Sayısı</label>
+          <Radio opts={[{v:'tek',l:'Tek dal'},{v:'iki',l:'İki dal'},{v:'cok',l:'Çok dallı (kompleks)'}]} val={cf.dal} chg={v=>updF('dal',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S15: Fistül Uzanım ─────────────────────────────────────────────────── */
+  function s15(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Fistül {fi+1} / {fSay}</div><div className="card-title">Uzanım</div><div className="card-desc">İnternal uzanım mesafesi ve karşı yarı geçişi</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Fistül {fi+1} — Uzanım</div>
+        <div className="fg"><label className="flabel">İnternal Uzanım Mesafesi</label>
+          <Radio opts={[
+            {v:'superfisiyel',l:'Superfisiyal (<1 cm)'},{v:'orta',l:'Orta (1–3 cm)'},{v:'derin',l:'Derin (>3 cm)'},
+          ]} val={cf.intMes} chg={v=>updF('intMes',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Karşı Yarıya Geçiş (At Nalı / Horseshoe)</label>
+          <Radio opts={[{v:'yok',l:'Yok'},{v:'var',l:'Var — At nalı uzanımı'}]} val={cf.karsi} chg={v=>updF('karsi',v)}/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S16: Fistül Çevre Doku ─────────────────────────────────────────────── */
+  function s16(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Fistül {fi+1} / {fSay}</div><div className="card-title">Çevre Doku Bulguları</div><div className="card-desc">İnflamasyon ve eşlik eden abse</div></div>
+      <div className="card-body">
+        <div className="loop-tag"><div className="loop-dot"/>Fistül {fi+1} — Çevre Doku</div>
+        <div className="fg"><label className="flabel">Çevre Dokuda İnflamasyon</label>
+          <Radio opts={[{v:'yok',l:'Yok'},{v:'hafif',l:'Hafif'},{v:'belirgin',l:'Belirgin'}]} val={cf.infla} chg={v=>updF('infla',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Eşlik Eden Abse Koleksiyonu</label>
+          <Radio opts={[{v:'yok',l:'Yok'},{v:'var',l:'Var'}]} val={cf.abse} chg={v=>updF('abse',v)}/>
+        </div>
+        <div className="fg"><label className="flabel">Fistül Notları</label>
+          <textarea className="finput" value={cf.not} onChange={e=>updF('not',e.target.value)} rows={2} placeholder="Bu fistüle özel ek notlar..."/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ── S17: Ek Bulgular ───────────────────────────────────────────────────── */
+  function s17(){return(
+    <div className="card">
+      <div className="card-hdr"><div className="card-num">Adım 18 / {TOTAL}</div><div className="card-title">Ek Bulgular</div><div className="card-desc">Diğer pelvik yapılar ve notlar</div></div>
+      <div className="card-body">
+        <div className="fg"><label className="flabel">İdrar Yolları</label>
+          <input className="finput" value={ek.idrar} onChange={e=>setEk(p=>({...p,idrar:e.target.value}))} placeholder="Mesane duvarı, üretra, üreter..."/>
+        </div>
+        <div className="fg"><label className="flabel">Kemik Doku / Sakrum / Koksiks</label>
+          <input className="finput" value={ek.kemik} onChange={e=>setEk(p=>({...p,kemik:e.target.value}))} placeholder="Kemik erozyon, metastatik lezyon..."/>
+        </div>
+        <div className="fg"><label className="flabel">Diğer Pelvik Bulgular</label>
+          <input className="finput" value={ek.diger} onChange={e=>setEk(p=>({...p,diger:e.target.value}))} placeholder="Over, uterus, prostat, periton..."/>
+        </div>
+        <div className="fg"><label className="flabel">Ek Notlar</label>
+          <textarea className="finput" value={ek.not} onChange={e=>setEk(p=>({...p,not:e.target.value}))} rows={3} placeholder="Diğer bulgular, klinik korelasyon önerileri..."/>
+        </div>
+      </div>
+    </div>
+  );}
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     S18: RAPOR
+  ══════════════════════════════════════════════════════════════════════════ */
+  function s18(){
+    const diffs=kitleler.map(k=>calcDiff(k));
+    const tarih=new Date().toLocaleDateString('tr-TR');
+    const cinLbl=hasta.cin==='erkek'?'Erkek':hasta.cin==='kadin'?'Kadın':'';
+
+    const LOKL={rektum:'Rektum',rektosigmoid:'Rektosigmoid bileşke',anal:'Anal kanal',perianal:'Perianal',iskiorektal:'İskiorektal fossa',retrorektal:'Retrorektal / Presaral'};
+    const SEVL={ust:'Üst rektum (>10 cm)',orta:'Orta rektum (5–10 cm)',alt:'Alt rektum (<5 cm)'};
+    const TMEL={temiz:'Temiz (>1 mm)',tehdit:'Tehdit (<1 mm)',tutulmus:'Tutulmuş'};
+    const TIPL={intersfinkteriK:'İntersfinkterik',transsfinkteriK:'Transsfinkterik',suprasfinkterik:'Suprasfinkterik',ekstrasfinkterik:'Ekstrasfinkterik'};
+    const INTL={superfisiyel:'Superfisiyal (<1 cm)',orta:'Orta (1–3 cm)',derin:'Derin (>3 cm)'};
+    const DALLL={tek:'Tek dal',iki:'İki dal',cok:'Çok dallı (kompleks)'};
+    const DIACL={sag:'Sağ perianal',sol:'Sol perianal',anterior:'Anterior perine',posterior:'Posterior perine',gluteus:'Gluteus',intergluteal:'İntergluteal hat',skrotum:'Skrotum / Labium majus'};
+    const ADCL={yuksek:'>1.5 ×10⁻³ mm²/s (yüksek)',orta:'1.0–1.5 ×10⁻³ mm²/s',hafif_dusuk:'Hafif düşük (0.9–1.0)',dusuk:'Düşük (<1.0)',cok_dusuk:'Çok düşük (<0.7)'};
+    const ORGLL={sfinkter:'Sfinkter kompleksi',mesane:'Mesane',prostat_uv:'Prostat/Uterus/Vajina',seminal:'Seminal vezikül',levator:'Levator ani',sakrum:'Sakrum/Koksiks'};
+
+    const tmeBadge=(v)=>{
+      if(!v) return null;
+      const cls={temiz:'mrc-temiz',tehdit:'mrc-tehdit',tutulmus:'mrc-tutulmus'}[v]||'';
+      return <span className={`mrc-badge ${cls}`}>{TMEL[v]||v}</span>;
+    };
+
+    const pctColor=(p)=>{
+      if(p>=70) return '#ef4444';
+      if(p>=45) return '#f59e0b';
+      if(p>=25) return '#3b82f6';
+      return '#6b7280';
+    };
+
+    function genText(){
+      const L=[];
+      L.push('REKTUM & ANÜS MRI RAPORU');
+      L.push('═'.repeat(44));
+      if(hasta.ad)   L.push(`Hasta       : ${hasta.ad}`);
+      if(hasta.yas)  L.push(`Yaş         : ${hasta.yas}`);
+      if(cinLbl)     L.push(`Cinsiyet    : ${cinLbl}`);
+      if(hasta.endik)L.push(`Endikasyon  : ${hasta.endik}`);
+      if(hasta.cert) L.push(`Öykü        : ${hasta.cert}`);
+      L.push(`Tarih       : ${tarih}`);
+      L.push('');
+      L.push(`TEKNİK: ${tek.tesla} / ${tek.coil} / ${tek.sek.join(', ')} / ${tek.kont?'IVKM uygulandı':'Kontrastsız'}`);
+      L.push('');
+      L.push('BULGULAR:');
+      if(genel.sfDis||genel.sfIs||genel.rDuv||genel.periYag){
+        L.push('');
+        L.push('Genel Pelvik Değerlendirme:');
+        if(genel.sfDis) L.push(`  Dış sfinkter: ${genel.sfDis}`);
+        if(genel.sfIs)  L.push(`  İç sfinkter : ${genel.sfIs}`);
+        if(genel.lev)   L.push(`  Levator ani : ${genel.lev}`);
+        if(genel.rDuv)  L.push(`  Rektum duvarı: ${genel.rDuv}`);
+        if(genel.periYag) L.push(`  Perirektal yağ: ${genel.periYag}`);
+        if(genel.not)   L.push(`  Not: ${genel.not}`);
+      }
+      kitleler.forEach((k,i)=>{
+        L.push('');
+        L.push(`Kitle ${i+1}:`);
+        if(k.lok)  L.push(`  Lokalizasyon : ${LOKL[k.lok]||k.lok}${k.sev?` — ${SEVL[k.sev]||k.sev}`:''}`);
+        if(k.saat) L.push(`  Saat kadranı : ${k.saat}`);
+        if(k.bAP)  L.push(`  Boyut        : ${k.bAP}×${k.bT||'?'}×${k.bCC||'?'} mm`);
+        if(k.kontur) L.push(`  Kontur       : ${k.kontur}`);
+        if(k.t1)   L.push(`  T1A          : ${k.t1}`);
+        if(k.t2)   L.push(`  T2A          : ${k.t2}`);
+        if(k.chem) L.push(`  Chemical Shift: ${k.chem}`);
+        if(k.dwi)  L.push(`  DWI          : ${k.dwi}`);
+        if(k.adc)  L.push(`  ADC          : ${ADCL[k.adc]||k.adc}`);
+        if(k.ivkm) L.push(`  IVKM         : ${k.ivkm}`);
+        if(k.kontPat&&k.kontPat!=='yok') L.push(`  Kontrast kinetik: ${k.kontPat}`);
+        if(k.cevre) L.push(`  Çevre yağ    : ${k.cevre}`);
+        if(k.organInv&&k.organInv.length>0) L.push(`  Organ invazyonu: ${k.organInv.map(x=>ORGLL[x]||x).join(', ')}`);
+        if(k.mrcMm) L.push(`  MRC mesafesi : ${k.mrcMm} mm`);
+        if(k.tme)   L.push(`  TME planı    : ${TMEL[k.tme]||k.tme}`);
+        if(k.lnSay&&Number(k.lnSay)>0) L.push(`  Mezorektum LN: ${k.lnSay} adet, en büyük ${k.lnBoy} mm — ${k.lnYer||''}`);
+        if(k.not)   L.push(`  Not: ${k.not}`);
+        if(diffs[i]&&diffs[i].length>0){
+          L.push(`  Ayrıcı Tanı:`);
+          diffs[i].slice(0,3).forEach(d=>L.push(`    - ${d.name} (%${d.pct}) [${d.matched.join(', ')}]`));
+        }
+      });
+      fistullar.forEach((f,i)=>{
+        L.push('');
+        L.push(`Fistül ${i+1}:`);
+        if(f.tip)    L.push(`  Parks tipi   : ${TIPL[f.tip]||f.tip}`);
+        if(f.saat)   L.push(`  İnternal açılım: saat ${f.saat}`);
+        if(f.disAc)  L.push(`  Dış açılım   : ${DIACL[f.disAc]||f.disAc}`);
+        if(f.dal)    L.push(`  Dal yapısı   : ${DALLL[f.dal]||f.dal}`);
+        if(f.intMes) L.push(`  Uzanım       : ${INTL[f.intMes]||f.intMes}`);
+        if(f.karsi==='var') L.push(`  At nalı uzanım: VAR (Horseshoe)`);
+        if(f.infla&&f.infla!=='yok') L.push(`  İnflamasyon  : ${f.infla}`);
+        if(f.abse==='var')  L.push(`  Eşlik eden abse: VAR`);
+        if(f.not)    L.push(`  Not: ${f.not}`);
+      });
+      if(ek.idrar||ek.kemik||ek.diger||ek.not){
+        L.push('');
+        L.push('Ek Bulgular:');
+        if(ek.idrar)  L.push(`  İdrar yolları: ${ek.idrar}`);
+        if(ek.kemik)  L.push(`  Kemik doku   : ${ek.kemik}`);
+        if(ek.diger)  L.push(`  Diğer        : ${ek.diger}`);
+        if(ek.not)    L.push(`  Not          : ${ek.not}`);
+      }
+      return L.join('\n');
+    }
+
+    function copyRep(){
+      const ta=document.createElement('textarea');
+      ta.value=genText();
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+
+    return(
+      <div>
+        {/* Export butonları */}
+        <div className="exp-row">
+          <button className="exp-btn pri" onClick={()=>window.print()}>🖨️  Yazdır / PDF</button>
+          <button className="exp-btn" onClick={copyRep}>📋  Metni Kopyala</button>
+          <button className="exp-btn" onClick={()=>{
+            const blob=new Blob([genText()],{type:'text/plain;charset=utf-8'});
+            const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+            a.download=`Rektum_MRI_${(hasta.ad||'Rapor').replace(/\s+/g,'_')}.txt`;
+            a.click(); URL.revokeObjectURL(a.href);
+          }}>💾  TXT İndir</button>
+        </div>
+
+        {/* Rapor başlık */}
+        <div className="rep-wrap">
+          <div className="rep-hdr">
+            <div className="rep-title">REKTUM &amp; ANÜS MRI RAPORU</div>
+            <div className="rep-sub">{[hasta.ad, hasta.yas&&hasta.yas+' yaş', cinLbl, tarih].filter(Boolean).join('  ·  ')}</div>
+          </div>
+          <div className="rep-body">
+
+            {/* Klinik */}
+            <div className="rep-sec">
+              <div className="rep-sec-title">Klinik &amp; Teknik</div>
+              <table className="rep-tbl">
+                <tbody>
+                  {hasta.endik&&<tr><td>Endikasyon</td><td>{hasta.endik}</td></tr>}
+                  {hasta.cert&&<tr><td>Öykü</td><td>{hasta.cert}</td></tr>}
+                  <tr><td>Alan Gücü / Coil</td><td>{tek.tesla} / {tek.coil}</td></tr>
+                  <tr><td>Sekanslar</td><td>{tek.sek.join(', ')}</td></tr>
+                  <tr><td>IVKM</td><td>{tek.kont?'Uygulandı':'Uygulanmadı'}</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Genel Pelvik */}
+            {(genel.sfDis||genel.sfIs||genel.lev||genel.rDuv||genel.periYag||genel.not)&&(
+              <div className="rep-sec">
+                <div className="rep-sec-title">Genel Pelvik Değerlendirme</div>
+                <table className="rep-tbl">
+                  <tbody>
+                    {genel.sfDis&&<tr><td>Dış sfinkter</td><td>{genel.sfDis}</td></tr>}
+                    {genel.sfIs&&<tr><td>İç sfinkter</td><td>{genel.sfIs}</td></tr>}
+                    {genel.lev&&<tr><td>Levator ani</td><td>{genel.lev}</td></tr>}
+                    {genel.rDuv&&<tr><td>Rektum duvar</td><td>{genel.rDuv}</td></tr>}
+                    {genel.periYag&&<tr><td>Perirektal yağ</td><td>{genel.periYag}</td></tr>}
+                    {genel.not&&<tr><td>Not</td><td>{genel.not}</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Kitleler */}
+            {kitleler.map((k,i)=>(
+              <div key={i} className="rep-sec">
+                <div className="rep-sec-title">Kitle {i+1} — {LOKL[k.lok]||k.lok||'—'}</div>
+                <table className="rep-tbl">
+                  <tbody>
+                    {k.lok&&<tr><td>Lokalizasyon</td><td>{LOKL[k.lok]}{k.sev?` — ${SEVL[k.sev]||k.sev}`:''}</td></tr>}
+                    {k.saat&&<tr><td>Saat kadranı</td><td>{k.saat}</td></tr>}
+                    {(k.bAP||k.bT||k.bCC)&&<tr><td>Boyut</td><td>{k.bAP||'?'} × {k.bT||'?'} × {k.bCC||'?'} mm</td></tr>}
+                    {k.kontur&&<tr><td>Kontur</td><td>{k.kontur}</td></tr>}
+                    {k.t1&&<tr><td>T1A</td><td>{k.t1}</td></tr>}
+                    {k.t2&&<tr><td>T2A</td><td>{k.t2}</td></tr>}
+                    {k.chem&&<tr><td>Chemical Shift</td><td>{k.chem==='out_phase'?'Out-phase sinyal kaybı ★ YAĞ':k.chem}</td></tr>}
+                    {k.dwi&&<tr><td>DWI</td><td>{k.dwi}</td></tr>}
+                    {k.adc&&<tr><td>ADC</td><td>{ADCL[k.adc]||k.adc}</td></tr>}
+                    {k.ivkm&&<tr><td>IVKM karakteri</td><td>{k.ivkm}</td></tr>}
+                    {k.kontPat&&k.kontPat!=='yok'&&<tr><td>Kinetik patern</td><td>{k.kontPat}</td></tr>}
+                    {k.cevre&&<tr><td>Perirektal yağ</td><td>{k.cevre}</td></tr>}
+                    {k.organInv&&k.organInv.length>0&&<tr><td>Organ invazyonu</td><td>{k.organInv.map(x=>ORGLL[x]||x).join(', ')}</td></tr>}
+                    {k.mrcMm&&<tr><td>MRC mesafesi</td><td>{k.mrcMm} mm</td></tr>}
+                    {k.tme&&<tr><td>TME planı</td><td>{tmeBadge(k.tme)}</td></tr>}
+                    {k.lnSay&&Number(k.lnSay)>0&&<tr><td>Mezorektum LN</td><td>{k.lnSay} adet / en büyük {k.lnBoy||'?'} mm</td></tr>}
+                    {k.lnYer&&<tr><td>LN yerleşimi</td><td>{k.lnYer}</td></tr>}
+                    {k.not&&<tr><td>Not</td><td>{k.not}</td></tr>}
+                  </tbody>
+                </table>
+
+                {/* YORUM — Ayrıcı Tanı */}
+                {diffs[i]&&diffs[i].length>0&&(
+                  <div className="yorum">
+                    <div className="yorum-title">
+                      <span style={{fontSize:15}}>🔬</span>
+                      YORUM — Ayrıcı Tanı (Ağırlıklı MRI Sinyal Skoru)
+                    </div>
+                    {diffs[i].map((d,di)=>(
+                      <div key={d.id} className="diff-item">
+                        <div className="diff-hdr">
+                          <div>
+                            <span className="diff-name" style={{color:di===0?d.clr:'var(--text)'}}>{d.name}</span>
+                            <span className="diff-cat">{d.cat}</span>
+                          </div>
+                          <span className="diff-pct" style={{color:pctColor(d.pct)}}>%{d.pct}</span>
+                        </div>
+                        <div className="diff-bg">
+                          <div className="diff-fill" style={{width:`${d.pct}%`,background:d.clr}}/>
+                        </div>
+                        <div className="crit-list">
+                          {d.matched.map(m=><span key={m} className="crit-chip">{m}</span>)}
+                          {d.info.slice(0,2).map((inf,ii)=>(
+                            <span key={ii} className="crit-chip" style={{background:'rgba(30,150,255,.08)',color:'#7dd3fc',borderColor:'rgba(125,211,252,.2)'}}>{inf}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {diffs[i][0]&&(
+                      <div style={{marginTop:12,padding:'10px 13px',background:'rgba(0,0,0,.2)',borderRadius:8,fontSize:12,color:'#cbd5e1',lineHeight:1.7}}>
+                        <strong style={{color:diffs[i][0].clr}}>Öncelikli Tanı:</strong> {diffs[i][0].name}<br/>
+                        {diffs[i][0].info.join(' — ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Fistüller */}
+            {fistullar.map((f,i)=>(
+              <div key={i} className="rep-sec">
+                <div className="rep-sec-title">Fistül {i+1} — {TIPL[f.tip]||'—'}</div>
+                <table className="rep-tbl">
+                  <tbody>
+                    {f.tip&&<tr><td>Parks Tipi</td><td><strong>{TIPL[f.tip]||f.tip}</strong></td></tr>}
+                    {f.saat&&<tr><td>İnternal açılım</td><td>Saat {f.saat}</td></tr>}
+                    {f.disAc&&<tr><td>Dış açılım</td><td>{DIACL[f.disAc]||f.disAc}</td></tr>}
+                    {f.dal&&<tr><td>Dal yapısı</td><td>{DALLL[f.dal]||f.dal}</td></tr>}
+                    {f.intMes&&<tr><td>İnternal uzanım</td><td>{INTL[f.intMes]||f.intMes}</td></tr>}
+                    {f.karsi&&<tr><td>At nalı uzanım</td><td>{f.karsi==='var'?'✅  VAR (Horseshoe)':'Yok'}</td></tr>}
+                    {f.infla&&f.infla!=='yok'&&<tr><td>İnflamasyon</td><td>{f.infla}</td></tr>}
+                    {f.abse&&<tr><td>Eşlik eden abse</td><td>{f.abse==='var'?'✅  VAR':'Yok'}</td></tr>}
+                    {f.not&&<tr><td>Not</td><td>{f.not}</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+
+            {/* Ek Bulgular */}
+            {(ek.idrar||ek.kemik||ek.diger||ek.not)&&(
+              <div className="rep-sec">
+                <div className="rep-sec-title">Ek Bulgular</div>
+                <table className="rep-tbl">
+                  <tbody>
+                    {ek.idrar&&<tr><td>İdrar yolları</td><td>{ek.idrar}</td></tr>}
+                    {ek.kemik&&<tr><td>Kemik doku</td><td>{ek.kemik}</td></tr>}
+                    {ek.diger&&<tr><td>Diğer pelvik</td><td>{ek.diger}</td></tr>}
+                    {ek.not&&<tr><td>Notlar</td><td>{ek.not}</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* MRI Sinyal Referans Tablosu */}
+            <div className="rep-sec">
+              <div className="rep-sec-title">Rektum &amp; Anüs MRI — Patoloji Referans Tablosu</div>
+              <div style={{overflowX:'auto'}}>
+                <table className="rep-tbl" style={{minWidth:700}}>
+                  <thead>
+                    <tr>
+                      {['Patoloji','T1A','T2A','Chem.Shift','DWI','ADC','IVKM'].map(h=>(
+                        <td key={h} style={{fontWeight:700,color:'var(--accent)',fontSize:11,textTransform:'uppercase'}}>{h}</td>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Rektum Adenokarsinomu','İzo / Hafif hipo','Orta hiper','Değişmez','Belirgin kısıtlama','Düşük','Heterojen persistan'],
+                      ['Anal SHK','İzointens','Orta hiper','Değişmez','Kısıtlama var','Düşük','Erken güçlü heterojen'],
+                      ['Rektal GIST','İzointens','Hiper / Heterojen','Değişmez','Kısıtlama var','Düşük–Orta','Güçlü heterojen'],
+                      ['Lenfoma','Hipointens','Hafif hiper','Değişmez','Güçlü kısıtlama','Çok düşük','Hafif homojen persistan'],
+                      ['Metastaz','Hipointens','Heterojen hiper','Değişmez','Kısıtlama var','Düşük','Rim / heterojen'],
+                      ['Endometriozis','Hiper (kan)','Hipointens fibrozis','Değişmez','Hafif kısıtlama','Hafif düşük','Minimal / geç'],
+                      ['Rektal Lipom','Hiperintens','Orta hiper','Out-phase kayıp ★','Kısıtlama yok','Yüksek','Kontrastlanmıyor'],
+                      ['Abse','Hipointens','Çok hiper','Değişmez','Güçlü kısıtlama','Çok düşük','Rim kontrastlanma'],
+                      ['Fistül Traktı','Hipointens','Hiperintens','Değişmez','Hafif kısıtlama','Orta','Rim / duvar'],
+                      ['Mukosel / Kist','Hipointens','Çok hiper','Değişmez','Shine-through','Yüksek','Kontrastlanmıyor'],
+                      ['Duplikasyon Kisti','Hipointens','Çok hiper','Değişmez','Kısıtlama yok','Yüksek','İnce duvar minimal'],
+                    ].map((row,ri)=>(
+                      <tr key={ri}>
+                        {row.map((cell,ci)=>(
+                          <td key={ci} style={ci===0?{fontWeight:600,color:'var(--text)'}:{}}>{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STEP RENDERER
+  ══════════════════════════════════════════════════════════════════════════ */
+  function renderStep(){
+    switch(step){
+      case 0: return s0();
+      case 1: return s1();
+      case 2: return s2();
+      case 3: return s3();
+      case 4: return s4();
+      case 5: return s5();
+      case 6: return s6();
+      case 7: return s7();
+      case 8: return s8();
+      case 9: return s9();
+      case 10: return s10();
+      case 11: return s11();
+      case 12: return s12();
+      case 13: return s13();
+      case 14: return s14();
+      case 15: return s15();
+      case 16: return s16();
+      case 17: return s17();
+      case 18: return s18();
+      default: return null;
+    }
+  }
+
+  const stepLabel=[
+    'Hasta','Teknik','Genel','Lezyon','Kitle Sayısı',
+    `Kitle ${ki+1} — Lok`,`Kitle ${ki+1} — Morfoloji`,`Kitle ${ki+1} — Sinyal`,
+    `Kitle ${ki+1} — DWI/ADC`,`Kitle ${ki+1} — IVKM`,`Kitle ${ki+1} — Yayılım`,
+    `Kitle ${ki+1} — Lenf Nodu`,'Fistül Sayısı',
+    `Fistül ${fi+1} — Lok`,`Fistül ${fi+1} — Tip`,`Fistül ${fi+1} — Uzanım`,
+    `Fistül ${fi+1} — Çevre`,'Ek Bulgular','Rapor',
+  ];
+
+  const nextLabel=step===18?null:(step===11?`Kitle ${ki+1} Tamamla`:(step===16?`Fistül ${fi+1} Tamamla`:'İleri →'));
+
+  return(
+    <div>
+      <div className="prog-bar"><div className="prog-fill" style={{width:pct+'%'}}/></div>
+      <div className="app-hdr">
+        <div className="hdr-icon">🫁</div>
+        <div>
+          <div className="hdr-title">Rektum &amp; Anüs MRI</div>
+          <div className="hdr-sub">Karar Destek Sistemi — Gülhane EAH Radyoloji</div>
+        </div>
+        <div className="step-badge">{stepLabel[step]||''}</div>
+      </div>
+      <div className="wiz">{renderStep()}</div>
+      {step<19&&(
+        <div className="nav-foot">
+          <button className="nbtn btn-prev" onClick={goPrev} disabled={step===0}>← Geri</button>
+          <span style={{fontSize:12,color:'var(--muted)'}}>Adım {step+1} / {TOTAL}</span>
+          {step<18&&<button className="nbtn btn-next" onClick={goNext}>{nextLabel}</button>}
+          {step===18&&<button className="nbtn btn-next" onClick={()=>setStep(0)} style={{background:'linear-gradient(135deg,#10b981,#059669)'}}>🔄 Yeni Hasta</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

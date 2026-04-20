@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Beyin MR Spektroskopi Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0b0d13;--sf:#131620;--sf2:#191d2a;--sf3:#212636;
+--bd:#282e3e;--tx:#e6e9f0;--tx2:#97a0b4;--tx3:#666e80;
+--ac:#8b5cf6;--ac2:#a78bfa;--acd:rgba(139,92,246,.14);
+--gn:#10b981;--gnd:rgba(16,185,129,.12);
+--am:#f59e0b;--amd:rgba(245,158,11,.12);
+--rd:#ef4444;--rdd:rgba(239,68,68,.12);
+--bl:#3b82f6;--bld:rgba(59,130,246,.12);
+--pk:#ec4899;--pkd:rgba(236,72,153,.12);
+--cy:#06b6d4;--cyd:rgba(6,182,212,.12);
+--or:#f97316;--ord:rgba(249,115,22,.12);
+--r:12px;--rs:8px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+.hdr{text-align:center;padding:28px 0 20px}
+.hdr h1{font-size:1.55rem;font-weight:700;background:linear-gradient(135deg,var(--cy),var(--ac));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr .sub{color:var(--tx2);font-size:.82rem;margin-top:3px;font-weight:300}
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:18px}
+.tab{flex:1;padding:10px 6px;border-radius:var(--rs);border:1.5px solid var(--bd);background:var(--sf);color:var(--tx3);font-size:.74rem;font-weight:500;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.tab.active{border-color:var(--ac);background:var(--acd);color:var(--ac2)}
+.tab.done{border-color:var(--gn);color:var(--gn)}
+/* PROGRESS */
+.pbar{background:var(--sf);border-radius:20px;height:5px;margin-bottom:20px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--cy),var(--ac));border-radius:20px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+/* CARD */
+.cd{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:24px;margin-bottom:14px;animation:sUp .3s ease}
+@keyframes sUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.cd-t{font-size:1.05rem;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.cd-d{color:var(--tx2);font-size:.8rem;margin-bottom:18px;line-height:1.5}
+/* METABOLITE ROW */
+.met-grid{display:flex;flex-direction:column;gap:6px}
+.met-row{display:flex;align-items:center;gap:8px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;transition:all .15s}
+.met-row:hover{border-color:rgba(139,92,246,.3)}
+.met-info{min-width:180px;flex-shrink:0}
+.met-name{font-size:.82rem;font-weight:600;color:var(--tx)}
+.met-ppm{font-size:.68rem;color:var(--tx3);font-family:'JetBrains Mono',monospace}
+.met-opts{display:flex;gap:5px;flex-wrap:wrap;flex:1;justify-content:flex-end}
+.mb{padding:5px 12px;border-radius:14px;border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-size:.7rem;cursor:pointer;transition:all .18s;font-family:inherit;white-space:nowrap}
+.mb:hover{border-color:var(--ac)}
+.mb.on{font-weight:600}
+.mb.on-yok{background:var(--sf3);border-color:var(--tx3);color:var(--tx3)}
+.mb.on-n{background:var(--gnd);border-color:var(--gn);color:var(--gn)}
+.mb.on-d{background:var(--bld);border-color:var(--bl);color:var(--bl)}
+.mb.on-y{background:var(--rdd);border-color:var(--rd);color:var(--rd)}
+/* INPUT */
+.ig{margin-bottom:14px}
+.ig label{display:block;font-size:.78rem;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.ifl{width:100%;background:var(--sf2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 13px;color:var(--tx);font-size:.86rem;font-family:inherit;outline:none;transition:border-color .2s}
+.ifl:focus{border-color:var(--ac)}
+.ratio-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ratio-card{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;text-align:center}
+.ratio-card .rc-label{font-size:.82rem;font-weight:600;color:var(--ac2);margin-bottom:4px}
+.ratio-card .rc-norm{font-size:.68rem;color:var(--tx3);margin-bottom:8px}
+.ratio-card input{width:100%;background:var(--sf);border:1.5px solid var(--bd);border-radius:6px;padding:8px;color:var(--tx);font-size:.9rem;font-family:'JetBrains Mono',monospace;text-align:center;outline:none}
+.ratio-card input:focus{border-color:var(--ac)}
+.ratio-card .rc-stat{margin-top:6px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:10px;display:inline-block}
+.rc-normal{background:var(--gnd);color:var(--gn)}
+.rc-high{background:var(--rdd);color:var(--rd)}
+.rc-low{background:var(--bld);color:var(--bl)}
+/* BUTTONS */
+.br{display:flex;gap:8px;margin-top:20px}
+.bt{flex:1;padding:12px;border-radius:var(--rs);border:none;font-size:.84rem;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.bt1{background:linear-gradient(135deg,var(--ac),#7c3aed);color:#fff}
+.bt1:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(139,92,246,.3)}
+.bt2{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}
+.bt2:hover{border-color:var(--ac);color:var(--tx)}
+.bt3{background:linear-gradient(135deg,var(--gn),#059669);color:#fff}
+.btd{background:var(--rdd);color:var(--rd);border:1px solid rgba(239,68,68,.3)}
+.bts{padding:7px 13px;font-size:.76rem;flex:unset}
+/* REPORT */
+.rps{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:22px;margin-bottom:14px}
+.rps h3{font-size:.95rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.rt{width:100%;border-collapse:collapse;font-size:.8rem}
+.rt th{text-align:left;padding:9px 11px;background:var(--sf2);color:var(--tx2);font-weight:600;border-bottom:1px solid var(--bd);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px}
+.rt td{padding:9px 11px;border-bottom:1px solid rgba(40,46,62,.5)}
+.rt tr:nth-child(even) td{background:rgba(25,29,42,.5)}
+.rt .v{color:var(--tx);font-weight:500}.rt .l{color:var(--tx2)}
+.badge-up{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:600;background:var(--rdd);color:var(--rd)}
+.badge-dn{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:600;background:var(--bld);color:var(--bl)}
+.badge-nm{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:600;background:var(--gnd);color:var(--gn)}
+.badge-no{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:600;background:var(--sf3);color:var(--tx3)}
+/* YORUM */
+.yb{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;margin-top:14px}
+.yt{font-size:.85rem;font-weight:700;color:var(--ac2);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.yx{font-size:.8rem;color:var(--tx);line-height:1.55;margin-bottom:8px}
+.svb{height:7px;border-radius:4px;background:var(--sf);overflow:hidden;margin-top:4px}
+.svf{height:100%;border-radius:4px;transition:width .8s ease}
+/* DIFF */
+.dt{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:10px}
+.dt th{padding:7px;background:var(--acd);color:var(--ac2);text-align:left;border-bottom:1px solid var(--bd);font-size:.68rem;text-transform:uppercase}
+.dt td{padding:6px 7px;border-bottom:1px solid rgba(40,46,62,.4);color:var(--tx2)}
+.dt tr.mt td{color:var(--tx);font-weight:500}
+.ms{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;font-size:.66rem;font-weight:600}
+.mh{background:var(--gnd);color:var(--gn)}.mm{background:var(--amd);color:var(--am)}.ml{background:var(--bld);color:var(--bl)}
+/* SPECTRUM VIZ */
+.spec-viz{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:16px;margin-top:14px;overflow-x:auto}
+.spec-viz svg{width:100%;height:auto}
+/* EXPORT */
+.exr{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.exb{padding:9px 16px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:.8rem;cursor:pointer;font-family:inherit;font-weight:500;transition:all .2s;display:flex;align-items:center;gap:5px}
+.exb:hover{border-color:var(--ac);color:var(--tx)}
+@media(max-width:600px){
+  .met-row{flex-direction:column;align-items:flex-start;gap:6px}
+  .met-opts{justify-content:flex-start}
+  .ratio-grid{grid-template-columns:1fr}
+  .tabs{flex-wrap:wrap}
+}
+@media print{
+body{background:#fff;color:#000}
+.hdr,.pbar,.tabs,.br,.exr{display:none}
+.cd,.rps{border:1px solid #ddd;background:#fff}
+.rt th{background:#f3f4f6;color:#374151}.rt td{color:#1f2937}
+.yb{background:#f9fafb;border:1px solid #e5e7eb}.yt{color:#6d28d6}.yx{color:#1f2937}
+.met-row{background:#f9fafb;border:1px solid #e5e7eb}
+.ratio-card{background:#f9fafb;border:1px solid #e5e7eb}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useRef} = React;
+
+/* ══════════ METABOLITE DEFINITIONS ══════════ */
+const METABOLITES = [
+  {key:'naa',name:'NAA',ppm:'2.0 ppm',group:'ana',desc:'N-Asetil Aspartat'},
+  {key:'cho',name:'Kolin (Cho)',ppm:'3.2 ppm',group:'ana',desc:'Kolin'},
+  {key:'cr',name:'Kreatin (Cr)',ppm:'3.0 ppm',group:'ana',desc:'Kreatin'},
+  {key:'laktat',name:'Laktat',ppm:'1.33 ppm',group:'ana',desc:'Laktat (dublet)'},
+  {key:'lipit',name:'Lipidler',ppm:'1.3 ppm',group:'ana',desc:'Lipid'},
+  {key:'mi',name:'Myoinositol',ppm:'3.5 & 4.06 ppm',group:'ana',desc:'Myoinositol'},
+  {key:'alanin',name:'Alanin',ppm:'1.48 ppm',group:'ek',desc:'Alanin'},
+  {key:'asetat',name:'Asetat',ppm:'1.9 ppm',group:'ek',desc:'Asetat'},
+  {key:'glx',name:'Glutamin / Glutamat',ppm:'2.2–2.4 ppm',group:'ek',desc:'Glx'},
+  {key:'gaba',name:'GABA',ppm:'2.2–2.4 ppm',group:'ek',desc:'GABA'},
+  {key:'suksinat',name:'Süksinat',ppm:'2.4 ppm',group:'ek',desc:'Süksinat'},
+  {key:'hg2',name:'2-Hidroksiglutarat',ppm:'2.25 ppm',group:'ek',desc:'2-HG'},
+  {key:'sitrat',name:'Sitrat',ppm:'2.6 ppm',group:'ek',desc:'Sitrat'},
+  {key:'aspartat',name:'Aspartat',ppm:'2.6 ppm',group:'ek',desc:'Aspartat'},
+  {key:'taurin',name:'Taurin',ppm:'3.4 ppm',group:'ek',desc:'Taurin'},
+  {key:'val',name:'Valin / Lösin / İzolösin',ppm:'0.9 ppm',group:'ek',desc:'Dallı zincirli aminoasitler'},
+];
+
+const MET_OPTS = ['Pik Yok','Normal','Düşük','Yüksek'];
+const optClass = (v)=>v==='Pik Yok'?'on-yok':v==='Normal'?'on-n':v==='Düşük'?'on-d':v==='Yüksek'?'on-y':'';
+const badgeClass = (v)=>v==='Yüksek'?'badge-up':v==='Düşük'?'badge-dn':v==='Normal'?'badge-nm':'badge-no';
+
+/* ══════════ DIFFERENTIAL DIAGNOSIS ══════════ */
+const DDX = [
+  {name:"Düşük grade glioma",naa:'↓',cho:'↑',cr:'↓/N',lak:'−',lip:'−',extra:"Cho/NAA oranı artar",
+   match:{naa:'Düşük',cho:'Yüksek',laktat:'Pik Yok',lipit:'Pik Yok'}},
+  {name:"Yüksek grade glioma",naa:'↓↓↓',cho:'↑↑↑',cr:'↓',lak:'+',lip:'+',extra:"Çok yüksek Cho, nekroz alanında lipit",
+   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
+  {name:"Glioblastoma",naa:'↓↓↓',cho:'↑↑↑',cr:'↓',lak:'+',lip:'+++',extra:"Lipit ve laktat pikleri belirgin",
+   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
+  {name:"Metastaz",naa:'↓',cho:'↑',cr:'↓',lak:'+',lip:'++',extra:"Peritümöral alanda NAA korunur",
+   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
+  {name:"Primer SSS Lenfoma",naa:'↓↓',cho:'↑↑',cr:'↓',lak:'+',lip:'++',extra:"Çok yüksek kolin",
+   match:{naa:'Düşük',cho:'Yüksek',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
+  {name:"Abse",naa:'Yok',cho:'Yok',cr:'Yok',lak:'+',lip:'+',extra:"Aminoasit, asetat ve süksinat pikleri",
+   match:{naa:'Pik Yok',cho:'Pik Yok',cr:'Pik Yok',laktat:'Yüksek',asetat:'Yüksek',suksinat:'Yüksek',val:'Yüksek'}},
+  {name:"Tüberküloma",naa:'↓',cho:'N/↑',cr:'↓',lak:'+',lip:'++',extra:"Lipit piki karakteristik",
+   match:{naa:'Düşük',lipit:'Yüksek',laktat:'Yüksek'}},
+  {name:"Multiple Skleroz (aktif plak)",naa:'↓',cho:'↑',cr:'↓',lak:'±',lip:'−',extra:"Demiyelinizasyona bağlı Cho artışı",
+   match:{naa:'Düşük',cho:'Yüksek',lipit:'Pik Yok'}},
+  {name:"Radyasyon Nekrozu",naa:'↓',cho:'↓',cr:'↓',lak:'+',lip:'++',extra:"Kolin düşük, lipit yüksek",
+   match:{naa:'Düşük',cho:'Düşük',cr:'Düşük',laktat:'Yüksek',lipit:'Yüksek'}},
+  {name:"Menenjioma",naa:'Yok',cho:'↑↑',cr:'↓',lak:'−',lip:'±',extra:"Alanin piki tipiktir",
+   match:{naa:'Pik Yok',cho:'Yüksek',alanin:'Yüksek'}},
+];
+
+/* ══════════ SCORING ══════════ */
+function scoreDDX(mets,ratios){
+  return DDX.map(d=>{
+    let s=0,t=0;
+    const m=d.match;
+    Object.keys(m).forEach(k=>{
+      const w = (k==='naa'||k==='cho'||k==='cr')?3:(k==='laktat'||k==='lipit')?2:2;
+      t+=w;
+      if(mets[k]===m[k]) s+=w;
+      else if(mets[k]&&m[k]){
+        // partial: Düşük vs Pik Yok = half credit
+        if((mets[k]==='Düşük'&&m[k]==='Pik Yok')||(mets[k]==='Pik Yok'&&m[k]==='Düşük')) s+=w*0.5;
+        // Yüksek partially matching Normal
+        if((mets[k]==='Normal'&&m[k]==='Yüksek')||(mets[k]==='Yüksek'&&m[k]==='Normal')) s+=w*0.25;
+      }
+    });
+    // Ratio bonuses
+    if(ratios.choCr){
+      t+=2;
+      const v=parseFloat(ratios.choCr);
+      if(!isNaN(v)){
+        if(d.name.includes('glioma')||d.name.includes('Glioblastoma')||d.name.includes('Lenfoma')||d.name==='Menenjioma'){
+          if(v>1.2) s+=2;
+        } else if(d.name==='Radyasyon Nekrozu'){
+          if(v<=1.2) s+=2;
+        }
+      }
+    }
+    if(ratios.choNaa){
+      t+=2;
+      const v=parseFloat(ratios.choNaa);
+      if(!isNaN(v)){
+        // Cho/NAA > 2 → malignite
+        // But this is NAA/Cho, so NAA/Cho < 0.5 → malignite
+        // Wait, the ratio card is NAA/Cho. Normal=1.6. <1.6 azalmış
+        // Let me check: in the drawio NAA/Cho normal=1.6
+        // Low NAA/Cho means high Cho relative to NAA → tumor
+        if(d.name.includes('glioma')||d.name.includes('Glioblastoma')||d.name.includes('Lenfoma')){
+          if(v<1.6) s+=2;
+        }
+      }
+    }
+    if(ratios.naaCr){
+      t+=2;
+      const v=parseFloat(ratios.naaCr);
+      if(!isNaN(v)){
+        if(d.match.naa==='Düşük'||d.match.naa==='Pik Yok'){
+          if(v<2.0) s+=2;
+        } else {
+          if(v>=2.0) s+=2;
+        }
+      }
+    }
+    // Special metabolite bonuses
+    if(d.name==='Abse'){
+      if(mets.asetat==='Yüksek') s+=2;
+      if(mets.suksinat==='Yüksek') s+=2;
+      if(mets.val==='Yüksek') s+=2;
+      t+=6;
+    }
+    if(d.name==='Menenjioma'){
+      if(mets.alanin==='Yüksek') s+=3;
+      t+=3;
+    }
+    if(d.name.includes('2-HG')||d.name.includes('IDH')){
+      if(mets.hg2==='Yüksek') s+=3;
+      t+=3;
+    }
+
+    const pct=t>0?Math.round(s/t*100):0;
+    return {...d,score:s,total:t,pct};
+  }).sort((a,b)=>b.pct-a.pct);
+}
+
+function genYorum(mets,ratios){
+  let sev=0,f=[];
+  if(mets.naa==='Düşük'){sev+=15;f.push('NAA azalmış (nöronal kayıp)');}
+  if(mets.naa==='Pik Yok'){sev+=20;f.push('NAA piki yok');}
+  if(mets.cho==='Yüksek'){sev+=20;f.push('Kolin artmış (hücre proliferasyonu)');}
+  if(mets.cho==='Pik Yok'){sev+=5;f.push('Kolin piki yok (ekstraaksiyel/abse)');}
+  if(mets.laktat==='Yüksek'){sev+=15;f.push('Laktat yüksek (anaerobik metabolizma)');}
+  if(mets.lipit==='Yüksek'){sev+=15;f.push('Lipit yüksek (nekroz)');}
+  if(mets.alanin==='Yüksek'){f.push('Alanin piki (menenjioma)');}
+  if(mets.asetat==='Yüksek'&&mets.suksinat==='Yüksek'){sev+=10;f.push('Asetat + süksinat (abse paterni)');}
+  if(mets.hg2==='Yüksek'){f.push('2-HG piki (IDH mutant gliom)');}
+
+  const naaCr=parseFloat(ratios.naaCr);
+  if(!isNaN(naaCr)&&naaCr<2.0){sev+=10;f.push(`NAA/Cr=${naaCr} (azalmış)`);}
+  const choNaa=parseFloat(ratios.choNaa);
+  // Actually: drawio shows NAA/Cho. If NAA/Cho < 1.6 → azalmış → tumoral
+  if(!isNaN(choNaa)&&choNaa<1.6){sev+=10;f.push(`NAA/Cho=${choNaa} (azalmış → tümöral)`);}
+  const choCr=parseFloat(ratios.choCr);
+  if(!isNaN(choCr)&&choCr>1.2){sev+=10;f.push(`Cho/Cr=${choCr} (artmış → proliferasyon)`);}
+
+  sev=Math.min(sev,100);
+  const color=sev>=60?'var(--rd)':sev>=30?'var(--am)':'var(--gn)';
+  let text='';
+  if(sev>=60) text=`Yüksek şüpheli metabolik profil: ${f.join('; ')}. Tümöral/nekrotik süreç ön planda.`;
+  else if(sev>=30) text=`Orta düzeyde anormal metabolik bulgular: ${f.join('; ')}. Klinik korelasyon ve takip önerilir.`;
+  else if(f.length) text=`Hafif metabolik değişiklikler: ${f.join('; ')}. Benign/nonspesifik bulgular.`;
+  else text='Normal metabolik profil. Belirgin patolojik metabolik değişiklik saptanmadı.';
+  return {text,sev,color};
+}
+
+/* ══════════ APP ══════════ */
+function App(){
+  const [step,setStep]=useState(0);
+  // 0=Ana metabolitler, 1=Ek metabolitler, 2=Oranlar, 3=Rapor
+  const [mets,setMets]=useState(()=>{
+    const o={};METABOLITES.forEach(m=>o[m.key]='');return o;
+  });
+  const [ratios,setRatios]=useState({naaCr:'',choNaa:'',choCr:''});
+  const rRef=useRef(null);
+
+  const setMet=(k,v)=>setMets(prev=>({...prev,[k]:v}));
+  const anaM=METABOLITES.filter(m=>m.group==='ana');
+  const ekM=METABOLITES.filter(m=>m.group==='ek');
+  const stepLabels=['Ana Metabolitler','Ek Metabolitler','Oranlar','Rapor'];
+  const progress=Math.round((step/3)*100);
+
+  // Ratio auto-classification
+  const ratioStatus=(key,val)=>{
+    const v=parseFloat(val);if(isNaN(v)) return null;
+    if(key==='naaCr') return v>=2.0?{label:'Normal',cls:'rc-normal'}:{label:'Azalmış',cls:'rc-low'};
+    if(key==='choNaa') return v>=1.6?{label:'Normal',cls:'rc-normal'}:{label:'Azalmış',cls:'rc-low'};
+    if(key==='choCr') return v<=1.2?{label:'Normal',cls:'rc-normal'}:{label:'Artmış',cls:'rc-high'};
+    return null;
+  };
+
+  /* ═══ RENDER METABOLITE PAGE ═══ */
+  const renderMetPage=(list,title,icon)=>(
+    <div className="cd" key={`met-${step}`}>
+      <div className="cd-t">{icon} {title}</div>
+      <div className="cd-d">Her metabolit için pik durumunu seçiniz.</div>
+      <div className="met-grid">
+        {list.map(m=>(
+          <div className="met-row" key={m.key}>
+            <div className="met-info">
+              <div className="met-name">{m.name}</div>
+              <div className="met-ppm">{m.ppm}</div>
+            </div>
+            <div className="met-opts">
+              {MET_OPTS.map(o=>(
+                <button key={o}
+                  className={`mb ${mets[m.key]===o?`on ${optClass(o)}`:''}`}
+                  onClick={()=>setMet(m.key,o)}>{o}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ═══ RENDER RATIOS ═══ */
+  const renderRatios=()=>(
+    <div className="cd" key="ratios">
+      <div className="cd-t">📊 Metabolit Oranları</div>
+      <div className="cd-d">Hesaplanan metabolit oranlarını giriniz. Otomatik olarak sınıflandırılacaktır.</div>
+      <div className="ratio-grid">
+        {[
+          {key:'naaCr',label:'NAA / Cr',norm:'Normal ≈ 2.0'},
+          {key:'choNaa',label:'NAA / Cho',norm:'Normal ≈ 1.6'},
+          {key:'choCr',label:'Cho / Cr',norm:'Normal ≈ 1.2'},
+        ].map(r=>{
+          const st=ratioStatus(r.key,ratios[r.key]);
+          return(
+            <div className="ratio-card" key={r.key}>
+              <div className="rc-label">{r.label}</div>
+              <div className="rc-norm">{r.norm}</div>
+              <input type="number" step="0.1" placeholder="—"
+                value={ratios[r.key]}
+                onChange={e=>setRatios({...ratios,[r.key]:e.target.value})}/>
+              {st&&<div className={`rc-stat ${st.cls}`}>{st.label}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  /* ═══ RENDER REPORT ═══ */
+  const dx=useMemo(()=>scoreDDX(mets,ratios),[mets,ratios]);
+  const yorum=useMemo(()=>genYorum(mets,ratios),[mets,ratios]);
+
+  const renderReport=()=>(
+    <div ref={rRef}>
+      <div className="cd" style={{textAlign:'center',background:'linear-gradient(135deg,var(--sf),var(--sf2))'}}>
+        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>🧠 Beyin MR Spektroskopi Raporu</h2>
+        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+      </div>
+
+      {/* Metabolitler Tablosu */}
+      <div className="rps">
+        <h3>📈 Metabolit Profili</h3>
+        <table className="rt">
+          <thead><tr><th>Metabolit</th><th>ppm</th><th>Durum</th></tr></thead>
+          <tbody>
+            {METABOLITES.filter(m=>mets[m.key]&&mets[m.key]!=='').map(m=>(
+              <tr key={m.key}>
+                <td className="l">{m.name}</td>
+                <td className="l" style={{fontFamily:'JetBrains Mono',fontSize:'.75rem'}}>{m.ppm}</td>
+                <td><span className={badgeClass(mets[m.key])}>{mets[m.key]}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Oranlar */}
+      <div className="rps">
+        <h3>📊 Metabolit Oranları</h3>
+        <table className="rt">
+          <thead><tr><th>Oran</th><th>Değer</th><th>Durum</th></tr></thead>
+          <tbody>
+            {[
+              {key:'naaCr',label:'NAA / Cr',norm:2.0},
+              {key:'choNaa',label:'NAA / Cho',norm:1.6},
+              {key:'choCr',label:'Cho / Cr',norm:1.2},
+            ].map(r=>{
+              const v=ratios[r.key];
+              const st=ratioStatus(r.key,v);
+              return v?(
+                <tr key={r.key}>
+                  <td className="l">{r.label}</td>
+                  <td className="v" style={{fontFamily:'JetBrains Mono'}}>{v}</td>
+                  <td>{st&&<span className={badgeClass(st.cls.includes('high')?'Yüksek':st.cls.includes('low')?'Düşük':'Normal')}>{st.label}</span>}</td>
+                </tr>
+              ):null;
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* YORUM */}
+      <div className="rps">
+        <div className="yb" style={{margin:0}}>
+          <div className="yt">📊 YORUM</div>
+          <div className="yx">{yorum.text}</div>
+          <div style={{display:'flex',alignItems:'center',gap:7,fontSize:'.72rem',color:'var(--tx3)'}}>
+            <span>Şüphe</span>
+            <div className="svb" style={{flex:1}}><div className="svf" style={{width:`${yorum.sev}%`,background:yorum.color}}/></div>
+            <span style={{color:yorum.color,fontWeight:600}}>{yorum.sev}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Ayırıcı Tanı */}
+      <div className="rps">
+        <h3>🔍 Ayırıcı Tanı</h3>
+        <table className="dt">
+          <thead><tr><th>Patoloji</th><th>Uyum</th><th>NAA</th><th>Cho</th><th>Lak</th><th>Lip</th><th>Tipik Özellik</th></tr></thead>
+          <tbody>
+            {dx.map((d,i)=>(
+              <tr key={i} className={d.pct>=60?'mt':''}>
+                <td style={{fontWeight:d.pct>=60?600:400}}>{d.name}</td>
+                <td><span className={`ms ${d.pct>=70?'mh':d.pct>=40?'mm':'ml'}`}>{d.pct}%</span></td>
+                <td>{d.naa}</td>
+                <td>{d.cho}</td>
+                <td>{d.lak}</td>
+                <td>{d.lip}</td>
+                <td style={{fontSize:'.68rem',maxWidth:180}}>{d.extra}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Metabolit Klinik Anlam Referansı */}
+      <div className="rps">
+        <h3>📌 Metabolit Referans Tablosu</h3>
+        <table className="rt">
+          <thead><tr><th>Metabolit</th><th>Klinik Anlam</th></tr></thead>
+          <tbody>
+            <tr><td className="l">NAA</td><td className="v">Nöronal bütünlüğü gösterir (tümör ve hasarda azalır)</td></tr>
+            <tr><td className="l">Kolin (Cho)</td><td className="v">Hücre membranı dönüşümü ve proliferasyon (tümörlerde artar)</td></tr>
+            <tr><td className="l">Kreatin (Cr)</td><td className="v">Enerji metabolizması (referans metabolit)</td></tr>
+            <tr><td className="l">Laktat</td><td className="v">Anaerobik metabolizma, nekroz veya hipoksi</td></tr>
+            <tr><td className="l">Lipit</td><td className="v">Nekroz, yüksek dereceli tümör veya enfeksiyon</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Hızlı kurallar */}
+      <div className="rps">
+        <h3>📌 Ayırıcı Tanı İpuçları</h3>
+        <table className="dt">
+          <thead><tr><th>Patern</th><th>Olası Tanı</th></tr></thead>
+          <tbody>
+            <tr><td>Cho ↑ + NAA ↓ + Cho/NAA &gt; 2</td><td style={{fontWeight:600}}>Malignite (high-grade gliom)</td></tr>
+            <tr><td>Lipit ↑ + Laktat ↑</td><td style={{fontWeight:600}}>Nekroz veya enfeksiyon</td></tr>
+            <tr><td>NAA yok + Cho yok + Cr yok + Aminoasit/Asetat/Süksinat</td><td style={{fontWeight:600}}>Abse</td></tr>
+            <tr><td>Alanin piki</td><td style={{fontWeight:600}}>Menenjioma</td></tr>
+            <tr><td>Cho ↑ + NAA ↓ + Lipit yok</td><td style={{fontWeight:600}}>Multiple Skleroz (aktif plak)</td></tr>
+            <tr><td>Cho ↓ + NAA ↓ + Lipit ↑↑</td><td style={{fontWeight:600}}>Radyasyon Nekrozu</td></tr>
+            <tr><td>2-HG piki</td><td style={{fontWeight:600}}>IDH-mutant gliom</td></tr>
+            <tr><td>Cho/NAA &gt; 2</td><td style={{fontWeight:600}}>Malignite düşündürür</td></tr>
+            <tr><td>Cho/Cr ↑</td><td style={{fontWeight:600}}>Tümör proliferasyonu</td></tr>
+            <tr><td>NAA/Cr ↓</td><td style={{fontWeight:600}}>Nöronal kayıp</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="exr">
+        <button className="exb" onClick={()=>window.print()}>🖨️ PDF Yazdır</button>
+        <button className="exb" onClick={handleCopy}>📋 HTML Kopyala</button>
+        <button className="bt bt2 bts" onClick={()=>setStep(2)}>← Düzenle</button>
+        <button className="bt btd bts" onClick={handleReset}>🔄 Sıfırla</button>
+      </div>
+    </div>
+  );
+
+  const handleCopy=()=>{
+    if(!rRef.current)return;
+    const ta=document.createElement('textarea');
+    ta.value=rRef.current.innerHTML;
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    alert('Rapor HTML olarak panoya kopyalandı!');
+  };
+  const handleReset=()=>{
+    if(!confirm('Tüm verileri sıfırlamak istediğinize emin misiniz?'))return;
+    const o={};METABOLITES.forEach(m=>o[m.key]='');
+    setMets(o);setRatios({naaCr:'',choNaa:'',choCr:''});setStep(0);
+  };
+
+  return(
+    <div className="wrap">
+      <div className="hdr">
+        <h1>Beyin MR Spektroskopi Karar Destek</h1>
+        <div className="sub">Metabolit Analizi & Ayırıcı Tanı</div>
+      </div>
+
+      {step<3&&(
+        <>
+          <div className="tabs">
+            {stepLabels.map((l,i)=>(
+              <div key={i} className={`tab ${step===i?'active':''} ${i<step?'done':''}`}
+                onClick={()=>{if(i<=step)setStep(i);}}>
+                {l}{i<step&&' ✓'}
+              </div>
+            ))}
+          </div>
+          <div className="pbar"><div className="pfill" style={{width:`${progress}%`}}/></div>
+        </>
+      )}
+
+      {step===0&&(
+        <>
+          {renderMetPage(anaM,'Ana Metabolitler','🧬')}
+          <div className="br">
+            <button className="bt bt1" onClick={()=>setStep(1)}>İleri →</button>
+          </div>
+        </>
+      )}
+      {step===1&&(
+        <>
+          {renderMetPage(ekM,'Ek Metabolitler','🔬')}
+          <div className="br">
+            <button className="bt bt2" onClick={()=>setStep(0)}>← Geri</button>
+            <button className="bt bt1" onClick={()=>setStep(2)}>İleri →</button>
+          </div>
+        </>
+      )}
+      {step===2&&(
+        <>
+          {renderRatios()}
+          <div className="br">
+            <button className="bt bt2" onClick={()=>setStep(1)}>← Geri</button>
+            <button className="bt bt3" onClick={()=>setStep(3)}>Rapor Oluştur ✓</button>
+          </div>
+        </>
+      )}
+      {step===3&&renderReport()}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

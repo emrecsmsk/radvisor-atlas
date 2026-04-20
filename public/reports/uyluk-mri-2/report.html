@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Uyluk MRI — Kas-İskelet ve Nörovasküler Karar Destek Sistemi</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0e17;
+    --bg-2:#16151f;
+    --bg-3:#1d1c28;
+    --bg-4:#252432;
+    --border:#2f2e3e;
+    --border-2:#3b394d;
+    --text:#e6e4f0;
+    --text-dim:#a8a5bd;
+    --text-muted:#716f86;
+    --accent:#dc2626;
+    --accent-2:#f59e0b;
+    --accent-3:#10b981;
+    --accent-soft:rgba(220,38,38,0.14);
+    --accent-softer:rgba(220,38,38,0.08);
+    --warn:#f97316;
+    --danger:#ef4444;
+    --ok:#22c55e;
+    --shadow:0 20px 50px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(220,38,38,0.12), transparent 60%),
+      radial-gradient(900px 500px at 90% 10%, rgba(245,158,11,0.08), transparent 60%),
+      radial-gradient(1000px 700px at 50% 120%, rgba(16,185,129,0.06), transparent 60%),
+      var(--bg);
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  header.brand,.header{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--border);background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border-radius:16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .header .brand{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+  .brand-text h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-0.4px;color:var(--text)}
+  .brand-text .sub{font-size:11.5px;color:var(--text-dim);margin-top:3px;letter-spacing:0.2px}
+  .header-meta{display:flex;gap:8px;flex-wrap:wrap}
+  .meta-chip{background:var(--bg-4);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:11.5px;color:var(--text-dim);font-weight:500;white-space:nowrap}
+  .meta-chip span{color:var(--text-dim2);margin-right:4px;text-transform:uppercase;font-size:10.5px;letter-spacing:0.5px}
+  .meta-chip b{color:var(--accent);font-weight:700;font-size:13px}
+  .step-body{min-height:120px}
+  .step-title-wrap{flex:1}
+  .nav-mid{flex:1;display:flex;justify-content:center;align-items:center}
+  .nav-warn{color:#fbbf24;font-size:12.5px;font-weight:500;text-align:center;padding:6px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px}
+  .print-actions{position:sticky;top:10px;z-index:10;display:flex;gap:10px;margin-bottom:14px;width:100%;max-width:210mm;padding:10px;background:rgba(15,14,23,0.95);border:1px solid var(--border);border-radius:12px;backdrop-filter:blur(8px)}
+  .print-sheet{background:#fff;color:#111;width:100%;max-width:210mm;min-height:280mm;padding:20mm;box-shadow:0 10px 40px rgba(0,0,0,0.5);border-radius:6px;font-family:'IBM Plex Sans',system-ui,sans-serif}
+  @media print{.no-print{display:none!important}}
+  .logo{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#dc2626 0%,#f59e0b 65%,#10b981 100%);display:grid;place-items:center;font-weight:700;color:#0f0e17;font-size:22px;letter-spacing:-1px;box-shadow:0 6px 18px rgba(220,38,38,0.35)}
+  .titles h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-0.2px}
+  .titles p{margin:2px 0 0;font-size:12px;color:var(--text-dim)}
+  .progress-wrap{margin:18px 0 8px}
+  .progress-bar{height:6px;background:var(--bg-3);border-radius:100px;overflow:hidden;border:1px solid var(--border)}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#dc2626,#f59e0b,#10b981);border-radius:100px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+  .card{background:linear-gradient(180deg,var(--bg-2),var(--bg-3));border:1px solid var(--border);border-radius:18px;padding:26px 28px;margin-top:18px;animation:fadeIn .35s ease-out;box-shadow:var(--shadow)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .step-h{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .step-num{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center;font-weight:600;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid rgba(245,158,11,0.25)}
+  .step-title{font-size:19px;font-weight:600;letter-spacing:-0.2px}
+  .step-sub{font-size:13px;color:var(--text-dim);margin-top:2px}
+
+  label.field{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;letter-spacing:0.3px;text-transform:uppercase;font-weight:500}
+  .row{display:grid;gap:14px;margin-bottom:14px}
+  .row.r2{grid-template-columns:1fr 1fr}
+  .row.r3{grid-template-columns:1fr 1fr 1fr}
+  .row.r4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:720px){.row.r2,.row.r3,.row.r4{grid-template-columns:1fr}}
+
+  input[type=text],input[type=number],select,textarea{
+    width:100%;background:var(--bg-4);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-family:inherit;font-size:14px;transition:all .15s
+  }
+  input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(220,38,38,0.15)}
+  textarea{resize:vertical;min-height:72px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--bg-4);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:100px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;user-select:none}
+  .chip:hover{border-color:var(--border-2);background:var(--bg-3)}
+  .chip.selected{background:var(--accent-soft);border-color:var(--accent);color:#fecaca}
+  .chip.warn.selected{background:rgba(249,115,22,0.14);border-color:var(--warn);color:#fed7aa}
+  .chip.ok.selected{background:rgba(34,197,94,0.14);border-color:var(--ok);color:#bbf7d0}
+
+  .check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:6px}
+  .check-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--bg-4);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;user-select:none;font-size:13px;line-height:1.4}
+  .check-item:hover{border-color:var(--border-2)}
+  .check-item.on{background:var(--accent-softer);border-color:var(--accent);color:#fecaca}
+  .check-box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border-2);flex-shrink:0;margin-top:1px;position:relative;transition:all .15s}
+  .check-item.on .check-box{background:var(--accent);border-color:var(--accent)}
+  .check-item.on .check-box::after{content:'✓';position:absolute;top:-3px;left:2px;color:#fff;font-size:12px;font-weight:700}
+
+  .seg-wrap{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--border)}
+  .seg-wrap:last-child{border-bottom:none}
+  .seg-name{font-size:13px;font-weight:500;color:var(--text)}
+  .seg-opts{display:flex;gap:6px;flex-wrap:wrap}
+  .seg-opt{padding:6px 12px;border-radius:8px;background:var(--bg-4);border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all .15s;user-select:none}
+  .seg-opt:hover{border-color:var(--border-2)}
+  .seg-opt.on{background:var(--accent-soft);border-color:var(--accent);color:#fecaca}
+  .seg-opt.on.warn{background:rgba(249,115,22,0.14);border-color:var(--warn);color:#fed7aa}
+
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+  button.btn{background:var(--bg-4);border:1px solid var(--border);color:var(--text);padding:10px 22px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+  button.btn:hover{border-color:var(--border-2);background:var(--bg-3)}
+  button.btn.primary{background:linear-gradient(135deg,#dc2626,#f59e0b);border-color:transparent;color:#fff;font-weight:600}
+  button.btn.primary:hover{filter:brightness(1.1)}
+  button.btn.ghost{background:transparent}
+  button.btn.danger{background:rgba(239,68,68,0.1);border-color:var(--danger);color:#fca5a5}
+  button.btn.danger:hover{background:rgba(239,68,68,0.18)}
+  button.btn.ok{background:rgba(34,197,94,0.1);border-color:var(--ok);color:#86efac}
+  button.btn:disabled{opacity:0.4;cursor:not-allowed}
+
+  .lesion-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .lesion-tab{padding:8px 14px;background:var(--bg-4);border:1px solid var(--border);border-radius:100px;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:6px}
+  .lesion-tab.active{background:var(--accent-soft);border-color:var(--accent);color:#fecaca}
+  .lesion-tab.done{background:rgba(34,197,94,0.1);border-color:var(--ok);color:#86efac}
+  .lesion-del{background:transparent;border:none;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:14px;opacity:0.7}
+  .lesion-del:hover{opacity:1}
+
+  /* Report styles */
+  .report-sheet{background:#fff;color:#111;padding:42px 52px;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;line-height:1.55;box-shadow:0 30px 80px rgba(0,0,0,0.5)}
+  .report-sheet h2{margin:0 0 4px;font-size:22px;color:#991b1b;letter-spacing:-0.3px}
+  .report-sheet .sub{color:#666;font-size:12px;margin-bottom:18px}
+  .report-sheet h3{font-size:14px;text-transform:uppercase;color:#991b1b;margin:22px 0 8px;letter-spacing:1px;border-bottom:2px solid #991b1b;padding-bottom:4px}
+  .report-sheet h4{font-size:13px;margin:14px 0 6px;color:#333}
+  .report-sheet table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:12.5px}
+  .report-sheet table td{padding:7px 10px;vertical-align:top;border-bottom:1px solid #eee}
+  .report-sheet table tr:nth-child(even) td{background:#fafafa}
+  .report-sheet table td:first-child{font-weight:600;color:#555;width:34%}
+  .report-sheet .yorum{background:#f0fdf4;border-left:4px solid #10b981;padding:12px 16px;margin:14px 0;border-radius:4px;color:#064e3b}
+  .report-sheet .yorum-title{font-weight:700;color:#065f46;margin-bottom:6px;font-size:12px;text-transform:uppercase;letter-spacing:0.8px}
+  .report-sheet .ek-bulgu{display:inline-block;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;padding:2px 8px;border-radius:4px;font-size:11px;margin:2px 4px 2px 0;font-weight:500}
+  .report-sheet .malign-flag{background:#fef2f2;border-left:4px solid #dc2626;padding:12px 16px;margin:14px 0;border-radius:4px;color:#7f1d1d}
+  .report-sheet .malign-title{font-weight:700;color:#991b1b;margin-bottom:6px;font-size:12px;text-transform:uppercase;letter-spacing:0.8px}
+  .report-sheet .diff-table td:first-child{width:auto}
+  .report-sheet .diff-pct{font-weight:700;color:#991b1b;text-align:right}
+  .report-sheet .lesion-block{border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin:10px 0;background:#fafafa}
+  .report-sheet .lesion-title{font-weight:700;color:#991b1b;margin-bottom:8px;font-size:13px}
+  .report-sheet .footer{margin-top:32px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#888;display:flex;justify-content:space-between}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:0.4px}
+  .badge.red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  .badge.orange{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+  .badge.green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0}
+  .badge.blue{background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
+  .badge.gray{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb}
+
+  .diff-list{margin:14px 0}
+  .diff-item{display:grid;grid-template-columns:1fr 80px;gap:12px;align-items:center;padding:10px 14px;background:var(--bg-4);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px}
+  .diff-item.top{background:linear-gradient(135deg,rgba(220,38,38,0.15),rgba(245,158,11,0.08));border-color:var(--accent)}
+  .diff-bar{background:var(--bg-3);height:6px;border-radius:100px;overflow:hidden;margin-top:4px}
+  .diff-bar-fill{height:100%;background:linear-gradient(90deg,#dc2626,#f59e0b);border-radius:100px}
+  .diff-name{font-weight:500}
+  .diff-detail{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:'JetBrains Mono',monospace}
+  .diff-score{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent-2);text-align:right;font-size:15px}
+
+  .alert-info{background:rgba(16,185,129,0.08);border-left:3px solid var(--accent-3);padding:10px 14px;border-radius:6px;font-size:12.5px;color:#bbf7d0;margin:10px 0}
+  .alert-warn{background:rgba(249,115,22,0.08);border-left:3px solid var(--warn);padding:10px 14px;border-radius:6px;font-size:12.5px;color:#fed7aa;margin:10px 0}
+
+  .export-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;justify-content:center}
+
+  /* Print overlay */
+  .print-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:grid;place-items:start center;overflow:auto;padding:20px}
+  .print-overlay .actions{position:sticky;top:10px;z-index:10;display:flex;gap:10px;margin-bottom:14px}
+
+  @media print{
+    body *{visibility:hidden!important}
+    .print-sheet,.print-sheet *{visibility:visible!important}
+    .print-sheet{position:absolute!important;left:0;top:0;width:100%;background:#fff!important;padding:20mm!important;box-shadow:none!important;border-radius:0!important}
+    .no-print{display:none!important}
+  }
+</style>
+</head>
+<body>
+<div id="root"><div style="padding:40px;text-align:center;color:#a1a1aa;font-family:system-ui,sans-serif">
+  <div style="font-size:14px;margin-bottom:10px">Uyluk MRI Karar Destek</div>
+  <div style="font-size:12px">Uygulama yükleniyor… (React + Babel CDN)</div>
+  <div style="font-size:11px;margin-top:20px;color:#71717a">
+    Bu mesaj 5 saniyeden fazla kalırsa internet bağlantınızı kontrol edin; uygulamanın çalışması için unpkg.com CDN'ine erişim gereklidir.
+  </div>
+</div></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useMemo,useCallback,useRef,Fragment} = React;
+
+/* ========================================================
+   PATHOLOGY DATABASE — Uyluk (Thigh) MRI
+   Ağırlıklar: DWI/ADC & Kontrast yüksek, T2/STIR orta-yüksek,
+   T1 orta, lokalizasyon/morfoloji orta, patognomik bonus.
+======================================================== */
+const PATHOLOGIES = [
+  {
+    id:'muscle_strain_g1',name:'Kas Zorlanması Grade I',category:'Travmatik',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['izointens'],
+      t2:['feathery','minimal_odem'],
+      stir:['feathery','minimal_odem'],
+      dwi:['normal','minimal'],
+      kontrast:['yok','hafif'],
+      morfoloji:['diffuz','tuylu_gorunum'],
+      klinik:['akut_travma','spor_yaralanmasi'],
+      patognomik:['myotendinoz_bileske_odemi','kas_lifi_devamliligi_korunmus']
+    },
+    weights:{komp:2,t1:2,t2:4,stir:5,dwi:2,kontrast:2,morfoloji:4,klinik:3,patognomik:6},
+    description:'Mikroskobik kas lifi yırtığı; makroskobik kopma veya hematom yok.'
+  },
+  {
+    id:'muscle_strain_g2',name:'Kas Zorlanması Grade II (Parsiyel Yırtık)',category:'Travmatik',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['izointens','hipointens'],
+      t2:['hiperintens','sivi_koleksiyonu','feathery'],
+      stir:['hiperintens','sivi_koleksiyonu'],
+      dwi:['restrikte','artmis'],
+      kontrast:['periferik','halka'],
+      morfoloji:['parsiyel_kopma','lif_diskontinuitesi','hematom'],
+      klinik:['akut_travma','ani_agri'],
+      patognomik:['kas_lifi_parsiyel_kopma','intramuskuler_hematom']
+    },
+    weights:{komp:2,t1:2,t2:4,stir:4,dwi:3,kontrast:3,morfoloji:6,klinik:3,patognomik:7},
+    description:'Kas liflerinin <%50 kopması; fokal hematom/sıvı olabilir.'
+  },
+  {
+    id:'muscle_strain_g3',name:'Kas Zorlanması Grade III (Komplet Yırtık)',category:'Travmatik',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['heterojen','hematom_sinyali'],
+      t2:['hiperintens','sivi_koleksiyonu','buyuk_hematom'],
+      stir:['hiperintens','sivi_koleksiyonu'],
+      dwi:['artmis','restrikte'],
+      kontrast:['periferik','halka'],
+      morfoloji:['komplet_kopma','retraksiyon','buyuk_hematom','bell_clapper'],
+      klinik:['akut_travma','fonksiyon_kaybi'],
+      patognomik:['tam_devamsizlik','kas_retraksiyonu','avulsiyon']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:4,dwi:3,kontrast:3,morfoloji:7,klinik:4,patognomik:8},
+    description:'Tam kat kas veya tendinöz kopma, sıklıkla retraksiyon ile birlikte.'
+  },
+  {
+    id:'muscle_contusion',name:'Kas Kontüzyonu',category:'Travmatik',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['izointens','hafif_hiperintens'],
+      t2:['hiperintens','diffuz_odem'],
+      stir:['hiperintens','diffuz_odem'],
+      dwi:['artmis','hafif_restrikte'],
+      kontrast:['diffuz','hafif'],
+      morfoloji:['diffuz','ill_defined','kitle_etkisi_yok'],
+      klinik:['kunt_travma','direk_darbe'],
+      patognomik:['travma_oyküsü','diffuz_kas_odemi']
+    },
+    weights:{komp:2,t1:2,t2:4,stir:5,dwi:2,kontrast:2,morfoloji:4,klinik:4,patognomik:6},
+    description:'Doğrudan künt travmaya bağlı diffüz intramüsküler ödem/kanama.'
+  },
+  {
+    id:'myositis_ossificans',name:'Miyositis Ossifikans',category:'Travmatik/İnflamatuar',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['heterojen','perifer_hipointens'],
+      t2:['heterojen','santral_hiper_perifer_hipo','zonal_patern'],
+      stir:['heterojen','zonal_patern'],
+      dwi:['degisken'],
+      kontrast:['periferik','yogun'],
+      morfoloji:['oval','zonal_kalsifikasyon','periferik_ossifikasyon'],
+      klinik:['travma_sonrasi','subakut_kronik','sertlik'],
+      patognomik:['zonal_kalsifikasyon','periferal_kortikal_rim','3_6_hafta_oykusu']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:3,dwi:2,kontrast:3,morfoloji:6,klinik:4,patognomik:9},
+    description:'Travma sonrası heterotopik kemikleşme; zonal maturasyon patognomik.'
+  },
+  {
+    id:'intramuscular_hematoma',name:'İntramüsküler Hematom',category:'Travmatik',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['degisken_evreye_gore','subakut_hiperintens','kronik_hipointens_rim'],
+      t2:['heterojen','sivi_sivi_seviyesi','hemosiderin_rim'],
+      stir:['heterojen'],
+      dwi:['artmis','kanama_artefakti'],
+      kontrast:['periferik','minimal'],
+      morfoloji:['oval','kapsullu','sivi_sivi_seviyesi'],
+      klinik:['travma','antikoagulan'],
+      patognomik:['sivi_sivi_seviyesi','evre_bagimli_sinyal','hemosiderin_rim']
+    },
+    weights:{komp:2,t1:4,t2:5,stir:3,dwi:3,kontrast:3,morfoloji:5,klinik:3,patognomik:8},
+    description:'Evre bağımlı sinyal değişikliği; sıvı-sıvı seviyesi ve hemosiderin halkası.'
+  },
+  {
+    id:'morel_lavallee',name:'Morel-Lavallée Lezyonu',category:'Travmatik',
+    features:{
+      komp:['subkutan','fascia_lata'],
+      t1:['degisken','hiperintens_yagli','hipointens_seroz'],
+      t2:['hiperintens','sivi_sinyali'],
+      stir:['hiperintens'],
+      dwi:['artmis'],
+      kontrast:['periferik_kapsul','yok'],
+      morfoloji:['oval_fuziform','kapsullu','fascia_ile_kas_arasinda'],
+      klinik:['kayma_yaralanmasi','trafik_kazasi','spor_travmasi'],
+      patognomik:['fascia_lata_ustunde','deri_altı_kas_arasi','kapsüle_seroma']
+    },
+    weights:{komp:5,t1:3,t2:4,stir:3,dwi:2,kontrast:3,morfoloji:6,klinik:4,patognomik:9},
+    description:'Cilt altı ile derin fascia arasında kayma yaralanmasına bağlı kollaksiyon.'
+  },
+  {
+    id:'pyomyositis',name:'Piyomiyozit',category:'Enfeksiyon',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['hipointens','izointens'],
+      t2:['hiperintens','yogun_odem'],
+      stir:['hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['diffuz','periferik_apse_varsa','halka'],
+      morfoloji:['diffuz_kas_odemi','apse_odaklari','multilocul'],
+      klinik:['ates','enfeksiyon_bulgulari','immunsupresyon','diyabet'],
+      patognomik:['DWI_belirgin_restriksiyon','apse_halka_kontrast','klinik_sepsis']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:4,dwi:7,kontrast:5,morfoloji:5,klinik:5,patognomik:8},
+    description:'Bakteriyel (sıklıkla S. aureus) kas enfeksiyonu; apse oluşabilir.'
+  },
+  {
+    id:'soft_tissue_abscess',name:'Yumuşak Doku Apsesi',category:'Enfeksiyon',
+    features:{
+      komp:['subkutan','anterior','medial','posterior','fascia_lata'],
+      t1:['hipointens','santral_daha_hipo'],
+      t2:['santral_hiperintens','perifer_odem'],
+      stir:['hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['halka','kalin_duzensiz'],
+      morfoloji:['koleksiyon','kavite','multilocul'],
+      klinik:['ates','lokal_inflamasyon','travma_cerrahi_oykusu'],
+      patognomik:['DWI_restriksiyon','kalin_halka_kontrast','santral_nekroz']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:3,dwi:7,kontrast:7,morfoloji:5,klinik:4,patognomik:8},
+    description:'Kapsüle pürülan koleksiyon; DWI restriksiyonu ve halka kontrastlanma karakteristik.'
+  },
+  {
+    id:'necrotizing_fasciitis',name:'Nekrotizan Fasiit',category:'Enfeksiyon',
+    features:{
+      komp:['fascia_lata','subkutan','kompartman_tumu'],
+      t1:['izointens','hipointens','gaz_void'],
+      t2:['fascia_boyunca_hiperintens','kalin_fascia'],
+      stir:['hiperintens','fascial_yayilim'],
+      dwi:['artmis','restrikte'],
+      kontrast:['fascia_kontrastlanmasi','nonenhancing_nekroz'],
+      morfoloji:['fascia_kalinlaşması','gaz','multikompartman'],
+      klinik:['sepsis','hizli_progresyon','yuksek_mortalite'],
+      patognomik:['derin_fascia_hiperintensitesi','gaz_gorunumu','non_enhancing_fascia']
+    },
+    weights:{komp:5,t1:3,t2:5,stir:4,dwi:3,kontrast:7,morfoloji:6,klinik:6,patognomik:10},
+    description:'Derin fascial katmanların yaygın inflamasyonu; cerrahi acil durum.'
+  },
+  {
+    id:'cellulitis',name:'Selülit',category:'Enfeksiyon',
+    features:{
+      komp:['subkutan','cilt'],
+      t1:['izointens','hafif_hipointens'],
+      t2:['subkutan_retikuler_hiperintensite'],
+      stir:['subkutan_odem','reticular_patern'],
+      dwi:['hafif_artmis'],
+      kontrast:['diffuz','subkutan'],
+      morfoloji:['subkutan_retikulasyon','cilt_kalinlaşması'],
+      klinik:['eritem','sicaklık','ates'],
+      patognomik:['subkutan_retikuler_odem','cilt_kalinlaşması','apse_yok']
+    },
+    weights:{komp:5,t1:2,t2:4,stir:5,dwi:2,kontrast:4,morfoloji:5,klinik:4,patognomik:7},
+    description:'Derialtı dokunun bakteriyel enfeksiyonu; fokal koleksiyon yoktur.'
+  },
+  {
+    id:'muscle_denervation',name:'Kas Denervasyonu',category:'Nöromüsküler',
+    features:{
+      komp:['siyatik_dagilim','femoral_dagilim','obturator_dagilim'],
+      t1:['akut_normal','kronik_yag_replasmani','hiperintens_kronik'],
+      t2:['akut_hiperintens','homojen_odem'],
+      stir:['akut_hiperintens','diffuz'],
+      dwi:['degisken'],
+      kontrast:['hafif','yok'],
+      morfoloji:['diffuz_kas_odemi','atrofi_kronik','sinir_dagilimi'],
+      klinik:['sinir_travmasi','radikulopati','disk_hernisi'],
+      patognomik:['tek_sinir_dagiliminda_odem','kronik_yag_replasmani','sinir_lezyonu']
+    },
+    weights:{komp:5,t1:4,t2:4,stir:5,dwi:2,kontrast:2,morfoloji:5,klinik:4,patognomik:9},
+    description:'Akut: diffüz kas ödemi; kronik: yağ replasmanı ve atrofi. Sinir dağılımında.'
+  },
+  {
+    id:'lipoma',name:'Lipom / İntramüsküler Lipom',category:'Benign Tümör',
+    features:{
+      komp:['subkutan','anterior','medial','posterior'],
+      t1:['belirgin_hiperintens','yag_sinyali'],
+      t2:['hiperintens_yag','yag_baskilida_hipointens'],
+      stir:['hipointens','yag_baskilanir'],
+      dwi:['restrikte_degil'],
+      kontrast:['yok','minimal_septal'],
+      morfoloji:['iyi_sinirli','kapsullu','yag_tamam','septa_yok'],
+      klinik:['yavas_buyume','agrisiz_kitle','yaslı_hasta'],
+      patognomik:['tamamiyla_yag_sinyali','yag_baskilida_total_kayip','kalin_septa_yok']
+    },
+    weights:{komp:2,t1:7,t2:5,stir:6,dwi:3,kontrast:5,morfoloji:6,klinik:3,patognomik:10},
+    description:'Tamamen yağ sinyalinde, kapsüllü benign neoplazi; kalın septa yok.'
+  },
+  {
+    id:'atypical_lipoma_wdl',name:'Atipik Lipom / Well-Diff Liposarkom',category:'Malign Tümör',
+    features:{
+      komp:['anterior','medial','posterior','derin_yumusak_doku'],
+      t1:['yagli_hiperintens','kalin_septa_hipointens'],
+      t2:['yagli_komponent_hiperintens','nodul_hiperintens'],
+      stir:['yag_baskilanir','septa_nodul_hiperintens'],
+      dwi:['nodul_restrikte'],
+      kontrast:['kalin_septa','noduler_kontrastlanma'],
+      morfoloji:['yagli_kitle','kalin_septa','nodul_icerik','>10cm','derin_yerlesim'],
+      klinik:['yaslı','yavas_buyume','derin_kitle'],
+      patognomik:['kalin_noduler_septa','yag_dominant_kitle_nodul_ile']
+    },
+    weights:{komp:3,t1:5,t2:4,stir:5,dwi:4,kontrast:5,morfoloji:7,klinik:3,patognomik:10},
+    description:'Kalın nodüler septa (>2 mm) içeren, derin ve büyük (>10 cm) yağlı kitle.'
+  },
+  {
+    id:'myxoid_liposarcoma',name:'Miksoid Liposarkom',category:'Malign Tümör',
+    features:{
+      komp:['medial','anterior','posterior','derin'],
+      t1:['hipointens_kisminen_izointens','minimal_yag_foci'],
+      t2:['belirgin_hiperintens','sivi_benzer'],
+      stir:['belirgin_hiperintens'],
+      dwi:['hafif_restrikte'],
+      kontrast:['retikuler','noduler','progresif'],
+      morfoloji:['multilobuler','sivi_benzeri_T2','minimal_yag','>5cm'],
+      klinik:['orta_yas','uyluk_medial','derin_kitle'],
+      patognomik:['sivi_benzeri_T2','retikuler_kontrast','minimal_yag_oci_genc']
+    },
+    weights:{komp:5,t1:4,t2:6,stir:4,dwi:4,kontrast:6,morfoloji:6,klinik:4,patognomik:10},
+    description:'T2 sıvı benzeri sinyal, retiküler kontrastlanma; uyluk en sık lokalizasyon.'
+  },
+  {
+    id:'pleomorphic_sarcoma',name:'Undifferentiated Pleomorphic Sarkom (MFH)',category:'Malign Tümör',
+    features:{
+      komp:['anterior','medial','posterior','derin'],
+      t1:['heterojen','izo_hipointens','kanama_alanlari'],
+      t2:['heterojen','nekroz_alanlari','hemoraji'],
+      stir:['heterojen_hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['heterojen','yogun','nekroz_non_enhancing'],
+      morfoloji:['buyuk_kitle','>5cm','nekroz','hemoraji','ill_defined','infiltratif'],
+      klinik:['yaslı','hizli_buyuyen_kitle'],
+      patognomik:['heterojenite_ve_nekroz','belirgin_DWI_restriksiyon','>5cm']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:3,dwi:6,kontrast:6,morfoloji:7,klinik:3,patognomik:9},
+    description:'Yaşlılarda en sık ekstremite sarkomu; heterojen, nekrotik, büyük.'
+  },
+  {
+    id:'synovial_sarcoma',name:'Sinovyal Sarkom',category:'Malign Tümör',
+    features:{
+      komp:['anterior','medial','posterior','eklem_yakini'],
+      t1:['izo_hiperintens','triple_signal'],
+      t2:['heterojen','triple_signal','sivi_sivi_seviyesi'],
+      stir:['heterojen_hiperintens'],
+      dwi:['restrikte'],
+      kontrast:['heterojen','yogun'],
+      morfoloji:['multilobuler','>5cm','kalsifikasyon','sivi_sivi_seviyesi','derin_kitle'],
+      klinik:['genc_eriskin','eklem_yakini','yavas_buyuyen'],
+      patognomik:['triple_signal_T2','kalsifikasyon','sivi_sivi_seviyesi_genc']
+    },
+    weights:{komp:3,t1:4,t2:5,stir:4,dwi:4,kontrast:5,morfoloji:7,klinik:4,patognomik:10},
+    description:'Genç erişkin, eklem yakını, üç sinyal paterni (triple signal) ve kalsifikasyon.'
+  },
+  {
+    id:'rhabdomyosarcoma',name:'Rabdomiyosarkom',category:'Malign Tümör',
+    features:{
+      komp:['anterior','medial','posterior'],
+      t1:['izo_hipointens','heterojen'],
+      t2:['heterojen_hiperintens'],
+      stir:['hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['heterojen','yogun'],
+      morfoloji:['buyuk_kitle','infiltratif','hizli_buyuyen'],
+      klinik:['cocuk_genc','hizli_buyuyen_kitle'],
+      patognomik:['cocuk_hasta','belirgin_DWI','hizli_progresyon']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:3,dwi:6,kontrast:5,morfoloji:5,klinik:6,patognomik:9},
+    description:'Çocuk ve genç erişkinde en sık yumuşak doku sarkomu.'
+  },
+  {
+    id:'desmoid',name:'Desmoid Tümör (Agresif Fibromatozis)',category:'Benign Agresif',
+    features:{
+      komp:['anterior','medial','posterior','fascia_yakini'],
+      t1:['hipointens','izointens'],
+      t2:['heterojen','band_like_hipointens','fibröz_bantlar'],
+      stir:['heterojen','hipointens_bantlar'],
+      dwi:['hafif_restrikte'],
+      kontrast:['heterojen','orta_yogun'],
+      morfoloji:['infiltratif','fascia_yelken','parmak_benzeri_uzantılar'],
+      klinik:['genc_eriskin','kadın','gebelik_postpartum'],
+      patognomik:['hipointens_fibröz_bantlar_T2','fascial_tail','infiltratif_sinir']
+    },
+    weights:{komp:3,t1:4,t2:6,stir:3,dwi:3,kontrast:4,morfoloji:6,klinik:4,patognomik:10},
+    description:'T2 hipointens fibröz bantlar, infiltratif sınır ve "fascial tail" karakteristik.'
+  },
+  {
+    id:'schwannoma',name:'Schwannom',category:'Benign Sinir Kılıfı Tümörü',
+    features:{
+      komp:['siyatik','femoral','obturator','sinir_boyunca'],
+      t1:['hipointens','izointens'],
+      t2:['hiperintens','target_sign','fascicular_patern'],
+      stir:['hiperintens'],
+      dwi:['hafif_restrikte'],
+      kontrast:['heterojen','yogun','target_kontrastlanma'],
+      morfoloji:['fuziform','kapsullu','eksantrik_sinir','split_fat_sign'],
+      klinik:['yavas_buyume','agrisiz','paresteziler'],
+      patognomik:['target_sign','split_fat_sign','sinir_boyunca_fuziform']
+    },
+    weights:{komp:7,t1:3,t2:5,stir:3,dwi:3,kontrast:4,morfoloji:7,klinik:3,patognomik:10},
+    description:'Sinir üzerinde eksantrik, kapsüllü; target sign ve split fat sign patognomik.'
+  },
+  {
+    id:'neurofibroma',name:'Nörofibrom',category:'Benign Sinir Kılıfı Tümörü',
+    features:{
+      komp:['siyatik','femoral','obturator','cilt_alti'],
+      t1:['hipointens','izointens'],
+      t2:['target_sign','hiperintens_perifer_hipo_santral'],
+      stir:['hiperintens'],
+      dwi:['hafif_restrikte'],
+      kontrast:['heterojen','santral_veya_target'],
+      morfoloji:['fuziform','sinir_ile_birlesik','multiple_NF1'],
+      klinik:['NF1','cafe_au_lait','multiple'],
+      patognomik:['target_sign','NF1_klinik','multiple_sinir_boyunca']
+    },
+    weights:{komp:7,t1:3,t2:5,stir:3,dwi:3,kontrast:4,morfoloji:6,klinik:4,patognomik:10},
+    description:'Sinir içi, konsantrik yerleşimli; NF1 de sıklıkla multipl ve pleksiform.'
+  },
+  {
+    id:'mpnst',name:'MPNST (Malign Periferik Sinir Kılıfı Tümörü)',category:'Malign Tümör',
+    features:{
+      komp:['siyatik','femoral','obturator','sinir_boyunca'],
+      t1:['heterojen','izo_hipointens'],
+      t2:['heterojen','nekroz_alanlari','>5cm'],
+      stir:['heterojen_hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['heterojen','yogun','nekroz_alanlari'],
+      morfoloji:['buyuk','>5cm','ill_defined','infiltratif','hızlı_buyüyen'],
+      klinik:['NF1','agri','nörolojik_defisit','hızlı_buyuyen_kitle'],
+      patognomik:['NF1_zemininde_hızlı_buyume','yeni_agri','>5cm_heterojen_kitle']
+    },
+    weights:{komp:6,t1:3,t2:4,stir:3,dwi:6,kontrast:5,morfoloji:7,klinik:5,patognomik:10},
+    description:'Sinir kılıfı malign dönüşümü; NF1 hastalarında %10 risk.'
+  },
+  {
+    id:'hemangioma',name:'İntramüsküler Hemanjiom / Vasküler Malformasyon',category:'Vasküler',
+    features:{
+      komp:['anterior','medial','posterior','subkutan'],
+      t1:['heterojen','yag_fokus','serpentin_hipointens'],
+      t2:['belirgin_hiperintens','multiple_serpentin_vaskuler','phleboliths'],
+      stir:['hiperintens'],
+      dwi:['degisken'],
+      kontrast:['yogun','gecikmiş','serpentin_patern'],
+      morfoloji:['lobule','serpentin_damarlar','yag_fokus','phlebolith','infiltratif'],
+      klinik:['genc_eriskin','egzersizle_agri','yumusak_kitle','kizarık_deri'],
+      patognomik:['phlebolith','serpentin_T2_hiperintens','yag_fokus_icinde_kitle']
+    },
+    weights:{komp:3,t1:4,t2:6,stir:4,dwi:2,kontrast:5,morfoloji:7,klinik:3,patognomik:10},
+    description:'Serpentin T2 hiperintens vasküler yapılar, phlebolithler ve yağ fokusları.'
+  },
+  {
+    id:'dvt',name:'Derin Ven Trombozu (Femoral/Popliteal)',category:'Vasküler',
+    features:{
+      komp:['femoral_ven','profunda_ven','popliteal_ven'],
+      t1:['akut_izointens','subakut_hiperintens'],
+      t2:['akut_hiperintens','intraluminal','kronik_hipointens'],
+      stir:['akut_hiperintens','perivenöz_odem'],
+      dwi:['akut_restrikte'],
+      kontrast:['filling_defekt','intraluminal_non_enhancing','duvar_kontrast'],
+      morfoloji:['intraluminal_trombus','ven_genişlemesi','kollateraller'],
+      klinik:['bacak_odemi','agrili_şişlik','immobilizasyon','cerrahi_oyku'],
+      patognomik:['intraluminal_filling_defekt','ven_distansiyonu','kollateral_akım']
+    },
+    weights:{komp:9,t1:3,t2:4,stir:3,dwi:3,kontrast:7,morfoloji:6,klinik:5,patognomik:10},
+    description:'Akut: T2 hiperintens ekspanse ven; kronik: hipointens retrakte duvar.'
+  },
+  {
+    id:'pseudoaneurysm',name:'Psödoanevrizma / AV Fistül',category:'Vasküler',
+    features:{
+      komp:['femoral_arter','profunda_arter','popliteal_arter'],
+      t1:['akım_voidi','hematom_cevre'],
+      t2:['akım_voidi','yin_yang_gorunum'],
+      stir:['degisken'],
+      dwi:['degisken'],
+      kontrast:['dolum_arteryel_faz','erken_venöz_dolum_AV_fistul'],
+      morfoloji:['sakkuler_genişleme','arter_komşu','fokal_duvar_defekt','pulsatil'],
+      klinik:['iatrojenik','kateter_oyku','pulsatil_kitle','ufurum'],
+      patognomik:['yin_yang_akım','arteryel_fazda_dolum','erken_ven_dolum_fistul']
+    },
+    weights:{komp:9,t1:3,t2:4,stir:2,dwi:2,kontrast:7,morfoloji:6,klinik:5,patognomik:10},
+    description:'Yin-yang akım paterni, arteryel fazda dolum; AV fistülde erken venöz dolum.'
+  },
+  {
+    id:'femur_stress_fx',name:'Femur Stres Kırığı',category:'Kemik-Travmatik',
+    features:{
+      komp:['femur_korteks','femur_medulla'],
+      t1:['hipointens_bant','medüller_odem'],
+      t2:['medüller_odem_hiperintens','fraktür_hatti_hipointens'],
+      stir:['belirgin_hiperintens_odem'],
+      dwi:['degisken'],
+      kontrast:['diffuz_medüller','fraktür_hatti_kontrast'],
+      morfoloji:['fokal_korteks_kalınlaşması','medüller_odem','T1_hipointens_bant','periosteal_reaksiyon'],
+      klinik:['aktif_birey','koşucu','tekrarlayan_yuk','agri'],
+      patognomik:['T1_hipo_bant_medulla','periosteal_reaksiyon','atlet_oyku']
+    },
+    weights:{komp:7,t1:5,t2:4,stir:5,dwi:2,kontrast:4,morfoloji:6,klinik:4,patognomik:9},
+    description:'T1 hipointens bant + periosteal reaksiyon + medüller ödem klasik paternidir.'
+  },
+  {
+    id:'osteomyelitis',name:'Osteomiyelit (Femur)',category:'Kemik-Enfeksiyon',
+    features:{
+      komp:['femur_medulla','femur_korteks','perifemoral_yumusak_doku'],
+      t1:['medüller_hipointens','normal_yag_kaybı'],
+      t2:['medüller_hiperintens','periostal_abse','sinus_trakti'],
+      stir:['yogun_hiperintens'],
+      dwi:['restrikte_apse_varsa'],
+      kontrast:['heterojen_medüller','non_enhancing_sekestr','sinus_trakti'],
+      morfoloji:['kortikal_destruksiyon','periostal_reaksiyon','sekestr','sinus_trakti','yumusak_doku_yayilimi'],
+      klinik:['ates','lokal_agri','enfeksiyon','diyabet','cerrahi_oyku'],
+      patognomik:['T1_medüller_yag_kaybı','sekestr','cloaca_sinus_trakti']
+    },
+    weights:{komp:4,t1:6,t2:4,stir:5,dwi:4,kontrast:5,morfoloji:7,klinik:5,patognomik:10},
+    description:'T1 medüller yağ kaybı + STIR ödem + kortikal destrüksiyon; sekestr tanısaldır.'
+  },
+  {
+    id:'osteosarcoma',name:'Osteosarkom',category:'Kemik-Malign',
+    features:{
+      komp:['femur_metafiz','femur_distal','femur_proksimal'],
+      t1:['heterojen_hipointens','osteoid_matrix'],
+      t2:['heterojen','matrix_hipointens','çevresel_odem'],
+      stir:['heterojen_hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['heterojen_yogun','non_enhancing_nekroz'],
+      morfoloji:['medüller_kitle','kortikal_destruksiyon','codman','sunburst_periost','osteoid_matrix','yumusak_doku_kitlesi'],
+      klinik:['genc_10_25_yas','distal_femur','agri','kitle'],
+      patognomik:['osteoid_matrix','Codman_ucgeni','sunburst_periost']
+    },
+    weights:{komp:7,t1:4,t2:4,stir:3,dwi:6,kontrast:5,morfoloji:8,klinik:5,patognomik:10},
+    description:'Adolesan/genç yetişkin distal femurda osteoid matriks üreten malign kemik tümörü.'
+  },
+  {
+    id:'ewing_sarcoma',name:'Ewing Sarkomu',category:'Kemik-Malign',
+    features:{
+      komp:['femur_diafiz','femur_metafiz'],
+      t1:['homojen_izo_hipointens'],
+      t2:['heterojen_hiperintens'],
+      stir:['hiperintens'],
+      dwi:['belirgin_restrikte'],
+      kontrast:['heterojen_yogun','yumusak_doku_kitlesi_yogun'],
+      morfoloji:['diafizer','permeatif_destruksiyon','lamellar_periostal','onion_skin','buyuk_yumusak_doku_kitlesi'],
+      klinik:['5_25_yas','ates','lokal_agri','yalanci_enfeksiyon_klinigi'],
+      patognomik:['onion_skin_periost','diafizer_permeatif','buyuk_yumusak_doku_komponenti']
+    },
+    weights:{komp:7,t1:3,t2:4,stir:3,dwi:6,kontrast:5,morfoloji:8,klinik:5,patognomik:10},
+    description:'Diafizer, permeatif, onion-skin periosteal reaksiyon; ateş ile enfeksiyonu taklit eder.'
+  },
+  {
+    id:'bone_metastasis',name:'Femur Kemik Metastazı',category:'Kemik-Malign',
+    features:{
+      komp:['femur_medulla','femur_korteks','proksimal_femur'],
+      t1:['hipointens_yag_kaybı','multiple_odak'],
+      t2:['hiperintens','heterojen'],
+      stir:['hiperintens'],
+      dwi:['restrikte'],
+      kontrast:['heterojen','yogun'],
+      morfoloji:['multiple','iyi_sinirli_kotu_sinirli','litik_sklerotik','patolojik_fraktür_riski'],
+      klinik:['>45_yas','primer_malignite_oyku','kemik_agrisi','multiple_iskelet_tutulum'],
+      patognomik:['primer_malignite_oyku','multiple_medüller_T1_hipo_lezyon','patolojik_fraktür']
+    },
+    weights:{komp:5,t1:6,t2:3,stir:4,dwi:4,kontrast:4,morfoloji:6,klinik:6,patognomik:9},
+    description:'Medüller T1 yağ kaybı olan multipl lezyonlar; primer tümör öyküsü kritik.'
+  },
+  {
+    id:'multiple_myeloma',name:'Multipl Myelom / Plazmositom',category:'Kemik-Malign',
+    features:{
+      komp:['femur_medulla','multiple_kemik'],
+      t1:['multiple_hipointens_odak','salt_pepper','diffuz_hipointens'],
+      t2:['hiperintens'],
+      stir:['hiperintens'],
+      dwi:['restrikte'],
+      kontrast:['yogun'],
+      morfoloji:['multiple_punched_out','fokal_plazmositom','diffuz_medüller_infiltrasyon'],
+      klinik:['>50_yas','kemik_agrisi','anemi','hiperkalsemi','böbrek_yetmezligi'],
+      patognomik:['salt_pepper_patern','punched_out_lezyonlar','serum_M_protein']
+    },
+    weights:{komp:5,t1:6,t2:3,stir:4,dwi:4,kontrast:4,morfoloji:6,klinik:5,patognomik:10},
+    description:'Salt-and-pepper patern veya multipl hipointens odaklar; klinik ile korele.'
+  },
+  {
+    id:'enchondroma',name:'Enkondrom',category:'Kemik-Benign',
+    features:{
+      komp:['femur_medulla','metafiz','diafiz'],
+      t1:['lobule_izo_hipointens','iclerinde_kalsifikasyon_hipointens'],
+      t2:['lobule_hiperintens','ring_arc_kalsifikasyon'],
+      stir:['lobule_hiperintens'],
+      dwi:['hafif'],
+      kontrast:['periferik_arc','septal'],
+      morfoloji:['lobule','iyi_sinirli','ring_arc_kalsifikasyon','kortikal_destruksiyon_yok'],
+      klinik:['insidental','agrisiz','her_yas'],
+      patognomik:['ring_arc_kalsifikasyon','lobule_T2_hiper','endosteal_skalloping_minimal']
+    },
+    weights:{komp:5,t1:4,t2:5,stir:3,dwi:3,kontrast:4,morfoloji:7,klinik:3,patognomik:9},
+    description:'Ring-and-arc kalsifikasyon, T2 lobülasyonlar, minimal endosteal skalloping.'
+  },
+  {
+    id:'chondrosarcoma',name:'Kondrosarkom',category:'Kemik-Malign',
+    features:{
+      komp:['femur_medulla','proksimal_femur'],
+      t1:['heterojen','lobule_hipointens','kalsifikasyon'],
+      t2:['lobule_hiperintens','kondroid_matrix'],
+      stir:['lobule_hiperintens'],
+      dwi:['restrikte'],
+      kontrast:['periferik_septal','ring_arc'],
+      morfoloji:['>5cm','endosteal_skalloping_>2_3','kortikal_destruksiyon','yumusak_doku_kitlesi'],
+      klinik:['>40_yas','kemik_agrisi','buyuyen_lezyon'],
+      patognomik:['derin_endosteal_skalloping','yumusak_doku_komponenti','ring_arc_kalsifikasyon']
+    },
+    weights:{komp:6,t1:4,t2:4,stir:3,dwi:4,kontrast:4,morfoloji:8,klinik:4,patognomik:10},
+    description:'Derin endosteal skalloping (>2/3), kortikal destrüksiyon ve yumuşak doku komponenti.'
+  },
+  {
+    id:'bone_infarct',name:'Kemik İnfarktı / Medüller İnfarkt',category:'Kemik-Benign',
+    features:{
+      komp:['femur_medulla','distal_femur'],
+      t1:['serpiginöz_hipointens_rim','santral_yag_sinyali'],
+      t2:['double_line_sign','santral_hiperintens'],
+      stir:['hiperintens_rim'],
+      dwi:['yok'],
+      kontrast:['rim'],
+      morfoloji:['serpiginöz_sınır','coğrafik','iyi_sinirli','santral_normal_yag'],
+      klinik:['kortikosteroid','alkol','orak_hucre','dalıcı'],
+      patognomik:['double_line_sign','serpiginöz_hipo_rim_santral_yag']
+    },
+    weights:{komp:5,t1:5,t2:6,stir:4,dwi:3,kontrast:3,morfoloji:7,klinik:4,patognomik:10},
+    description:'Double-line sign (T2) ve serpiginöz sınır; santral yağ sinyalinin korunması.'
+  },
+  {
+    id:'fibrous_dysplasia',name:'Fibröz Displazi',category:'Kemik-Benign',
+    features:{
+      komp:['femur_medulla','proksimal_femur'],
+      t1:['homojen_izo_hipointens'],
+      t2:['homojen_izo_hipointens','bazen_hiperintens'],
+      stir:['degisken'],
+      dwi:['yok'],
+      kontrast:['homojen','diffuz'],
+      morfoloji:['ground_glass_matrix','genis_lezyon','kortikal_incelme','shepherd_crook'],
+      klinik:['genc_hasta','insidental','bazen_agri','patolojik_fraktür'],
+      patognomik:['ground_glass_matrix','shepherd_crook_deformite','T2_orta_sinyal']
+    },
+    weights:{komp:6,t1:4,t2:4,stir:3,dwi:2,kontrast:3,morfoloji:8,klinik:3,patognomik:10},
+    description:'Ground-glass matriks, proksimal femurda "shepherd crook" deformitesi.'
+  },
+  {
+    id:'heterotopic_ossif',name:'Heterotopik Ossifikasyon',category:'Kemik-Ekstraosseöz',
+    features:{
+      komp:['anterior','medial','posterior','subkutan'],
+      t1:['perifer_hipointens_rim','santral_yag'],
+      t2:['heterojen','perifer_hipo','santral_hiper_veya_yag'],
+      stir:['heterojen'],
+      dwi:['yok'],
+      kontrast:['aktif_faz_kontrast','matur_faz_minimal'],
+      morfoloji:['zonal_patern','yumusak_doku_icinde_kemik','periferal_kortikal_rim'],
+      klinik:['spinal_kord_yaralanmasi','nörolojik_hastalık','cerrahi_sonrasi','yanık','travma'],
+      patognomik:['periferal_kortikal_kemik','zonal_patern','spinal_kord_yaralanmasi_oyku']
+    },
+    weights:{komp:2,t1:3,t2:4,stir:2,dwi:2,kontrast:3,morfoloji:6,klinik:5,patognomik:10},
+    description:'Nörolojik/travma sonrası yumuşak dokuda matur kemik; zonal patern.'
+  },
+  {
+    id:'avulsion_injury',name:'Avülsiyon Yaralanması (Hamstring / Adduktor)',category:'Travmatik',
+    features:{
+      komp:['iskion_tuberositasi','pubis','posterior','medial'],
+      t1:['kemik_parcasi_kopma','hipointens_odem'],
+      t2:['kemik_odemi','sivi_defekt'],
+      stir:['hiperintens_odem','tendon_defekti'],
+      dwi:['degisken'],
+      kontrast:['hafif'],
+      morfoloji:['kortikal_kemik_parcasi','tendon_retraksiyonu','sıvı_dolu_defekt','origo_insertio'],
+      klinik:['akut_spor_yaralanmasi','adolesan','sprinter','ani_agri'],
+      patognomik:['kemik_parcasi_kopma','tendon_origo_insertio_defekti']
+    },
+    weights:{komp:4,t1:4,t2:4,stir:4,dwi:2,kontrast:2,morfoloji:7,klinik:5,patognomik:9},
+    description:'Tendon orijin/insertion bölgesinden kemik parçası kopması; sprinter & adolesanda.'
+  }
+];
+
+/* Feature label mapping for report readability */
+const FEATURE_LABELS = {
+  komp:'Kompartman/Lokalizasyon',t1:'T1 sinyal',t2:'T2 sinyal',stir:'STIR/PDFS',
+  dwi:'DWI/ADC',kontrast:'Kontrastlanma paterni',morfoloji:'Morfoloji',
+  klinik:'Klinik korelasyon',patognomik:'Patognomik özellikler'
+};
+
+/* ========================================================
+   WIZARD ADIMLARI — Uyluk MRI
+   16 ana adım + çoklu lezyon döngüsü (7 alt-adım)
+======================================================== */
+const STEPS = [
+  {id:'klinik',title:'Klinik Bilgi',sub:'Demografi, taraf, indikasyon, travma öyküsü'},
+  {id:'teknik',title:'Teknik Parametreler',sub:'MR cihazı ve elde edilen sekanslar'},
+  {id:'cilt',title:'Cilt ve Subkutan Doku',sub:'Derialtı ödem, koleksiyon, nodül'},
+  {id:'fascia',title:'Fascia Lata ve Kompartmanlar',sub:'Fascial bütünlük, kompartman sıvısı'},
+  {id:'femur_cortex',title:'Femur — Korteks ve Periost',sub:'Kortikal bütünlük, periosteal reaksiyon'},
+  {id:'femur_medulla',title:'Femur — Medülla ve Kemik İliği',sub:'Medüller sinyal, yağ replasmanı, lezyon'},
+  {id:'anterior',title:'Anterior Kompartman — Kuadriseps',sub:'Rectus femoris, vastus lat/med/int'},
+  {id:'medial',title:'Medial Kompartman — Adduktorlar',sub:'Adductor magnus/longus/brevis, gracilis, pectineus'},
+  {id:'posterior',title:'Posterior Kompartman — Hamstring',sub:'Biceps femoris, semitendinosus, semimembranosus'},
+  {id:'tendon',title:'Tendon ve Enthesis',sub:'Proksimal/distal tendon insertion değerlendirmesi'},
+  {id:'vascular',title:'Femoral Nörovasküler Paket',sub:'SFA, CFA, profunda, femoral ven, saphen'},
+  {id:'sciatic',title:'Siyatik Sinir',sub:'Boyut, sinyal, çevresi, fasiküler patern'},
+  {id:'femoral_n',title:'Femoral ve Obturator Sinir',sub:'Sinir seyri, nöropati bulguları'},
+  {id:'lenf',title:'İnguinal / Yüzeyel Lenf Nodları',sub:'Boyut, şekil, sinyal'},
+  {id:'lezyon_giris',title:'Lezyon Sayısı ve Ekleme',sub:'Fokal lezyon varlığı ve sayısı'},
+  // — multi-lezyon döngüsü burada araya girer —
+  {id:'ek',title:'Ek Bulgular',sub:'Serbest metin ek bulgu girişi'},
+  {id:'rapor',title:'Sonuç ve Rapor',sub:'Ayırıcı tanı ve yapılandırılmış rapor'}
+];
+
+const LESION_SUBSTEPS = [
+  {id:'lez_loc',title:'Lezyon — Lokalizasyon ve Boyut',sub:'Kompartman, kas, üç boyut'},
+  {id:'lez_morf',title:'Lezyon — Morfoloji',sub:'Sınır, şekil, kapsül, infiltrasyon'},
+  {id:'lez_t1',title:'Lezyon — T1 Sinyal',sub:'Yağ, hemoraji, kalsifikasyon ipuçları'},
+  {id:'lez_t2',title:'Lezyon — T2 / STIR / PDFS',sub:'Sıvı, ödem, kalsifikasyon, fibröz bantlar'},
+  {id:'lez_dwi',title:'Lezyon — DWI / ADC',sub:'Restriksiyon paterni'},
+  {id:'lez_kontrast',title:'Lezyon — Kontrastlanma',sub:'Patern ve dinamik'},
+  {id:'lez_kom',title:'Lezyon — Komşuluk / İnvazyon',sub:'Kemik, damar, sinir, fascia, cilt'}
+];
+
+/* ============== UI atomları ============== */
+const Chip = ({label,selected,onClick,variant=''}) => (
+  <div className={`chip ${selected?'selected':''} ${variant}`} onClick={onClick}>{label}</div>
+);
+
+const CheckBoxItem = ({label,on,onToggle}) => (
+  <div className={`check-item ${on?'on':''}`} onClick={(e)=>{e.stopPropagation();onToggle()}}>
+    <div className="check-box"></div>
+    <div>{label}</div>
+  </div>
+);
+
+const SegRow = ({name,value,onChange,options}) => (
+  <div className="seg-wrap">
+    <div className="seg-name">{name}</div>
+    <div className="seg-opts">
+      {options.map(o=>(
+        <div key={o.v} className={`seg-opt ${value===o.v?'on':''} ${o.warn?'warn':''}`}
+             onClick={()=>onChange(o.v)}>{o.l}</div>
+      ))}
+    </div>
+  </div>
+);
+
+const Field = ({label,children}) => (
+  <div>
+    <label className="field">{label}</label>
+    {children}
+  </div>
+);
+
+
+/* ========================================================
+   ANA UYGULAMA BİLEŞENİ
+======================================================== */
+function App(){
+  const [stepIdx,setStepIdx] = useState(0);
+  const [currentLesionIdx,setCurrentLesionIdx] = useState(-1);
+  const [lesionSubStep,setLesionSubStep] = useState(0);
+
+  /* Ana state */
+  const [data,setData] = useState({
+    // Klinik
+    taraf:'',yas:'',cinsiyet:'',indikasyon:[],travmaOykusu:'',klinikNot:'',
+    // Teknik
+    cihaz:'',sekanslar:[],kontrastVerildi:'',
+    // Cilt
+    cilt:{durum:'normal',bulgu:[]},ciltNot:'',
+    // Fascia
+    fasciaLata:{durum:'normal',bulgu:[]},kompartmanSindromu:'',fasciaNot:'',
+    // Femur korteks
+    femurKorteks:{durum:'normal',bulgu:[]},periost:{durum:'normal',bulgu:[]},femurKorteksNot:'',
+    // Femur medülla
+    femurMedulla:{durum:'normal',bulgu:[]},kemikIligi:'',femurMedullaNot:'',
+    // Kuadriseps
+    rectusFemoris:'normal',vastusLat:'normal',vastusMed:'normal',vastusInt:'normal',
+    anteriorBulgu:[],anteriorNot:'',
+    // Adduktorlar
+    adductorMag:'normal',adductorLong:'normal',adductorBrev:'normal',gracilis:'normal',pectineus:'normal',
+    medialBulgu:[],medialNot:'',
+    // Hamstring
+    bicepsFem:'normal',semitend:'normal',semimem:'normal',
+    posteriorBulgu:[],posteriorNot:'',
+    // Tendon
+    proximalTendon:'normal',distalTendon:'normal',tendonBulgu:[],tendonNot:'',
+    // Vascular
+    sfa:'normal',cfa:'normal',profundaFem:'normal',femoralVen:'normal',saphenVen:'normal',
+    vascularBulgu:[],vascularNot:'',
+    // Siyatik
+    siyatikCap:'normal',siyatikSinyal:'normal',siyatikCevre:'normal',siyatikBulgu:[],siyatikNot:'',
+    // Femoral / Obturator
+    femoralSinir:'normal',obturatorSinir:'normal',femoralBulgu:[],femoralNot:'',
+    // Lenf
+    lenfNodBoyut:'',lenfNodSayisi:'',lenfNodSinyal:'',lenfBulgu:[],lenfNot:'',
+    // Lezyonlar
+    lezyonVarMi:'',lezyonlar:[],
+    // Ek bulgular
+    ekBulgular:''
+  });
+
+  const lesions = data.lezyonlar||[];
+  const inLesionLoop = stepIdx === 15 && currentLesionIdx >= 0 && currentLesionIdx < lesions.length;
+  const totalSteps = STEPS.length + (lesions.length>0 ? lesions.length * LESION_SUBSTEPS.length : 0);
+  const computedStep = useMemo(()=>{
+    if(inLesionLoop){
+      return 15 + currentLesionIdx * LESION_SUBSTEPS.length + lesionSubStep;
+    }
+    if(stepIdx < 15) return stepIdx;
+    return stepIdx + lesions.length * LESION_SUBSTEPS.length;
+  },[stepIdx,currentLesionIdx,lesionSubStep,lesions.length,inLesionLoop]);
+  const progress = ((computedStep+1) / (totalSteps+1)) * 100;
+
+  const update = (k,v)=>setData(s=>({...s,[k]:v}));
+  const updateNested = (parent,k,v)=>setData(s=>({...s,[parent]:{...s[parent],[k]:v}}));
+  const toggleInList = (k,v)=>setData(s=>({...s,[k]:s[k].includes(v)?s[k].filter(x=>x!==v):[...s[k],v]}));
+  const toggleInNestedList = (parent,k,v)=>setData(s=>({
+    ...s,[parent]:{...s[parent],[k]:s[parent][k].includes(v)?s[parent][k].filter(x=>x!==v):[...s[parent][k],v]}
+  }));
+
+  /* Lezyon yönetimi */
+  const addLesion = () => {
+    const newLesion = {
+      id:'L'+(lesions.length+1),
+      komp:'',kas:'',boyut:{x:'',y:'',z:''},
+      morfoloji:[],sinir:'',
+      t1:[],t1Not:'',
+      t2:[],stir:[],t2Not:'',
+      dwi:'',adc:'',dwiNot:'',
+      kontrast:[],dinamik:'',kontrastNot:'',
+      invazyon:[],invazyonNot:'',
+      tamamlandi:false
+    };
+    setData(s=>({...s,lezyonlar:[...s.lezyonlar,newLesion]}));
+  };
+
+  const updateLesion = (idx,key,val) => {
+    setData(s=>({
+      ...s,
+      lezyonlar:s.lezyonlar.map((l,i)=>i===idx?{...l,[key]:val}:l)
+    }));
+  };
+  const toggleLesionList = (idx,key,val) => {
+    setData(s=>({
+      ...s,
+      lezyonlar:s.lezyonlar.map((l,i)=>{
+        if(i!==idx) return l;
+        const cur = l[key]||[];
+        return {...l,[key]:cur.includes(val)?cur.filter(x=>x!==val):[...cur,val]};
+      })
+    }));
+  };
+  const removeLesion = (idx) => {
+    setData(s=>({...s,lezyonlar:s.lezyonlar.filter((_,i)=>i!==idx)}));
+    if(currentLesionIdx === idx) {setCurrentLesionIdx(-1); setLesionSubStep(0);}
+  };
+
+  const finalizeLesion = () => {
+    if(currentLesionIdx < 0) return;
+    const idx = currentLesionIdx;
+    // Lezyonu tamamla ve güncel listeyi elde et
+    const updatedLesions = lesions.map((l,i)=>i===idx?{...l,tamamlandi:true}:l);
+    setData(s=>({...s,lezyonlar:updatedLesions}));
+    // Sıradaki tamamlanmamış lezyonu bul
+    const nextIncomplete = updatedLesions.findIndex((l,i)=>i!==idx && !l.tamamlandi);
+    if(nextIncomplete >= 0){
+      // Sıradaki lezyona otomatik geç
+      setCurrentLesionIdx(nextIncomplete);
+      setLesionSubStep(0);
+    } else {
+      // Tüm lezyonlar tamam — döngüden çık (stepIdx=15 'ek' ekranı görünsün)
+      setCurrentLesionIdx(-1);
+      setLesionSubStep(0);
+    }
+  };
+
+  /* Navigasyon - 3-part loop fix pattern */
+  const goNext = () => {
+    if(inLesionLoop){
+      // Lezyon döngüsü içinde
+      if(lesionSubStep < LESION_SUBSTEPS.length - 1){
+        setLesionSubStep(s=>s+1);
+      } else {
+        // Bu lezyon tamamlandı
+        finalizeLesion();
+      }
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    // Ana adım 15 (lezyon girişi) sonrası: eğer lezyon varsa döngüye gir
+    if(stepIdx === 14 && lesions.length > 0){
+      // Önce tamamlanmamış olan lezyonu bul
+      const incomplete = lesions.findIndex(l=>!l.tamamlandi);
+      if(incomplete >= 0){
+        setStepIdx(15);
+        setCurrentLesionIdx(incomplete);
+        setLesionSubStep(0);
+        window.scrollTo({top:0,behavior:'smooth'});
+        return;
+      }
+      // Hepsi tamamsa ek bulgular adımına (stepIdx=15 'ek')
+      setStepIdx(15);
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    // Ana adım 15 = 'Ek Bulgular' ekranı (currentLesionIdx=-1 iken)
+    // Bu durumda her zaman rapor adımına geç — lezyonlar finalizeLesion ile otomatik ilerlemiş olmalı
+    if(stepIdx === 15 && currentLesionIdx === -1){
+      setStepIdx(16);
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    if(stepIdx < STEPS.length - 1){
+      setStepIdx(s=>s+1);
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  const goPrev = () => {
+    if(inLesionLoop){
+      if(lesionSubStep > 0){
+        setLesionSubStep(s=>s-1);
+      } else {
+        // İlk alt adımdan; önceki lezyona ya da lezyon girişine dön
+        if(currentLesionIdx > 0){
+          // Önceki lezyonun son alt adımına
+          setCurrentLesionIdx(currentLesionIdx-1);
+          setLesionSubStep(LESION_SUBSTEPS.length-1);
+        } else {
+          // Lezyon giriş adımına dön
+          setCurrentLesionIdx(-1);
+          setLesionSubStep(0);
+          setStepIdx(14);
+        }
+      }
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    // Lezyon sonrası (ek bulgu) adımından lezyon varsa sona dön
+    if(stepIdx === 16 && lesions.length > 0){
+      setStepIdx(15);
+      setCurrentLesionIdx(lesions.length-1);
+      setLesionSubStep(LESION_SUBSTEPS.length-1);
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    if(stepIdx > 0){
+      setStepIdx(s=>s-1);
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+
+  /* Current step calc */
+  let currentStepDef;
+  if(inLesionLoop){
+    currentStepDef = LESION_SUBSTEPS[lesionSubStep];
+  } else {
+    currentStepDef = STEPS[stepIdx];
+  }
+
+
+  /* ========================================================
+     SCORING ENGINE — Ağırlıklı ayırıcı tanı motoru
+     Lezyon + genel bulgular birleştirilir
+  ======================================================== */
+  const computeDifferential = () => {
+    // Tüm bulgu setini topla
+    const allFeatures = {
+      komp:[],t1:[],t2:[],stir:[],dwi:[],kontrast:[],morfoloji:[],klinik:[],patognomik:[]
+    };
+    // Lezyonlardan topla
+    lesions.forEach(l=>{
+      if(!l.tamamlandi) return;
+      if(l.komp) allFeatures.komp.push(l.komp);
+      if(l.kas) allFeatures.komp.push(l.kas);
+      allFeatures.morfoloji.push(...(l.morfoloji||[]));
+      allFeatures.t1.push(...(l.t1||[]));
+      allFeatures.t2.push(...(l.t2||[]));
+      allFeatures.stir.push(...(l.stir||[]));
+      if(l.dwi) allFeatures.dwi.push(l.dwi);
+      allFeatures.kontrast.push(...(l.kontrast||[]));
+      allFeatures.morfoloji.push(...(l.invazyon||[]));
+    });
+    // Genel bulgulardan topla (kompartman, klinik vb.)
+    allFeatures.morfoloji.push(...(data.cilt.bulgu||[]));
+    allFeatures.morfoloji.push(...(data.fasciaLata.bulgu||[]));
+    allFeatures.morfoloji.push(...(data.femurKorteks.bulgu||[]));
+    allFeatures.morfoloji.push(...(data.periost.bulgu||[]));
+    allFeatures.morfoloji.push(...(data.femurMedulla.bulgu||[]));
+    allFeatures.morfoloji.push(...(data.anteriorBulgu||[]));
+    allFeatures.morfoloji.push(...(data.medialBulgu||[]));
+    allFeatures.morfoloji.push(...(data.posteriorBulgu||[]));
+    allFeatures.morfoloji.push(...(data.vascularBulgu||[]));
+    allFeatures.morfoloji.push(...(data.siyatikBulgu||[]));
+    allFeatures.morfoloji.push(...(data.femoralBulgu||[]));
+    allFeatures.morfoloji.push(...(data.tendonBulgu||[]));
+    allFeatures.klinik.push(...(data.indikasyon||[]));
+
+    // Skorla
+    const scored = PATHOLOGIES.map(path=>{
+      let score = 0;
+      let maxScore = 0;
+      const matches = {};
+      Object.keys(path.features).forEach(cat=>{
+        const expected = path.features[cat];
+        const weight = path.weights[cat] || 1;
+        const actual = allFeatures[cat] || [];
+        maxScore += weight * 1.0; // normalize
+        let catMatch = 0;
+        expected.forEach(exp=>{
+          if(actual.some(a=>a.includes(exp) || exp.includes(a))){
+            catMatch += 1;
+          }
+        });
+        const catScore = expected.length>0 ? (catMatch/expected.length) * weight : 0;
+        score += catScore;
+        matches[cat] = catMatch>0;
+      });
+      const pct = maxScore>0 ? Math.min(100, Math.round((score/maxScore)*100)) : 0;
+      return {...path,score:pct,matches};
+    }).sort((a,b)=>b.score-a.score);
+    return scored;
+  };
+
+  /* ========================================================
+     RENDER: Klinik adımı (Step 0)
+  ======================================================== */
+  const renderKlinik = () => (
+    <Fragment>
+      <div className="row r3">
+        <Field label="Taraf">
+          <div className="chips">
+            {['Sağ','Sol','Bilateral'].map(t=>(
+              <Chip key={t} label={t} selected={data.taraf===t} onClick={()=>update('taraf',t)}/>
+            ))}
+          </div>
+        </Field>
+        <Field label="Yaş">
+          <input type="number" value={data.yas} onChange={e=>update('yas',e.target.value)} placeholder="Örn: 45"/>
+        </Field>
+        <Field label="Cinsiyet">
+          <div className="chips">
+            {['Kadın','Erkek'].map(c=>(
+              <Chip key={c} label={c} selected={data.cinsiyet===c} onClick={()=>update('cinsiyet',c)}/>
+            ))}
+          </div>
+        </Field>
+      </div>
+      <Field label="İndikasyon (birden fazla seçilebilir)">
+        <div className="check-grid">
+          {['akut_travma','spor_yaralanmasi','kunt_travma','kayma_yaralanmasi','kitle_sisme','agrili_sislik',
+            'ates','enfeksiyon_bulgulari','pulsatil_kitle','nörolojik_defisit','radikulopati','paresteziler',
+            'egzersizle_agri','kemik_agrisi','kronik_agri','patolojik_fraktür','postop_kontrol',
+            'tumor_staging','tumor_takip','tarama_NF1','antikoagulan','immunsupresyon','diyabet',
+            'primer_malignite_oyku','cerrahi_oyku','iatrojenik'].map(i=>(
+              <CheckBoxItem key={i} label={i.replace(/_/g,' ')} on={data.indikasyon.includes(i)}
+                onToggle={()=>toggleInList('indikasyon',i)}/>
+            ))}
+        </div>
+      </Field>
+      <div className="row r2">
+        <Field label="Travma öyküsü">
+          <div className="chips">
+            {['Yok','Akut (<24s)','Subakut (1-7 gün)','Kronik (>1 hf)'].map(t=>(
+              <Chip key={t} label={t} selected={data.travmaOykusu===t} onClick={()=>update('travmaOykusu',t)}/>
+            ))}
+          </div>
+        </Field>
+        <Field label="Ek klinik not">
+          <input type="text" value={data.klinikNot} onChange={e=>update('klinikNot',e.target.value)}
+            placeholder="Serbest metin — ek klinik detay"/>
+        </Field>
+      </div>
+    </Fragment>
+  );
+
+  /* Teknik */
+  const renderTeknik = () => (
+    <Fragment>
+      <div className="row r2">
+        <Field label="MR Cihazı">
+          <div className="chips">
+            {['1.5 T','3 T'].map(c=>(
+              <Chip key={c} label={c} selected={data.cihaz===c} onClick={()=>update('cihaz',c)}/>
+            ))}
+          </div>
+        </Field>
+        <Field label="IV Kontrast">
+          <div className="chips">
+            {['Verildi (Gd)','Verilmedi'].map(k=>(
+              <Chip key={k} label={k} selected={data.kontrastVerildi===k} onClick={()=>update('kontrastVerildi',k)}/>
+            ))}
+          </div>
+        </Field>
+      </div>
+      <Field label="Elde edilen sekanslar">
+        <div className="check-grid">
+          {['T1 aksiyel','T1 koronal','T1 sagital','T2 aksiyel','T2 koronal','T2 sagital',
+            'PDFS / Yağ baskılı PD','STIR','DWI (b=50/400/800)','ADC haritası',
+            'T2* / GRE','Kontrastlı T1 yağ baskılı','Dinamik kontrast (4D/Time-resolved)',
+            'MR anjiyografi','MR venografi'].map(s=>(
+              <CheckBoxItem key={s} label={s} on={data.sekanslar.includes(s)}
+                onToggle={()=>toggleInList('sekanslar',s)}/>
+            ))}
+        </div>
+      </Field>
+    </Fragment>
+  );
+
+  /* Cilt */
+  const renderCilt = () => (
+    <Fragment>
+      <Field label="Cilt / Subkutan genel durum">
+        <div className="chips">
+          {['normal','anormal'].map(d=>(
+            <Chip key={d} label={d} selected={data.cilt.durum===d}
+              onClick={()=>updateNested('cilt','durum',d)}/>
+          ))}
+        </div>
+      </Field>
+      {data.cilt.durum==='anormal' && (
+        <Fragment>
+          <Field label="Cilt / Subkutan bulguları">
+            <div className="check-grid">
+              {['cilt_kalinlaşması','subkutan_retikuler_odem','subkutan_yag_planı_silikleşme',
+                'sivi_koleksiyonu','apse','nodüler_kitle','cilt_altı_kist','lipom_benzeri_kitle',
+                'hematom','Morel-Lavallée','nekroz','gaz_odaklari','selülit'].map(b=>(
+                  <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.cilt.bulgu.includes(b)}
+                    onToggle={()=>toggleInNestedList('cilt','bulgu',b)}/>
+                ))}
+            </div>
+          </Field>
+          <Field label="Ek not">
+            <textarea value={data.ciltNot} onChange={e=>update('ciltNot',e.target.value)} placeholder="Serbest metin"/>
+          </Field>
+        </Fragment>
+      )}
+    </Fragment>
+  );
+
+  /* Fascia lata */
+  const renderFascia = () => (
+    <Fragment>
+      <Field label="Fascia lata ve kompartman genel durumu">
+        <div className="chips">
+          {['normal','anormal'].map(d=>(
+            <Chip key={d} label={d} selected={data.fasciaLata.durum===d}
+              onClick={()=>updateNested('fasciaLata','durum',d)}/>
+          ))}
+        </div>
+      </Field>
+      {data.fasciaLata.durum==='anormal' && (
+        <Fragment>
+          <Field label="Fascia / kompartman bulguları">
+            <div className="check-grid">
+              {['fascia_kalinlaşması','fascia_boyunca_hiperintensite','fascia_yelken_tail',
+                'kompartman_sıvı_artışı','kompartman_odemi','fasiitis','derin_fascia_hiperintensitesi',
+                'non_enhancing_fascia','fascial_yayilim','multikompartman_tutulum','fascia_ile_kas_arasinda',
+                'gaz_gorunumu','fascia_lata','iliotibial_tract_kalinlaşması'].map(b=>(
+                  <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.fasciaLata.bulgu.includes(b)}
+                    onToggle={()=>toggleInNestedList('fasciaLata','bulgu',b)}/>
+                ))}
+            </div>
+          </Field>
+          <Field label="Kompartman sendromu bulgusu">
+            <div className="chips">
+              {['Yok','Şüpheli','Belirgin'].map(k=>(
+                <Chip key={k} label={k} selected={data.kompartmanSindromu===k}
+                  onClick={()=>update('kompartmanSindromu',k)} variant={k==='Belirgin'?'warn':''}/>
+              ))}
+            </div>
+          </Field>
+          <Field label="Ek not">
+            <textarea value={data.fasciaNot} onChange={e=>update('fasciaNot',e.target.value)}/>
+          </Field>
+        </Fragment>
+      )}
+    </Fragment>
+  );
+
+  /* Femur korteks */
+  const renderFemurCortex = () => (
+    <Fragment>
+      <div className="row r2">
+        <Field label="Kortikal bütünlük">
+          <div className="chips">
+            {['normal','anormal'].map(d=>(
+              <Chip key={d} label={d} selected={data.femurKorteks.durum===d}
+                onClick={()=>updateNested('femurKorteks','durum',d)}/>
+            ))}
+          </div>
+        </Field>
+        <Field label="Periost">
+          <div className="chips">
+            {['normal','anormal'].map(d=>(
+              <Chip key={d} label={d} selected={data.periost.durum===d}
+                onClick={()=>updateNested('periost','durum',d)}/>
+            ))}
+          </div>
+        </Field>
+      </div>
+      {data.femurKorteks.durum==='anormal' && (
+        <Field label="Kortikal bulgular">
+          <div className="check-grid">
+            {['fokal_korteks_kalınlaşması','kortikal_destruksiyon','kortikal_incelme',
+              'T1_hipointens_bant','fraktür_hatti','endosteal_skalloping','endosteal_skalloping_>2_3',
+              'permeatif_destruksiyon','patolojik_fraktür','kortikal_expansiyon','shepherd_crook',
+              'kortikal_osteoid_matrix'].map(b=>(
+                <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.femurKorteks.bulgu.includes(b)}
+                  onToggle={()=>toggleInNestedList('femurKorteks','bulgu',b)}/>
+              ))}
+          </div>
+        </Field>
+      )}
+      {data.periost.durum==='anormal' && (
+        <Field label="Periosteal bulgular">
+          <div className="check-grid">
+            {['periostal_reaksiyon','sunburst_periost','Codman_ucgeni','onion_skin','lamellar_periostal',
+              'solid_periosteal','agresif_periosteal','benign_periosteal','periosteal_abse'].map(b=>(
+                <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.periost.bulgu.includes(b)}
+                  onToggle={()=>toggleInNestedList('periost','bulgu',b)}/>
+              ))}
+          </div>
+        </Field>
+      )}
+      <Field label="Ek not">
+        <textarea value={data.femurKorteksNot} onChange={e=>update('femurKorteksNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Femur medülla */
+  const renderFemurMedulla = () => (
+    <Fragment>
+      <Field label="Medüller/kemik iliği genel durum">
+        <div className="chips">
+          {['normal','anormal'].map(d=>(
+            <Chip key={d} label={d} selected={data.femurMedulla.durum===d}
+              onClick={()=>updateNested('femurMedulla','durum',d)}/>
+          ))}
+        </div>
+      </Field>
+      {data.femurMedulla.durum==='anormal' && (
+        <Fragment>
+          <Field label="Medüller bulgular">
+            <div className="check-grid">
+              {['medüller_odem','T1_medüller_yag_kaybı','diffuz_medüller_infiltrasyon',
+                'multiple_medüller_T1_hipo_lezyon','fokal_medüller_lezyon','salt_pepper',
+                'punched_out_lezyonlar','ground_glass_matrix','kondroid_matrix','ring_arc_kalsifikasyon',
+                'double_line_sign','serpiginöz_hipo_rim_santral_yag','sekestr','cloaca_sinus_trakti',
+                'avaskuler_nekroz','multiple','fokal_plazmositom','permeatif_destruksiyon'].map(b=>(
+                  <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.femurMedulla.bulgu.includes(b)}
+                    onToggle={()=>toggleInNestedList('femurMedulla','bulgu',b)}/>
+                ))}
+            </div>
+          </Field>
+          <Field label="Kemik iliği paterni (yaş uyumu)">
+            <div className="chips">
+              {['Yaş uyumlu','Yaşa göre aşırı sarı ilik','Yaşa göre aşırı kırmızı ilik (reconversion)','Diffüz infiltrasyon paterni'].map(k=>(
+                <Chip key={k} label={k} selected={data.kemikIligi===k} onClick={()=>update('kemikIligi',k)}/>
+              ))}
+            </div>
+          </Field>
+          <Field label="Ek not">
+            <textarea value={data.femurMedullaNot} onChange={e=>update('femurMedullaNot',e.target.value)}/>
+          </Field>
+        </Fragment>
+      )}
+    </Fragment>
+  );
+
+
+  /* Helper for muscle segment */
+  const MUSCLE_OPTS = [
+    {v:'normal',l:'Normal'},
+    {v:'odem',l:'Ödem',warn:true},
+    {v:'strain_g1',l:'Strain I',warn:true},
+    {v:'strain_g2',l:'Strain II',warn:true},
+    {v:'strain_g3',l:'Strain III',warn:true},
+    {v:'kontüzyon',l:'Kontüzyon',warn:true},
+    {v:'atrofi',l:'Atrofi',warn:true},
+    {v:'yag_replas',l:'Yağ replasmanı',warn:true},
+    {v:'kitle',l:'Kitle',warn:true},
+    {v:'apse',l:'Apse',warn:true},
+    {v:'hematom',l:'Hematom',warn:true}
+  ];
+
+  /* Anterior compartment - Kuadriseps */
+  const renderAnterior = () => (
+    <Fragment>
+      <div className="alert-info">Anterior kompartman: m. rectus femoris, vastus lateralis, vastus medialis, vastus intermedius, sartorius</div>
+      <SegRow name="Rectus femoris" value={data.rectusFemoris}
+        onChange={v=>update('rectusFemoris',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Vastus lateralis" value={data.vastusLat}
+        onChange={v=>update('vastusLat',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Vastus medialis" value={data.vastusMed}
+        onChange={v=>update('vastusMed',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Vastus intermedius" value={data.vastusInt}
+        onChange={v=>update('vastusInt',v)} options={MUSCLE_OPTS}/>
+      <Field label="Ek anterior kompartman bulguları">
+        <div className="check-grid">
+          {['feathery','minimal_odem','diffuz_odem','diffuz','hematom','kitle_etkisi_yok','kompartman_tumu',
+            'siyatik_dagilim','femoral_dagilim','obturator_dagilim','intramuskuler_hematom','parsiyel_kopma',
+            'komplet_kopma','lif_diskontinuitesi','retraksiyon','myotendinoz_bileske_odemi'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.anteriorBulgu.includes(b)}
+                onToggle={()=>toggleInList('anteriorBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.anteriorNot} onChange={e=>update('anteriorNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Medial compartment - Adduktorlar */
+  const renderMedial = () => (
+    <Fragment>
+      <div className="alert-info">Medial kompartman: m. adductor magnus, longus, brevis, gracilis, pectineus, obturator externus</div>
+      <SegRow name="Adductor magnus" value={data.adductorMag}
+        onChange={v=>update('adductorMag',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Adductor longus" value={data.adductorLong}
+        onChange={v=>update('adductorLong',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Adductor brevis" value={data.adductorBrev}
+        onChange={v=>update('adductorBrev',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Gracilis" value={data.gracilis}
+        onChange={v=>update('gracilis',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Pectineus" value={data.pectineus}
+        onChange={v=>update('pectineus',v)} options={MUSCLE_OPTS}/>
+      <Field label="Ek medial kompartman bulguları">
+        <div className="check-grid">
+          {['feathery','diffuz_odem','adductor_avulsiyon','pubis_odemi','osteitis_pubis',
+            'myotendinoz_bileske_odemi','intramuskuler_hematom','parsiyel_kopma','komplet_kopma'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.medialBulgu.includes(b)}
+                onToggle={()=>toggleInList('medialBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.medialNot} onChange={e=>update('medialNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Posterior - Hamstring */
+  const renderPosterior = () => (
+    <Fragment>
+      <div className="alert-info">Posterior kompartman: m. biceps femoris (caput longum+breve), semitendinosus, semimembranosus</div>
+      <SegRow name="Biceps femoris" value={data.bicepsFem}
+        onChange={v=>update('bicepsFem',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Semitendinosus" value={data.semitend}
+        onChange={v=>update('semitend',v)} options={MUSCLE_OPTS}/>
+      <SegRow name="Semimembranosus" value={data.semimem}
+        onChange={v=>update('semimem',v)} options={MUSCLE_OPTS}/>
+      <Field label="Ek posterior kompartman bulguları">
+        <div className="check-grid">
+          {['feathery','diffuz_odem','hamstring_avulsiyon','iskion_tuberositasi','tendon_retraksiyonu',
+            'sıvı_dolu_defekt','myotendinoz_bileske_odemi','siyatik_dagilim',
+            'intramuskuler_hematom','parsiyel_kopma','komplet_kopma'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.posteriorBulgu.includes(b)}
+                onToggle={()=>toggleInList('posteriorBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.posteriorNot} onChange={e=>update('posteriorNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Tendon */
+  const renderTendon = () => (
+    <Fragment>
+      <div className="alert-info">Tendon değerlendirmesi: proksimal (kalça origosu) ve distal (diz insertiosu)</div>
+      <SegRow name="Proksimal tendon komp." value={data.proximalTendon}
+        onChange={v=>update('proximalTendon',v)} options={[
+          {v:'normal',l:'Normal'},
+          {v:'tendinopati',l:'Tendinopati',warn:true},
+          {v:'parsiyel_yirtik',l:'Parsiyel yırtık',warn:true},
+          {v:'komplet_yirtik',l:'Komplet yırtık',warn:true},
+          {v:'avulsiyon',l:'Avulsiyon',warn:true}
+        ]}/>
+      <SegRow name="Distal tendon komp." value={data.distalTendon}
+        onChange={v=>update('distalTendon',v)} options={[
+          {v:'normal',l:'Normal'},
+          {v:'tendinopati',l:'Tendinopati',warn:true},
+          {v:'parsiyel_yirtik',l:'Parsiyel yırtık',warn:true},
+          {v:'komplet_yirtik',l:'Komplet yırtık',warn:true},
+          {v:'avulsiyon',l:'Avulsiyon',warn:true}
+        ]}/>
+      <Field label="Ek tendon/enthesis bulguları">
+        <div className="check-grid">
+          {['tendon_kalinlaşması','intrasubstans_sinyal','enthesopati','kalsifik_tendinopati',
+            'kemik_parcasi_kopma','tendon_origo_insertio_defekti','adductor_avulsiyon',
+            'hamstring_avulsiyon','kuadriseps_tendon_kopmasi','sıvı_dolu_defekt'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.tendonBulgu.includes(b)}
+                onToggle={()=>toggleInList('tendonBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.tendonNot} onChange={e=>update('tendonNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Vascular */
+  const VASCULAR_OPTS = [
+    {v:'normal',l:'Normal'},
+    {v:'kalibre_artisi',l:'Kalibre artışı',warn:true},
+    {v:'stenoz',l:'Stenoz',warn:true},
+    {v:'tromboz',l:'Tromboz',warn:true},
+    {v:'psödoanevrizma',l:'Psödoanevrizma',warn:true},
+    {v:'AV_fistul',l:'AV fistül',warn:true},
+    {v:'kollateral',l:'Kollateral',warn:true}
+  ];
+
+  const renderVascular = () => (
+    <Fragment>
+      <div className="alert-info">Femoral nörovasküler paket: common femoral A/V, superficial femoral A, profunda femoris, femoral V, saphen venler</div>
+      <SegRow name="Common femoral art. (CFA)" value={data.cfa}
+        onChange={v=>update('cfa',v)} options={VASCULAR_OPTS}/>
+      <SegRow name="Superficial femoral art. (SFA)" value={data.sfa}
+        onChange={v=>update('sfa',v)} options={VASCULAR_OPTS}/>
+      <SegRow name="Profunda femoris art." value={data.profundaFem}
+        onChange={v=>update('profundaFem',v)} options={VASCULAR_OPTS}/>
+      <SegRow name="Femoral ven" value={data.femoralVen}
+        onChange={v=>update('femoralVen',v)} options={VASCULAR_OPTS}/>
+      <SegRow name="Saphen (büyük/küçük) ven" value={data.saphenVen}
+        onChange={v=>update('saphenVen',v)} options={VASCULAR_OPTS}/>
+      <Field label="Ek vasküler bulgular">
+        <div className="check-grid">
+          {['intraluminal_trombus','ven_genişlemesi','intraluminal_filling_defekt','ven_distansiyonu',
+            'kollateral_akım','akım_voidi','yin_yang_gorunum','yin_yang_akım','dolum_arteryel_faz',
+            'erken_venöz_dolum_AV_fistul','erken_ven_dolum_fistul','sakkuler_genişleme','arter_komşu',
+            'fokal_duvar_defekt','pulsatil','perivenöz_odem','yumusak_kitle','serpentin_damarlar',
+            'phlebolith','yag_fokus','multiple_serpentin_vaskuler','lobule','non_enhancing_nekroz'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.vascularBulgu.includes(b)}
+                onToggle={()=>toggleInList('vascularBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.vascularNot} onChange={e=>update('vascularNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Siyatik */
+  const renderSciatic = () => (
+    <Fragment>
+      <div className="alert-info">Siyatik sinir: gluteal bölgeden uyluk posterioruna, popliteal fossaya kadar takip; tibial ve peroneal bölümler.</div>
+      <SegRow name="Siyatik sinir kalibresi" value={data.siyatikCap}
+        onChange={v=>update('siyatikCap',v)} options={[
+          {v:'normal',l:'Normal'},
+          {v:'fokal_genis',l:'Fokal genişleme',warn:true},
+          {v:'diffuz_genis',l:'Diffüz genişleme',warn:true},
+          {v:'atrofi',l:'Atrofi',warn:true}
+        ]}/>
+      <SegRow name="T2/STIR sinyali" value={data.siyatikSinyal}
+        onChange={v=>update('siyatikSinyal',v)} options={[
+          {v:'normal',l:'Normal'},
+          {v:'hafif_artmis',l:'Hafif artmış',warn:true},
+          {v:'belirgin_hiperintens',l:'Belirgin hiper',warn:true}
+        ]}/>
+      <SegRow name="Çevresi" value={data.siyatikCevre}
+        onChange={v=>update('siyatikCevre',v)} options={[
+          {v:'normal',l:'Normal'},
+          {v:'çevre_odem',l:'Çevre ödem',warn:true},
+          {v:'kitle_bası',l:'Kitle basısı',warn:true},
+          {v:'fibröz_bant',l:'Fibröz bant',warn:true}
+        ]}/>
+      <Field label="Ek siyatik sinir bulguları">
+        <div className="check-grid">
+          {['target_sign','split_fat_sign','fascicular_patern','sinir_boyunca_fuziform','sinir_boyunca',
+            'eksantrik_sinir','sinir_ile_birlesik','fuziform','kapsullu','sinir_dagilimi',
+            'tek_sinir_dagiliminda_odem','piriformis_sendromu_bulgulari','infiltratif_sinir'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.siyatikBulgu.includes(b)}
+                onToggle={()=>toggleInList('siyatikBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.siyatikNot} onChange={e=>update('siyatikNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Femoral/Obturator */
+  const NERVE_OPTS = [
+    {v:'normal',l:'Normal'},
+    {v:'fokal_genis',l:'Fokal genişleme',warn:true},
+    {v:'T2_hiperintens',l:'T2 hiper',warn:true},
+    {v:'kitle_bası',l:'Kitle basısı',warn:true},
+    {v:'atrofi',l:'Atrofi',warn:true}
+  ];
+  const renderFemoralN = () => (
+    <Fragment>
+      <div className="alert-info">Femoral sinir: iliopsoas kenarından anteriora; obturator sinir: obturator kanaldan medial kompartmana.</div>
+      <SegRow name="Femoral sinir" value={data.femoralSinir}
+        onChange={v=>update('femoralSinir',v)} options={NERVE_OPTS}/>
+      <SegRow name="Obturator sinir" value={data.obturatorSinir}
+        onChange={v=>update('obturatorSinir',v)} options={NERVE_OPTS}/>
+      <Field label="Ek bulgular">
+        <div className="check-grid">
+          {['femoral_dagilim','obturator_dagilim','psoas_hematom','iliopsoas_kitle',
+            'inguinal_lenf_etki','kompresyon_bulgusu','fasikuler_sinyal_kaybı'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.femoralBulgu.includes(b)}
+                onToggle={()=>toggleInList('femoralBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.femoralNot} onChange={e=>update('femoralNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Lenf */
+  const renderLenf = () => (
+    <Fragment>
+      <Field label="Lenf nodu sayısı">
+        <div className="chips">
+          {['Normal sınırda','Az sayıda belirgin','Multiple'].map(s=>(
+            <Chip key={s} label={s} selected={data.lenfNodSayisi===s} onClick={()=>update('lenfNodSayisi',s)}/>
+          ))}
+        </div>
+      </Field>
+      <div className="row r2">
+        <Field label="En büyük kısa aks çapı">
+          <input type="text" value={data.lenfNodBoyut} onChange={e=>update('lenfNodBoyut',e.target.value)}
+            placeholder="Örn: 12 mm"/>
+        </Field>
+        <Field label="Genel sinyal paterni">
+          <div className="chips">
+            {['Normal hilus korunmuş','Hiperintens T2','Heterojen','Nekrotik','Kontrast tutulum arttı'].map(s=>(
+              <Chip key={s} label={s} selected={data.lenfNodSinyal===s} onClick={()=>update('lenfNodSinyal',s)}/>
+            ))}
+          </div>
+        </Field>
+      </div>
+      <Field label="Ek lenf nodu bulguları">
+        <div className="check-grid">
+          {['reaktif_görünüm','patolojik_boyut','yuvarlak_sekil','hilus_kaybı','nekroz_ic',
+            'konglomere_paket','ekstrakapsüler_yayilim','DWI_belirgin_restriksiyon'].map(b=>(
+              <CheckBoxItem key={b} label={b.replace(/_/g,' ')} on={data.lenfBulgu.includes(b)}
+                onToggle={()=>toggleInList('lenfBulgu',b)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Ek not">
+        <textarea value={data.lenfNot} onChange={e=>update('lenfNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+
+  /* ============== Lezyon giriş adımı ============== */
+  const renderLezyonGiris = () => (
+    <Fragment>
+      <div className="alert-info">Fokal lezyon/kitle veya multipl lezyonlar varsa her biri için ayrı değerlendirme yapılır. Kas ödemi, diffüz patern veya tendon yaralanması için lezyon eklenmesine gerek yoktur — genel kompartman değerlendirmeleri yeterlidir.</div>
+      <Field label="Fokal lezyon / kitle / koleksiyon var mı?">
+        <div className="chips">
+          {['Yok','Var'].map(v=>(
+            <Chip key={v} label={v} selected={data.lezyonVarMi===v} onClick={()=>update('lezyonVarMi',v)}
+              variant={v==='Var'?'warn':''}/>
+          ))}
+        </div>
+      </Field>
+
+      {data.lezyonVarMi==='Var' && (
+        <Fragment>
+          <div className="lesion-tabs">
+            {lesions.map((l,i)=>(
+              <div key={l.id} className={`lesion-tab ${l.tamamlandi?'done':''}`}>
+                {l.id} {l.tamamlandi?'✓':'…'}
+                <button className="lesion-del" onClick={(e)=>{e.stopPropagation();if(confirm(`${l.id} lezyonu silinsin mi?`)) removeLesion(i);}}>×</button>
+              </div>
+            ))}
+            <button className="btn" onClick={addLesion}>+ Lezyon Ekle</button>
+          </div>
+          {lesions.length === 0 && (
+            <div className="alert-warn">Henüz lezyon eklenmedi. "+ Lezyon Ekle" ile ilk lezyonu tanımlayın.</div>
+          )}
+          {lesions.length > 0 && lesions.every(l=>l.tamamlandi) && (
+            <div className="alert-info">Tüm lezyonlar tamamlandı. İleri diyerek ek bulgulara geçebilirsiniz.</div>
+          )}
+          {lesions.length > 0 && lesions.some(l=>!l.tamamlandi) && (
+            <div className="alert-warn">{lesions.filter(l=>!l.tamamlandi).length} lezyon henüz tamamlanmadı. İleri diyerek değerlendirmeye başlayın.</div>
+          )}
+        </Fragment>
+      )}
+    </Fragment>
+  );
+
+  /* ============== LEZYON ALT ADIMLARI ============== */
+  const curL = inLesionLoop ? lesions[currentLesionIdx] : null;
+
+  const renderLezLoc = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — Lokalizasyon</div>
+      <Field label="Kompartman/bölge">
+        <div className="chips">
+          {[
+            {v:'anterior',l:'Anterior'},{v:'medial',l:'Medial'},{v:'posterior',l:'Posterior'},
+            {v:'subkutan',l:'Subkutan'},{v:'cilt',l:'Cilt'},{v:'fascia_lata',l:'Fascia lata'},
+            {v:'femur_medulla',l:'Femur medülla'},{v:'femur_korteks',l:'Femur korteks'},
+            {v:'femur_metafiz',l:'Femur metafiz'},{v:'femur_diafiz',l:'Femur diafiz'},
+            {v:'femur_distal',l:'Femur distal'},{v:'femur_proksimal',l:'Femur proksimal'},
+            {v:'derin_yumusak_doku',l:'Derin yumuşak doku'},{v:'eklem_yakini',l:'Eklem yakını'},
+            {v:'femoral_arter',l:'Femoral arter'},{v:'femoral_ven',l:'Femoral ven'},
+            {v:'profunda_arter',l:'Profunda arter'},{v:'profunda_ven',l:'Profunda ven'},
+            {v:'popliteal_arter',l:'Popliteal arter'},{v:'popliteal_ven',l:'Popliteal ven'},
+            {v:'siyatik',l:'Siyatik sinir'},{v:'femoral',l:'Femoral sinir'},{v:'obturator',l:'Obturator sinir'},
+            {v:'iskion_tuberositasi',l:'İskion tub.'},{v:'pubis',l:'Pubis'}
+          ].map(o=>(
+            <Chip key={o.v} label={o.l} selected={curL?.komp===o.v}
+              onClick={()=>updateLesion(currentLesionIdx,'komp',o.v)}/>
+          ))}
+        </div>
+      </Field>
+      <Field label="Spesifik kas (varsa)">
+        <input type="text" value={curL?.kas||''}
+          onChange={e=>updateLesion(currentLesionIdx,'kas',e.target.value)}
+          placeholder="Örn: Rectus femoris orta 1/3"/>
+      </Field>
+      <Field label="Boyut (mm)">
+        <div className="row r3">
+          <input type="text" placeholder="X (örn: 35)" value={curL?.boyut?.x||''}
+            onChange={e=>updateLesion(currentLesionIdx,'boyut',{...curL.boyut,x:e.target.value})}/>
+          <input type="text" placeholder="Y (örn: 28)" value={curL?.boyut?.y||''}
+            onChange={e=>updateLesion(currentLesionIdx,'boyut',{...curL.boyut,y:e.target.value})}/>
+          <input type="text" placeholder="Z (örn: 60)" value={curL?.boyut?.z||''}
+            onChange={e=>updateLesion(currentLesionIdx,'boyut',{...curL.boyut,z:e.target.value})}/>
+        </div>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezMorf = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — Morfoloji ve sınır</div>
+      <Field label="Sınır karakteri">
+        <div className="chips">
+          {['iyi_sinirli','ill_defined','kapsullu','infiltratif','lobule','multilobuler','oval','oval_fuziform','fuziform'].map(s=>(
+            <Chip key={s} label={s.replace(/_/g,' ')} selected={(curL?.morfoloji||[]).includes(s)}
+              onClick={()=>toggleLesionList(currentLesionIdx,'morfoloji',s)}/>
+          ))}
+        </div>
+      </Field>
+      <Field label="Yapısal özellikler">
+        <div className="check-grid">
+          {['santral_nekroz','hemoraji','septa_yok','kalin_noduler_septa','kapsul','>5cm','>10cm',
+            'multiple_punched_out','intraluminal_trombus','ven_genişlemesi','kortikal_destruksiyon',
+            'kortikal_expansiyon','kortikal_incelme','yumusak_doku_kitlesi','medüller_kitle',
+            'bell_clapper','kollateraller','sakkuler_genişleme','fokal_duvar_defekt','pulsatil',
+            'onion_skin','Codman_ucgeni','sunburst_periost','lamellar_periostal','permeatif_destruksiyon',
+            'zonal_kalsifikasyon','ring_arc_kalsifikasyon','ground_glass_matrix','kondroid_matrix',
+            'osteoid_matrix','sivi_sivi_seviyesi','hemosiderin_rim','serpentin_damarlar','phlebolith',
+            'yag_tamam','yag_fokus','yagli_hiperintens','yagli_komponent_hiperintens','yagli_kitle',
+            'kalin_septa','nodul_icerik','triple_signal','band_like_hipointens','fibröz_bantlar',
+            'parmak_benzeri_uzantılar','fascial_tail','endosteal_skalloping','endosteal_skalloping_>2_3',
+            'shepherd_crook','sekestr','sinus_trakti','cloaca_sinus_trakti','periosteal_reaksiyon',
+            'buyuk_hematom','koleksiyon','kavite','multilocul','apse_odaklari','subkutan_retikulasyon',
+            'cilt_kalinlaşması','kompresyon_bulgusu','hızlı_buyüyen','buyuk','serpiginöz_sınır',
+            'coğrafik','santral_normal_yag','patolojik_fraktür_riski','litik_sklerotik',
+            'target_sign','split_fat_sign','fascicular_patern','eksantrik_sinir','fuziform',
+            'sinir_boyunca_fuziform','sinir_ile_birlesik','multiple_NF1'].map(m=>(
+              <CheckBoxItem key={m} label={m.replace(/_/g,' ')} on={(curL?.morfoloji||[]).includes(m)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'morfoloji',m)}/>
+            ))}
+        </div>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezT1 = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — T1 sinyal (ve yağ baskılama)</div>
+      <Field label="T1 sinyal özellikleri">
+        <div className="check-grid">
+          {['izointens','hipointens','hiperintens','heterojen','belirgin_hiperintens','perifer_hipointens',
+            'santral_yag','yag_sinyali','hiperintens_yag','yagli_hiperintens','minimal_yag_foci',
+            'yag_fokus','yagli_komponent_hiperintens','osteoid_matrix','hematom_sinyali','salt_pepper',
+            'diffuz_hipointens','multiple_hipointens_odak','T1_medüller_yag_kaybı','T1_hipointens_bant',
+            'serpiginöz_hipointens_rim','subakut_hiperintens','degisken_evreye_gore','kronik_hipointens_rim',
+            'kalin_septa_hipointens','target_sign','lobule_izo_hipointens','iclerinde_kalsifikasyon_hipointens',
+            'akım_voidi','hematom_cevre','hafif_hiperintens','akut_izointens','akut_normal',
+            'kronik_yag_replasmani','iyi_sinirli_kotu_sinirli','homojen_izo_hipointens','izo_hiperintens',
+            'triple_signal','kemik_parcasi_kopma','medüller_odem','minimal_yag_oci_genc'].map(t=>(
+              <CheckBoxItem key={t} label={t.replace(/_/g,' ')} on={(curL?.t1||[]).includes(t)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'t1',t)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="T1 ek not">
+        <textarea value={curL?.t1Not||''}
+          onChange={e=>updateLesion(currentLesionIdx,'t1Not',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezT2 = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — T2 / STIR / PDFS</div>
+      <Field label="T2 sinyal özellikleri">
+        <div className="check-grid">
+          {['hiperintens','hipointens','heterojen','izointens','belirgin_hiperintens','santral_hiper_perifer_hipo',
+            'perifer_hipo','sivi_benzer','sivi_benzeri_T2','sivi_koleksiyonu','sivi_sinyali','sivi_sivi_seviyesi',
+            'feathery','diffuz_odem','homojen_odem','yogun_odem','minimal_odem','medüller_odem','fraktür_hatti_hipointens',
+            'medüller_odem_hiperintens','multiple_serpentin_vaskuler','ring_arc_kalsifikasyon','fascia_boyunca_hiperintens',
+            'kalin_fascia','zonal_patern','periferal_ossifikasyon','target_sign','triple_signal',
+            'band_like_hipointens','çevresel_odem','matrix_hipointens','nekroz_alanlari','hemoraji','buyuk_hematom',
+            'lobule_hiperintens','santral_hiperintens','double_line_sign','kondroid_matrix','homojen_izo_hipointens',
+            'bazen_hiperintens','fascia_boyunca_hiperintensite','osteoid_matrix','kemik_odemi','tendon_defekti',
+            'intraluminal','akut_hiperintens','kronik_hipointens','filling_defekt','intraluminal_filling_defekt',
+            'perivenöz_odem','yag_baskilida_hipointens','yag_baskilanir'].map(t=>(
+              <CheckBoxItem key={t} label={t.replace(/_/g,' ')} on={(curL?.t2||[]).includes(t)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'t2',t)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="STIR/PDFS özellikleri">
+        <div className="check-grid">
+          {['hiperintens','hipointens','yag_baskilanir','diffuz','homojen','heterojen_hiperintens',
+            'belirgin_hiperintens','feathery','subkutan_odem','reticular_patern','subkutan_retikuler_odem',
+            'fascial_yayilim','kemik_iligi_odemi','yogun_hiperintens','hiperintens_odem','hiperintens_rim',
+            'yogun_hiperintens_odem','tendon_defekti','sivi_defekt','zonal_patern','minimal_odem','fascia_yelken_tail'].map(s=>(
+              <CheckBoxItem key={s} label={s.replace(/_/g,' ')} on={(curL?.stir||[]).includes(s)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'stir',s)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="T2/STIR ek not">
+        <textarea value={curL?.t2Not||''}
+          onChange={e=>updateLesion(currentLesionIdx,'t2Not',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezDWI = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — DWI ve ADC</div>
+      <Field label="DWI / ADC paterni">
+        <div className="chips">
+          {[
+            {v:'belirgin_restrikte',l:'Belirgin restrikte'},
+            {v:'restrikte',l:'Restrikte'},
+            {v:'hafif_restrikte',l:'Hafif restrikte'},
+            {v:'normal',l:'Normal / izo'},
+            {v:'artmis',l:'Artmış diffüzyon'},
+            {v:'hafif_artmis',l:'Hafif artmış'},
+            {v:'restrikte_apse_varsa',l:'Restrikte (apse+)'},
+            {v:'akut_restrikte',l:'Akut restrikte'},
+            {v:'nodul_restrikte',l:'Nodülde restrikte'},
+            {v:'degisken',l:'Değişken'},
+            {v:'restrikte_degil',l:'Restrikte değil'},
+            {v:'yok',l:'Yok / normal'},
+            {v:'kanama_artefakti',l:'Kanama artefaktı'},
+            {v:'minimal',l:'Minimal'},
+            {v:'DWI_belirgin_restriksiyon',l:'Ek: DWI restriksiyonu patognomik'}
+          ].map(o=>(
+            <Chip key={o.v} label={o.l} selected={curL?.dwi===o.v}
+              onClick={()=>updateLesion(currentLesionIdx,'dwi',o.v)}/>
+          ))}
+        </div>
+      </Field>
+      <Field label="ADC değeri (×10⁻³ mm²/sn)">
+        <input type="text" value={curL?.adc||''}
+          onChange={e=>updateLesion(currentLesionIdx,'adc',e.target.value)}
+          placeholder="Örn: 0.85"/>
+      </Field>
+      <Field label="DWI ek not">
+        <textarea value={curL?.dwiNot||''}
+          onChange={e=>updateLesion(currentLesionIdx,'dwiNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezKontrast = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — Kontrastlanma paterni</div>
+      <Field label="Kontrastlanma tipi">
+        <div className="check-grid">
+          {['yok','minimal','hafif','diffuz','yogun','heterojen','homojen',
+            'periferik','halka','kalin_duzensiz','kalin_septa','noduler_kontrastlanma','septal',
+            'rim','ring_arc','target_kontrastlanma','serpentin_patern','santral_veya_target',
+            'progresif','gecikmiş','retikuler','periferik_arc','periferik_kapsul',
+            'fascia_kontrastlanmasi','nonenhancing_nekroz','non_enhancing_nekroz','non_enhancing_fascia',
+            'non_enhancing_sekestr','filling_defekt','duvar_kontrast','periferik_apse_varsa',
+            'medüller','heterojen_medüller','diffuz_medüller','fraktür_hatti_kontrast',
+            'aktif_faz_kontrast','matur_faz_minimal','dolum_arteryel_faz','erken_venöz_dolum_AV_fistul',
+            'erken_ven_dolum_fistul','sinus_trakti','intraluminal_non_enhancing','yumusak_doku_kitlesi_yogun',
+            'ring_arc','minimal_septal'].map(k=>(
+              <CheckBoxItem key={k} label={k.replace(/_/g,' ')} on={(curL?.kontrast||[]).includes(k)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'kontrast',k)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="Dinamik özellik (varsa)">
+        <div className="chips">
+          {['Tip I persistan','Tip II plato','Tip III wash-out','Hızlı-erken','Geç'].map(d=>(
+            <Chip key={d} label={d} selected={curL?.dinamik===d}
+              onClick={()=>updateLesion(currentLesionIdx,'dinamik',d)}/>
+          ))}
+        </div>
+      </Field>
+      <Field label="Kontrastlanma ek not">
+        <textarea value={curL?.kontrastNot||''}
+          onChange={e=>updateLesion(currentLesionIdx,'kontrastNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  const renderLezKom = () => (
+    <Fragment>
+      <div className="alert-info">Lezyon {curL?.id} — Komşuluk / invazyon</div>
+      <Field label="Komşu yapı etkileşimi">
+        <div className="check-grid">
+          {['femur_korteks_etkilenmis','femur_medülla_invaze','endosteal_skalloping','kortikal_destruksiyon',
+            'periosteal_reaksiyon','patolojik_fraktür','yumusak_doku_kitlesi','fascia_tutulumu',
+            'fascia_yelken','fascial_tail','cilt_tutulumu','subkutan_yayılım','multikompartman_tutulum',
+            'damar_bası','damar_invazyonu','akım_voidi_icinde','arter_komşu','ven_bası',
+            'sinir_bası','sinir_invazyonu','siyatik_etkilenmis','femoral_sinir_etkilenmis',
+            'obturator_etkilenmis','eklem_bası','eklem_invazyonu','lenf_nodu_ekleme',
+            'inguinal_uzanim','popliteal_uzanim','kalça_eklemi_tutulum','diz_eklemi_tutulum'].map(k=>(
+              <CheckBoxItem key={k} label={k.replace(/_/g,' ')} on={(curL?.invazyon||[]).includes(k)}
+                onToggle={()=>toggleLesionList(currentLesionIdx,'invazyon',k)}/>
+            ))}
+        </div>
+      </Field>
+      <Field label="İnvazyon ek not">
+        <textarea value={curL?.invazyonNot||''}
+          onChange={e=>updateLesion(currentLesionIdx,'invazyonNot',e.target.value)}/>
+      </Field>
+    </Fragment>
+  );
+
+  /* Ek bulgular */
+  const renderEk = () => (
+    <Fragment>
+      <Field label="Ek bulgular / açıklamalar (serbest metin)">
+        <textarea rows="6" value={data.ekBulgular} onChange={e=>update('ekBulgular',e.target.value)}
+          placeholder="Raporda ayrıca belirtmek istediğiniz bulgular, öneriler, karşılaştırmalı tetkik notları..."/>
+      </Field>
+    </Fragment>
+  );
+
+
+  /* ============== RAPOR OLUŞTURMA ============== */
+  const buildReport = () => {
+    const diff = computeDifferential();
+    const topDiff = diff.slice(0,8);
+    return {diff,topDiff};
+  };
+
+  const diffResult = useMemo(()=>buildReport(),[data,lesions]);
+
+  /* ---- Metin inşa fonksiyonu (düz metin kopyalama için) ---- */
+  const buildTextReport = () => {
+    const lines = [];
+    lines.push('═══════════════════════════════════════════════════');
+    lines.push('   UYLUK MRG — KAS-İSKELET / NÖROVASKÜLER DEĞERLENDİRME');
+    lines.push('═══════════════════════════════════════════════════');
+    lines.push('');
+    lines.push('KLİNİK BİLGİLER');
+    lines.push('───────────────────────────');
+    if(data.taraf) lines.push(`• Taraf: ${data.taraf}`);
+    if(data.yas) lines.push(`• Yaş: ${data.yas}`);
+    if(data.cinsiyet) lines.push(`• Cinsiyet: ${data.cinsiyet}`);
+    if(data.indikasyon.length) lines.push(`• İndikasyon: ${data.indikasyon.map(i=>i.replace(/_/g,' ')).join(', ')}`);
+    if(data.travmaOykusu) lines.push(`• Travma öyküsü: ${data.travmaOykusu}`);
+    if(data.klinikNot) lines.push(`• Not: ${data.klinikNot}`);
+    lines.push('');
+    lines.push('TEKNİK');
+    lines.push('───────────────────────────');
+    if(data.cihaz) lines.push(`• Cihaz: ${data.cihaz}`);
+    if(data.sekanslar.length) lines.push(`• Sekanslar: ${data.sekanslar.join('; ')}`);
+    if(data.kontrastVerildi) lines.push(`• Kontrast: ${data.kontrastVerildi}`);
+    lines.push('');
+    lines.push('BULGULAR');
+    lines.push('───────────────────────────');
+    lines.push(`• Cilt/Subkutan: ${data.cilt.durum}${data.cilt.bulgu.length?' — '+data.cilt.bulgu.map(b=>b.replace(/_/g,' ')).join(', '):''}`);
+    lines.push(`• Fascia lata/kompartman: ${data.fasciaLata.durum}${data.fasciaLata.bulgu.length?' — '+data.fasciaLata.bulgu.map(b=>b.replace(/_/g,' ')).join(', '):''}`);
+    lines.push(`• Femur korteks: ${data.femurKorteks.durum}${data.femurKorteks.bulgu.length?' — '+data.femurKorteks.bulgu.map(b=>b.replace(/_/g,' ')).join(', '):''}`);
+    lines.push(`• Femur medülla: ${data.femurMedulla.durum}${data.femurMedulla.bulgu.length?' — '+data.femurMedulla.bulgu.map(b=>b.replace(/_/g,' ')).join(', '):''}`);
+    lines.push(`• Kuadriseps: RF:${data.rectusFemoris} VL:${data.vastusLat} VM:${data.vastusMed} VI:${data.vastusInt}`);
+    lines.push(`• Adduktorlar: AM:${data.adductorMag} AL:${data.adductorLong} AB:${data.adductorBrev} Grac:${data.gracilis} Pect:${data.pectineus}`);
+    lines.push(`• Hamstring: BF:${data.bicepsFem} ST:${data.semitend} SM:${data.semimem}`);
+    lines.push(`• Tendonlar: Prox:${data.proximalTendon} Dist:${data.distalTendon}`);
+    lines.push(`• Vasküler: CFA:${data.cfa} SFA:${data.sfa} ProfFem:${data.profundaFem} FemV:${data.femoralVen} Saphen:${data.saphenVen}`);
+    lines.push(`• Siyatik sinir: ${data.siyatikCap}/${data.siyatikSinyal}/${data.siyatikCevre}`);
+    lines.push(`• Femoral/Obturator: Fem:${data.femoralSinir} Obt:${data.obturatorSinir}`);
+    if(data.lenfNodBoyut||data.lenfNodSayisi) lines.push(`• Lenf: ${data.lenfNodSayisi||''} ${data.lenfNodBoyut?'('+data.lenfNodBoyut+')':''} ${data.lenfNodSinyal||''}`);
+    lines.push('');
+    if(lesions.length){
+      lines.push('LEZYON/LEZYONLAR');
+      lines.push('───────────────────────────');
+      lesions.forEach(l=>{
+        lines.push(`[${l.id}] Lokalizasyon: ${(l.komp||'').replace(/_/g,' ')} ${l.kas?'— '+l.kas:''}`);
+        if(l.boyut.x||l.boyut.y||l.boyut.z) lines.push(`  Boyut: ${l.boyut.x}×${l.boyut.y}×${l.boyut.z} mm`);
+        if(l.morfoloji.length) lines.push(`  Morfoloji: ${l.morfoloji.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+        if(l.t1.length) lines.push(`  T1: ${l.t1.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+        if(l.t2.length) lines.push(`  T2: ${l.t2.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+        if(l.stir.length) lines.push(`  STIR: ${l.stir.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+        if(l.dwi) lines.push(`  DWI/ADC: ${l.dwi.replace(/_/g,' ')}${l.adc?' (ADC '+l.adc+')':''}`);
+        if(l.kontrast.length) lines.push(`  Kontrast: ${l.kontrast.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+        if(l.invazyon.length) lines.push(`  Komşuluk: ${l.invazyon.map(x=>x.replace(/_/g,' ')).join(', ')}`);
+      });
+      lines.push('');
+    }
+    lines.push('AYIRICI TANI (Ağırlıklı skorlama)');
+    lines.push('───────────────────────────');
+    diffResult.topDiff.forEach((d,i)=>{
+      lines.push(`${i+1}. ${d.name} — %${d.score}  [${d.category}]`);
+    });
+    lines.push('');
+    if(data.ekBulgular){
+      lines.push('EK BULGULAR');
+      lines.push('───────────────────────────');
+      lines.push(data.ekBulgular);
+      lines.push('');
+    }
+    lines.push('YORUM');
+    lines.push('───────────────────────────');
+    const first = diffResult.topDiff[0];
+    if(first && first.score>40){
+      lines.push(`Bulgular en çok "${first.name}" lehine değerlendirilmiştir.`);
+      lines.push(first.description);
+    } else {
+      lines.push('Bulgular non-spesifik; klinik ve laboratuvar bulguları ile korelasyon önerilir.');
+    }
+    lines.push('');
+    lines.push('Rapor Tarihi: ' + new Date().toLocaleDateString('tr-TR'));
+    return lines.join('\n');
+  };
+
+  /* ---- HTML rapor oluşturma (download/print için) ---- */
+  const buildHTMLReport = () => {
+    const pct = (l) => l ? l.replace(/_/g,' ') : '';
+    let html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"/><title>Uyluk MRG Raporu</title>
+    <style>
+    body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#111;padding:40px;max-width:900px;margin:0 auto;line-height:1.5;font-size:13.5px}
+    h2{margin:0 0 4px;font-size:22px;color:#991b1b;letter-spacing:-0.3px}
+    .sub{color:#666;font-size:12px;margin-bottom:18px}
+    h3{font-size:14px;text-transform:uppercase;color:#991b1b;margin:22px 0 8px;letter-spacing:1px;border-bottom:2px solid #991b1b;padding-bottom:4px}
+    h4{font-size:13px;margin:14px 0 6px;color:#333}
+    table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:12.5px}
+    table td{padding:7px 10px;vertical-align:top;border-bottom:1px solid #eee}
+    table tr:nth-child(even) td{background:#fafafa}
+    table td:first-child{font-weight:600;color:#555;width:34%}
+    .yorum{background:#f0fdf4;border-left:4px solid #10b981;padding:12px 16px;margin:14px 0;border-radius:4px;color:#064e3b}
+    .yorum-title{font-weight:700;color:#065f46;margin-bottom:6px;font-size:12px;text-transform:uppercase;letter-spacing:0.8px}
+    .ek-bulgu{display:inline-block;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;padding:2px 8px;border-radius:4px;font-size:11px;margin:2px 4px 2px 0;font-weight:500}
+    .malign-flag{background:#fef2f2;border-left:4px solid #dc2626;padding:12px 16px;margin:14px 0;border-radius:4px;color:#7f1d1d}
+    .malign-title{font-weight:700;color:#991b1b;margin-bottom:6px;font-size:12px;text-transform:uppercase;letter-spacing:0.8px}
+    .diff-pct{font-weight:700;color:#991b1b;text-align:right}
+    .lesion-block{border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin:10px 0;background:#fafafa}
+    .lesion-title{font-weight:700;color:#991b1b;margin-bottom:8px;font-size:13px}
+    .footer{margin-top:32px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#888;display:flex;justify-content:space-between}
+    .badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:0.4px}
+    .badge.red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .badge.orange{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+    .badge.green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0}
+    </style></head><body>`;
+    html += `<h2>Uyluk MRG — Kas-İskelet ve Nörovasküler Değerlendirme</h2>`;
+    html += `<div class="sub">Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>`;
+    html += `<h3>Klinik Bilgiler</h3><table>`;
+    if(data.taraf) html += `<tr><td>Taraf</td><td>${data.taraf}</td></tr>`;
+    if(data.yas) html += `<tr><td>Yaş</td><td>${data.yas}</td></tr>`;
+    if(data.cinsiyet) html += `<tr><td>Cinsiyet</td><td>${data.cinsiyet}</td></tr>`;
+    if(data.indikasyon.length) html += `<tr><td>İndikasyon</td><td>${data.indikasyon.map(i=>pct(i)).join(', ')}</td></tr>`;
+    if(data.travmaOykusu) html += `<tr><td>Travma öyküsü</td><td>${data.travmaOykusu}</td></tr>`;
+    if(data.klinikNot) html += `<tr><td>Not</td><td>${data.klinikNot}</td></tr>`;
+    html += `</table>`;
+    html += `<h3>Teknik</h3><table>`;
+    if(data.cihaz) html += `<tr><td>Cihaz</td><td>${data.cihaz}</td></tr>`;
+    if(data.sekanslar.length) html += `<tr><td>Sekanslar</td><td>${data.sekanslar.join('; ')}</td></tr>`;
+    if(data.kontrastVerildi) html += `<tr><td>Kontrast</td><td>${data.kontrastVerildi}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Yumuşak Doku ve Kompartmanlar</h3><table>`;
+    html += `<tr><td>Cilt / Subkutan</td><td>${data.cilt.durum}${data.cilt.bulgu.length?' — '+data.cilt.bulgu.map(pct).join(', '):''}</td></tr>`;
+    html += `<tr><td>Fascia lata</td><td>${data.fasciaLata.durum}${data.fasciaLata.bulgu.length?' — '+data.fasciaLata.bulgu.map(pct).join(', '):''}</td></tr>`;
+    if(data.kompartmanSindromu) html += `<tr><td>Kompartman sendromu</td><td>${data.kompartmanSindromu}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Femur (Kemik)</h3><table>`;
+    html += `<tr><td>Korteks</td><td>${data.femurKorteks.durum}${data.femurKorteks.bulgu.length?' — '+data.femurKorteks.bulgu.map(pct).join(', '):''}</td></tr>`;
+    html += `<tr><td>Periost</td><td>${data.periost.durum}${data.periost.bulgu.length?' — '+data.periost.bulgu.map(pct).join(', '):''}</td></tr>`;
+    html += `<tr><td>Medülla / Kemik iliği</td><td>${data.femurMedulla.durum}${data.femurMedulla.bulgu.length?' — '+data.femurMedulla.bulgu.map(pct).join(', '):''}${data.kemikIligi?' | '+data.kemikIligi:''}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Kas Kompartmanları</h3><table>`;
+    html += `<tr><td>Anterior (Kuadriseps)</td><td>Rectus femoris: <b>${data.rectusFemoris}</b> | Vastus lateralis: <b>${data.vastusLat}</b> | Vastus medialis: <b>${data.vastusMed}</b> | Vastus intermedius: <b>${data.vastusInt}</b></td></tr>`;
+    html += `<tr><td>Medial (Adduktorlar)</td><td>Adductor magnus: <b>${data.adductorMag}</b> | Adductor longus: <b>${data.adductorLong}</b> | Adductor brevis: <b>${data.adductorBrev}</b> | Gracilis: <b>${data.gracilis}</b> | Pectineus: <b>${data.pectineus}</b></td></tr>`;
+    html += `<tr><td>Posterior (Hamstring)</td><td>Biceps femoris: <b>${data.bicepsFem}</b> | Semitendinosus: <b>${data.semitend}</b> | Semimembranosus: <b>${data.semimem}</b></td></tr>`;
+    if(data.anteriorBulgu.length) html += `<tr><td>Anterior ek bulgular</td><td>${data.anteriorBulgu.map(pct).join(', ')}</td></tr>`;
+    if(data.medialBulgu.length) html += `<tr><td>Medial ek bulgular</td><td>${data.medialBulgu.map(pct).join(', ')}</td></tr>`;
+    if(data.posteriorBulgu.length) html += `<tr><td>Posterior ek bulgular</td><td>${data.posteriorBulgu.map(pct).join(', ')}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Tendonlar ve Enthesis</h3><table>`;
+    html += `<tr><td>Proksimal tendon komp.</td><td>${data.proximalTendon}</td></tr>`;
+    html += `<tr><td>Distal tendon komp.</td><td>${data.distalTendon}</td></tr>`;
+    if(data.tendonBulgu.length) html += `<tr><td>Ek bulgular</td><td>${data.tendonBulgu.map(pct).join(', ')}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Vasküler Yapılar</h3><table>`;
+    html += `<tr><td>CFA / SFA / Profunda</td><td>CFA: <b>${data.cfa}</b> | SFA: <b>${data.sfa}</b> | Profunda fem.: <b>${data.profundaFem}</b></td></tr>`;
+    html += `<tr><td>Venler</td><td>Femoral ven: <b>${data.femoralVen}</b> | Saphen: <b>${data.saphenVen}</b></td></tr>`;
+    if(data.vascularBulgu.length) html += `<tr><td>Ek bulgular</td><td>${data.vascularBulgu.map(pct).join(', ')}</td></tr>`;
+    html += `</table>`;
+
+    html += `<h3>Periferik Sinirler</h3><table>`;
+    html += `<tr><td>Siyatik sinir</td><td>Kalibre: <b>${data.siyatikCap}</b> | Sinyal: <b>${data.siyatikSinyal}</b> | Çevre: <b>${data.siyatikCevre}</b></td></tr>`;
+    html += `<tr><td>Femoral sinir</td><td><b>${data.femoralSinir}</b></td></tr>`;
+    html += `<tr><td>Obturator sinir</td><td><b>${data.obturatorSinir}</b></td></tr>`;
+    if(data.siyatikBulgu.length) html += `<tr><td>Siyatik ek bulgular</td><td>${data.siyatikBulgu.map(pct).join(', ')}</td></tr>`;
+    if(data.femoralBulgu.length) html += `<tr><td>Femoral/obturator ek</td><td>${data.femoralBulgu.map(pct).join(', ')}</td></tr>`;
+    html += `</table>`;
+
+    if(data.lenfNodBoyut||data.lenfNodSayisi||data.lenfBulgu.length){
+      html += `<h3>Lenf Nodları</h3><table>`;
+      if(data.lenfNodSayisi) html += `<tr><td>Sayı</td><td>${data.lenfNodSayisi}</td></tr>`;
+      if(data.lenfNodBoyut) html += `<tr><td>En büyük kısa aks</td><td>${data.lenfNodBoyut}</td></tr>`;
+      if(data.lenfNodSinyal) html += `<tr><td>Sinyal</td><td>${data.lenfNodSinyal}</td></tr>`;
+      if(data.lenfBulgu.length) html += `<tr><td>Ek bulgular</td><td>${data.lenfBulgu.map(pct).join(', ')}</td></tr>`;
+      html += `</table>`;
+    }
+
+    if(lesions.length){
+      html += `<h3>Lezyon(lar)</h3>`;
+      lesions.forEach(l=>{
+        html += `<div class="lesion-block"><div class="lesion-title">Lezyon ${l.id}${l.komp?' — '+pct(l.komp):''}${l.kas?' ('+l.kas+')':''}</div>`;
+        html += `<table>`;
+        if(l.boyut.x||l.boyut.y||l.boyut.z) html += `<tr><td>Boyut</td><td>${l.boyut.x}×${l.boyut.y}×${l.boyut.z} mm</td></tr>`;
+        if(l.morfoloji.length) html += `<tr><td>Morfoloji</td><td>${l.morfoloji.map(pct).join(', ')}</td></tr>`;
+        if(l.t1.length) html += `<tr><td>T1</td><td>${l.t1.map(pct).join(', ')}${l.t1Not?' | '+l.t1Not:''}</td></tr>`;
+        if(l.t2.length) html += `<tr><td>T2</td><td>${l.t2.map(pct).join(', ')}</td></tr>`;
+        if(l.stir.length) html += `<tr><td>STIR/PDFS</td><td>${l.stir.map(pct).join(', ')}${l.t2Not?' | '+l.t2Not:''}</td></tr>`;
+        if(l.dwi) html += `<tr><td>DWI/ADC</td><td>${pct(l.dwi)}${l.adc?' | ADC: '+l.adc:''}${l.dwiNot?' | '+l.dwiNot:''}</td></tr>`;
+        if(l.kontrast.length) html += `<tr><td>Kontrast</td><td>${l.kontrast.map(pct).join(', ')}${l.dinamik?' | Dinamik: '+l.dinamik:''}${l.kontrastNot?' | '+l.kontrastNot:''}</td></tr>`;
+        if(l.invazyon.length) html += `<tr><td>Komşuluk/invazyon</td><td>${l.invazyon.map(pct).join(', ')}${l.invazyonNot?' | '+l.invazyonNot:''}</td></tr>`;
+        html += `</table></div>`;
+      });
+    }
+
+    html += `<h3>Ayırıcı Tanı (Ağırlıklı Skorlama)</h3>`;
+    html += `<table>`;
+    diffResult.topDiff.forEach((d,i)=>{
+      const malignCats = ['Malign Tümör','Kemik-Malign'];
+      const cls = malignCats.includes(d.category) ? 'red' :
+                  (d.category.includes('Enfeksiyon')||d.category.includes('Travmatik')) ? 'orange' : 'green';
+      html += `<tr><td>${i+1}. ${d.name} <span class="badge ${cls}">${d.category}</span></td><td class="diff-pct">%${d.score}</td></tr>`;
+    });
+    html += `</table>`;
+
+    // Malign/şüpheli flagging
+    const hasMalign = diffResult.topDiff.slice(0,3).some(d=>['Malign Tümör','Kemik-Malign'].includes(d.category) && d.score>35);
+    if(hasMalign){
+      html += `<div class="malign-flag"><div class="malign-title">⚠ Malignite Şüphesi</div>Yapılan ağırlıklı skorlamada bulgular malign tümör lehine değerlendirilmiştir. Biyopsi öncesi MSK onkoloji konseyi değerlendirmesi ve tüm kompartman boyunca T1 yağlı ve yağ baskılı kontrast görüntülerle stadyalama değerlendirmesi önerilir.</div>`;
+    }
+
+    if(data.ekBulgular){
+      html += `<h3>Ek Bulgular</h3><p>${data.ekBulgular.replace(/\n/g,'<br/>')}</p>`;
+    }
+
+    const first = diffResult.topDiff[0];
+    html += `<div class="yorum"><div class="yorum-title">Yorum</div>`;
+    if(first && first.score>40){
+      html += `Bulgular en çok <b>${first.name}</b> (skor %${first.score}) lehine değerlendirilmiştir. ${first.description}`;
+      if(diffResult.topDiff[1] && diffResult.topDiff[1].score>25){
+        html += ` Ayırıcı tanıda <b>${diffResult.topDiff[1].name}</b> (%${diffResult.topDiff[1].score}) ve <b>${diffResult.topDiff[2]?.name}</b> (%${diffResult.topDiff[2]?.score}) da göz önünde bulundurulmalıdır.`;
+      }
+    } else {
+      html += `Bulgular non-spesifik görünümde olup, en olası tanılar içinde <b>${first?.name||'—'}</b> (%${first?.score||0}) ön plandadır. Klinik, laboratuvar ve takip görüntüleme ile korelasyon önerilir.`;
+    }
+    html += `</div>`;
+
+    html += `<div class="footer"><span>Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}</span><span>Uyluk MRG Karar Destek Sistemi</span></div>`;
+    html += `</body></html>`;
+    return html;
+  };
+
+  /* ============== RAPOR ADIMI ============== */
+  const [printOpen,setPrintOpen] = useState(false);
+  const [copyStatus,setCopyStatus] = useState('');
+
+  const copyHTMLToClipboard = () => {
+    const htmlBody = buildHTMLReport();
+    try {
+      // execCommand fallback (sandbox-safe)
+      const ta = document.createElement('textarea');
+      ta.value = htmlBody;
+      ta.style.position='fixed';ta.style.left='-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopyStatus('HTML kopyalandı ✓');
+    } catch(e){
+      setCopyStatus('Kopyalama başarısız');
+    }
+    setTimeout(()=>setCopyStatus(''),2500);
+  };
+
+  const copyTextToClipboard = () => {
+    const txt = buildTextReport();
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position='fixed';ta.style.left='-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopyStatus('Metin kopyalandı ✓');
+    } catch(e){
+      setCopyStatus('Kopyalama başarısız');
+    }
+    setTimeout(()=>setCopyStatus(''),2500);
+  };
+
+  const downloadHTML = () => {
+    try{
+      const html = buildHTMLReport();
+      const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `uyluk_mrg_raporu_${new Date().toISOString().slice(0,10)}.html`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setCopyStatus('HTML indirildi ✓');
+    }catch(e){
+      // Sandbox ortamında URL.createObjectURL çalışmayabilir → print overlay kullan
+      setPrintOpen(true);
+      setCopyStatus('İndirme yerine yazdırma açıldı');
+    }
+    setTimeout(()=>setCopyStatus(''),2500);
+  };
+
+  const openPrintOverlay = () => setPrintOpen(true);
+  const closePrintOverlay = () => setPrintOpen(false);
+  const triggerPrint = () => window.print();
+
+  const renderRapor = () => {
+    const first = diffResult.topDiff[0];
+    const hasMalign = diffResult.topDiff.slice(0,3).some(d=>['Malign Tümör','Kemik-Malign'].includes(d.category) && d.score>35);
+    return (
+      <Fragment>
+        <div className="alert-info">Ağırlıklı skorlama sonuçları aşağıda sıralanmıştır. Rapor butonlarıyla dışa aktarım yapılabilir.</div>
+        <h3 style={{fontSize:'15px',margin:'18px 0 10px',color:'var(--accent-2)'}}>Ayırıcı Tanı — Top 8</h3>
+        <div className="diff-list">
+          {diffResult.topDiff.map((d,i)=>(
+            <div key={d.id} className={`diff-item ${i===0?'top':''}`}>
+              <div>
+                <div className="diff-name">{i+1}. {d.name}</div>
+                <div className="diff-detail">{d.category}</div>
+                <div className="diff-bar"><div className="diff-bar-fill" style={{width:d.score+'%'}}></div></div>
+              </div>
+              <div className="diff-score">%{d.score}</div>
+            </div>
+          ))}
+        </div>
+
+        {hasMalign && (
+          <div className="alert-warn">⚠ Üst sıralamada malign tümör kategorisinde yüksek skor bulunmaktadır. MSK onkoloji konseyi değerlendirmesi önerilir.</div>
+        )}
+
+        <div className="export-actions">
+          <button className="btn primary" onClick={openPrintOverlay}>📄 Rapor Önizle / Yazdır</button>
+          <button className="btn ok" onClick={copyHTMLToClipboard}>📋 HTML Kopyala</button>
+          <button className="btn" onClick={copyTextToClipboard}>📝 Metin Kopyala</button>
+          <button className="btn" onClick={downloadHTML}>⬇ HTML İndir</button>
+        </div>
+        {copyStatus && <div style={{textAlign:'center',marginTop:10,color:'var(--accent-3)',fontSize:'13px'}}>{copyStatus}</div>}
+
+        {first && (
+          <div style={{marginTop:24,padding:'16px 20px',background:'var(--bg-4)',borderRadius:10,borderLeft:'4px solid var(--accent-3)'}}>
+            <div style={{fontSize:'12px',color:'var(--accent-3)',textTransform:'uppercase',letterSpacing:'0.8px',fontWeight:600,marginBottom:6}}>Yorum Özeti</div>
+            <div style={{fontSize:'13.5px',lineHeight:1.6,color:'var(--text)'}}>
+              {first.score>40
+                ? <Fragment>Bulgular en çok <b style={{color:'#fecaca'}}>{first.name}</b> (skor %{first.score}) lehine değerlendirilmiştir. {first.description}</Fragment>
+                : <Fragment>Bulgular non-spesifik görünümde. En olası tanı <b>{first.name}</b> (%{first.score}) olmakla birlikte klinik ve laboratuvar korelasyonu önerilir.</Fragment>
+              }
+            </div>
+          </div>
+        )}
+      </Fragment>
+    );
+  };
+
+  /* ========================================================
+     STEP DISPATCH — Aktif adıma göre içerik seçimi
+  ======================================================== */
+  const renderStepBody = () => {
+    if(inLesionLoop){
+      const subId = currentStepDef.id;
+      if(subId === 'lez_loc') return renderLezLoc();
+      if(subId === 'lez_morf') return renderLezMorf();
+      if(subId === 'lez_t1') return renderLezT1();
+      if(subId === 'lez_t2') return renderLezT2();
+      if(subId === 'lez_dwi') return renderLezDWI();
+      if(subId === 'lez_kontrast') return renderLezKontrast();
+      if(subId === 'lez_kom') return renderLezKom();
+      return <div>Bilinmeyen lezyon alt-adımı</div>;
+    }
+    const id = currentStepDef.id;
+    if(id === 'klinik') return renderKlinik();
+    if(id === 'teknik') return renderTeknik();
+    if(id === 'cilt') return renderCilt();
+    if(id === 'fascia') return renderFascia();
+    if(id === 'femur_cortex') return renderFemurCortex();
+    if(id === 'femur_medulla') return renderFemurMedulla();
+    if(id === 'anterior') return renderAnterior();
+    if(id === 'medial') return renderMedial();
+    if(id === 'posterior') return renderPosterior();
+    if(id === 'tendon') return renderTendon();
+    if(id === 'vascular') return renderVascular();
+    if(id === 'sciatic') return renderSciatic();
+    if(id === 'femoral_n') return renderFemoralN();
+    if(id === 'lenf') return renderLenf();
+    if(id === 'lezyon_giris') return renderLezyonGiris();
+    if(id === 'ek') return renderEk();
+    if(id === 'rapor') return renderRapor();
+    return <div>Bilinmeyen adım</div>;
+  };
+
+  /* ========================================================
+     NAVİGASYON GUARD'LARI
+  ======================================================== */
+  const isLastStep = stepIdx === STEPS.length - 1;
+  const nextDisabled = (stepIdx === 14 && data.lezyonVarMi === 'Var' && lesions.length === 0);
+  const prevDisabled = stepIdx === 0 && !inLesionLoop;
+
+  /* ========================================================
+     ANA RETURN — Header + Progress + Card + Navigation + Print Overlay
+  ======================================================== */
+  return (
+    <Fragment>
+      <div className="header">
+        <div className="brand">
+          <div className="logo">U</div>
+          <div className="brand-text">
+            <h1>Uyluk MRI Karar Destek</h1>
+            <div className="sub">Kas–İskelet + Nörovasküler değerlendirme • Çoklu lezyon ayırıcı tanı motoru</div>
+          </div>
+        </div>
+        <div className="header-meta">
+          <div className="meta-chip"><span>Adım</span> <b>{computedStep + 1}</b> / {totalSteps}</div>
+          {lesions.length > 0 && <div className="meta-chip"><span>Lezyon</span> <b>{lesions.filter(l=>l.tamamlandi).length}</b> / {lesions.length}</div>}
+        </div>
+      </div>
+
+      <div className="progress-wrap">
+        <div className="progress-bar"><div className="progress-fill" style={{width: progress + '%'}}></div></div>
+      </div>
+
+      <div className="card fadeIn" key={inLesionLoop ? `lez-${currentLesionIdx}-${lesionSubStep}` : `main-${stepIdx}`}>
+        <div className="step-h">
+          <div className="step-num">{inLesionLoop ? `L${currentLesionIdx+1}.${lesionSubStep+1}` : (stepIdx + 1)}</div>
+          <div className="step-title-wrap">
+            <div className="step-title">{currentStepDef.title}</div>
+            <div className="step-sub">{currentStepDef.sub}</div>
+          </div>
+        </div>
+
+        <div className="step-body">
+          {renderStepBody()}
+        </div>
+
+        <div className="nav">
+          <button className="btn" onClick={goPrev} disabled={prevDisabled}>← Geri</button>
+          <div className="nav-mid">
+            {nextDisabled && <div className="nav-warn">⚠ En az 1 lezyon eklemelisiniz</div>}
+          </div>
+          {!isLastStep && (
+            <button className={`btn ${inLesionLoop && lesionSubStep === LESION_SUBSTEPS.length - 1 ? 'ok' : 'primary'}`}
+              onClick={goNext} disabled={nextDisabled}>
+              {inLesionLoop && lesionSubStep === LESION_SUBSTEPS.length - 1 ? 'Lezyonu Tamamla ✓' : 'İleri →'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* PRINT OVERLAY — DOM tabanlı, sandbox-safe */}
+      {printOpen && (
+        <div className="print-overlay">
+          <div className="print-actions no-print">
+            <button className="btn" onClick={closePrintOverlay}>✕ Kapat</button>
+            <div style={{flex:1}}></div>
+            <button className="btn primary" onClick={triggerPrint}>🖨 Yazdır / PDF'e Kaydet</button>
+          </div>
+          <div className="print-sheet" dangerouslySetInnerHTML={{__html: buildHTMLReport()}}></div>
+        </div>
+      )}
+    </Fragment>
+  );
+}
+
+/* ============== UYGULAMA MONTAJI ============== */
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<App />);
+
+    </script>
+  </body>
+</html>

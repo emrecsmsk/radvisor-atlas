@@ -1,65 +1,58 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ReportCatalog } from "@/components/ReportCatalog";
+import { getReports } from "@/lib/reports";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default function HomePage() {
+  const reports = getReports();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="flex flex-1 flex-col">
+      <header className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-surface)]/90 backdrop-blur">
+        <div className="mx-auto flex h-[var(--shell-topbar-h)] w-full max-w-7xl items-center justify-between gap-4 px-6 sm:px-10">
+          <Link
+            href="/"
+            aria-label="Radvisor Atlas"
+            className="flex items-center gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--color-bg)]"
           >
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src="/brand/logo-expanded.png"
+              alt="Radvisor"
+              width={180}
+              height={54}
+              priority
+              className="h-9 w-auto"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <span className="hidden h-6 w-px bg-[var(--color-line-strong)] sm:inline-block" />
+            <span className="hidden text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--color-muted)] sm:inline">
+              Atlas
+            </span>
+          </Link>
+          <span className="hidden text-xs tabular-nums text-[var(--color-muted)] sm:inline">
+            {reports.length} rapor
+          </span>
         </div>
-      </main>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-7xl flex-col px-6 pb-24 pt-12 sm:px-10">
+        <section className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-primary)]">
+            Radvisor · Atlas
+          </p>
+          <h1 className="mt-5 text-[2.35rem] font-semibold leading-[1.12] tracking-tight text-[var(--color-ink)] sm:text-[2.8rem]">
+            Radyoloji karar destek raporları, tek bir çatı altında.
+          </h1>
+          <p className="mt-5 max-w-xl text-[0.98rem] leading-relaxed text-[var(--color-muted)]">
+            MR ve kesitsel görüntüleme için hazırlanmış karar destek
+            formlarını buradan seçin. Raporu açtığınızda ilgili forma geçer,
+            hastaya özel değerlendirmeyi tamamlayabilirsiniz.
+          </p>
+        </section>
+
+        <ReportCatalog reports={reports} />
+      </div>
     </div>
   );
 }

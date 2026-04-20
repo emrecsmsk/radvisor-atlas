@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lenf Nodu MRI Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0c0b14;--sf:#161525;--sf2:#1e1d30;--bd:#2a2845;
+--ac:#6d9fff;--ac2:#4a7adf;--acg:rgba(109,159,255,.12);
+--tx:#dde0f0;--txd:#7f82a0;--txb:#fff;
+--gn:#34d399;--rd:#f87171;--or:#fb923c;--yl:#fbbf24;--bl:#60a5fa;--pk:#c084fc;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.wrap{max-width:920px;margin:0 auto;padding:16px}
+.hdr{text-align:center;padding:18px 0;border-bottom:1px solid var(--bd);margin-bottom:18px}
+.hdr h1{font-size:1.35rem;color:var(--ac);font-weight:700;letter-spacing:.3px}
+.pb{width:100%;height:4px;background:var(--sf2);border-radius:2px;margin-bottom:14px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--ac2),var(--ac));border-radius:2px;transition:width .4s}
+.cd{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:20px;margin-bottom:12px;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.sn{display:inline-block;background:var(--ac2);color:#fff;font-size:.66rem;padding:2px 8px;border-radius:10px;margin-bottom:5px;font-weight:600}
+.st{font-size:1rem;font-weight:600;color:var(--txb);margin-bottom:2px}
+.ss{color:var(--txd);font-size:.78rem;margin-bottom:12px}
+.og{display:flex;flex-wrap:wrap;gap:6px}
+.ob{padding:8px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:.82rem;transition:all .15s;user-select:none}
+.ob:hover{border-color:var(--ac);background:var(--acg)}
+.ob.sel{border-color:var(--ac);background:var(--ac);color:#fff;font-weight:600}
+.ni{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:.88rem;width:100px;outline:none}
+.ni:focus{border-color:var(--ac)}
+.ir{display:flex;align-items:center;gap:6px}
+.iu{color:var(--txd);font-size:.8rem}
+.fl{color:var(--txd);font-size:.78rem;margin-bottom:4px;margin-top:10px}
+.fl:first-child{margin-top:0}
+.nr{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)}
+.btn{padding:8px 20px;border-radius:8px;border:none;cursor:pointer;font-size:.84rem;font-weight:600;transition:all .15s}
+.bp{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}.bp:hover{border-color:var(--ac)}
+.bn{background:var(--ac);color:#fff}.bn:hover{background:var(--ac2)}.bn:disabled{opacity:.3;cursor:not-allowed}
+.bs{background:#16a34a;color:#fff}
+.lb{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.lc{padding:5px 12px;border-radius:14px;font-size:.74rem;border:1px solid var(--bd);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s}
+.lc.dn{border-color:var(--gn);color:var(--gn)}
+.la{border-color:var(--gn);color:var(--gn)}.la:hover{background:rgba(52,211,153,.1)}
+.rp{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:20px;margin-bottom:12px}
+.rp h2{font-size:1.05rem;color:var(--ac);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+.rp h3{font-size:.88rem;color:var(--txb);margin:14px 0 6px;padding:6px 10px;background:var(--ac2);border-radius:6px}
+.rt{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:.8rem}
+.rt th{text-align:left;padding:6px 10px;background:var(--ac2);color:#fff;font-weight:600;border:1px solid var(--bd)}
+.rt td{padding:6px 10px;border:1px solid var(--bd)}
+.rt tr:nth-child(even) td{background:var(--sf2)}.rt tr:nth-child(odd) td{background:var(--sf)}
+.tl{color:var(--txd);width:38%;font-weight:500}.tv{color:var(--txb);font-weight:600}
+.dr{background:var(--sf2);border-radius:8px;padding:12px;margin:6px 0;border-left:3px solid var(--ac)}
+.dr-bar{height:8px;border-radius:4px;background:var(--sf);overflow:hidden;margin:4px 0}
+.dr-fill{height:100%;border-radius:4px;transition:width .6s}
+.dr-desc{font-size:.74rem;color:var(--txd);margin-top:4px;line-height:1.4}
+.dr-keys{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.dr-key{font-size:.66rem;padding:2px 6px;border-radius:4px;background:rgba(109,159,255,.1);color:var(--ac)}
+.yb{background:var(--sf2);border-left:3px solid var(--ac);border-radius:0 8px 8px 0;padding:14px;margin:10px 0}
+.yt{font-size:.84rem;font-weight:700;margin-bottom:5px}
+.yx{font-size:.8rem;line-height:1.5}
+.er{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.be{padding:7px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;font-size:.78rem;transition:all .15s}.be:hover{border-color:var(--ac);color:var(--ac)}
+.morph-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.morph-item{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all .15s;font-size:.82rem}
+.morph-item:hover{border-color:var(--ac)}
+.morph-item.sel{border-color:var(--ac);background:var(--acg);color:var(--txb);font-weight:600}
+.morph-item .mi-label{font-weight:600;margin-bottom:2px}
+.morph-item .mi-sub{font-size:.7rem;color:var(--txd)}
+@media print{
+body{background:#fff;color:#000}
+.nr,.er,.lb,.btn,.pb,.hdr,.sn{display:none!important}
+.cd,.rp,.yb,.dr{border:1px solid #ccc;background:#fff;color:#000}
+.rt th{background:#4a7adf;color:#fff}.rt td{color:#000}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+var useState = React.useState, Fragment = React.Fragment;
+
+/* ===== REGIONS ===== */
+var REGIONS = [
+  {g:'Baş-Boyun',r:['Submental (IA)','Submandibular (IB)','Üst Juguler (IIA/IIB)','Orta Juguler (III)','Alt Juguler (IV)','Posterior Üçgen (VA/VB)','Anterior Kompartman (VI)','Retrofaringeal','Parotid','Supraklavikular']},
+  {g:'Toraks',r:['Mediastinal (Paratrakeal)','Mediastinal (Prevascular)','Mediastinal (Subkarinal)','Mediastinal (Paraözofageal)','Hiler','Aksiller (Level I)','Aksiller (Level II)','Aksiller (Level III)','İnternal Mammarian']},
+  {g:'Abdomen',r:['Çölyak','Paraaortik','Parakavel','Retroperitoneal','Mezenterik','Hepatik Hilus','Splenik Hilus','Renal Hilus']},
+  {g:'Pelvis',r:['İliak Kommon','İliak Eksternal','İliak İnternal (Obturator)','Presakral','Inguinal Yüzeyel','Inguinal Derin (Femoral)']}
+];
+
+/* ===== SIGNAL OPTIONS ===== */
+var T1_OPTS = ['İzointens','Hipointens','Hiperintens','Hiperintens hilus','Heterojen'];
+var T2_OPTS = ['Hipointens','İzointens','Hafif hiperintens','Hiperintens','Heterojen hiperintens','Çok hiperintens'];
+var IO_OPTS = ['Değişiklik yok','Out-phase sinyal düşüşü'];
+var DWI_OPTS = ['Restriksiyon yok','Hafif hiperintens','Güçlü hiperintens','Periferik hiperintens','Shine-through'];
+var ADC_OPTS = ['Normal','Hafif düşük','Düşük','Çok düşük','Düşük periferik','Hiperintens'];
+var ART_OPTS = ['Kontrastlanma yok','Minimal','Hafif homojen','Homojen','Heterojen','Rim','Heterojen/Rim'];
+var PV_OPTS = ['Kontrastlanma yok','Minimal','Homojen','Heterojen','Rim'];
+var LATE_OPTS = ['Kontrastlanma yok','Minimal','Persistan','Rim'];
+var SHAPES = ['Oval (uzun aks/kısa aks > 2)','Yuvarlak (uzun aks/kısa aks \u2248 1)'];
+var HILUS = ['Korunmuş (yağlı hilus mevcut)','Kaybolmuş','Kısmen korunmuş'];
+var CORTEX = ['İnce ve düzenli','Kalınlaşmış (asimetrik)','Kalınlaşmış (konsantrik)','Düzensiz','Nekrotik merkez'];
+
+/* ===== DIFFERENTIAL PROFILES ===== */
+var DIFFS = [
+  {name:'Normal Lenf Nodu', sev:0,
+   t1e:['İzointens'],t1p:['Hiperintens hilus'],
+   t2e:['Hafif hiperintens'],t2p:['İzointens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Hafif hiperintens'],dwp:['Restriksiyon yok'],
+   adce:['Normal'],adcp:['Hafif düşük'],
+   arte:['Hafif homojen'],artp:['Homojen'],
+   pve:['Homojen'],pvp:['Hafif homojen'],
+   late:['Persistan'],latp:[],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:[],
+   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:['Kısmen korunmuş'],
+   core:['İnce ve düzenli'],corp:[],
+   desc:'Oval morfoloji, yağlı hilus korunmuş, ince korteks. T2A hafif hiperintens, DWI hafif, ADC normal.',
+   keys:['Oval','Yağlı hilus (+)','İnce korteks','Normal ADC']},
+
+  {name:'Reaktif Lenfadenopati', sev:10,
+   t1e:['İzointens'],t1p:[],
+   t2e:['Hiperintens'],t2p:['Hafif hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Hafif hiperintens'],dwp:['Güçlü hiperintens'],
+   adce:['Hafif düşük'],adcp:['Normal'],
+   arte:['Homojen'],artp:['Hafif homojen'],
+   pve:['Homojen'],pvp:[],
+   late:['Persistan'],latp:[],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
+   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:['Kısmen korunmuş'],
+   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
+   desc:'Büyümüş ancak oval morfolojiyi ve yağlı hilusu koruyan lenf nodu. Homojen kontrastlanma.',
+   keys:['Oval korunmuş','Hilus (+)','Homojen CE','T2 hiperintens']},
+
+  {name:'Metastatik Lenf Nodu', sev:85,
+   t1e:['Hipointens'],t1p:['İzointens','Heterojen'],
+   t2e:['Heterojen hiperintens'],t2p:['Hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Güçlü hiperintens'],dwp:['Periferik hiperintens'],
+   adce:['Düşük'],adcp:['Hafif düşük'],
+   arte:['Heterojen','Heterojen/Rim'],artp:['Rim'],
+   pve:['Heterojen'],pvp:['Rim'],
+   late:['Persistan'],latp:['Rim'],
+   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:[],
+   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
+   core:['Kalınlaşmış (asimetrik)','Düzensiz'],corp:['Kalınlaşmış (konsantrik)'],
+   desc:'Yuvarlak morfoloji, hilus kaybı, heterojen kontrastlanma. Güçlü DWI restriksiyon ve düşük ADC.',
+   keys:['Yuvarlak','Hilus kayıp','Heterojen CE','DWI(+)','Düşük ADC']},
+
+  {name:'Nekrotik Metastatik Nod', sev:90,
+   t1e:['Hipointens'],t1p:['Heterojen'],
+   t2e:['Çok hiperintens'],t2p:['Heterojen hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Periferik hiperintens'],dwp:['Güçlü hiperintens'],
+   adce:['Düşük periferik'],adcp:['Düşük'],
+   arte:['Rim'],artp:['Heterojen/Rim'],
+   pve:['Rim'],pvp:[],
+   late:['Rim'],latp:[],
+   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:[],
+   hile:['Kaybolmuş'],hilp:[],
+   core:['Nekrotik merkez'],corp:['Düzensiz'],
+   desc:'Santral nekroz + rim kontrastlanma paterni. T2A merkezde çok yüksek sinyal. DWI periferik restriksiyon.',
+   keys:['Nekrotik merkez','Rim CE','T2 çok yüksek','Periferik DWI']},
+
+  {name:'Lenfoma', sev:80,
+   t1e:['İzointens','Hipointens'],t1p:[],
+   t2e:['Hafif hiperintens'],t2p:['Hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Güçlü hiperintens'],dwp:[],
+   adce:['Çok düşük'],adcp:['Düşük'],
+   arte:['Homojen'],artp:['Hafif homojen'],
+   pve:['Homojen'],pvp:[],
+   late:['Persistan'],latp:[],
+   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:['Oval (uzun aks/kısa aks > 2)'],
+   hile:['Kaybolmuş'],hilp:[],
+   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
+   desc:'Multipl büyük homojen nodlar. Çok güçlü DWI restriksiyon ve çok düşük ADC (\u003C0.8\u00D710\u207B\u00B3). Homojen kontrastlanma.',
+   keys:['Çok düşük ADC','Güçlü DWI','Homojen CE','Multipl büyük']},
+
+  {name:'Tüberküloz Lenfadenit', sev:55,
+   t1e:['Hipointens'],t1p:['Heterojen'],
+   t2e:['Heterojen hiperintens'],t2p:['Çok hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Periferik hiperintens'],dwp:['Güçlü hiperintens'],
+   adce:['Düşük periferik'],adcp:['Düşük'],
+   arte:['Rim'],artp:['Heterojen/Rim'],
+   pve:['Rim'],pvp:[],
+   late:['Rim'],latp:[],
+   she:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],shp:['Oval (uzun aks/kısa aks > 2)'],
+   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
+   core:['Nekrotik merkez'],corp:['Düzensiz'],
+   desc:'Nekrotik metastatik nodla benzer görünüm. Rim kontrastlanma + kazöz nekroz. Konglomerat pattern ayırt edici olabilir.',
+   keys:['Rim CE','Kazöz nekroz','Konglomerat','Nekrotik metastazla benzer']},
+
+  {name:'Granülomatöz Hastalık (Sarkoidoz)', sev:20,
+   t1e:['Hipointens'],t1p:['İzointens'],
+   t2e:['Hipointens','İzointens'],t2p:[],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Restriksiyon yok'],dwp:['Hafif hiperintens'],
+   adce:['Normal'],adcp:['Hafif düşük'],
+   arte:['Minimal'],artp:['Kontrastlanma yok'],
+   pve:['Minimal'],pvp:['Kontrastlanma yok'],
+   late:['Minimal'],latp:['Kontrastlanma yok'],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
+   hile:['Kaybolmuş'],hilp:['Kısmen korunmuş'],
+   core:['Kalınlaşmış (konsantrik)'],corp:[],
+   desc:'T1+T2 hipointens (fibrozis). Minimal kontrastlanma. DWI genellikle negatif. Bilateral hiler LAP sarkoidozda tipik.',
+   keys:['T1+T2 düşük','Minimal CE','DWI negatif','Fibrozis/kalsifikasyon']},
+
+  {name:'Yağlı Hilus \u2014 Benign Nod', sev:0,
+   t1e:['Hiperintens hilus'],t1p:['İzointens'],
+   t2e:['Hafif hiperintens'],t2p:['İzointens'],
+   ioe:['Out-phase sinyal düşüşü'],iop:[],
+   dwe:['Restriksiyon yok'],dwp:['Hafif hiperintens'],
+   adce:['Normal'],adcp:[],
+   arte:['Hafif homojen'],artp:['Minimal'],
+   pve:['Homojen'],pvp:['Minimal'],
+   late:['Persistan'],latp:[],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:[],
+   hile:['Korunmuş (yağlı hilus mevcut)'],hilp:[],
+   core:['İnce ve düzenli'],corp:[],
+   desc:'Out-phase sinyal düşüşü (intrasellüler yağ) patognomoniktir. Yağlı hilus belirgin.',
+   keys:['Out-phase sinyal kaybı','Yağlı hilus','Oval','Benign']},
+
+  {name:'Kistik Lenf Nodu', sev:15,
+   t1e:['Hipointens'],t1p:['İzointens'],
+   t2e:['Çok hiperintens'],t2p:['Hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Shine-through'],dwp:['Restriksiyon yok'],
+   adce:['Hiperintens'],adcp:['Normal'],
+   arte:['Kontrastlanma yok'],artp:['Minimal'],
+   pve:['Kontrastlanma yok'],pvp:['Minimal'],
+   late:['Kontrastlanma yok'],latp:['Minimal'],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
+   hile:['Kaybolmuş'],hilp:[],
+   core:['Nekrotik merkez'],corp:[],
+   desc:'Basit kist sinyali: T1 düşük, T2 çok yüksek, kontrastlanma yok. DWI shine-through (gerçek restriksiyon değil).',
+   keys:['T2 çok yüksek','CE yok','Shine-through','ADC yüksek']},
+
+  {name:'Anjioimmünoblastik / İnflamatuvar', sev:30,
+   t1e:['İzointens'],t1p:[],
+   t2e:['Hiperintens'],t2p:['Hafif hiperintens'],
+   ioe:['Değişiklik yok'],iop:[],
+   dwe:['Hafif hiperintens'],dwp:['Güçlü hiperintens'],
+   adce:['Hafif düşük'],adcp:['Düşük'],
+   arte:['Homojen'],artp:['Hafif homojen'],
+   pve:['Homojen'],pvp:[],
+   late:['Persistan'],latp:[],
+   she:['Oval (uzun aks/kısa aks > 2)'],shp:['Yuvarlak (uzun aks/kısa aks \u2248 1)'],
+   hile:['Kısmen korunmuş'],hilp:['Kaybolmuş'],
+   core:['Kalınlaşmış (konsantrik)'],corp:['Kalınlaşmış (asimetrik)'],
+   desc:'Reaktif lenfadenopatiye benzer ancak daha belirgin kontrastlanma ve olası DWI restriksiyon. Klinik korelasyon gerektirir.',
+   keys:['Homojen CE','T2 hiperintens','Klinik korelasyon','İnflamatuvar']}
+];
+
+/* ===== WEIGHTS ===== */
+var W = {t1:2, t2:3, io:3, dwi:5, adc:5, art:3, pv:2, lat:1, sh:3, hil:4, cor:3};
+var MAX_SC = 0;
+(function(){var ks=Object.keys(W);for(var i=0;i<ks.length;i++) MAX_SC += W[ks[i]]*2;})();
+
+function calcDiff(nd) {
+  var res = [];
+  for (var i = 0; i < DIFFS.length; i++) {
+    var dd = DIFFS[i], sc = 0;
+    function chk(val, exact, partial, w) {
+      if (!val) return;
+      if (exact.indexOf(val) >= 0) sc += w * 2;
+      else if (partial.indexOf(val) >= 0) sc += w;
+    }
+    chk(nd.t1, dd.t1e, dd.t1p, W.t1);
+    chk(nd.t2, dd.t2e, dd.t2p, W.t2);
+    chk(nd.io, dd.ioe, dd.iop, W.io);
+    chk(nd.dwi, dd.dwe, dd.dwp, W.dwi);
+    chk(nd.adc, dd.adce, dd.adcp, W.adc);
+    chk(nd.art, dd.arte, dd.artp, W.art);
+    chk(nd.pv, dd.pve, dd.pvp, W.pv);
+    chk(nd.lat, dd.late, dd.latp, W.lat);
+    chk(nd.shape, dd.she, dd.shp, W.sh);
+    chk(nd.hilus, dd.hile, dd.hilp, W.hil);
+    chk(nd.cortex, dd.core, dd.corp, W.cor);
+    var pct = Math.round((sc / MAX_SC) * 100);
+    if (pct > 10) res.push({name:dd.name, pct:pct, sev:dd.sev, desc:dd.desc, keys:dd.keys});
+  }
+  res.sort(function(a, b) { return b.pct - a.pct; });
+  return res;
+}
+
+function pctCol(p) { return p>=65?'var(--rd)':p>=45?'var(--or)':p>=30?'var(--yl)':'var(--gn)'; }
+
+/* ===== STEPS ===== */
+var STEPS = ['nodPre','nodLoop','nodPost','rapor'];
+var NOD_SUB = ['region','side','kisa','uzun','shape','hilus','cortex','t1','t2','io','dwi','adc','art','pv','lat','sonuc'];
+
+/* ===== COMPONENTS ===== */
+function Radio(p) {
+  return React.createElement('div',{className:'og'},
+    p.options.map(function(o){return React.createElement('div',{key:o,className:'ob'+(p.value===o?' sel':''),onClick:function(){p.onChange(o)}},o)}));
+}
+function NumIn(p) {
+  return React.createElement('div',{className:'ir'},
+    React.createElement('input',{className:'ni',type:'number',step:'0.1',min:'0',value:p.value||'',onChange:function(e){p.onChange(e.target.value)},placeholder:p.ph||''}),
+    React.createElement('span',{className:'iu'},p.u||'mm'));
+}
+function SW(p) {
+  return React.createElement('div',{className:'cd'},
+    React.createElement('div',{className:'sn'},'ADIM '+p.n),
+    React.createElement('div',{className:'st'},p.t),
+    p.s?React.createElement('div',{className:'ss'},p.s):null,
+    p.children);
+}
+function Row(p){return React.createElement('tr',null,React.createElement('td',{className:'tl'},p.l),React.createElement('td',{className:'tv'},p.v||'\u2014'))}
+
+function DiffResult(p) {
+  var r = p.results;
+  if (!r||r.length===0) return React.createElement('div',{style:{color:'var(--txd)',fontSize:'.8rem',padding:8}},'Yeterli veri yok.');
+  return React.createElement('div',null,r.slice(0,6).map(function(d,i){
+    var col=pctCol(d.pct), top=i===0&&d.pct>=35;
+    return React.createElement('div',{key:i,className:'dr',style:{borderLeftColor:col,background:top?'rgba(109,159,255,.06)':undefined}},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6}},
+        React.createElement('span',{style:{fontSize:'.78rem',fontWeight:700,color:col}},'%'+d.pct),
+        React.createElement('span',{style:{fontSize:'.84rem',fontWeight:top?700:600,color:top?'var(--txb)':'var(--tx)'}},d.name),
+        d.sev>=70?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(248,113,113,.15)',color:'var(--rd)',fontWeight:700,marginLeft:4}},'MALİGN'):
+        d.sev>=40?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(251,146,60,.12)',color:'var(--or)',fontWeight:700,marginLeft:4}},'ŞÜPHELİ'):
+        d.sev<=5?React.createElement('span',{style:{fontSize:'.62rem',padding:'1px 6px',borderRadius:4,background:'rgba(52,211,153,.12)',color:'var(--gn)',fontWeight:700,marginLeft:4}},'BENİGN'):null
+      ),
+      React.createElement('div',{className:'dr-bar'},React.createElement('div',{className:'dr-fill',style:{width:d.pct+'%',background:col}})),
+      React.createElement('div',{className:'dr-desc'},d.desc),
+      React.createElement('div',{className:'dr-keys'},d.keys.map(function(k,j){return React.createElement('span',{key:j,className:'dr-key'},k)}))
+    );
+  }));
+}
+
+/* ===== APP ===== */
+function App() {
+  var _s=useState(0),step=_s[0],setStep=_s[1];
+  var _n=useState([]),nods=_n[0],setNods=_n[1];
+  var _ni=useState(-1),nIdx=_ni[0],setNIdx=_ni[1];
+  var _ns=useState(0),nSub=_ns[0],setNSub=_ns[1];
+
+  var sn=STEPS[step],total=STEPS.length,pct=((step+1)/total)*100;
+
+  function addNod(){
+    var n={region:'',side:'',kisa:'',uzun:'',shape:'',hilus:'',cortex:'',t1:'',t2:'',io:'',dwi:'',adc:'',art:'',pv:'',lat:''};
+    setNods(function(p){return p.concat([n])});
+    setNIdx(nods.length);setNSub(0);
+  }
+  function setNF(k,v){setNods(function(p){var c=p.slice();c[nIdx]={};for(var x in p[nIdx])c[nIdx][x]=p[nIdx][x];c[nIdx][k]=v;return c})}
+  function finNod(){setNIdx(-1);setNSub(0)}
+  function rmNod(i){setNods(function(p){return p.filter(function(_,j){return j!==i})})}
+
+  function ix(name){return STEPS.indexOf(name)}
+
+  function canNext(){
+    if(sn==='nodPre') return true;
+    if(sn==='nodLoop'){
+      if(nIdx<0) return true;
+      var nd=nods[nIdx]; if(!nd) return true;
+      var cs=NOD_SUB[nSub];
+      if(cs==='sonuc') return true;
+      if(cs==='region') return !!nd.region;
+      if(cs==='side') return !!nd.side;
+      if(cs==='kisa') return !!nd.kisa;
+      if(cs==='uzun') return !!nd.uzun;
+      if(cs==='shape') return !!nd.shape;
+      if(cs==='hilus') return !!nd.hilus;
+      if(cs==='cortex') return !!nd.cortex;
+      if(cs==='t1') return !!nd.t1;
+      if(cs==='t2') return !!nd.t2;
+      if(cs==='io') return !!nd.io;
+      if(cs==='dwi') return !!nd.dwi;
+      if(cs==='adc') return !!nd.adc;
+      if(cs==='art') return !!nd.art;
+      if(cs==='pv') return !!nd.pv;
+      if(cs==='lat') return !!nd.lat;
+      return true;
+    }
+    return true;
+  }
+
+  function goNext(){
+    if(sn==='nodPre'){
+      if(nIdx===-1){setStep(ix('nodPost'));return}
+      setStep(ix('nodLoop'));return;
+    }
+    if(sn==='nodLoop'){
+      var last=NOD_SUB.length-1;
+      if(nIdx>=0&&nSub<last){setNSub(nSub+1);return}
+      finNod();setStep(ix('nodPost'));return;
+    }
+    setStep(Math.min(step+1,total-1));
+  }
+  function goPrev(){
+    if(sn==='nodLoop'){if(nSub>0){setNSub(nSub-1);return}setStep(ix('nodPre'));return}
+    if(sn==='nodPost'){setStep(ix('nodPre'));return}
+    setStep(Math.max(step-1,0));
+  }
+
+  /* ===== RENDER ===== */
+  function renderStep(){
+    switch(sn){
+      case 'nodPre':
+        return React.createElement(SW,{n:1,t:'Lenf Nodu Değerlendirmesi',s:'Patolojik lenf nodlarını ekleyin'},
+          React.createElement('div',{className:'lb'},
+            nods.map(function(n,i){return React.createElement('div',{key:i,className:'lc dn',onClick:function(){setNIdx(i);setNSub(0);setStep(ix('nodLoop'))}},
+              'Nod '+(i+1)+(n.kisa?' ('+n.kisa+'mm)':'')+(n.region?' \u2014 '+n.region:''))}),
+            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},'+ Lenf Nodu Ekle')
+          ),
+          nods.length===0?React.createElement('div',{style:{color:'var(--txd)',fontSize:'.82rem',padding:8}},'Patolojik lenf nodu yoksa rapora ilerleyin.'):null
+        );
+
+      case 'nodLoop':{
+        if(nIdx<0||!nods[nIdx]) return null;
+        var nd=nods[nIdx],cs=NOD_SUB[nSub];
+        var diffRes=calcDiff(nd);
+        var lbl={region:'Anatomik Bölge',side:'Taraf',kisa:'Kısa Aks',uzun:'Uzun Aks',shape:'Morfoloji (Şekil)',hilus:'Hilus Durumu',cortex:'Korteks',t1:'T1A Sinyal',t2:'T2A Sinyal',io:'In-Phase / Out-Phase',dwi:'DWI',adc:'ADC',art:'Arterial Faz',pv:'Portal Venöz Faz',lat:'Geç Faz',sonuc:'Ayırıcı Tanı Sonucu'};
+        var content=null;
+
+        if(cs==='region'){
+          var regionEls = REGIONS.map(function(g){
+            return React.createElement('div',{key:g.g,style:{marginBottom:10}},
+              React.createElement('div',{style:{fontSize:'.76rem',fontWeight:700,color:'var(--ac)',marginBottom:4}},g.g),
+              React.createElement('div',{className:'og'},g.r.map(function(r){
+                return React.createElement('div',{key:r,className:'ob'+(nd.region===r?' sel':''),onClick:function(){setNF('region',r)}},r);
+              })));
+          });
+          content = React.createElement('div',null,regionEls);
+        }
+        else if(cs==='side') content=React.createElement(Radio,{options:['Sağ','Sol','Bilateral','Midline'],value:nd.side,onChange:function(v){setNF('side',v)}});
+        else if(cs==='kisa') content=React.createElement('div',null,
+          React.createElement('div',{className:'fl'},'Kısa aks ölçümü'),
+          React.createElement(NumIn,{value:nd.kisa,onChange:function(v){setNF('kisa',v)}}));
+        else if(cs==='uzun') content=React.createElement('div',null,
+          React.createElement('div',{className:'fl'},'Uzun aks ölçümü'),
+          React.createElement(NumIn,{value:nd.uzun,onChange:function(v){setNF('uzun',v)}}));
+        else if(cs==='shape') content=React.createElement('div',null,
+          React.createElement('div',{className:'morph-grid'},SHAPES.map(function(s){
+            return React.createElement('div',{key:s,className:'morph-item'+(nd.shape===s?' sel':''),onClick:function(){setNF('shape',s)}},
+              React.createElement('div',{className:'mi-label'},s.split('(')[0].trim()),
+              React.createElement('div',{className:'mi-sub'},s.includes('(')?'('+s.split('(')[1]:''));
+          })),
+          nd.kisa && nd.uzun ? React.createElement('div',{style:{marginTop:8,fontSize:'.78rem',color:'var(--txd)'}},
+            'Hesaplanan oran: '+(parseFloat(nd.uzun)/parseFloat(nd.kisa)).toFixed(2)+
+            (parseFloat(nd.uzun)/parseFloat(nd.kisa)>=2?' (Oval)':' (Yuvarlak)')
+          ):null);
+        else if(cs==='hilus') content=React.createElement('div',{className:'morph-grid',style:{gridTemplateColumns:'1fr'}},HILUS.map(function(h){
+          return React.createElement('div',{key:h,className:'morph-item'+(nd.hilus===h?' sel':''),onClick:function(){setNF('hilus',h)}},
+            React.createElement('div',{className:'mi-label'},h.split('(')[0].trim()),
+            h.includes('(')?React.createElement('div',{className:'mi-sub'},'('+h.split('(')[1]):null);}));
+        else if(cs==='cortex') content=React.createElement(Radio,{options:CORTEX,value:nd.cortex,onChange:function(v){setNF('cortex',v)}});
+        else if(cs==='t1') content=React.createElement(Radio,{options:T1_OPTS,value:nd.t1,onChange:function(v){setNF('t1',v)}});
+        else if(cs==='t2') content=React.createElement(Radio,{options:T2_OPTS,value:nd.t2,onChange:function(v){setNF('t2',v)}});
+        else if(cs==='io') content=React.createElement(Radio,{options:IO_OPTS,value:nd.io,onChange:function(v){setNF('io',v)}});
+        else if(cs==='dwi') content=React.createElement(Radio,{options:DWI_OPTS,value:nd.dwi,onChange:function(v){setNF('dwi',v)}});
+        else if(cs==='adc') content=React.createElement(Radio,{options:ADC_OPTS,value:nd.adc,onChange:function(v){setNF('adc',v)}});
+        else if(cs==='art') content=React.createElement(Radio,{options:ART_OPTS,value:nd.art,onChange:function(v){setNF('art',v)}});
+        else if(cs==='pv') content=React.createElement(Radio,{options:PV_OPTS,value:nd.pv,onChange:function(v){setNF('pv',v)}});
+        else if(cs==='lat') content=React.createElement(Radio,{options:LATE_OPTS,value:nd.lat,onChange:function(v){setNF('lat',v)}});
+        else if(cs==='sonuc') content=React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:'.86rem',fontWeight:700,color:'var(--ac)',marginBottom:10}},'Nod '+(nIdx+1)+' \u2014 Ayırıcı Tanı Eşleştirmesi'),
+          React.createElement(DiffResult,{results:diffRes}),
+          React.createElement('div',{style:{marginTop:14,display:'flex',gap:8}},
+            React.createElement('button',{className:'btn bn',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();setStep(ix('nodPre'))}},'Nod Listesine Dön'),
+            React.createElement('button',{className:'btn bs',style:{fontSize:'.8rem',padding:'7px 16px'},onClick:function(){finNod();addNod();setNSub(0)}},'+ Yeni Nod Ekle')
+          ));
+
+        return React.createElement(SW,{n:1,t:'Nod '+(nIdx+1)+' \u2014 '+lbl[cs],s:'Alt adım '+(nSub+1)+'/'+NOD_SUB.length},content);
+      }
+
+      case 'nodPost':
+        return React.createElement(SW,{n:1,t:'Lenf Nodu Özeti',s:'Toplam '+nods.length+' lenf nodu'},
+          nods.map(function(n,i){
+            var dr=calcDiff(n),top=dr.length>0?dr[0]:null;
+            return React.createElement('div',{key:i,style:{background:'var(--sf2)',borderRadius:8,padding:12,marginBottom:8,fontSize:'.8rem'}},
+              React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                React.createElement('strong',{style:{color:'var(--ac)'}},'Nod '+(i+1)+': '+n.region+' ('+n.side+')'),
+                React.createElement('span',{style:{color:'var(--rd)',cursor:'pointer',fontSize:'.72rem'},onClick:function(){rmNod(i)}},'\u2715 Sil')
+              ),
+              React.createElement('div',{style:{marginTop:3}},'Kısa: '+n.kisa+'mm | Uzun: '+n.uzun+'mm | '+n.shape.split('(')[0].trim()+' | Hilus: '+n.hilus.split('(')[0].trim()),
+              React.createElement('div',{style:{marginTop:2}},'T1:'+n.t1+' | T2:'+n.t2+' | DWI:'+n.dwi+' | ADC:'+n.adc),
+              top?React.createElement('div',{style:{marginTop:4,padding:'4px 8px',background:'rgba(109,159,255,.08)',borderRadius:4,fontSize:'.76rem'}},
+                React.createElement('span',{style:{color:pctCol(top.pct),fontWeight:700}},'%'+top.pct+' '),
+                React.createElement('span',{style:{color:'var(--txb)'}},top.name),
+                top.sev>=70?React.createElement('span',{style:{marginLeft:6,fontSize:'.62rem',color:'var(--rd)',fontWeight:700}},'MALİGN'):null):null
+            );
+          }),
+          React.createElement('div',{style:{marginTop:12,display:'flex',gap:8,flexWrap:'wrap'}},
+            React.createElement('div',{className:'lc la',onClick:function(){addNod();setStep(ix('nodLoop'))}},'+ Başka Nod Ekle'),
+            React.createElement('button',{className:'btn bn',style:{fontSize:'.82rem',padding:'8px 20px'},onClick:function(){setStep(ix('rapor'))}},'\uD83D\uDCCB Rapor Oluştur')
+          )
+        );
+
+      case 'rapor': return renderReport();
+      default: return null;
+    }
+  }
+
+  /* ===== REPORT ===== */
+  function renderReport(){
+    var els=[];
+    els.push(React.createElement('h2',{key:'hd'},'LENF NODU MRI \u2014 YAPISAL RAPOR'));
+
+    if(nods.length===0){
+      els.push(React.createElement('table',{key:'t0',className:'rt'},React.createElement('tbody',null,React.createElement(Row,{l:'Lenf Nodları',v:'Patolojik lenf nodu saptanmamıştır.'}))));
+    } else {
+      nods.forEach(function(n,i){
+        els.push(React.createElement('h3',{key:'h'+i},'Nod '+(i+1)+': '+n.region+' ('+n.side+')'));
+        els.push(React.createElement('table',{key:'t'+i,className:'rt'},React.createElement('tbody',null,
+          React.createElement(Row,{l:'Bölge / Taraf',v:n.region+' \u2014 '+n.side}),
+          React.createElement(Row,{l:'Kısa Aks / Uzun Aks',v:n.kisa+'mm / '+n.uzun+'mm'}),
+          React.createElement(Row,{l:'Morfoloji',v:n.shape}),
+          React.createElement(Row,{l:'Hilus',v:n.hilus}),
+          React.createElement(Row,{l:'Korteks',v:n.cortex}),
+          React.createElement(Row,{l:'T1A / T2A',v:n.t1+' / '+n.t2}),
+          React.createElement(Row,{l:'In/Out-Phase',v:n.io}),
+          React.createElement(Row,{l:'DWI / ADC',v:n.dwi+' / '+n.adc}),
+          React.createElement(Row,{l:'Arterial / PV / Geç',v:n.art+' / '+n.pv+' / '+n.lat})
+        )));
+        var dr=calcDiff(n);
+        if(dr.length>0){
+          els.push(React.createElement('div',{key:'dr'+i,style:{marginBottom:14}},
+            React.createElement('div',{style:{fontSize:'.82rem',fontWeight:700,color:'var(--ac)',marginBottom:6,marginTop:4}},'Nod '+(i+1)+' \u2014 Ayırıcı Tanı'),
+            React.createElement(DiffResult,{results:dr})));
+        }
+      });
+
+      // YORUM
+      var yorumlar = makeYorumlar();
+      if(yorumlar.length>0){
+        els.push(React.createElement('h3',{key:'hy'},'YORUM'));
+        yorumlar.forEach(function(y,i){
+          els.push(React.createElement('div',{key:'y'+i,className:'yb',style:{borderLeftColor:y.c}},
+            React.createElement('div',{className:'yt',style:{color:y.c}},y.t),
+            React.createElement('div',{className:'yx'},y.x)));
+        });
+      }
+    }
+
+    els.push(React.createElement('div',{key:'exp',className:'er'},
+      React.createElement('button',{className:'be',onClick:function(){window.print()}},'\uD83D\uDDA8 PDF Yazdır'),
+      React.createElement('button',{className:'be',onClick:copyRpt},'\uD83D\uDCCB Kopyala'),
+      React.createElement('button',{className:'be',onClick:exportHTML},'\uD83D\uDCE5 HTML İndir')
+    ));
+
+    return React.createElement('div',{className:'rp',id:'rpt-content'},els);
+  }
+
+  function makeYorumlar(){
+    var y=[];
+    nods.forEach(function(n,i){
+      var dr=calcDiff(n);
+      if(dr.length===0) return;
+      var top=dr[0];
+      var col=top.sev>=70?'var(--rd)':top.sev>=40?'var(--or)':top.sev>=20?'var(--yl)':'var(--gn)';
+
+      // Size criteria
+      var kisa=parseFloat(n.kisa)||0;
+      var sizeWarn='';
+      if(n.region.indexOf('Juguler')>=0||n.region.indexOf('Submandibular')>=0||n.region.indexOf('Submental')>=0){
+        if(kisa>10) sizeWarn=' Kısa aks boyut kriteri aşılmıştır (boyun: 10mm sınırı).';
+      } else if(n.region.indexOf('Retrofaringeal')>=0){
+        if(kisa>8) sizeWarn=' Retrofaringeal bölgede 8mm sınırı aşılmıştır.';
+      } else if(n.region.indexOf('Inguinal')>=0){
+        if(kisa>15) sizeWarn=' İnguinal bölgede 15mm sınırı aşılmıştır.';
+      } else if(n.region.indexOf('Mediastinal')>=0||n.region.indexOf('Hiler')>=0){
+        if(kisa>10) sizeWarn=' Mediastinal/hiler bölgede 10mm sınırı aşılmıştır.';
+      } else {
+        if(kisa>10) sizeWarn=' Kısa aks 10mm sınırını aşmıştır.';
+      }
+
+      var txt='Nod '+(i+1)+' ('+n.region+', '+n.side+', kısa aks '+n.kisa+'mm): Sinyal profili en çok '+top.name+' ile uyumludur (%'+top.pct+' eşleşme).'+sizeWarn;
+      if(top.sev>=70) txt+=' MALİGNİTE AÇISINDAN DİKKATLİ DEĞERLENDİRİLMELİDİR.';
+      if(dr.length>1) txt+=' Ayırıcı tanıda '+dr[1].name+' (%'+dr[1].pct+') de düşünülmelidir.';
+
+      // ADC rule
+      if(n.adc==='Çok düşük') txt+=' ADC değeri çok düşük olup lenfoma olasılığı yüksektir.';
+      else if(n.adc==='Düşük') txt+=' ADC değeri düşük olup malignite olasılığı artmıştır.';
+
+      // Hilus rule
+      if(n.hilus==='Korunmuş (yağlı hilus mevcut)') txt+=' Yağlı hilusun korunması benign lehine bulgudur.';
+
+      // Morphology rule
+      if(n.shape.indexOf('Yuvarlak')>=0 && n.hilus==='Kaybolmuş') txt+=' Yuvarlak morfoloji + hilus kaybı malignite lehine önemli morfolojik bulgulardır.';
+
+      y.push({t:'Nod '+(i+1)+': '+top.name+' (%'+top.pct+')',x:txt,c:col});
+    });
+    return y;
+  }
+
+  function copyRpt(){
+    var el=document.getElementById('rpt-content');if(!el)return;
+    var ta=document.createElement('textarea');ta.style.position='fixed';ta.style.left='-9999px';
+    ta.value=el.innerText;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);alert('Rapor panoya kopyalandı!');
+  }
+
+  function exportHTML(){
+    var el=document.getElementById('rpt-content');if(!el)return;
+    var css='body{font-family:Segoe UI,system-ui,sans-serif;background:#fff;color:#111;padding:24px;max-width:900px;margin:0 auto}'
+      +'h2{font-size:1.1rem;color:#4a7adf;border-bottom:2px solid #4a7adf;padding-bottom:6px;margin-bottom:16px}'
+      +'h3{font-size:.9rem;background:#4a7adf;color:#fff;padding:6px 10px;border-radius:6px;margin:16px 0 8px}'
+      +'table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:.82rem}'
+      +'th{text-align:left;padding:6px 10px;background:#4a7adf;color:#fff;border:1px solid #ddd}'
+      +'td{padding:6px 10px;border:1px solid #ddd}'
+      +'tr:nth-child(even) td{background:#f4f4f8}'
+      +'.tl{color:#666;width:38%}.tv{color:#111;font-weight:600}'
+      +'.dr{background:#f8f8fc;border-left:3px solid #4a7adf;border-radius:0 6px 6px 0;padding:10px;margin:6px 0}'
+      +'.dr-bar{height:6px;border-radius:3px;background:#eee;overflow:hidden;margin:4px 0}'
+      +'.dr-fill{height:100%;border-radius:3px}'
+      +'.dr-desc{font-size:.74rem;color:#666;margin-top:4px}'
+      +'.dr-keys{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}'
+      +'.dr-key{font-size:.65rem;padding:2px 6px;border-radius:3px;background:#e8eeff;color:#4a7adf}'
+      +'.yb{background:#f8f8fc;border-left:3px solid #4a7adf;border-radius:0 6px 6px 0;padding:12px;margin:8px 0}'
+      +'.yt{font-size:.84rem;font-weight:700;margin-bottom:4px}'
+      +'.yx{font-size:.8rem;line-height:1.5}'
+      +'.er{display:none}';
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lenf Nodu MRI Rapor</title><style>'+css+'</style></head><body>'+el.innerHTML+'</body></html>';
+    var blob=new Blob([html],{type:'text/html'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='lenf_nodu_mri_rapor.html';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  var nextLbl='İleri \u2192';
+  if(sn==='nodLoop') nextLbl=nSub>=NOD_SUB.length-1?'Tamamla \u2713':'Sonraki \u2192';
+
+  return React.createElement('div',{className:'wrap'},
+    React.createElement('div',{className:'hdr'},React.createElement('h1',null,'Lenf Nodu MRI Karar Destek Sistemi')),
+    React.createElement('div',{className:'pb'},React.createElement('div',{className:'pf',style:{width:pct+'%'}})),
+    renderStep(),
+    sn!=='rapor'?React.createElement('div',{className:'nr'},
+      React.createElement('button',{className:'btn bp',onClick:goPrev,disabled:step===0&&(sn!=='nodLoop'||nSub===0)},'\u2190 Geri'),
+      React.createElement('span',{style:{color:'var(--txd)',fontSize:'.76rem'}},(step+1)+'/'+total),
+      React.createElement('button',{className:'btn bn',onClick:goNext,disabled:!canNext()},nextLbl)
+    ):React.createElement('div',{className:'nr'},
+      React.createElement('button',{className:'btn bp',onClick:goPrev},'\u2190 Düzenle'),
+      React.createElement('button',{className:'btn bs',onClick:function(){setStep(0);setNods([]);setNIdx(-1);}},'\uD83D\uDD04 Yeni'))
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>T2* Demir Konsantrasyon Hesaplama</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.app{max-width:960px;margin:0 auto;padding:16px}
+.header{text-align:center;padding:20px 0 14px;border-bottom:2px solid #7c3aed}
+.header h1{font-size:1.4rem;color:#c4b5fd;letter-spacing:.5px}
+.header p{font-size:.82rem;color:#888;margin-top:4px}
+
+/* Tabs */
+.tabs{display:flex;margin-top:18px;border-radius:8px 8px 0 0;overflow:hidden}
+.tab{flex:1;padding:11px;text-align:center;cursor:pointer;font-weight:600;font-size:.92rem;border:1px solid #333;background:#16162a;user-select:none;transition:all .2s}
+.tab.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.tab:not(.active):hover{background:#222244}
+
+/* Panel */
+.panel{background:#16162a;border:1px solid #333;border-top:none;border-radius:0 0 8px 8px;padding:22px;display:none}
+.panel.active{display:block}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-group>label,.section-label{display:block;font-size:.83rem;color:#a78bfa;margin-bottom:6px;font-weight:600}
+.toggle-row{display:flex;gap:10px;flex-wrap:wrap}
+.toggle-btn{padding:7px 14px;border-radius:6px;border:1px solid #555;background:#0f0f23;color:#ccc;cursor:pointer;font-size:.83rem;transition:all .2s}
+.toggle-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.toggle-btn:hover:not(.active){background:#222244}
+
+/* TE/SI Table */
+.data-table{width:100%;border-collapse:collapse;margin-top:6px}
+.data-table th{background:#0f0f23;color:#a78bfa;padding:8px 6px;font-size:.78rem;font-weight:600;text-align:center;border:1px solid #333}
+.data-table td{padding:4px;border:1px solid #333;text-align:center}
+.data-table tr:nth-child(even) td{background:#13132a}
+.data-table tr:nth-child(odd) td{background:#0f0f23}
+.data-table input{width:100%;padding:6px 8px;background:transparent;border:1px solid transparent;border-radius:4px;color:#fff;font-size:.9rem;text-align:center;outline:none}
+.data-table input:focus{border-color:#7c3aed;background:#1a1a3e}
+.data-table .row-num{color:#555;font-size:.75rem;width:30px}
+.data-table .del-btn{background:none;border:none;color:#555;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px}
+.data-table .del-btn:hover{color:#f87171;background:#2a1a1a}
+.table-actions{display:flex;gap:10px;margin-top:8px}
+.table-actions button{padding:6px 14px;border-radius:6px;border:1px solid #555;background:#0f0f23;color:#ccc;cursor:pointer;font-size:.8rem}
+.table-actions button:hover{background:#222244}
+
+/* Chart */
+.chart-wrap{background:#0a0a1e;border:1px solid #333;border-radius:8px;padding:16px;margin-top:16px;text-align:center}
+.chart-wrap h4{font-size:.82rem;color:#888;margin-bottom:10px;text-align:left}
+#chartSVG{width:100%;max-width:600px;height:auto}
+
+/* Results */
+.result-box{background:#0f0f23;border:1px solid #333;border-radius:8px;padding:18px;margin-top:16px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:10px}
+.result-card{background:#1a1a2e;border:1px solid #333;border-radius:6px;padding:12px;text-align:center}
+.result-card .rc-label{font-size:.72rem;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.result-card .rc-value{font-size:1.3rem;font-weight:700;color:#c4b5fd}
+.result-card .rc-unit{font-size:.72rem;color:#666;margin-top:2px}
+.severity-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:700;margin-top:10px;letter-spacing:.5px}
+.sev-normal{background:#064e3b;color:#6ee7b7}
+.sev-borderline{background:#3b3506;color:#fcd34d}
+.sev-mild{background:#4a3000;color:#fbbf24}
+.sev-moderate{background:#5c1a00;color:#fb923c}
+.sev-severe{background:#6b0000;color:#fca5a5}
+.fit-info{font-size:.78rem;color:#888;margin-top:8px;line-height:1.5}
+.fit-info span{color:#a78bfa}
+
+/* Risk visual */
+.risk-visual{display:flex;gap:3px;margin-top:10px;height:36px;border-radius:6px;overflow:hidden}
+.risk-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:600;text-align:center;line-height:1.2;transition:outline .2s}
+
+/* YORUM */
+.yorum-box{background:#1a0a2e;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;padding:14px;margin-top:14px}
+.yorum-box h4{color:#c4b5fd;font-size:.88rem;margin-bottom:6px}
+.yorum-box p{font-size:.83rem;color:#d4d4d4;line-height:1.6}
+
+/* Info & Refs */
+.info-box{background:#1a1a3e;border:1px solid rgba(124,58,237,.2);border-radius:8px;padding:12px;margin-top:14px;font-size:.8rem;color:#a78bfa;line-height:1.5}
+.info-box strong{color:#c4b5fd}
+.refs{margin-top:20px;padding:14px;background:#0f0f23;border-radius:8px;border:1px solid #333}
+.refs h3{font-size:.82rem;color:#7c3aed;margin-bottom:6px}
+.refs p{font-size:.72rem;color:#777;line-height:1.5;margin-bottom:3px}
+
+/* Buttons */
+.btn-group{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btn{padding:9px 18px;border-radius:6px;border:none;cursor:pointer;font-size:.83rem;font-weight:600;transition:all .2s}
+.btn-calc{background:#7c3aed;color:#fff}
+.btn-calc:hover{background:#6d28d9}
+.btn-print{background:#4c1d95;color:#ddd}
+.btn-print:hover{background:#5b21b6}
+.btn-copy{background:#0f0f23;color:#a78bfa;border:1px solid #7c3aed}
+.btn-copy:hover{background:#1a1a3e}
+.btn-reset{background:#0f0f23;color:#888;border:1px solid #444}
+.btn-reset:hover{background:#1a1a2e}
+
+.hidden{display:none!important}
+.error-msg{color:#f87171;font-size:.82rem;margin-top:8px}
+
+/* Print */
+@media print{
+  body{background:#fff!important;color:#000!important}
+  .tabs,.btn-group,.table-actions,.toggle-row{display:none!important}
+  .panel.active{border:none;background:#fff!important}
+  .panel:not(.active){display:none!important}
+  .header{border-bottom:2px solid #333}.header h1{color:#333!important}.header p{color:#666!important}
+  .data-table th{background:#eee!important;color:#333!important;border-color:#ccc!important}
+  .data-table td{background:#fff!important;border-color:#ccc!important}
+  .data-table input{color:#000!important}
+  .chart-wrap{background:#fff!important;border-color:#ccc!important}
+  .chart-wrap h4{color:#333!important}
+  .result-box,.result-card{background:#f9f9f9!important;border-color:#ccc!important}
+  .result-card .rc-label{color:#666!important}.result-card .rc-value{color:#333!important}
+  .yorum-box{background:#f5f0ff!important}.yorum-box h4,.yorum-box p{color:#333!important}
+  .info-box{background:#f5f0ff!important;color:#333!important;border-color:#ccc!important}.info-box strong{color:#000!important}
+  .refs{background:#f9f9f9!important;border-color:#ccc!important}.refs h3{color:#333!important}.refs p{color:#555!important}
+  .form-group>label,.section-label{color:#333!important}
+  .fit-info{color:#555!important}.fit-info span{color:#333!important}
+  .severity-badge,.risk-visual,.risk-zone{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .print-only{display:block!important}
+}
+/* Report Overlay */
+#reportOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto}
+.rp-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7)}
+.rp-sheet{position:relative;background:#fff;color:#222;max-width:700px;width:95%;margin:30px auto;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.5);z-index:1}
+.rp-toolbar{display:flex;gap:8px;padding:10px 16px;background:#f0ecff;border-radius:10px 10px 0 0;border-bottom:1px solid #ddd;flex-wrap:wrap}
+.rp-tbtn{padding:6px 14px;border:1px solid #7c3aed;border-radius:6px;background:#fff;color:#7c3aed;cursor:pointer;font-size:.82rem;font-weight:600}
+.rp-tbtn:hover{background:#7c3aed;color:#fff}
+.rp-close{margin-left:auto;border-color:#999;color:#666}
+.rp-close:hover{background:#999;color:#fff}
+.rp-body{padding:28px 32px;font-size:13px;line-height:1.6}
+.rp-title{font-size:16px;text-align:center;border-bottom:2px solid #7c3aed;padding-bottom:10px;margin-bottom:6px;color:#333}
+.rp-date{text-align:center;font-size:11px;color:#999;margin-bottom:16px}
+.rp-h2{font-size:13px;color:#7c3aed;margin:16px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+.rp-tbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.rp-tbl th{background:#f0ecff;padding:6px;border:1px solid #ddd;font-weight:600;color:#5b21b6}
+.rp-tbl td{padding:5px;border:1px solid #ddd;text-align:center}
+.rp-even td{background:#fff}
+.rp-odd td{background:#f8f8fc}
+.rp-chart{text-align:center;margin:10px 0}
+.rp-chart svg{max-width:480px;width:100%;height:auto;border:1px solid #ddd;border-radius:6px}
+.rp-res{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+.rp-res td{padding:8px;border:1px solid #ddd}
+.rp-res tr:nth-child(odd) td{background:#f8f8fc}
+.rp-k{font-weight:600;width:40%;background:#f0ecff!important;color:#5b21b6}
+.rp-fit{font-size:11px;color:#888;margin:8px 0}
+.rp-yorum{background:#f5f0ff;border-left:4px solid #7c3aed;padding:12px;margin:14px 0;border-radius:0 6px 6px 0;font-size:13px;color:#333}
+.rp-yorum strong{color:#5b21b6}
+.rp-footer{text-align:center;font-size:10px;color:#bbb;margin-top:16px;border-top:1px solid #eee;padding-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>T2* Relaksometri — Demir Konsantrasyon Hesaplama</h1>
+    <p>Multi-eko GRE Sinyal İntensitelerinden T2* Curve Fitting ile Karaciğer / Kardiyak Demir Kantitasyonu</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('liver')">Karaciğer (Liver)</div>
+    <div class="tab" onclick="switchTab('cardiac')">Kalp (Cardiac)</div>
+  </div>
+
+  <!-- ═══ LIVER ═══ -->
+  <div class="panel active" id="panelLiver">
+    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px">KARACİĞER DEMİR KONSANTRASYONU</div>
+    <div class="form-group">
+      <label>Alan Gücü</label>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setOpt('liver','fs','1.5',this)">1.5 T</button>
+        <button class="toggle-btn" onclick="setOpt('liver','fs','3',this)">3 T</button>
+      </div>
+    </div>
+    <div class="form-group" id="liverMethodGroup">
+      <label>LIC Kalibrasyon</label>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setOpt('liver','method','garbowski',this)">Garbowski 2014</button>
+        <button class="toggle-btn" onclick="setOpt('liver','method','wood',this)">Wood 2005</button>
+      </div>
+    </div>
+    <label class="section-label">TE ve Sinyal İntensitesi (SI) Değerleri</label>
+    <table class="data-table" id="liverTable">
+      <thead><tr><th style="width:30px">#</th><th>TE (ms)</th><th>SI</th><th style="width:36px"></th></tr></thead>
+      <tbody id="liverTbody"></tbody>
+    </table>
+    <div class="table-actions">
+      <button onclick="addRow('liver')">+ Satır Ekle</button>
+      <button onclick="addMultiRows('liver')">+ 4 Satır</button>
+      <button onclick="fillSample('liver')">Örnek Veri</button>
+    </div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn btn-calc" onclick="calculate('liver')">Hesapla</button>
+      <button class="btn btn-reset" onclick="resetAll('liver')">Sıfırla</button>
+    </div>
+    <div id="liverError" class="error-msg hidden"></div>
+    <div id="liverOutput" class="hidden">
+      <div class="chart-wrap"><h4>T2* Sinyal Bozunma Eğrisi</h4><svg id="chartLiver" viewBox="0 0 560 320"></svg></div>
+      <div class="result-box">
+        <div class="section-label">Hesaplama Sonuçları</div>
+        <div class="result-grid">
+          <div class="result-card"><div class="rc-label">T2*</div><div class="rc-value" id="liverT2s">—</div><div class="rc-unit">ms</div></div>
+          <div class="result-card"><div class="rc-label">R2*</div><div class="rc-value" id="liverR2s">—</div><div class="rc-unit">Hz (s⁻¹)</div></div>
+          <div class="result-card"><div class="rc-label">LIC</div><div class="rc-value" id="liverLIC">—</div><div class="rc-unit">mg/g dw</div></div>
+          <div class="result-card"><div class="rc-label">S₀</div><div class="rc-value" id="liverS0">—</div><div class="rc-unit">a.u.</div></div>
+        </div>
+        <div id="liverSevWrap" style="text-align:center;margin-top:10px"></div>
+        <div class="fit-info" id="liverFitInfo"></div>
+      </div>
+      <div class="yorum-box"><h4>YORUM</h4><p id="liverYorum"></p></div>
+    </div>
+    <div class="info-box" style="margin-top:16px">
+      <strong>Fitting Modeli:</strong> SI(TE) = S₀ × exp(−TE / T2*) — Mono-eksponansiyel<br>
+      <strong>Auto-Truncation:</strong> R² &lt; 0.995 ise son veri noktaları otomatik çıkarılır (He et al. algoritması)<br>
+      <strong>LIC Garbowski 2014:</strong> LIC = 31.94 × (T2*)<sup>−1.014</sup> · <strong>Wood 2005:</strong> LIC = 0.0254 × R2* + 0.202<br>
+      <strong>Şiddet:</strong> Normal &lt;1.8 · Sınırda 1.8–3.2 · Hafif 3.2–7.0 · Orta 7.0–15.0 · Ağır ≥15.0 mg/g dw
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-print" onclick="printReport('liver')">Yazdır / PDF</button>
+      <button class="btn btn-copy" onclick="copyReport('panelLiver')">Kopyala</button>
+    </div>
+    <div class="refs">
+      <h3>Referanslar</h3>
+      <p>1. Garbowski MW, et al. Biopsy-based calibration of T2* MR for estimation of LIC. <em>J Cardiovasc Magn Reson</em> 2014;16:40.</p>
+      <p>2. Wood JC, et al. MRI R2 and R2* mapping accurately estimates hepatic iron concentration. <em>Blood</em> 2005;106(4):1460-5.</p>
+      <p>3. He T, et al. Automated truncation method for myocardial T2* measurement. <em>J Magn Reson Imaging</em> 2008;28(4):921-7.</p>
+      <p>4. Storey P, et al. R2* imaging at 3T and comparison with 1.5T. <em>JMRI</em> 2007;25(3):540-7.</p>
+      <p>5. Henninger B, et al. Practical guide to quantification of hepatic iron with MRI. <em>Eur Radiol</em> 2020;30:383-393.</p>
+    </div>
+  </div>
+
+  <!-- ═══ CARDIAC ═══ -->
+  <div class="panel" id="panelCardiac">
+    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px">KARDİYAK DEMİR KONSANTRASYONU</div>
+    <label class="section-label">TE ve Sinyal İntensitesi (SI) Değerleri</label>
+    <table class="data-table" id="cardiacTable">
+      <thead><tr><th style="width:30px">#</th><th>TE (ms)</th><th>SI</th><th style="width:36px"></th></tr></thead>
+      <tbody id="cardiacTbody"></tbody>
+    </table>
+    <div class="table-actions">
+      <button onclick="addRow('cardiac')">+ Satır Ekle</button>
+      <button onclick="addMultiRows('cardiac')">+ 4 Satır</button>
+      <button onclick="fillSample('cardiac')">Örnek Veri</button>
+    </div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn btn-calc" onclick="calculate('cardiac')">Hesapla</button>
+      <button class="btn btn-reset" onclick="resetAll('cardiac')">Sıfırla</button>
+    </div>
+    <div id="cardiacError" class="error-msg hidden"></div>
+    <div id="cardiacOutput" class="hidden">
+      <div class="chart-wrap"><h4>T2* Sinyal Bozunma Eğrisi</h4><svg id="chartCardiac" viewBox="0 0 560 320"></svg></div>
+      <div class="result-box">
+        <div class="section-label">Hesaplama Sonuçları</div>
+        <div class="result-grid">
+          <div class="result-card"><div class="rc-label">T2*</div><div class="rc-value" id="cardiacT2s">—</div><div class="rc-unit">ms</div></div>
+          <div class="result-card"><div class="rc-label">R2*</div><div class="rc-value" id="cardiacR2s">—</div><div class="rc-unit">Hz (s⁻¹)</div></div>
+          <div class="result-card"><div class="rc-label">[Fe] Miyokard</div><div class="rc-value" id="cardiacFe">—</div><div class="rc-unit">mg/g dw</div></div>
+          <div class="result-card"><div class="rc-label">S₀</div><div class="rc-value" id="cardiacS0">—</div><div class="rc-unit">a.u.</div></div>
+        </div>
+        <div id="cardiacSevWrap" style="text-align:center;margin-top:10px"></div>
+        <div style="margin-top:12px">
+          <div class="section-label" style="margin-bottom:6px">T2* Risk Sınıflaması (Pennell 2013 AHA)</div>
+          <div class="risk-visual">
+            <div class="risk-zone" id="crz1" style="background:#064e3b;color:#6ee7b7">&gt;20 ms<br>Normal</div>
+            <div class="risk-zone" id="crz2" style="background:#4a3000;color:#fbbf24">10–20 ms<br>Orta Risk</div>
+            <div class="risk-zone" id="crz3" style="background:#6b0000;color:#fca5a5">&lt;10 ms<br>Yüksek Risk</div>
+          </div>
+        </div>
+        <div class="fit-info" id="cardiacFitInfo"></div>
+      </div>
+      <div class="yorum-box"><h4>YORUM</h4><p id="cardiacYorum"></p></div>
+    </div>
+    <div class="info-box" style="margin-top:16px">
+      <strong>Fitting:</strong> SI(TE) = S₀ × exp(−TE / T2*) — Auto-truncation (R² &gt; 0.995)<br>
+      <strong>Formül (Carpenter 2011):</strong> [Fe] = 45.0 × (T2*)<sup>−1.22</sup> mg/g dw<br>
+      <strong>Risk (Pennell 2013 AHA):</strong> &gt;20 ms Normal · 10–20 ms Orta · &lt;10 ms Yüksek Risk
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-print" onclick="printReport('cardiac')">Yazdır / PDF</button>
+      <button class="btn btn-copy" onclick="copyReport('panelCardiac')">Kopyala</button>
+    </div>
+    <div class="refs">
+      <h3>Referanslar</h3>
+      <p>1. Carpenter JP, et al. On T2* MR and cardiac iron. <em>Circulation</em> 2011;123:1519-28.</p>
+      <p>2. Pennell DJ, et al. AHA Scientific Statement on β-thalassemia major. <em>Circulation</em> 2013;128:281-308.</p>
+      <p>3. Anderson LJ. Assessment of iron overload with T2* MRI. <em>Prog Cardiovasc Dis</em> 2011;54:287-94.</p>
+      <p>4. He T, et al. Automated truncation method for myocardial T2*. <em>JMRI</em> 2008;28:921-7.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════ */
+var opts = {
+  liver: { fs:'1.5', method:'garbowski' },
+  cardiac: {}
+};
+var rowCount = { liver:0, cardiac:0 };
+
+/* ══════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', function(){
+  for(var i=0;i<12;i++) addRow('liver');
+  for(var i=0;i<8;i++) addRow('cardiac');
+});
+
+/* ══════════════════════════════════════════
+   UI HELPERS
+   ══════════════════════════════════════════ */
+function switchTab(t){
+  var tabs=document.querySelectorAll('.tab');
+  tabs[0].className='tab'+(t==='liver'?' active':'');
+  tabs[1].className='tab'+(t==='cardiac'?' active':'');
+  document.getElementById('panelLiver').className='panel'+(t==='liver'?' active':'');
+  document.getElementById('panelCardiac').className='panel'+(t==='cardiac'?' active':'');
+}
+
+function setOpt(organ, key, val, btn){
+  opts[organ][key]=val;
+  var row=btn.parentElement;
+  var btns=row.querySelectorAll('.toggle-btn');
+  for(var i=0;i<btns.length;i++) btns[i].className='toggle-btn';
+  btn.className='toggle-btn active';
+  if(key==='fs'){
+    document.getElementById('liverMethodGroup').style.display=val==='1.5'?'block':'none';
+    if(val==='3') opts.liver.method='wood';
+  }
+}
+
+function addRow(organ){
+  rowCount[organ]++;
+  var tbody=document.getElementById(organ+'Tbody');
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td class="row-num">'+rowCount[organ]+'</td>'+
+    '<td><input type="number" step="any" min="0" placeholder="TE"></td>'+
+    '<td><input type="number" step="any" min="0" placeholder="SI"></td>'+
+    '<td><button class="del-btn" onclick="delRow(this,\''+organ+'\')" title="Sil">×</button></td>';
+  tbody.appendChild(tr);
+}
+
+function addMultiRows(organ){ for(var i=0;i<4;i++) addRow(organ); }
+
+function delRow(btn, organ){
+  var tr=btn.closest('tr');
+  tr.parentElement.removeChild(tr);
+  renumber(organ);
+}
+
+function renumber(organ){
+  var rows=document.getElementById(organ+'Tbody').querySelectorAll('tr');
+  for(var i=0;i<rows.length;i++) rows[i].cells[0].textContent=i+1;
+  rowCount[organ]=rows.length;
+}
+
+function getData(organ){
+  var rows=document.getElementById(organ+'Tbody').querySelectorAll('tr');
+  var data=[];
+  for(var i=0;i<rows.length;i++){
+    var inputs=rows[i].querySelectorAll('input');
+    var te=parseFloat(inputs[0].value);
+    var si=parseFloat(inputs[1].value);
+    if(!isNaN(te) && !isNaN(si) && te>0 && si>0) data.push({te:te, si:si});
+  }
+  data.sort(function(a,b){return a.te-b.te;});
+  return data;
+}
+
+function fillSample(organ){
+  // Clear
+  document.getElementById(organ+'Tbody').innerHTML='';
+  rowCount[organ]=0;
+  var samples;
+  if(organ==='liver'){
+    // Typical liver with moderate iron overload (~T2*=4.5ms)
+    samples=[
+      {te:0.93, si:780},{te:1.86, si:510},{te:2.79, si:340},
+      {te:3.72, si:225},{te:4.65, si:155},{te:5.58, si:108},
+      {te:6.51, si:78},{te:7.44, si:58},{te:8.37, si:46},
+      {te:9.30, si:39},{te:10.23, si:35},{te:11.16, si:33}
+    ];
+  } else {
+    // Typical cardiac with mild iron loading (~T2*=15ms)
+    samples=[
+      {te:2.6, si:920},{te:4.8, si:800},{te:7.0, si:590},
+      {te:9.2, si:450},{te:11.4, si:340},{te:13.6, si:265},
+      {te:15.8, si:210},{te:18.0, si:170}
+    ];
+  }
+  for(var i=0;i<samples.length;i++){
+    addRow(organ);
+    var rows=document.getElementById(organ+'Tbody').querySelectorAll('tr');
+    var last=rows[rows.length-1].querySelectorAll('input');
+    last[0].value=samples[i].te;
+    last[1].value=samples[i].si;
+  }
+}
+
+function resetAll(organ){
+  document.getElementById(organ+'Tbody').innerHTML='';
+  rowCount[organ]=0;
+  var n=organ==='liver'?12:8;
+  for(var i=0;i<n;i++) addRow(organ);
+  document.getElementById(organ+'Output').classList.add('hidden');
+  document.getElementById(organ+'Error').classList.add('hidden');
+}
+
+function showError(organ, msg){
+  var el=document.getElementById(organ+'Error');
+  el.textContent=msg;
+  el.classList.remove('hidden');
+  document.getElementById(organ+'Output').classList.add('hidden');
+}
+
+/* ══════════════════════════════════════════
+   CURVE FITTING
+   ══════════════════════════════════════════ */
+// Log-linear regression: ln(SI) = ln(S0) - TE/T2*
+function fitExponential(data){
+  var n=data.length;
+  if(n<3) return null;
+  var sx=0,sy=0,sxy=0,sxx=0;
+  for(var i=0;i<n;i++){
+    var x=data[i].te;
+    var y=Math.log(data[i].si);
+    sx+=x; sy+=y; sxy+=x*y; sxx+=x*x;
+  }
+  var denom=n*sxx-sx*sx;
+  if(Math.abs(denom)<1e-15) return null;
+  var b=(n*sxy-sx*sy)/denom;
+  var a=(sy-b*sx)/n;
+  if(b>=0) return null; // must be decaying
+  var T2s=-1/b;
+  var S0=Math.exp(a);
+  // R-squared
+  var yMean=sy/n;
+  var ssTot=0,ssRes=0;
+  for(var i=0;i<n;i++){
+    var yi=Math.log(data[i].si);
+    var fi=a+b*data[i].te;
+    ssTot+=(yi-yMean)*(yi-yMean);
+    ssRes+=(yi-fi)*(yi-fi);
+  }
+  var R2=ssTot>0?1-ssRes/ssTot:0;
+  return {T2s:T2s, S0:S0, R2:R2, nPoints:n, slope:b, intercept:a};
+}
+
+// Auto-truncation (He et al): remove last points until R²≥0.995 or min 3 points
+function fitWithTruncation(data){
+  var best=fitExponential(data);
+  if(!best) return {fit:null, usedData:data, truncated:0};
+  if(best.R2>=0.995) return {fit:best, usedData:data, truncated:0};
+
+  var used=data.slice();
+  var trunc=0;
+  while(used.length>3){
+    used.pop(); trunc++;
+    var f=fitExponential(used);
+    if(!f) continue;
+    if(f.R2>=0.995) return {fit:f, usedData:used, truncated:trunc};
+    // Also check if T2* stabilized
+    if(best && Math.abs(f.T2s-best.T2s)/best.T2s<0.025){
+      return {fit:f, usedData:used, truncated:trunc};
+    }
+    best=f;
+  }
+  // Return best we got
+  var final=fitExponential(used);
+  return {fit:final||best, usedData:used, truncated:trunc};
+}
+
+/* ══════════════════════════════════════════
+   LIC / CARDIAC IRON
+   ══════════════════════════════════════════ */
+function calcLIC(T2s, R2s, fs, method){
+  if(fs==='1.5'){
+    if(method==='garbowski') return 31.94*Math.pow(T2s,-1.014);
+    else return 0.0254*R2s+0.202;
+  } else {
+    // 3T: convert R2*(3T)→R2*(1.5T) via Storey 2007
+    var r15=(R2s-12.8)/1.927;
+    if(r15<=0) return null;
+    return 0.0254*r15+0.202;
+  }
+}
+
+function calcCardiacFe(T2s){ return 45.0*Math.pow(T2s,-1.22); }
+
+function licSeverity(v){
+  if(v<1.8) return {l:'Normal',cls:'sev-normal',c:'#6ee7b7'};
+  if(v<3.2) return {l:'Sınırda',cls:'sev-borderline',c:'#fcd34d'};
+  if(v<7.0) return {l:'Hafif',cls:'sev-mild',c:'#fbbf24'};
+  if(v<15) return {l:'Orta',cls:'sev-moderate',c:'#fb923c'};
+  return {l:'Ağır',cls:'sev-severe',c:'#fca5a5'};
+}
+
+function cardiacSev(t2){
+  if(t2>20) return {l:'Normal (Düşük Risk)',cls:'sev-normal',c:'#6ee7b7'};
+  if(t2>=10) return {l:'Orta Risk',cls:'sev-moderate',c:'#fb923c'};
+  return {l:'Yüksek Risk',cls:'sev-severe',c:'#fca5a5'};
+}
+
+/* ══════════════════════════════════════════
+   CHART (SVG)
+   ══════════════════════════════════════════ */
+function drawChart(svgId, allData, usedData, fit){
+  var svg=document.getElementById(svgId);
+  var W=560, H=320, pad={t:20,r:30,b:50,l:60};
+  var cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+
+  // Find ranges
+  var maxTE=0, maxSI=0;
+  for(var i=0;i<allData.length;i++){
+    if(allData[i].te>maxTE) maxTE=allData[i].te;
+    if(allData[i].si>maxSI) maxSI=allData[i].si;
+  }
+  maxTE*=1.1; maxSI*=1.15;
+
+  function sx(v){return pad.l+v/maxTE*cw;}
+  function sy(v){return pad.t+(1-v/maxSI)*ch;}
+
+  var html='';
+  // Background
+  html+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#0a0a1e"/>';
+  // Grid
+  for(var i=0;i<=5;i++){
+    var yv=maxSI*i/5;
+    var yp=sy(yv);
+    html+='<line x1="'+pad.l+'" y1="'+yp+'" x2="'+(W-pad.r)+'" y2="'+yp+'" stroke="#1a1a3e" stroke-width="1"/>';
+    html+='<text x="'+(pad.l-8)+'" y="'+(yp+4)+'" fill="#666" font-size="10" text-anchor="end">'+Math.round(yv)+'</text>';
+  }
+  for(var i=0;i<=5;i++){
+    var xv=maxTE*i/5;
+    var xp=sx(xv);
+    html+='<line x1="'+xp+'" y1="'+pad.t+'" x2="'+xp+'" y2="'+(H-pad.b)+'" stroke="#1a1a3e" stroke-width="1"/>';
+    html+='<text x="'+xp+'" y="'+(H-pad.b+16)+'" fill="#666" font-size="10" text-anchor="middle">'+xv.toFixed(1)+'</text>';
+  }
+  // Axes labels
+  html+='<text x="'+(pad.l+cw/2)+'" y="'+(H-8)+'" fill="#888" font-size="11" text-anchor="middle">TE (ms)</text>';
+  html+='<text x="14" y="'+(pad.t+ch/2)+'" fill="#888" font-size="11" text-anchor="middle" transform="rotate(-90,14,'+(pad.t+ch/2)+')">SI</text>';
+
+  // Fitted curve
+  if(fit){
+    var pts=[];
+    for(var x=0;x<=maxTE;x+=maxTE/200){
+      var fv=fit.S0*Math.exp(-x/fit.T2s);
+      if(fv<0) fv=0;
+      pts.push(sx(x)+','+sy(Math.min(fv,maxSI)));
+    }
+    html+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.9"/>';
+  }
+
+  // Excluded points (grey)
+  var usedTEs={};
+  for(var i=0;i<usedData.length;i++) usedTEs[usedData[i].te+'_'+usedData[i].si]=true;
+  for(var i=0;i<allData.length;i++){
+    var k=allData[i].te+'_'+allData[i].si;
+    if(!usedTEs[k]){
+      html+='<circle cx="'+sx(allData[i].te)+'" cy="'+sy(allData[i].si)+'" r="5" fill="none" stroke="#555" stroke-width="1.5" opacity="0.6"/>';
+      html+='<line x1="'+(sx(allData[i].te)-3)+'" y1="'+(sy(allData[i].si)-3)+'" x2="'+(sx(allData[i].te)+3)+'" y2="'+(sy(allData[i].si)+3)+'" stroke="#555" stroke-width="1.5" opacity="0.6"/>';
+    }
+  }
+
+  // Used data points (green)
+  for(var i=0;i<usedData.length;i++){
+    html+='<circle cx="'+sx(usedData[i].te)+'" cy="'+sy(usedData[i].si)+'" r="5" fill="#34d399" stroke="#064e3b" stroke-width="1.5"/>';
+  }
+
+  // Legend
+  html+='<circle cx="'+(W-pad.r-120)+'" cy="'+(pad.t+10)+'" r="4" fill="#34d399"/>';
+  html+='<text x="'+(W-pad.r-112)+'" y="'+(pad.t+14)+'" fill="#888" font-size="9">Kullanılan</text>';
+  html+='<line x1="'+(W-pad.r-60)+'" y1="'+(pad.t+10)+'" x2="'+(W-pad.r-45)+'" y2="'+(pad.t+10)+'" stroke="#7c3aed" stroke-width="2"/>';
+  html+='<text x="'+(W-pad.r-42)+'" y="'+(pad.t+14)+'" fill="#888" font-size="9">Fit</text>';
+
+  svg.innerHTML=html;
+}
+
+/* ══════════════════════════════════════════
+   MAIN CALCULATE
+   ══════════════════════════════════════════ */
+function calculate(organ){
+  var data=getData(organ);
+  if(data.length<3){ showError(organ, 'En az 3 geçerli TE/SI çifti gereklidir.'); return; }
+
+  document.getElementById(organ+'Error').classList.add('hidden');
+
+  var result=fitWithTruncation(data);
+  if(!result.fit){ showError(organ, 'Eksponansiyel fitting başarısız. Verileri kontrol ediniz.'); return; }
+
+  var fit=result.fit;
+  var T2s=fit.T2s;
+  var R2s=1000/T2s;
+  var S0=fit.S0;
+
+  // Draw chart
+  drawChart('chart'+organ.charAt(0).toUpperCase()+organ.slice(1), data, result.usedData, fit);
+
+  if(organ==='liver'){
+    var lic=calcLIC(T2s, R2s, opts.liver.fs, opts.liver.method);
+    document.getElementById('liverT2s').textContent=T2s.toFixed(2);
+    document.getElementById('liverR2s').textContent=R2s.toFixed(1);
+    document.getElementById('liverLIC').textContent=lic!==null?lic.toFixed(2):'—';
+    document.getElementById('liverS0').textContent=S0.toFixed(0);
+
+    if(lic!==null){
+      var sev=licSeverity(lic);
+      document.getElementById('liverSevWrap').innerHTML='<span class="severity-badge '+sev.cls+'">'+sev.l+' ('+lic.toFixed(2)+' mg/g dw)</span>';
+    } else {
+      document.getElementById('liverSevWrap').innerHTML='';
+    }
+
+    var trInfo=result.truncated>0?('Auto-truncation: son '+result.truncated+' veri noktası çıkarıldı. '):'Tüm veri noktaları kullanıldı. ';
+    var methStr=opts.liver.method==='garbowski'?'Garbowski 2014':'Wood 2005';
+    var fsStr=opts.liver.fs==='1.5'?'1.5T':'3T';
+    document.getElementById('liverFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>Kullanılan: '+fit.nPoints+'/'+data.length+' nokta</span> · <span>'+fsStr+' · '+methStr+'</span>';
+
+    // YORUM
+    var y=fsStr+" MRG multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ";
+    if(result.truncated>0) y+="Otomatik truncation ile son "+result.truncated+" veri noktası gürültü düzeltmesi amacıyla çıkarılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
+    else y+="Tüm veri noktaları fitting'e dahil edilmiştir (R² = "+fit.R2.toFixed(4)+"). ";
+    y+="Hesaplanan T2* = "+T2s.toFixed(2)+" ms (R2* = "+R2s.toFixed(1)+" Hz). ";
+    if(lic!==null){
+      y+=methStr+" kalibrasyon yöntemi ile karaciğer demir konsantrasyonu (LIC) "+lic.toFixed(2)+" mg/g kuru ağırlık olarak hesaplanmıştır. ";
+      var sv=licSeverity(lic);
+      if(sv.cls==='sev-normal') y+='Bu değer normal sınırlar içindedir.';
+      else if(sv.cls==='sev-borderline') y+='Bu değer sınırda yüksek aralıktadır. Klinik takip önerilir.';
+      else if(sv.cls==='sev-mild') y+='Bu değer hafif demir birikimine karşılık gelmektedir. Şelasyon tedavisi değerlendirilebilir.';
+      else if(sv.cls==='sev-moderate') y+='Bu değer orta düzeyde demir yüklenmesine karşılık gelmektedir. Şelasyon tedavisi endikedir.';
+      else y+='Bu değer ağır demir yüklenmesine karşılık gelmektedir. Acil şelasyon tedavisi gereklidir.';
+    }
+    document.getElementById('liverYorum').textContent=y;
+
+  } else { // cardiac
+    var fe=calcCardiacFe(T2s);
+    var sev=cardiacSev(T2s);
+    document.getElementById('cardiacT2s').textContent=T2s.toFixed(2);
+    document.getElementById('cardiacR2s').textContent=R2s.toFixed(1);
+    document.getElementById('cardiacFe').textContent=fe.toFixed(2);
+    document.getElementById('cardiacS0').textContent=S0.toFixed(0);
+    document.getElementById('cardiacSevWrap').innerHTML='<span class="severity-badge '+sev.cls+'">'+sev.l+'</span>';
+
+    // Risk zones highlight
+    document.getElementById('crz1').style.outline=T2s>20?'2px solid #fff':'none';
+    document.getElementById('crz2').style.outline=(T2s>=10&&T2s<=20)?'2px solid #fff':'none';
+    document.getElementById('crz3').style.outline=T2s<10?'2px solid #fff':'none';
+
+    var trInfo=result.truncated>0?('Auto-truncation: son '+result.truncated+' veri noktası çıkarıldı. '):'Tüm veri noktaları kullanıldı. ';
+    document.getElementById('cardiacFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>Kullanılan: '+fit.nPoints+'/'+data.length+' nokta</span>';
+
+    var y="Kardiyak multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ";
+    if(result.truncated>0) y+="Otomatik truncation ile son "+result.truncated+" veri noktası çıkarılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
+    else y+="Tüm veri noktaları kullanılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
+    y+="Hesaplanan T2* = "+T2s.toFixed(2)+" ms (R2* = "+R2s.toFixed(1)+" Hz). ";
+    y+="Carpenter 2011 denklemi ile miyokardiyal demir konsantrasyonu "+fe.toFixed(2)+" mg/g kuru ağırlıktır. ";
+    if(T2s>20) y+='T2* > 20 ms olup normal kategoridedir. Klinik olarak anlamlı miyokardiyal demir birikimi saptanmamıştır.';
+    else if(T2s>=10) y+='T2* 10–20 ms aralığında olup orta risk kategorisindedir. Şelasyon tedavisi optimizasyonu ve kardiyak takip önerilir.';
+    else y+='T2* < 10 ms olup yüksek risk kategorisindedir. Kalp yetmezliği ve aritmi riski artmıştır. Agresif şelasyon ve yakın kardiyolojik takip gereklidir.';
+    document.getElementById('cardiacYorum').textContent=y;
+  }
+
+  document.getElementById(organ+'Output').classList.remove('hidden');
+}
+
+/* ══════════════════════════════════════════
+   PRINT — inline overlay (sandbox-safe)
+   ══════════════════════════════════════════ */
+function printReport(organ){
+  var data=getData(organ);
+  if(data.length<3){alert('Önce veri girip Hesapla butonuna basınız.');return;}
+  var outEl=document.getElementById(organ+'Output');
+  if(outEl.classList.contains('hidden')){alert('Önce Hesapla butonuna basınız.');return;}
+
+  var title=organ==='liver'?'KARACİĞER DEMİR KONSANTRASYONU RAPORU':'KARDİYAK DEMİR KONSANTRASYONU RAPORU';
+
+  // TE/SI table
+  var tbl='<table class="rp-tbl"><tr><th>TE (ms)</th><th>SI</th></tr>';
+  for(var i=0;i<data.length;i++){
+    tbl+='<tr class="'+(i%2===0?'rp-even':'rp-odd')+'"><td>'+data[i].te+'</td><td>'+data[i].si+'</td></tr>';
+  }
+  tbl+='</table>';
+
+  // Chart SVG
+  var chartId=organ==='liver'?'chartLiver':'chartCardiac';
+  var chartSVG=document.getElementById(chartId).outerHTML;
+
+  // Results
+  var res='';
+  if(organ==='liver'){
+    res='<table class="rp-res"><tr><td class="rp-k">T2*</td><td>'+gT('liverT2s')+' ms</td></tr>';
+    res+='<tr><td class="rp-k">R2*</td><td>'+gT('liverR2s')+' Hz</td></tr>';
+    res+='<tr><td class="rp-k">LIC</td><td><strong>'+gT('liverLIC')+' mg/g dw</strong></td></tr>';
+    res+='<tr><td class="rp-k">S₀</td><td>'+gT('liverS0')+'</td></tr></table>';
+    res+=document.getElementById('liverSevWrap').innerHTML;
+  } else {
+    res='<table class="rp-res"><tr><td class="rp-k">T2*</td><td>'+gT('cardiacT2s')+' ms</td></tr>';
+    res+='<tr><td class="rp-k">R2*</td><td>'+gT('cardiacR2s')+' Hz</td></tr>';
+    res+='<tr><td class="rp-k">[Fe] Miyokard</td><td><strong>'+gT('cardiacFe')+' mg/g dw</strong></td></tr>';
+    res+='<tr><td class="rp-k">S₀</td><td>'+gT('cardiacS0')+'</td></tr></table>';
+    res+=document.getElementById('cardiacSevWrap').innerHTML;
+  }
+
+  var fitInfo=document.getElementById(organ+'FitInfo').textContent;
+  var yorum=document.getElementById(organ+'Yorum').textContent;
+  var tarih=new Date().toLocaleDateString('tr-TR');
+
+  // Build overlay
+  var ov=document.getElementById('reportOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='reportOverlay';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML=
+    '<div class="rp-backdrop" onclick="closeReport()"></div>'+
+    '<div class="rp-sheet">'+
+      '<div class="rp-toolbar">'+
+        '<button class="rp-tbtn" onclick="tryPrint()">🖨 Yazdır</button>'+
+        '<button class="rp-tbtn" onclick="copyReportHTML()">📋 Kopyala</button>'+
+        '<button class="rp-tbtn rp-close" onclick="closeReport()">✕ Kapat</button>'+
+      '</div>'+
+      '<div class="rp-body" id="rpBody">'+
+        '<h1 class="rp-title">'+title+'</h1>'+
+        '<p class="rp-date">'+tarih+'</p>'+
+        '<h2 class="rp-h2">Giriş Verileri (TE / SI)</h2>'+tbl+
+        '<h2 class="rp-h2">T2* Sinyal Bozunma Eğrisi</h2>'+
+        '<div class="rp-chart">'+chartSVG+'</div>'+
+        '<h2 class="rp-h2">Hesaplama Sonuçları</h2>'+res+
+        '<p class="rp-fit">'+fitInfo+'</p>'+
+        '<div class="rp-yorum"><strong>YORUM</strong><br>'+yorum+'</div>'+
+        '<p class="rp-footer">T2* Relaksometri Demir Konsantrasyon Hesaplama</p>'+
+      '</div>'+
+    '</div>';
+  ov.style.display='flex';
+}
+
+function gT(id){return document.getElementById(id).textContent;}
+
+function closeReport(){
+  var ov=document.getElementById('reportOverlay');
+  if(ov) ov.style.display='none';
+}
+
+function tryPrint(){
+  try{window.print();}catch(e){}
+  // If print doesn't fire (sandbox), user can Ctrl+P or use Copy
+}
+
+function copyReportHTML(){
+  var el=document.getElementById('rpBody');
+  if(!el) return;
+  // Try copying rich text
+  try{
+    var range=document.createRange();
+    range.selectNodeContents(el);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    alert('Rapor panoya kopyalandı. Word/Google Docs\'a yapıştırabilirsiniz.');
+  }catch(e){
+    // Fallback: plain text
+    var txt=el.innerText;
+    var ta=document.createElement('textarea');
+    ta.value=txt;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('Rapor (metin) panoya kopyalandı.');
+  }
+}
+
+/* ══════════════════════════════════════════
+   COPY
+   ══════════════════════════════════════════ */
+function copyReport(pid){
+  var t=document.getElementById(pid).innerText;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){alert('Rapor panoya kopyalandı.');});
+    } else {
+      var a=document.createElement('textarea');a.value=t;
+      document.body.appendChild(a);a.select();document.execCommand('copy');
+      document.body.removeChild(a);alert('Rapor panoya kopyalandı.');
+    }
+  }catch(e){alert('Kopyalama başarısız.');}
+}
+</script>
+</body>
+</html>

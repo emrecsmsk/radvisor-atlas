@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Over MRG Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0b0d13;--sf:#131620;--sf2:#191d2a;--sf3:#212636;
+--bd:#282e3e;--tx:#e6e9f0;--tx2:#97a0b4;--tx3:#666e80;
+--ac:#8b5cf6;--ac2:#a78bfa;--acd:rgba(139,92,246,.14);
+--gn:#10b981;--gnd:rgba(16,185,129,.12);
+--am:#f59e0b;--amd:rgba(245,158,11,.12);
+--rd:#ef4444;--rdd:rgba(239,68,68,.12);
+--bl:#3b82f6;--bld:rgba(59,130,246,.12);
+--pk:#ec4899;--pkd:rgba(236,72,153,.12);
+--cy:#06b6d4;--cyd:rgba(6,182,212,.12);
+--r:12px;--rs:8px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+/* HEADER */
+.hdr{text-align:center;padding:28px 0 20px}
+.hdr h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--ac),var(--pk));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr .sub{color:var(--tx2);font-size:.82rem;margin-top:3px;font-weight:300}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--acd);border:1px solid rgba(139,92,246,.25);border-radius:20px;padding:3px 12px;font-size:.7rem;color:var(--ac2);margin-top:8px;font-weight:500}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:var(--gn);animation:pls 2s infinite}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.35}}
+/* TABS */
+.phase-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.ptab{flex:1;min-width:120px;padding:10px 8px;border-radius:var(--rs);border:1.5px solid var(--bd);background:var(--sf);color:var(--tx3);font-size:.76rem;font-weight:500;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.ptab.active{border-color:var(--ac);background:var(--acd);color:var(--ac2)}
+.ptab.done{border-color:var(--gn);color:var(--gn)}
+.ptab .chk{margin-left:3px;font-size:.7rem}
+/* PROGRESS */
+.pbar{background:var(--sf);border-radius:20px;height:5px;margin-bottom:20px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--pk));border-radius:20px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+/* CARD */
+.cd{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:24px;margin-bottom:14px;animation:sUp .3s ease}
+@keyframes sUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.cd-t{font-size:1.05rem;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.cd-d{color:var(--tx2);font-size:.8rem;margin-bottom:16px;line-height:1.5}
+/* OPTIONS */
+.og{display:grid;gap:8px}
+.og.c2{grid-template-columns:1fr 1fr}.og.c3{grid-template-columns:1fr 1fr 1fr}.og.c4{grid-template-columns:1fr 1fr 1fr 1fr}
+.oi{background:var(--sf2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:9px;font-size:.84rem;user-select:none}
+.oi:hover{border-color:var(--ac);background:var(--acd)}
+.oi.sel{border-color:var(--ac);background:var(--acd);box-shadow:0 0 0 1px var(--ac)}
+.oi .rd{width:16px;height:16px;border-radius:50%;border:2px solid var(--tx3);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.oi.sel .rd{border-color:var(--ac);background:var(--ac)}
+.oi.sel .rd::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+/* INPUT */
+.ig{margin-bottom:14px}
+.ig label{display:block;font-size:.78rem;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.ifl{width:100%;background:var(--sf2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 13px;color:var(--tx);font-size:.86rem;font-family:inherit;outline:none;transition:border-color .2s}
+.ifl:focus{border-color:var(--ac)}
+/* SIGNAL PANEL */
+.sp{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;margin-bottom:10px}
+.sp-t{font-size:.8rem;font-weight:600;color:var(--ac2);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.sr{display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap}
+.sr:last-child{margin-bottom:0}
+.sl{font-size:.74rem;color:var(--tx2);min-width:55px;font-weight:500}
+.so{display:flex;gap:5px;flex-wrap:wrap}
+.sb{padding:4px 11px;border-radius:14px;border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-size:.7rem;cursor:pointer;transition:all .18s;font-family:inherit}
+.sb:hover{border-color:var(--ac)}
+.sb.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:500}
+/* BUTTONS */
+.br{display:flex;gap:8px;margin-top:20px}
+.bt{flex:1;padding:12px;border-radius:var(--rs);border:none;font-size:.84rem;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.bt1{background:linear-gradient(135deg,var(--ac),#7c3aed);color:#fff}
+.bt1:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(139,92,246,.3)}
+.bt2{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}
+.bt2:hover{border-color:var(--ac);color:var(--tx)}
+.bt3{background:linear-gradient(135deg,var(--gn),#059669);color:#fff}
+.btd{background:var(--rdd);color:var(--rd);border:1px solid rgba(239,68,68,.3)}
+.bts{padding:7px 13px;font-size:.76rem;flex:unset}
+/* LIST */
+.li{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.li-i{font-size:.82rem}.li-i span{color:var(--tx2);font-size:.72rem;margin-left:6px}
+.li-a{display:flex;gap:5px}
+.lib{padding:4px 9px;border-radius:5px;border:1px solid var(--bd);background:var(--sf);color:var(--tx2);font-size:.7rem;cursor:pointer;font-family:inherit}
+.lib:hover{border-color:var(--ac);color:var(--tx)}
+.lib.del:hover{border-color:var(--rd);color:var(--rd)}
+/* REPORT */
+.rps{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:22px;margin-bottom:14px}
+.rps h3{font-size:.95rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.rt{width:100%;border-collapse:collapse;font-size:.8rem}
+.rt th{text-align:left;padding:9px 11px;background:var(--sf2);color:var(--tx2);font-weight:600;border-bottom:1px solid var(--bd);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px}
+.rt td{padding:9px 11px;border-bottom:1px solid rgba(40,46,62,.5)}
+.rt tr:nth-child(even) td{background:rgba(25,29,42,.5)}
+.rt .v{color:var(--tx);font-weight:500}.rt .l{color:var(--tx2)}
+/* YORUM */
+.yb{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;margin-top:14px}
+.yt{font-size:.85rem;font-weight:700;color:var(--ac2);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.yx{font-size:.8rem;color:var(--tx);line-height:1.55;margin-bottom:8px}
+.svb{height:7px;border-radius:4px;background:var(--sf);overflow:hidden;margin-top:4px}
+.svf{height:100%;border-radius:4px;transition:width .8s ease}
+/* DIFF */
+.dt{width:100%;border-collapse:collapse;font-size:.73rem;margin-top:10px}
+.dt th{padding:7px;background:var(--acd);color:var(--ac2);text-align:left;border-bottom:1px solid var(--bd);font-size:.68rem;text-transform:uppercase}
+.dt td{padding:6px 7px;border-bottom:1px solid rgba(40,46,62,.4);color:var(--tx2)}
+.dt tr.mt td{color:var(--tx);font-weight:500}
+.ms{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;font-size:.66rem;font-weight:600}
+.mh{background:var(--gnd);color:var(--gn)}.mm{background:var(--amd);color:var(--am)}.ml{background:var(--bld);color:var(--bl)}
+/* EXPORT */
+.exr{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.exb{padding:9px 16px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:.8rem;cursor:pointer;font-family:inherit;font-weight:500;transition:all .2s;display:flex;align-items:center;gap:5px}
+.exb:hover{border-color:var(--ac);color:var(--tx)}
+@media print{
+body{background:#fff;color:#000}
+.hdr,.pbar,.phase-tabs,.br,.exr{display:none}
+.cd,.rps{border:1px solid #ddd;background:#fff}
+.rt th{background:#f3f4f6;color:#374151}.rt td{color:#1f2937}
+.yb{background:#f9fafb;border:1px solid #e5e7eb}.yt{color:#6d28d9}.yx{color:#1f2937}
+.sp{background:#f9fafb;border:1px solid #e5e7eb}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useRef,useCallback} = React;
+
+/* ══════════════ DIFFERENTIAL DIAGNOSIS TABLE (from ODT) ══════════════ */
+const DDX = [
+  {id:0,name:"Basit over kisti",t1:"Düşük",t2:"Yüksek",dwi:"Yok",adc:"Yüksek",artCe:"Kontrastlanmaz",venCe:"Kontrastlanmaz",solid:false,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
+  {id:1,name:"Hemorajik kist",t1:"Yüksek",t2:"Değişken/T2 shading",dwi:"Yok",adc:"Yüksek",artCe:"Kontrastlanmaz",venCe:"Kontrastlanmaz",solid:false,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
+  {id:2,name:"Endometrioma",t1:"Yüksek",t2:"T2 shading (düşük)",dwi:"Hafif",adc:"Orta",artCe:"Minimal duvar",venCe:"Minimal",solid:false,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
+  {id:3,name:"Mature kistik teratom (Dermoid)",t1:"Yüksek (yağ)",t2:"Değişken",dwi:"Yok",adc:"Yüksek",artCe:"Minimal septa",venCe:"Minimal",solid:false,septa:true,septaTip:"ince",kontur:"Düzenli",internal:"Heterojen",tip:"kist"},
+  {id:4,name:"Seröz kistadenom",t1:"Düşük",t2:"Yüksek",dwi:"Yok",adc:"Yüksek",artCe:"İnce septal",venCe:"Hafif",solid:false,septa:true,septaTip:"ince",kontur:"Düzenli",internal:"Homojen",tip:"kist"},
+  {id:5,name:"Müsinöz kistadenom",t1:"Düşük-orta",t2:"Çok odacıklı",dwi:"Yok",adc:"Yüksek",artCe:"Septal hafif",venCe:"Persistan",solid:false,septa:true,septaTip:"ince",kontur:"Düzenli",internal:"Heterojen",tip:"kist"},
+  {id:6,name:"Seröz borderline tümör",t1:"Düşük",t2:"Yüksek + papiller",dwi:"Hafif restriksiyon",adc:"Orta",artCe:"Papiller erken",venCe:"Persistan",solid:true,septa:true,septaTip:"kalın",kontur:"Lobule",internal:"Heterojen",tip:"kist"},
+  {id:7,name:"Müsinöz borderline tümör",t1:"Değişken",t2:"Multiloküler",dwi:"Hafif",adc:"Orta",artCe:"Septal/papiller",venCe:"Persistan",solid:true,septa:true,septaTip:"kalın",kontur:"Lobule",internal:"Heterojen",tip:"kist"},
+  {id:8,name:"Seröz kistadenokarsinom",t1:"Düşük-orta",t2:"Heterojen",dwi:"Restriksiyon",adc:"Düşük",artCe:"Papiller erken güçlü",venCe:"Washout",solid:true,septa:true,septaTip:"kalın",kontur:"Düzensiz",internal:"Heterojen",tip:"kist"},
+  {id:9,name:"Müsinöz karsinom",t1:"Değişken",t2:"Multiloküler",dwi:"Restriksiyon",adc:"Düşük",artCe:"Septal/papiller",venCe:"Persistan",solid:true,septa:true,septaTip:"kalın",kontur:"Düzensiz",internal:"Heterojen",tip:"kist"},
+  {id:10,name:"Fibroma / Thecoma",t1:"Düşük",t2:"Çok düşük",dwi:"Minimal",adc:"Orta",artCe:"Zayıf",venCe:"Geç kontrast",solid:true,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kitle"},
+  {id:11,name:"Brenner tümörü",t1:"Düşük",t2:"Çok düşük",dwi:"Minimal",adc:"Orta",artCe:"Hafif",venCe:"Persistan",solid:true,septa:false,septaTip:"yok",kontur:"Düzenli",internal:"Homojen",tip:"kitle"},
+  {id:12,name:"Granüloza hücreli tümör",t1:"Orta",t2:"Yüksek",dwi:"Restriksiyon",adc:"Düşük",artCe:"Erken",venCe:"Persistan",solid:true,septa:false,septaTip:"yok",kontur:"Lobule",internal:"Heterojen",tip:"kitle"},
+  {id:13,name:"Over metastazı (Krukenberg)",t1:"Düşük-orta",t2:"Orta-yüksek",dwi:"Belirgin restriksiyon",adc:"Düşük",artCe:"Heterojen erken",venCe:"Persistan",solid:true,septa:false,septaTip:"yok",kontur:"Düzensiz",internal:"Heterojen",tip:"kitle"},
+  {id:14,name:"Tubo-ovaryan apse",t1:"Düşük-orta",t2:"Yüksek",dwi:"Restriksiyon",adc:"Düşük",artCe:"Rim enhancement",venCe:"Rim",solid:false,septa:false,septaTip:"yok",kontur:"Düzensiz",internal:"Heterojen",tip:"kist"},
+  {id:15,name:"Over torsiyonu",t1:"Hafif yüksek",t2:"Yüksek (ödem)",dwi:"Restriksiyon olabilir",adc:"Düşük",artCe:"Azalmış",venCe:"Azalmış",solid:false,septa:false,septaTip:"yok",kontur:"Düzensiz",internal:"Heterojen",tip:"kist"},
+];
+
+const QUICK_RULES=[
+  {cond:"T1 yüksek + fat suppression'da sinyal kaybı",diag:"Teratom (Dermoid)"},
+  {cond:"T1 yüksek + T2 shading",diag:"Endometrioma"},
+  {cond:"T1 yüksek + septa yok",diag:"Hemorajik kist"},
+  {cond:"Güçlü difüzyon kısıtlaması + solid komponent",diag:"Over kanseri"},
+  {cond:"Güçlü difüzyon kısıtlaması + bilateral solid",diag:"Krukenberg metastazı"},
+  {cond:"Difüzyon kısıtlaması + pürülan içerik",diag:"Tubo-ovaryan apse"},
+  {cond:"CE: İnce duvar kontrastlanması",diag:"Basit kist"},
+  {cond:"CE: Septal kontrastlanma",diag:"Kistadenom"},
+  {cond:"CE: Papiller kontrastlanma",diag:"Borderline / Malign"},
+  {cond:"CE: Rim kontrastlanma",diag:"Apse"},
+];
+
+/* ══════════════ HELPERS ══════════════ */
+const emptySignal=()=>({t1a:'',t2a:'',t1afs:'',t2afs:'',dwi:'',ce:''});
+const emptyCyst=()=>({boyut:'',kontur:'',internal:'',septa:'',septaK:'',septaS:'',signal:emptySignal(),duvarK:'',duvarSignal:emptySignal(),solidKomp:'',solidBoyut:'',solidSignal:emptySignal()});
+const emptyMass=()=>({boyut:'',kontur:'',internal:'',signal:emptySignal()});
+const emptyOvary=()=>({durum:'',boyut:'',kistDurum:'',cysts:[],cIdx:-1,cStep:0,kitleDurum:'',masses:[],mIdx:-1,mStep:0});
+
+/* ══════════════ SIGNAL PANEL ══════════════ */
+function SP({title,icon,data,onChange}){
+  const rows=[
+    {k:'t1a',l:'T1A',o:['Hiperintens','Hipointens','İzointens']},
+    {k:'t2a',l:'T2A',o:['Hiperintens','Hipointens','İzointens']},
+    {k:'t1afs',l:'T1A FS',o:['Hiperintens','Hipointens','İzointens']},
+    {k:'t2afs',l:'T2A FS',o:['Hiperintens','Hipointens','İzointens']},
+    {k:'dwi',l:'DWI',o:['Kısıtlıyor','Kısıtlamıyor']},
+    {k:'ce',l:'CE',o:['İzlenmiyor','Zayıf','Güçlü']},
+  ];
+  return(
+    <div className="sp">
+      <div className="sp-t">{icon} {title}</div>
+      {rows.map(r=>(
+        <div className="sr" key={r.k}>
+          <span className="sl">{r.l}</span>
+          <div className="so">
+            {r.o.map(v=><button key={v} className={`sb ${data[r.k]===v?'on':''}`} onClick={()=>onChange({...data,[r.k]:v})}>{v}</button>)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════════════ SCORING ENGINE ══════════════ */
+function scoreLesion(lesion,type){
+  // type: 'kist' or 'kitle'
+  const sig = lesion.signal || {};
+  return DDX.map(d=>{
+    let s=0,t=0;
+    // T1 match (weight 2)
+    t+=2;
+    if(sig.t1a){
+      const hi=sig.t1a==='Hiperintens';
+      const lo=sig.t1a==='Hipointens';
+      const iz=sig.t1a==='İzointens';
+      if(hi&&(d.t1.includes('Yüksek')||d.t1.includes('yüksek'))) s+=2;
+      else if(lo&&d.t1.includes('Düşük')) s+=2;
+      else if(iz&&d.t1.includes('Orta')) s+=2;
+      else if(hi&&d.t1.includes('Değişken')) s+=1;
+      else if(iz&&d.t1.includes('Düşük-orta')) s+=1;
+    }
+    // T2 match (weight 2)
+    t+=2;
+    if(sig.t2a){
+      const hi=sig.t2a==='Hiperintens';
+      const lo=sig.t2a==='Hipointens';
+      if(hi&&(d.t2.includes('Yüksek')||d.t2.includes('yüksek'))) s+=2;
+      else if(lo&&(d.t2.includes('düşük')||d.t2.includes('Düşük'))) s+=2;
+      else if(hi&&(d.t2.includes('Değişken')||d.t2.includes('Multiloküler')||d.t2.includes('Heterojen'))) s+=1;
+    }
+    // T1A FS - fat sat drop check (weight 2)
+    t+=2;
+    if(sig.t1a&&sig.t1afs){
+      const t1hi=sig.t1a==='Hiperintens';
+      const fsLo=sig.t1afs==='Hipointens';
+      const fatsatDrop=t1hi&&fsLo; // dermoid pattern
+      if(d.id===3){ // Dermoid
+        if(fatsatDrop) s+=2; else s+=0;
+      } else {
+        if(t1hi&&sig.t1afs==='Hiperintens') s+=2; // persistent T1 high = hemorrhage/endo
+        else if(!t1hi) s+=1;
+      }
+    }
+    // DWI (weight 3)
+    t+=3;
+    if(sig.dwi){
+      const rest=sig.dwi==='Kısıtlıyor';
+      if(rest&&(d.dwi.includes('Restriksiyon')||d.dwi.includes('restriksiyon')||d.dwi.includes('Belirgin'))) s+=3;
+      else if(!rest&&(d.dwi==='Yok'||d.dwi==='Minimal')) s+=3;
+      else if(rest&&d.dwi.includes('Hafif')) s+=2;
+      else if(!rest&&d.dwi.includes('Hafif')) s+=1;
+    }
+    // CE (weight 3)
+    t+=3;
+    if(sig.ce){
+      if(sig.ce==='İzlenmiyor'&&(d.artCe.includes('Kontrastlanmaz')||d.artCe.includes('Azalmış'))) s+=3;
+      else if(sig.ce==='Güçlü'&&(d.artCe.includes('güçlü')||d.artCe.includes('Erken')||d.artCe.includes('erken')||d.artCe.includes('Heterojen'))) s+=3;
+      else if(sig.ce==='Zayıf'&&(d.artCe.includes('Minimal')||d.artCe.includes('Hafif')||d.artCe.includes('Zayıf')||d.artCe.includes('Rim')||d.artCe.includes('septal')||d.artCe.includes('Septal')||d.artCe.includes('İnce'))) s+=3;
+      else if(sig.ce==='Zayıf'&&sig.ce!=='İzlenmiyor') s+=1;
+    }
+    // Kontur (weight 1)
+    t+=1;
+    if(lesion.kontur){
+      if(lesion.kontur===d.kontur) s+=1;
+    }
+    // Internal (weight 1)
+    t+=1;
+    if(lesion.internal){
+      if(lesion.internal===d.internal) s+=1;
+    }
+    // Septa (weight 2) - only for cysts
+    if(type==='kist'){
+      t+=2;
+      if(lesion.septa){
+        const has=lesion.septa==='Var';
+        if(has===d.septa) s+=1;
+        if(has&&d.septa){
+          const k=parseFloat(lesion.septaK)||0;
+          if(k>3&&d.septaTip==='kalın') s+=1;
+          else if(k<=3&&d.septaTip==='ince') s+=1;
+        } else if(!has&&!d.septa) s+=1;
+      }
+      // Solid (weight 2)
+      t+=2;
+      if(lesion.solidKomp){
+        const hasSolid=lesion.solidKomp==='Var';
+        if(hasSolid===d.solid) s+=2;
+      }
+    }
+    // Type preference bonus
+    if(type==='kitle'&&d.tip==='kitle') s+=1;
+    if(type==='kist'&&d.tip==='kist') s+=1;
+    t+=1;
+
+    const pct=t>0?Math.round(s/t*100):0;
+    return {...d,score:s,total:t,pct};
+  }).sort((a,b)=>b.pct-a.pct).slice(0,8);
+}
+
+function genYorum(lesion,type){
+  if(!lesion) return {text:'',sev:0,color:'var(--gn)'};
+  let sev=0,f=[];
+  const sig=lesion.signal||{};
+  if(type==='kist'){
+    if(lesion.solidKomp==='Var'){sev+=30;f.push('solid komponent');}
+    if(lesion.septa==='Var'){
+      const k=parseFloat(lesion.septaK)||0;
+      if(k>3){sev+=15;f.push('kalın septa (>3mm)');}else{sev+=5;f.push('ince septa');}
+    }
+    if(lesion.duvarK){const dk=parseFloat(lesion.duvarK)||0;if(dk>3){sev+=10;f.push('kalın duvar');}}
+  }
+  if(type==='kitle'){sev+=20;f.push('solid kitle');}
+  if(sig.dwi==='Kısıtlıyor'){sev+=25;f.push('difüzyon kısıtlaması');}
+  if(sig.ce==='Güçlü'){sev+=20;f.push('güçlü kontrastlanma');}
+  if(lesion.kontur==='Düzensiz'){sev+=15;f.push('düzensiz kontur');}
+  if(lesion.internal==='Heterojen'){sev+=10;f.push('heterojen yapı');}
+  // Dermoid check
+  if(sig.t1a==='Hiperintens'&&sig.t1afs==='Hipointens'){f.push('yağ içeriği (T1↑ FS↓)');sev=Math.max(sev-15,5);}
+  // Endometrioma check
+  if(sig.t1a==='Hiperintens'&&sig.t2a==='Hipointens'&&sig.t1afs==='Hiperintens'){f.push('T2 shading + T1↑ (endometrioma paterni)');sev=Math.max(sev-10,10);}
+
+  sev=Math.min(sev,100);
+  let color=sev>=60?'var(--rd)':sev>=30?'var(--am)':'var(--gn)';
+  let text='';
+  if(sev>=60) text=`Yüksek şüpheli bulgular mevcut: ${f.join(', ')}. Malignite açısından ileri değerlendirme önerilir.`;
+  else if(sev>=30) text=`Orta düzeyde şüpheli bulgular: ${f.join(', ')}. Takip veya ileri tetkik değerlendirilmelidir.`;
+  else if(f.length) text=`Düşük şüpheli bulgular: ${f.join(', ')}. Benign özellikler ön planda olup rutin takip yeterli olabilir.`;
+  else text='Belirgin şüpheli bulgu saptanmadı. Benign özellikte lezyon.';
+  return {text,sev,color};
+}
+
+/* ══════════════ MAIN APP ══════════════ */
+function App(){
+  /* ─ state ─ */
+  const [phase,setPhase]=useState(0);
+  // phases: 0=sagOver, 1=sagKist, 2=sagKitle, 3=solOver, 4=solKist, 5=solKitle, 6=ekBulgu, 7=rapor
+  const [sag,setSag]=useState(emptyOvary());
+  const [sol,setSol]=useState(emptyOvary());
+  const [ek,setEk]=useState({asit:'',peritoneal:'',lap:'',utInvazyon:'',diger:''});
+  const rRef=useRef(null);
+
+  const pLabels=['Sağ Over','Sağ Kist','Sağ Kitle','Sol Over','Sol Kist','Sol Kitle','Ek Bulgular','Rapor'];
+  const progress=Math.round((phase/7)*100);
+
+  /* ─ phase navigation ─ */
+  const goPhase=(p)=>setPhase(p);
+  const nextPhase=()=>{
+    if(phase===0){
+      if(sag.durum==='Normal'||sag.durum==='Atrofik'||sag.durum==='İzlenmedi') setPhase(3);
+      else setPhase(1);
+    } else if(phase===1) setPhase(2);
+    else if(phase===2) setPhase(3);
+    else if(phase===3){
+      if(sol.durum==='Normal'||sol.durum==='Atrofik'||sol.durum==='İzlenmedi') setPhase(6);
+      else setPhase(4);
+    } else if(phase===4) setPhase(5);
+    else if(phase===5) setPhase(6);
+    else if(phase===6) setPhase(7);
+  };
+  const prevPhase=()=>{
+    if(phase===1) setPhase(0);
+    else if(phase===2) setPhase(1);
+    else if(phase===3) setPhase(sag.durum==='Normal'||sag.durum==='Atrofik'||sag.durum==='İzlenmedi'?0:2);
+    else if(phase===4) setPhase(3);
+    else if(phase===5) setPhase(4);
+    else if(phase===6) setPhase(sol.durum==='Normal'||sol.durum==='Atrofik'||sol.durum==='İzlenmedi'?3:5);
+    else if(phase===7) setPhase(6);
+    else if(phase===0) {}
+  };
+
+  /* ─ generic updaters ─ */
+  const ov=phase<3?sag:sol;
+  const setOv=phase<3?setSag:setSol;
+  const ovL=phase<3?'Sağ Over':'Sol Over';
+
+  /* ─ CYST LOOP ─ */
+  const addCyst=()=>{const c=[...ov.cysts,emptyCyst()];setOv({...ov,cysts:c,cIdx:c.length-1,cStep:0});};
+  const editCyst=(i)=>setOv({...ov,cIdx:i,cStep:0});
+  const delCyst=(i)=>{const c=[...ov.cysts];c.splice(i,1);setOv({...ov,cysts:c,cIdx:-1,cStep:0});};
+  const finCyst=()=>setOv({...ov,cIdx:-1,cStep:0});
+  const updCyst=(f,v)=>{const c=[...ov.cysts];c[ov.cIdx]={...c[ov.cIdx],[f]:v};setOv({...ov,cysts:c});};
+  const cNext=()=>{
+    const cy=ov.cysts[ov.cIdx];let ns=ov.cStep+1;
+    if(ov.cStep===2&&cy.septa==='Yok') ns=3; // skip septa details
+    if(ov.cStep===5&&cy.solidKomp==='Yok'){finCyst();return;}
+    if(ov.cStep===6){finCyst();return;}
+    if(ns>6){finCyst();return;}
+    setOv({...ov,cStep:ns});
+  };
+  const cPrev=()=>{
+    if(ov.cStep===0){finCyst();return;}
+    let ns=ov.cStep-1;
+    const cy=ov.cysts[ov.cIdx];
+    if(ns===2&&cy.septa==='Yok') ns=2;
+    if(ns===6) ns=5;
+    setOv({...ov,cStep:ns});
+  };
+
+  /* ─ MASS LOOP ─ */
+  const addMass=()=>{const m=[...ov.masses,emptyMass()];setOv({...ov,masses:m,mIdx:m.length-1,mStep:0});};
+  const editMass=(i)=>setOv({...ov,mIdx:i,mStep:0});
+  const delMass=(i)=>{const m=[...ov.masses];m.splice(i,1);setOv({...ov,masses:m,mIdx:-1,mStep:0});};
+  const finMass=()=>setOv({...ov,mIdx:-1,mStep:0});
+  const updMass=(f,v)=>{const m=[...ov.masses];m[ov.mIdx]={...m[ov.mIdx],[f]:v};setOv({...ov,masses:m});};
+  const mNext=()=>{
+    if(ov.mStep>=2){finMass();return;}
+    setOv({...ov,mStep:ov.mStep+1});
+  };
+  const mPrev=()=>{
+    if(ov.mStep===0){finMass();return;}
+    setOv({...ov,mStep:ov.mStep-1});
+  };
+
+  /* ══════════ RENDERS ══════════ */
+
+  /* ── Phase 0/3: Over Durumu + Boyut ── */
+  const renderOverDurum=()=>(
+    <div className="cd" key={`ov-${phase}`}>
+      <div className="cd-t">{phase<3?'➡️':'⬅️'} {ovL} — Durum & Boyut</div>
+      <div className="cd-d">Overin genel durumunu ve boyutunu belirtiniz.</div>
+      <div className="ig">
+        <label>Durum</label>
+        <div className="og c4">
+          {['Normal','Atrofik','İzlenmedi','Lezyon Var'].map(o=>(
+            <div key={o} className={`oi ${ov.durum===o?'sel':''}`} onClick={()=>setOv({...ov,durum:o})}><div className="rd"/>{o}</div>
+          ))}
+        </div>
+      </div>
+      {(ov.durum==='Normal'||ov.durum==='Lezyon Var')&&(
+        <div className="ig">
+          <label>Boyut (mm)</label>
+          <input className="ifl" placeholder="ör: 35x28x25" value={ov.boyut} onChange={e=>setOv({...ov,boyut:e.target.value})}/>
+        </div>
+      )}
+      <div className="br">
+        {phase>0&&<button className="bt bt2" onClick={prevPhase}>← Geri</button>}
+        <button className="bt bt1" onClick={nextPhase} disabled={!ov.durum}>İleri →</button>
+      </div>
+    </div>
+  );
+
+  /* ── Phase 1/4: Kist Döngüsü ── */
+  const renderKistLoop=()=>{
+    if(ov.cIdx===-1){
+      return(
+        <div className="cd" key={`cl-${phase}`}>
+          <div className="cd-t">🫧 {ovL} — Kistler</div>
+          <div className="cd-d">Over üzerindeki kistik lezyonları ekleyiniz.</div>
+          {ov.cysts.map((c,i)=>(
+            <div className="li" key={i}>
+              <div className="li-i">Kist #{i+1}<span>{c.boyut?`${c.boyut}mm`:''} {c.kontur} {c.solidKomp?`S:${c.solidKomp}`:''}</span></div>
+              <div className="li-a">
+                <button className="lib" onClick={()=>editCyst(i)}>✏️</button>
+                <button className="lib del" onClick={()=>delCyst(i)}>🗑️</button>
+              </div>
+            </div>
+          ))}
+          <div className="br">
+            <button className="bt bt2" onClick={prevPhase}>← Geri</button>
+            <button className="bt bt1 bts" onClick={addCyst}>+ Kist Ekle</button>
+            <button className="bt bt3" onClick={nextPhase}>Devam →</button>
+          </div>
+        </div>
+      );
+    }
+    const cy=ov.cysts[ov.cIdx];const cs=ov.cStep;
+    const inner=()=>{
+      switch(cs){
+        case 0:return(<>
+          <div className="cd-t">📏 Kist #{ov.cIdx+1} — Boyut</div>
+          <div className="ig"><label>Boyut (mm)</label>
+            <input className="ifl" placeholder="ör: 45x38" value={cy.boyut} onChange={e=>updCyst('boyut',e.target.value)}/></div>
+        </>);
+        case 1:return(<>
+          <div className="cd-t">🔲 Kist #{ov.cIdx+1} — Kontur & İç Yapı</div>
+          <div className="ig"><label>Kontur</label>
+            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map(o=>(
+              <div key={o} className={`oi ${cy.kontur===o?'sel':''}`} onClick={()=>updCyst('kontur',o)}><div className="rd"/>{o}</div>
+            ))}</div></div>
+          <div className="ig"><label>İnternal Görünüm</label>
+            <div className="og c2">{['Homojen','Heterojen'].map(o=>(
+              <div key={o} className={`oi ${cy.internal===o?'sel':''}`} onClick={()=>updCyst('internal',o)}><div className="rd"/>{o}</div>
+            ))}</div></div>
+        </>);
+        case 2:return(<>
+          <div className="cd-t">🔀 Kist #{ov.cIdx+1} — Septa</div>
+          <div className="og c2">{['Var','Yok'].map(o=>(
+            <div key={o} className={`oi ${cy.septa===o?'sel':''}`} onClick={()=>updCyst('septa',o)}><div className="rd"/>{o}</div>
+          ))}</div>
+          {cy.septa==='Var'&&(<div style={{marginTop:14}}>
+            <div className="ig"><label>Septa Kalınlığı (mm)</label>
+              <input className="ifl" placeholder="ör: 2" value={cy.septaK} onChange={e=>updCyst('septaK',e.target.value)}/></div>
+            <div className="ig"><label>Septa Sayısı</label>
+              <input className="ifl" placeholder="ör: 3" value={cy.septaS} onChange={e=>updCyst('septaS',e.target.value)}/></div>
+          </div>)}
+        </>);
+        case 3:return(<>
+          <div className="cd-t">🔬 Kist #{ov.cIdx+1} — Kist İçi Sinyal</div>
+          <div className="cd-d">Kist iç sıvısının sinyal karakteristiklerini seçiniz.</div>
+          <SP title="Kist İçi Sinyal" icon="💧" data={cy.signal} onChange={v=>updCyst('signal',v)}/>
+        </>);
+        case 4:return(<>
+          <div className="cd-t">🧱 Kist #{ov.cIdx+1} — Duvar Yapısı</div>
+          <div className="ig"><label>Duvar Kalınlığı (mm)</label>
+            <input className="ifl" placeholder="ör: 2" value={cy.duvarK} onChange={e=>updCyst('duvarK',e.target.value)}/></div>
+          <SP title="Duvar Sinyal" icon="🧱" data={cy.duvarSignal} onChange={v=>updCyst('duvarSignal',v)}/>
+        </>);
+        case 5:return(<>
+          <div className="cd-t">⬛ Kist #{ov.cIdx+1} — Solid Komponent</div>
+          <div className="cd-d">Kist içinde solid komponent varlığını belirtiniz.</div>
+          <div className="og c2">{['Yok','Var'].map(o=>(
+            <div key={o} className={`oi ${cy.solidKomp===o?'sel':''}`} onClick={()=>updCyst('solidKomp',o)}><div className="rd"/>{o}</div>
+          ))}</div>
+        </>);
+        case 6:return(<>
+          <div className="cd-t">⬛ Kist #{ov.cIdx+1} — Solid Detay</div>
+          <div className="ig"><label>Solid Komponent Boyutu (mm)</label>
+            <input className="ifl" placeholder="ör: 15x12" value={cy.solidBoyut} onChange={e=>updCyst('solidBoyut',e.target.value)}/></div>
+          <SP title="Solid Sinyal" icon="⬛" data={cy.solidSignal} onChange={v=>updCyst('solidSignal',v)}/>
+        </>);
+        default:return null;
+      }
+    };
+    return(
+      <div className="cd" key={`ce-${phase}-${ov.cIdx}-${cs}`}>
+        {inner()}
+        <div className="br">
+          <button className="bt bt2" onClick={cPrev}>← Geri</button>
+          <button className="bt bt1" onClick={cNext}>
+            {(cs===5&&cy.solidKomp==='Yok')||cs===6?'Kisti Tamamla ✓':'İleri →'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  /* ── Phase 2/5: Kitle Döngüsü ── */
+  const renderKitleLoop=()=>{
+    if(ov.mIdx===-1){
+      return(
+        <div className="cd" key={`ml-${phase}`}>
+          <div className="cd-t">🔴 {ovL} — Kitleler (Tümör)</div>
+          <div className="cd-d">Over üzerindeki solid kitleleri/tümörleri ekleyiniz.</div>
+          {ov.masses.map((m,i)=>(
+            <div className="li" key={i}>
+              <div className="li-i">Kitle #{i+1}<span>{m.boyut?`${m.boyut}mm`:''} {m.kontur} {m.internal}</span></div>
+              <div className="li-a">
+                <button className="lib" onClick={()=>editMass(i)}>✏️</button>
+                <button className="lib del" onClick={()=>delMass(i)}>🗑️</button>
+              </div>
+            </div>
+          ))}
+          <div className="br">
+            <button className="bt bt2" onClick={prevPhase}>← Geri</button>
+            <button className="bt bt1 bts" onClick={addMass}>+ Kitle Ekle</button>
+            <button className="bt bt3" onClick={nextPhase}>Devam →</button>
+          </div>
+        </div>
+      );
+    }
+    const ms=ov.masses[ov.mIdx];const st=ov.mStep;
+    const inner=()=>{
+      switch(st){
+        case 0:return(<>
+          <div className="cd-t">📏 Kitle #{ov.mIdx+1} — Boyut & Morfoloji</div>
+          <div className="ig"><label>Boyut (mm)</label>
+            <input className="ifl" placeholder="ör: 55x42" value={ms.boyut} onChange={e=>updMass('boyut',e.target.value)}/></div>
+          <div className="ig"><label>Kontur</label>
+            <div className="og c3">{['Düzenli','Düzensiz','Lobule'].map(o=>(
+              <div key={o} className={`oi ${ms.kontur===o?'sel':''}`} onClick={()=>updMass('kontur',o)}><div className="rd"/>{o}</div>
+            ))}</div></div>
+          <div className="ig"><label>İnternal Görünüm</label>
+            <div className="og c2">{['Homojen','Heterojen'].map(o=>(
+              <div key={o} className={`oi ${ms.internal===o?'sel':''}`} onClick={()=>updMass('internal',o)}><div className="rd"/>{o}</div>
+            ))}</div></div>
+        </>);
+        case 1:return(<>
+          <div className="cd-t">🔬 Kitle #{ov.mIdx+1} — Sinyal Karakteristikleri</div>
+          <SP title="Kitle Sinyali" icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
+        </>);
+        case 2:return(<>
+          <div className="cd-t">🔬 Kitle #{ov.mIdx+1} — Sinyal (devam)</div>
+          <SP title="Kitle Sinyali" icon="🔴" data={ms.signal} onChange={v=>updMass('signal',v)}/>
+        </>);
+        default:return null;
+      }
+    };
+    return(
+      <div className="cd" key={`me-${phase}-${ov.mIdx}-${st}`}>
+        {inner()}
+        <div className="br">
+          <button className="bt bt2" onClick={mPrev}>← Geri</button>
+          <button className="bt bt1" onClick={mNext}>
+            {st>=1?'Kitleyi Tamamla ✓':'İleri →'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  /* ── Phase 6: Ek Bulgular ── */
+  const renderEk=()=>(
+    <div className="cd" key="ek">
+      <div className="cd-t">📋 Ek Bulgular</div>
+      <div className="cd-d">Pelvik MRG'de eşlik eden ek bulguları belirtiniz.</div>
+      <div className="ig"><label>Asit</label>
+        <div className="og c3">{['Yok','Az Miktarda','Belirgin'].map(o=>(
+          <div key={o} className={`oi ${ek.asit===o?'sel':''}`} onClick={()=>setEk({...ek,asit:o})}><div className="rd"/>{o}</div>
+        ))}</div></div>
+      <div className="ig"><label>Peritoneal İmplant</label>
+        <div className="og c2">{['Yok','Var'].map(o=>(
+          <div key={o} className={`oi ${ek.peritoneal===o?'sel':''}`} onClick={()=>setEk({...ek,peritoneal:o})}><div className="rd"/>{o}</div>
+        ))}</div></div>
+      <div className="ig"><label>Lenfadenopati</label>
+        <div className="og c2">{['Yok','Var'].map(o=>(
+          <div key={o} className={`oi ${ek.lap===o?'sel':''}`} onClick={()=>setEk({...ek,lap:o})}><div className="rd"/>{o}</div>
+        ))}</div></div>
+      <div className="ig"><label>Uterus İnvazyonu</label>
+        <div className="og c2">{['Yok','Var'].map(o=>(
+          <div key={o} className={`oi ${ek.utInvazyon===o?'sel':''}`} onClick={()=>setEk({...ek,utInvazyon:o})}><div className="rd"/>{o}</div>
+        ))}</div></div>
+      <div className="ig"><label>Diğer Bulgular</label>
+        <input className="ifl" placeholder="Serbest metin..." value={ek.diger} onChange={e=>setEk({...ek,diger:e.target.value})}/></div>
+      <div className="br">
+        <button className="bt bt2" onClick={prevPhase}>← Geri</button>
+        <button className="bt bt3" onClick={nextPhase}>Rapor Oluştur ✓</button>
+      </div>
+    </div>
+  );
+
+  /* ── Phase 7: RAPOR ── */
+  const sigTable=(label,sig)=>{
+    if(!sig||!Object.values(sig).some(v=>v)) return null;
+    return(
+      <table className="rt" style={{marginTop:7}}>
+        <thead><tr><th colSpan="2">{label}</th></tr></thead>
+        <tbody>
+          {sig.t1a&&<tr><td className="l">T1A</td><td className="v">{sig.t1a}</td></tr>}
+          {sig.t2a&&<tr><td className="l">T2A</td><td className="v">{sig.t2a}</td></tr>}
+          {sig.t1afs&&<tr><td className="l">T1A FS</td><td className="v">{sig.t1afs}</td></tr>}
+          {sig.t2afs&&<tr><td className="l">T2A FS</td><td className="v">{sig.t2afs}</td></tr>}
+          {sig.dwi&&<tr><td className="l">DWI</td><td className="v">{sig.dwi}</td></tr>}
+          {sig.ce&&<tr><td className="l">CE</td><td className="v">{sig.ce}</td></tr>}
+        </tbody>
+      </table>
+    );
+  };
+
+  const renderLesionReport=(lesion,idx,type,label)=>{
+    const y=genYorum(lesion,type);
+    const dx=scoreLesion(lesion,type);
+    return(
+      <div key={`${type}-${idx}`} style={{marginTop:14,borderTop:'1px solid var(--bd)',paddingTop:14}}>
+        <h3 style={{fontSize:'.88rem'}}>{type==='kist'?'🫧':'🔴'} {label} #{idx+1}</h3>
+        <table className="rt">
+          <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+          <tbody>
+            {lesion.boyut&&<tr><td className="l">Boyut</td><td className="v">{lesion.boyut} mm</td></tr>}
+            {lesion.kontur&&<tr><td className="l">Kontur</td><td className="v">{lesion.kontur}</td></tr>}
+            {lesion.internal&&<tr><td className="l">İnternal</td><td className="v">{lesion.internal}</td></tr>}
+            {type==='kist'&&<tr><td className="l">Septa</td><td className="v">{lesion.septa||'-'}</td></tr>}
+            {type==='kist'&&lesion.septa==='Var'&&lesion.septaK&&<tr><td className="l">Septa Kalınlığı</td><td className="v">{lesion.septaK} mm</td></tr>}
+            {type==='kist'&&lesion.septa==='Var'&&lesion.septaS&&<tr><td className="l">Septa Sayısı</td><td className="v">{lesion.septaS}</td></tr>}
+            {type==='kist'&&lesion.duvarK&&<tr><td className="l">Duvar Kalınlığı</td><td className="v">{lesion.duvarK} mm</td></tr>}
+            {type==='kist'&&<tr><td className="l">Solid Komponent</td><td className="v">{lesion.solidKomp||'-'}</td></tr>}
+            {type==='kist'&&lesion.solidKomp==='Var'&&lesion.solidBoyut&&<tr><td className="l">Solid Boyut</td><td className="v">{lesion.solidBoyut} mm</td></tr>}
+          </tbody>
+        </table>
+        {sigTable(type==='kist'?'Kist İçi Sinyal':'Kitle Sinyali',lesion.signal)}
+        {type==='kist'&&sigTable('Duvar Sinyal',lesion.duvarSignal)}
+        {type==='kist'&&lesion.solidKomp==='Var'&&sigTable('Solid Sinyal',lesion.solidSignal)}
+
+        {/* YORUM */}
+        <div className="yb">
+          <div className="yt">📊 YORUM</div>
+          <div className="yx">{y.text}</div>
+          <div style={{display:'flex',alignItems:'center',gap:7,fontSize:'.72rem',color:'var(--tx3)'}}>
+            <span>Şüphe</span>
+            <div className="svb" style={{flex:1}}><div className="svf" style={{width:`${y.sev}%`,background:y.color}}/></div>
+            <span style={{color:y.color,fontWeight:600}}>{y.sev}%</span>
+          </div>
+        </div>
+
+        {/* DIFF DX */}
+        {dx.length>0&&(
+          <div style={{marginTop:10}}>
+            <div style={{fontSize:'.82rem',fontWeight:600,color:'var(--ac2)',marginBottom:6}}>🔍 Ayırıcı Tanı</div>
+            <table className="dt">
+              <thead><tr><th>Tanı</th><th>Uyum</th><th>T1</th><th>DWI</th><th>CE</th></tr></thead>
+              <tbody>
+                {dx.map((d,j)=>(
+                  <tr key={j} className={d.pct>=60?'mt':''}>
+                    <td style={{fontWeight:d.pct>=60?600:400}}>{d.name}</td>
+                    <td><span className={`ms ${d.pct>=70?'mh':d.pct>=40?'mm':'ml'}`}>{d.pct}%</span></td>
+                    <td>{d.t1}</td>
+                    <td>{d.dwi}</td>
+                    <td>{d.artCe}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderOvReport=(ov,label)=>(
+    <div className="rps">
+      <h3>{label==='Sağ Over'?'➡️':'⬅️'} {label}</h3>
+      <table className="rt">
+        <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+        <tbody>
+          <tr><td className="l">Durum</td><td className="v">{ov.durum||'-'}</td></tr>
+          {ov.boyut&&<tr><td className="l">Boyut</td><td className="v">{ov.boyut} mm</td></tr>}
+        </tbody>
+      </table>
+      {ov.cysts.length>0&&<div style={{marginTop:8,fontSize:'.78rem',fontWeight:600,color:'var(--cy)'}}>Kistik Lezyonlar ({ov.cysts.length})</div>}
+      {ov.cysts.map((c,i)=>renderLesionReport(c,i,'kist','Kist'))}
+      {ov.masses.length>0&&<div style={{marginTop:12,fontSize:'.78rem',fontWeight:600,color:'var(--pk)'}}>Solid Kitleler ({ov.masses.length})</div>}
+      {ov.masses.map((m,i)=>renderLesionReport(m,i,'kitle','Kitle'))}
+      {ov.cysts.length===0&&ov.masses.length===0&&<p style={{color:'var(--tx3)',fontSize:'.8rem',marginTop:8}}>Lezyon saptanmadı.</p>}
+    </div>
+  );
+
+  const renderRapor=()=>(
+    <div ref={rRef}>
+      <div className="cd" style={{textAlign:'center',background:'linear-gradient(135deg,var(--sf),var(--sf2))'}}>
+        <h2 style={{fontSize:'1.15rem',fontWeight:700,marginBottom:3}}>📋 Over MRG Değerlendirme Raporu</h2>
+        <p style={{color:'var(--tx2)',fontSize:'.75rem'}}>Tarih: {new Date().toLocaleDateString('tr-TR')}</p>
+      </div>
+      {renderOvReport(sag,'Sağ Over')}
+      {renderOvReport(sol,'Sol Over')}
+      <div className="rps">
+        <h3>📋 Ek Bulgular</h3>
+        <table className="rt">
+          <thead><tr><th>Parametre</th><th>Değer</th></tr></thead>
+          <tbody>
+            <tr><td className="l">Asit</td><td className="v">{ek.asit||'-'}</td></tr>
+            <tr><td className="l">Peritoneal İmplant</td><td className="v">{ek.peritoneal||'-'}</td></tr>
+            <tr><td className="l">Lenfadenopati</td><td className="v">{ek.lap||'-'}</td></tr>
+            <tr><td className="l">Uterus İnvazyonu</td><td className="v">{ek.utInvazyon||'-'}</td></tr>
+            {ek.diger&&<tr><td className="l">Diğer</td><td className="v">{ek.diger}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div className="rps">
+        <h3>📌 Hızlı Tanı Kuralları Referansı</h3>
+        <table className="dt">
+          <thead><tr><th>Bulgu Paterni</th><th>Olası Tanı</th></tr></thead>
+          <tbody>{QUICK_RULES.map((r,i)=><tr key={i}><td>{r.cond}</td><td style={{fontWeight:600}}>{r.diag}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <div className="exr">
+        <button className="exb" onClick={()=>window.print()}>🖨️ PDF Yazdır</button>
+        <button className="exb" onClick={handleCopy}>📋 HTML Kopyala</button>
+        <button className="bt bt2 bts" onClick={()=>setPhase(6)}>← Düzenle</button>
+        <button className="bt btd bts" onClick={handleReset}>🔄 Sıfırla</button>
+      </div>
+    </div>
+  );
+
+  const handleCopy=()=>{
+    if(!rRef.current)return;
+    const ta=document.createElement('textarea');
+    ta.value=rRef.current.innerHTML;
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    alert('Rapor HTML olarak panoya kopyalandı!');
+  };
+  const handleReset=()=>{
+    if(!confirm('Tüm verileri sıfırlamak istediğinize emin misiniz?'))return;
+    setSag(emptyOvary());setSol(emptyOvary());
+    setEk({asit:'',peritoneal:'',lap:'',utInvazyon:'',diger:''});setPhase(0);
+  };
+
+  /* ══════════ MAIN RENDER ══════════ */
+  const phasesDone=[
+    sag.durum,sag.durum==='Lezyon Var',sag.durum==='Lezyon Var',
+    sol.durum,sol.durum==='Lezyon Var',sol.durum==='Lezyon Var',
+    ek.asit,phase===7
+  ];
+
+  return(
+    <div className="wrap">
+      <div className="hdr">
+        <h1>Over MRG Karar Destek Sistemi</h1>
+        <div className="sub">Kistik & Solid Lezyon Değerlendirme — v2.0</div>
+
+      </div>
+
+      {phase<7&&(
+        <>
+          <div className="phase-tabs">
+            {pLabels.map((l,i)=>(
+              <div key={i} className={`ptab ${phase===i?'active':''} ${phasesDone[i]&&phase!==i?'done':''}`}
+                onClick={()=>{if(i<=phase||phasesDone[i])goPhase(i);}}>
+                {l}{phasesDone[i]&&phase!==i&&<span className="chk">✓</span>}
+              </div>
+            ))}
+          </div>
+          <div className="pbar"><div className="pfill" style={{width:`${progress}%`}}/></div>
+        </>
+      )}
+
+      {phase===0&&renderOverDurum()}
+      {phase===1&&renderKistLoop()}
+      {phase===2&&renderKitleLoop()}
+      {phase===3&&renderOverDurum()}
+      {phase===4&&renderKistLoop()}
+      {phase===5&&renderKitleLoop()}
+      {phase===6&&renderEk()}
+      {phase===7&&renderRapor()}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karaciğer & Safra Kesesi MRI Karar Destek v3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0b16;--card:#13132a;--card2:#1a1a35;--card3:#10102a;--purple:#7c3aed;--purple2:#9333ea;--purpleLight:#a855f7;--purpleDim:#5b21b6;--text:#e2e8f0;--textDim:#94a3b8;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;--cyan:#06b6d4;--border:#2a2a48;--border2:#3a3a58;--success:#10b981;--white:#fff;--pink:#ec4899}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app-header{background:linear-gradient(135deg,#0f0f2a 0%,#2d1b69 50%,#1a0a3e 100%);padding:14px 20px;border-bottom:2px solid var(--purple);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.app-header h1{font-size:1.1rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:8px}
+.app-header .badge{background:var(--purple);color:#fff;font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:600}
+.container{max-width:980px;margin:0 auto;padding:12px}
+
+.section-header{background:linear-gradient(90deg,var(--purpleDim),transparent);padding:8px 14px;border-radius:6px;margin-bottom:10px;font-size:.82rem;font-weight:600;color:var(--purpleLight);letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.section-header .icon{font-size:1rem}
+
+.progress-wrap{margin-bottom:12px;position:sticky;top:0;z-index:100;background:var(--bg);padding:6px 0}
+.progress-bar{display:flex;gap:2px;flex-wrap:wrap}
+.progress-bar .dot{height:5px;flex:1;min-width:10px;border-radius:3px;background:var(--border);transition:.3s;cursor:pointer}
+.progress-bar .dot.active{background:var(--purple);box-shadow:0 0 6px rgba(124,58,237,.5)}
+.progress-bar .dot.done{background:var(--success)}
+.progress-bar .dot.loop{background:var(--cyan);opacity:.5}
+.progress-bar .dot.loop.done{background:var(--cyan);opacity:1}
+.progress-bar .dot.loop.active{background:var(--cyan);box-shadow:0 0 6px rgba(6,182,212,.6);opacity:1}
+.progress-bar .dot:hover{opacity:.8}
+.prog-label{font-size:.7rem;color:var(--textDim);margin-top:4px;text-align:center}
+
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px}
+.step-title{font-size:.98rem;font-weight:600;color:var(--purpleLight);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.step-title .num{background:var(--purple);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+.step-title .lesion-tag{background:var(--cyan);color:#fff;font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:600}
+.step-subtitle{font-size:.78rem;color:var(--textDim);margin-bottom:10px}
+
+.opt-group{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.opt-group-label{font-size:.76rem;color:var(--cyan);margin-bottom:4px;font-weight:600;margin-top:6px}
+.opt-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:7px;cursor:pointer;font-size:.82rem;text-align:left;transition:.2s;line-height:1.3}
+.opt-btn:hover{border-color:var(--purple);background:#1e1e3a}
+.opt-btn.selected{border-color:var(--purple);background:rgba(124,58,237,.18);color:var(--white)}
+.opt-btn.selected::before{content:'✓ ';color:var(--purpleLight);font-weight:700}
+.cb-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:.82rem;transition:.2s}
+.cb-row:hover{border-color:var(--purple)}
+.cb-row.checked{border-color:var(--purple);background:rgba(124,58,237,.15)}
+.cb-row input[type=checkbox]{accent-color:var(--purple);width:15px;height:15px;pointer-events:none}
+
+.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.opt-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.opt-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+@media(max-width:600px){.opt-grid,.opt-grid-3,.opt-grid-4{grid-template-columns:1fr 1fr}}
+
+/* Number input / measurement row */
+.meas-grid{display:grid;grid-template-columns:1fr 100px 40px;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--border);padding:8px 10px;border-radius:7px;margin-bottom:6px}
+.meas-grid label{font-size:.8rem}
+.meas-grid input[type=number]{background:var(--card3);border:1px solid var(--border2);color:var(--text);padding:6px 8px;border-radius:5px;font-size:.85rem;font-family:inherit;width:100%;text-align:right}
+.meas-grid input[type=number]:focus{outline:none;border-color:var(--purple)}
+.meas-grid .unit{font-size:.72rem;color:var(--textDim)}
+.meas-hint{font-size:.7rem;color:var(--textDim);margin-top:-2px;margin-bottom:6px;padding-left:4px}
+.meas-result{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);padding:8px 12px;border-radius:6px;margin-top:6px;font-size:.8rem}
+.meas-result b{color:var(--cyan)}
+.meas-result .ok{color:var(--green)}
+.meas-result .warn{color:var(--yellow)}
+.meas-result .bad{color:var(--red)}
+
+/* Segment picker */
+.seg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:6px 0}
+.seg-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 4px;border-radius:6px;cursor:pointer;font-size:.78rem;text-align:center;transition:.2s;line-height:1.2}
+.seg-btn small{display:block;font-size:.62rem;color:var(--textDim);margin-top:2px}
+.seg-btn:hover{border-color:var(--purple)}
+.seg-btn.selected{border-color:var(--purple);background:rgba(124,58,237,.2);color:var(--white)}
+.seg-btn.selected small{color:var(--purpleLight)}
+@media(max-width:600px){.seg-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* Lesion summary pills */
+.lesion-list{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.lesion-pill{background:var(--card3);border:1px solid var(--border2);padding:4px 10px;border-radius:14px;font-size:.75rem;color:var(--textDim)}
+.lesion-pill.done{border-color:var(--cyan);color:var(--cyan)}
+.lesion-pill.current{border-color:var(--purple);color:var(--purpleLight);background:rgba(124,58,237,.1)}
+.lesion-pill .lp-num{font-weight:700;margin-right:4px}
+
+/* Navigation */
+.nav-bar{display:flex;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.btn{padding:9px 20px;border-radius:7px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s}
+.btn-prev{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-prev:hover{border-color:var(--purple)}
+.btn-next{background:var(--purple);color:#fff}
+.btn-next:hover{background:var(--purple2)}
+.btn-finalize{background:linear-gradient(135deg,var(--success),var(--green));color:#fff}
+.btn-add-lesion{background:var(--cyan);color:#fff}
+.btn-report{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:.95rem;padding:11px 28px}
+.btn-sm{padding:6px 14px;font-size:.78rem}
+
+/* Differential bars */
+.diff-bar-wrap{margin-bottom:5px}
+.diff-label{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:2px}
+.diff-label .name{color:var(--text)}
+.diff-label .pct{color:var(--purpleLight);font-weight:700}
+.diff-bar{height:8px;background:var(--card2);border-radius:4px;overflow:hidden}
+.diff-bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.diff-extra{font-size:.7rem;color:var(--textDim);margin-top:1px;margin-bottom:4px}
+
+/* Category tags */
+.cat-tag{display:inline-block;font-size:.6rem;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:600;vertical-align:middle}
+.cat-Konjenital{background:rgba(6,182,212,.2);color:var(--cyan)}
+.cat-Enfektif{background:rgba(239,68,68,.2);color:var(--red)}
+.cat-Benign{background:rgba(34,197,94,.2);color:var(--green)}
+.cat-Malign{background:rgba(234,179,8,.2);color:var(--yellow)}
+.cat-Travmatik{background:rgba(249,115,22,.2);color:var(--orange)}
+.cat-Vasküler{background:rgba(168,85,247,.2);color:var(--purpleLight)}
+.cat-Metabolik{background:rgba(148,163,184,.2);color:var(--textDim)}
+.cat-Diffüz{background:rgba(236,72,153,.2);color:var(--pink)}
+.cat-Safra{background:rgba(34,197,94,.15);color:#4ade80}
+.cat-Biliyer{background:rgba(6,182,212,.15);color:var(--cyan)}
+.cat-Nadir{background:rgba(100,116,139,.2);color:#94a3b8}
+
+/* Report overlay */
+.report-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:16px}
+.report-overlay.open{display:block}
+.report-sheet{max-width:820px;margin:0 auto;background:#fff;color:#1a1a1a;padding:36px;border-radius:6px;font-size:.82rem;line-height:1.5}
+.report-sheet h2{color:#4c1d95;font-size:1rem;margin:16px 0 6px;border-bottom:2px solid #7c3aed;padding-bottom:3px}
+.report-sheet h3{color:#6d28d9;font-size:.88rem;margin:10px 0 4px}
+.report-sheet h4{color:#7c3aed;font-size:.82rem;margin:8px 0 3px}
+.report-sheet table{width:100%;border-collapse:collapse;margin:6px 0 10px}
+.report-sheet th{background:#4c1d95;color:#fff;padding:5px 7px;text-align:left;font-size:.74rem}
+.report-sheet td{padding:4px 7px;font-size:.74rem;border-bottom:1px solid #e5e7eb;vertical-align:top}
+.report-sheet tr:nth-child(even) td{background:#f5f3ff}
+.report-sheet .yorum{background:#f0fdf4;border-left:4px solid #22c55e;padding:10px 14px;margin:10px 0;border-radius:4px;font-size:.8rem}
+.report-sheet .yorum b{color:#166534}
+.report-sheet .yorum-red{background:#fef2f2;border-left:4px solid #ef4444;padding:10px 14px;margin:10px 0;border-radius:4px;font-size:.8rem}
+.report-sheet .yorum-red b{color:#991b1b}
+.report-sheet .yorum-blue{background:#eff6ff;border-left:4px solid #3b82f6;padding:10px 14px;margin:10px 0;border-radius:4px;font-size:.8rem}
+.report-sheet .yorum-blue b{color:#1e40af}
+.report-sheet .yorum-amber{background:#fef3c7;border-left:4px solid #eab308;padding:10px 14px;margin:10px 0;border-radius:4px;font-size:.8rem}
+.report-sheet .yorum-amber b{color:#92400e}
+.toolbar{position:sticky;top:0;background:var(--card);padding:8px;display:flex;gap:6px;justify-content:center;border-radius:6px 6px 0 0;z-index:10000;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.toolbar .btn{padding:7px 14px;font-size:.78rem}
+.toolbar .btn-print{background:var(--purple);color:#fff}
+.toolbar .btn-copy{background:var(--success);color:#fff}
+.toolbar .btn-download{background:var(--cyan);color:#fff}
+.toolbar .btn-close{background:var(--red);color:#fff}
+.hidden{display:none!important}
+.info-box{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);border-radius:7px;padding:8px 12px;font-size:.78rem;color:var(--textDim);margin-bottom:10px;line-height:1.4}
+.info-box b{color:var(--purpleLight)}
+.divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+@media print{.toolbar{display:none}.report-overlay{position:static;background:#fff;padding:0}.report-sheet{box-shadow:none;border-radius:0}}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+<h1>🫁 Karaciğer & Safra Kesesi MRI Karar Destek Sistemi</h1>
+<span class="badge">v3.0 — Segment / Ölçüm / HBP</span>
+</div>
+
+<div class="container" id="app"></div>
+<div class="report-overlay" id="reportOverlay"></div>
+
+<script>
+// =====================================================
+// COUINAUD SEGMENTS
+// =====================================================
+const SEGMENTS=[
+ {v:'s1',t:'S1',d:'Kaudat'},
+ {v:'s2',t:'S2',d:'Sol lat süp'},
+ {v:'s3',t:'S3',d:'Sol lat inf'},
+ {v:'s4a',t:'S4a',d:'Sol med süp'},
+ {v:'s4b',t:'S4b',d:'Sol med inf'},
+ {v:'s5',t:'S5',d:'Sağ ant inf'},
+ {v:'s6',t:'S6',d:'Sağ post inf'},
+ {v:'s7',t:'S7',d:'Sağ post süp'},
+ {v:'s8',t:'S8',d:'Sağ ant süp'},
+ {v:'multi_seg',t:'Multi',d:'Birden fazla'}
+];
+const SEG_TO_LOBE={s1:'Kaudat lob',s2:'Sol lob lateral',s3:'Sol lob lateral',s4a:'Sol lob medial',s4b:'Sol lob medial',s5:'Sağ lob anterior',s6:'Sağ lob posterior',s7:'Sağ lob posterior',s8:'Sağ lob anterior',multi_seg:'Birden fazla segment'};
+
+// =====================================================
+// PATHOLOGY DATABASE
+// =====================================================
+const DB=[
+// ======= DİFFÜZ KARACİĞER =======
+{id:'siroz',name:'Siroz',organ:'KC',cat:'Diffüz',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'Heterojen, fibrotik alanlarda hipointens',
+ diger:'Nodüler kontur, rejeneratif nodüller, atrofi/hipertrofi, portal HT bulguları, C/RL ≥0.65',
+ keys:{kc_noduler:5,kc_irregüler:3,kc_heterojen:3,kc_atrofi_sag:3,kc_hipertrofi_sol:3,kc_hipertrofi_kaudat:3,portal_ht:4,splenomegali:3,asit:2,rejeneratif_nodul:5,displastik_nodul:3,pv_dilate:2,kollateral:3,crl_yuksek:5,crl_borderline:3}},
+{id:'steatoz',name:'Hepatosteatoz (Yağlı Karaciğer)',organ:'KC',cat:'Diffüz',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Diffüz out-phase sinyal düşüşü, hepatomegali olabilir',
+ keys:{kc_hepatomegali:2,kc_homojen:1,inout_diffuz_dusus:5,kc_diffuz_yag:5}},
+{id:'siderozis',name:'Hepatik Siderozis (Demir Birikimi)',organ:'KC',cat:'Diffüz',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Diffüz T1-T2 sinyal düşüşü, T2* kısalmış, susceptibility artefaktı',
+ keys:{kc_t1_diffuz_dusuk:5,kc_t2_diffuz_dusuk:5,inout_suscept:4,kc_heterojen:1,demir:5}},
+{id:'sistiserkoz',name:'Sistiserkozis (Karaciğer)',organ:'KC',cat:'Enfektif',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Multipl küçük kistik lezyonlar, kalsifikasyon, skoleks görülebilir',
+ keys:{multipl:3,kucuk_boyut:3,kalsifikasyon:4,skoleks:5,kistik:2}},
+
+// ======= FOKAL KC — KONJENİTAL =======
+{id:'basit_kist',name:'Basit Kist',organ:'KC',cat:'Konjenital',
+ t1:'Çok düşük',t2:'Çok yüksek',inout:'Değişmez',dwi:'Shine-through',adc:'Yüksek',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Hipointens',
+ diger:'İnce duvar, düzgün kontur, internal septasyon yok, çevre ödem yok',
+ keys:{t1_cok_hipo:3,t2_cok_hiper:3,inout_deg:1,dwi_yok:2,dwi_shine:1,adc_yuksek:2,art_yok:3,pvf_yok:2,gec_yok:2,kontur_duzgun:2,ince_duvar:2,septasyon_yok:2,odem_yok:2,hbp_hipo:2}},
+{id:'bilyer_hamartom',name:'Biliyer Hamartom (Von Meyenburg)',organ:'KC',cat:'Konjenital',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Yok',adc:'Yüksek',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Hipointens',
+ diger:'Multipl küçük kistler (<15mm), periportal dağılım',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_yok:2,adc_yuksek:1,art_yok:2,pvf_yok:1,gec_yok:1,multipl:3,kucuk_boyut:3,hbp_hipo:1}},
+{id:'polikistik',name:'Polikistik Karaciğer',organ:'KC',cat:'Konjenital',
+ t1:'Düşük',t2:'Çok yüksek',inout:'Değişmez',dwi:'Yok',adc:'Yüksek',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Hipointens',
+ diger:'Çok sayıda kist, böbrekte de kist, hepatomegali',
+ keys:{t1_hipo:2,t2_cok_hiper:3,inout_deg:1,dwi_yok:2,adc_yuksek:2,art_yok:2,pvf_yok:1,gec_yok:1,multipl:3,kc_hepatomegali:2,kist_bobrekte:3,hbp_hipo:1}},
+{id:'caroli',name:'Caroli Hastalığı',organ:'KC',cat:'Konjenital',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'İntrahepatik safra yollarında segmental sakküler dilatasyon, "central dot sign"',
+ keys:{ihsy_dilate:5,ihsy_sakkuler:5,central_dot:5,ihsy_tas:2,kolanjit_tekrar:3}},
+
+// ======= FOKAL KC — ENFEKTİF =======
+{id:'hidatik',name:'Hidatik Kist',organ:'KC',cat:'Enfektif',
+ t1:'Düşük',t2:'Çok yüksek',inout:'Değişmez',dwi:'Değişken',adc:'Yüksek',art:'Rim',pvf:'Rim',gec:'Rim',hbp:'Hipointens',
+ diger:'Daughter kistler, perikist, membran ayrışması, kalsifikasyon',
+ keys:{t1_hipo:2,t2_cok_hiper:2,inout_deg:1,dwi_degisken:1,adc_yuksek:1,art_rim:2,pvf_rim:1,gec_rim:1,daughter_kist:4,perikist:3,membran:3,kalsifikasyon:2,hbp_hipo:1}},
+{id:'piyojenik_abse',name:'Piyojenik Abse',organ:'KC',cat:'Enfektif',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Çok güçlü restriksiyon',adc:'Çok düşük',art:'Rim',pvf:'Rim',gec:'Rim',hbp:'Hipointens',
+ diger:'Periferik ödem BELİRGİN, gaz olabilir, cluster sign, double target sign',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_guclu_rest:4,adc_cok_dusuk:4,art_rim:3,pvf_rim:2,gec_rim:2,odem_var:4,odem_belirgin:2,gaz_lezyon:3,cluster:3,double_target:3,hbp_hipo:1,kontur_irregüler:2}},
+{id:'amebik_abse',name:'Amebik Abse',organ:'KC',cat:'Enfektif',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Rim',pvf:'Rim',gec:'Rim',hbp:'Hipointens',
+ diger:'Tek büyük lezyon, sağ lob sık, anchovy sauce içerik',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_rest:3,adc_dusuk:2,art_rim:2,pvf_rim:2,gec_rim:2,tek_lezyon:3,buyuk_boyut:2,seg_s5:2,seg_s6:2,seg_s7:2,seg_s8:2,odem_var:2,hbp_hipo:1}},
+{id:'granulom',name:'Granülom (TB/Sarkoidoz)',organ:'KC',cat:'Enfektif',
+ t1:'Düşük',t2:'Düşük-orta',inout:'Değişmez',dwi:'Hafif',adc:'Normal',art:'Minimal',pvf:'Minimal',gec:'Minimal',hbp:'Hipointens',
+ diger:'Multipl küçük nodül, splenomegali, kalsifikasyon olabilir',
+ keys:{t1_hipo:2,t2_hipo:2,inout_deg:1,dwi_hafif:1,adc_normal:1,art_minimal:2,pvf_minimal:1,gec_minimal:1,multipl:3,kucuk_boyut:2,splenomegali:2,kalsifikasyon:2,hbp_hipo:1}},
+
+// ======= FOKAL KC — BENİGN =======
+{id:'hemanjiyom',name:'Hemanjiyom',organ:'KC',cat:'Benign',
+ t1:'Düşük',t2:'Çok yüksek',inout:'Değişmez',dwi:'Hafif (T2 shine-through)',adc:'Yüksek',art:'Nodüler periferik',pvf:'Santrale dolum',gec:'Tam dolum',hbp:'Hipointens (Primovist-pseudowashout)',
+ diger:'"Light-bulb T2" sign, progressif santripetal kontrastlanma, düzgün kontur',
+ keys:{t1_hipo:2,t2_cok_hiper:4,inout_deg:1,dwi_hafif:1,dwi_shine:2,adc_yuksek:2,art_noduler_per:4,pvf_santral_dolum:4,gec_tam_dolum:3,lightbulb:4,kontur_duzgun:2,odem_yok:2,hbp_hipo:1}},
+{id:'atipik_hem',name:'Atipik Hemanjiyom',organ:'KC',cat:'Benign',
+ t1:'Düşük',t2:'Orta',inout:'Değişmez',dwi:'Değişken',adc:'Normal',art:'Heterojen',pvf:'Progressif',gec:'Persistan',hbp:'Hipointens',
+ diger:'Flash-filling veya sklerozlaşmış, T2 beklenen kadar parlak değil',
+ keys:{t1_hipo:1,t2_orta:2,inout_deg:1,dwi_degisken:1,adc_normal:1,art_heterojen:2,pvf_progressif:2,gec_persistan:2,flash_fill:3,hbp_hipo:1}},
+{id:'fnh',name:'FNH',organ:'KC',cat:'Benign',
+ t1:'İzointens',t2:'Hafif yüksek',inout:'Değişmez',dwi:'Hafif',adc:'Normal',art:'Homojen güçlü',pvf:'İzointens',gec:'Skar geç kontrast',hbp:'İzo / Hiperintens (OATP1+)',
+ diger:'Santral skar, spoke-wheel vaskülarite, kadınlarda sık, HBP izo/hiper ayırıcı',
+ keys:{t1_izo:3,t2_hafif_hiper:2,inout_deg:1,dwi_hafif:1,adc_normal:2,art_homojen_guclu:4,pvf_izo:3,gec_skar_kontrast:4,santral_skar:5,spoke_wheel:4,hbp_izo:5,hbp_hiper:5,kontur_duzgun:2,odem_yok:2}},
+{id:'adenom',name:'Hepatik Adenom',organ:'KC',cat:'Benign',
+ t1:'Hiper/izo',t2:'Hafif yüksek',inout:'Yağ varsa düşüş',dwi:'Değişken',adc:'Değişken',art:'Güçlü',pvf:'Washout olabilir',gec:'Hafif düşük',hbp:'Hipointens (β-katenin tipinde hiper)',
+ diger:'Kanama olabilir, OKS kullanımı, tek lezyon sık, HBP\'de hipointens (β-katenin+ hiper)',
+ keys:{t1_hiper:2,t1_izo:1,t2_hafif_hiper:2,inout_dusus:3,dwi_degisken:1,adc_degisken:1,art_guclu:3,pvf_washout:2,gec_dusuk:1,kanama:3,oks:3,tek_lezyon:2,hbp_hipo:3,hbp_hiper:1,kontur_duzgun:1}},
+{id:'lipom',name:'Lipom',organ:'KC',cat:'Benign',
+ t1:'Çok yüksek',t2:'Orta',inout:'Out-phase düşüş',dwi:'Yok',adc:'Normal',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Hipointens',
+ diger:'Saf yağ sinyali, India-ink artefaktı',
+ keys:{t1_cok_hiper:4,t2_orta:1,inout_dusus:4,dwi_yok:2,adc_normal:1,art_yok:3,pvf_yok:2,gec_yok:2,saf_yag:4,hbp_hipo:1}},
+{id:'nrh',name:'Nodüler Rejeneratif Hiperplazi',organ:'KC',cat:'Benign',
+ t1:'İzointens',t2:'İzointens',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Minimal',pvf:'İzointens',gec:'İzointens',hbp:'İzo/hafif hiper',
+ diger:'Portal hipertansiyon, multipl küçük nodül, siroz yok',
+ keys:{t1_izo:3,t2_izo:3,inout_deg:1,dwi_yok:2,adc_normal:2,art_minimal:2,pvf_izo:2,gec_izo:2,portal_ht:3,multipl:2,siroz_yok:2,hbp_izo:2}},
+{id:'fokal_yag',name:'Fokal Yağlanma',organ:'KC',cat:'Metabolik',
+ t1:'Hafif yüksek',t2:'Normal',inout:'Out-phase düşüş',dwi:'Yok',adc:'Normal',art:'Normal',pvf:'Normal',gec:'Normal',hbp:'Hafif hipointens',
+ diger:'Segmental/coğrafi dağılım, damar yapıları korunmuş, kütle etkisi yok',
+ keys:{t1_hafif_hiper:2,t2_normal:2,inout_dusus:5,dwi_yok:3,adc_normal:2,art_normal:2,pvf_normal:2,gec_normal:2,damar_normal:3,kutle_etkisi_yok:3,odem_yok:2,hbp_hipo:1}},
+{id:'fokal_yag_korunma',name:'Fokal Yağdan Korunmuş Alan',organ:'KC',cat:'Metabolik',
+ t1:'Düşük (göreceli)',t2:'Normal',inout:'Düşmez (çevre düşer)',dwi:'Yok',adc:'Normal',art:'Normal',pvf:'Normal',gec:'Normal',hbp:'İzointens',
+ diger:'Yağlı karaciğerde normal parankim adacığı, periportal/perivesiküler',
+ keys:{t1_hipo:1,inout_deg:1,kc_diffuz_yag:3,dwi_yok:2,damar_normal:3,kutle_etkisi_yok:3,periportal:2,perivesikuler:2,hbp_izo:2}},
+{id:'siderotik_nodul',name:'Siderotik Nodül',organ:'KC',cat:'Metabolik',
+ t1:'Çok düşük',t2:'Çok düşük',inout:'Susceptibility',dwi:'Yok',adc:'Normal',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Hipointens',
+ diger:'Demir birikimi, siroz zemini',
+ keys:{t1_cok_hipo:4,t2_cok_hipo:5,inout_suscept:5,dwi_yok:2,adc_normal:1,art_yok:2,pvf_yok:2,gec_yok:2,demir:4,siroz:2,hbp_hipo:1}},
+
+// ======= FOKAL KC — MALİGN =======
+{id:'hcc',name:'HCC',organ:'KC',cat:'Malign',
+ t1:'Düşük/heterojen',t2:'Orta yüksek',inout:'Yağ olabilir',dwi:'Restriksiyon',adc:'Düşük',art:'Arteriyel hiperintens',pvf:'Washout',gec:'Kapsül kontrast',hbp:'Hipointens (iyi diferansiye olanlarda nadir izo)',
+ diger:'Siroz zemini, AFP yüksek, vasküler invazyon, mozaik patern, HBP hipointens',
+ keys:{t1_hipo:1,t1_heterojen:2,t2_orta_hiper:2,inout_dusus:1,dwi_rest:3,adc_dusuk:3,art_hiper:5,pvf_washout:5,gec_kapsul:4,siroz:4,afp:3,vaskuler_invazyon:3,pv_tromb_tumor:4,mozaik:3,hbp_hipo:4,kontur_irregüler:2,kontur_lobule:2,odem_var:1}},
+{id:'fl_hcc',name:'Fibrolamellar HCC',organ:'KC',cat:'Malign',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Heterojen',pvf:'Persistan',gec:'Skar',hbp:'Hipointens',
+ diger:'Genç hasta, siroz yok, kalsifiye santral skar',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_rest:2,adc_dusuk:2,art_heterojen:2,pvf_persistan:2,gec_skar_kontrast:2,genc_hasta:4,siroz_yok:3,kalsifiye_skar:4,hbp_hipo:2}},
+{id:'kolanjiyoca_ih',name:'İntrahepatik Kolanjiyokarsinom',organ:'KC',cat:'Malign',
+ t1:'Düşük',t2:'Hafif yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Periferik',pvf:'Progressif',gec:'Geç kontrast (fibrotik)',hbp:'Hipointens (halo olabilir)',
+ diger:'Fibrotik yapı, safra yolu dilatasyonu, kapsül retraksiyonu, HBP hipointens',
+ keys:{t1_hipo:2,t2_hafif_hiper:2,inout_deg:1,dwi_rest:3,adc_dusuk:3,art_periferik:3,pvf_progressif:4,gec_gec_kontrast:5,fibrotik:4,ihsy_dilate:3,kapsul_retraksiyon:3,hbp_hipo:3,kontur_irregüler:2}},
+{id:'kolanjiyoca_hiler',name:'Hiler Kolanjiyokarsinom (Klatskin)',organ:'KC',cat:'Malign',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Hiler bölgede kitle, sağ-sol hepatik kanal birleşim yeri obstrüksiyonu',
+ keys:{ihsy_dilate:4,hiler_kitle:5,safra_obstruksiyon:4,kapsul_retraksiyon:2,dwi_rest:2,adc_dusuk:2,pvf_progressif:3,gec_gec_kontrast:3,perihiler_lap:3}},
+{id:'metastaz',name:'Metastaz',organ:'KC',cat:'Malign',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Güçlü restriksiyon',adc:'Düşük',art:'Rim/heterojen',pvf:'Rim',gec:'Rim',hbp:'Hipointens',
+ diger:'Multipl, bilinen primer tümör, target sign, HBP belirgin hipointens',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_guclu_rest:4,adc_dusuk:3,art_rim:3,pvf_rim:3,gec_rim:3,multipl:4,primer_tumor:4,target_sign:3,hbp_hipo:4,odem_var:2}},
+{id:'net_met',name:'Nöroendokrin Metastaz',organ:'KC',cat:'Malign',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Güçlü arteriyel',pvf:'Washout',gec:'Heterojen',hbp:'Hipointens',
+ diger:'Hipervasküler, pankreas NET/karsinoid primer',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_rest:3,adc_dusuk:3,art_guclu:3,art_hiper:3,pvf_washout:2,gec_heterojen:1,multipl:3,net_primer:5,hipervask:3,hbp_hipo:3}},
+{id:'lenfoma_kc',name:'Karaciğer Lenfoması',organ:'KC',cat:'Malign',
+ t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Güçlü restriksiyon',adc:'Çok düşük',art:'Hipovasküler',pvf:'Hipovasküler',gec:'Hafif',hbp:'Hipointens',
+ diger:'Multipl nodül veya diffüz, LAP eşlik eder',
+ keys:{t1_hipo:2,t2_hiper:2,inout_deg:1,dwi_guclu_rest:4,adc_cok_dusuk:4,art_minimal:3,pvf_minimal:3,gec_minimal:2,multipl:3,lap:4,perihiler_lap:3,hbp_hipo:2}},
+{id:'angiosarkom',name:'Anjiyosarkom',organ:'KC',cat:'Malign',t1:'Heterojen',t2:'Heterojen',inout:'',dwi:'Restriksiyon',adc:'Düşük',art:'Heterojen',pvf:'Progressif',gec:'Persistan',hbp:'Hipointens',
+ diger:'Kan dolu boşluklar, hemoraji, multipl lezyon',
+ keys:{t1_heterojen:3,t2_heterojen:3,dwi_rest:2,adc_dusuk:2,art_heterojen:3,pvf_progressif:2,gec_persistan:2,kanama:4,kan_bosluk:5,multipl:2,hbp_hipo:1}},
+
+// ======= FOKAL KC — VASKÜLER =======
+{id:'budd_chiari',name:'Budd-Chiari Sendromu',organ:'KC',cat:'Vasküler',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Hepatik ven trombozu, kaudat lob hipertrofisi, nutmeg liver patern',
+ keys:{hv_tromboz:5,hv_okluzyon:4,hv_gorunmuyor:3,kc_hipertrofi_kaudat:4,asit:3,kollateral:3,portal_ht:2,kc_heterojen:2,vci_daralma:2,vci_tromboz:3}},
+{id:'portal_tromboz',name:'Portal Ven Trombozu',organ:'KC',cat:'Vasküler',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Portal ven lümeninde dolum defekti, kavernöz transformasyon',
+ keys:{pv_tromboz:5,pv_kontrast_defekt:4,pv_kavernom:3,pv_dilate:2,kollateral:2}},
+{id:'tumor_tromb',name:'Tümör Trombozu (PV)',organ:'KC',cat:'Vasküler',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Portal ven genişlemiş, trombüste arteriyel kontrast tutulumu, HCC sıklıkla',
+ keys:{pv_tromboz:3,pv_genislemis:3,pv_tromb_tumor:5,art_tromb_kontrast:5,siroz:3,afp:2}},
+{id:'hepatik_infarkt',name:'Hepatik Enfarkt',organ:'KC',cat:'Vasküler',t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Restriksiyon (akut)',adc:'Düşük (akut)',art:'Yok',pvf:'Minimal',gec:'Minimal',hbp:'Hipointens',
+ diger:'Kama şeklinde periferik, damarsal dağılım, akut',
+ keys:{t1_hipo:2,t2_hiper:2,dwi_rest:3,adc_dusuk:2,art_yok:3,pvf_minimal:2,gec_minimal:2,kama_sekli:5,periferik_yerlesim:3,cerrahi:2,hbp_hipo:1}},
+
+// ======= FOKAL KC — TRAVMATİK =======
+{id:'hematom',name:'Karaciğer Hematomu',organ:'KC',cat:'Travmatik',t1:'Değişken (süreye göre)',t2:'Değişken',inout:'Değişmez',dwi:'Değişken',adc:'Değişken',art:'Yok/minimal',pvf:'Yok/minimal',gec:'Yok/minimal',hbp:'Hipointens',
+ diger:'Akut T1 yüksek olabilir, evreye göre sinyal değişir, travma öyküsü',
+ keys:{t1_hiper:2,t1_heterojen:2,inout_suscept:2,art_yok:2,pvf_yok:2,gec_yok:2,travma:5,kanama:4,hbp_hipo:1}},
+{id:'laserasyon',name:'Karaciğer Laserasyonu',organ:'KC',cat:'Travmatik',t1:'Düşük',t2:'Yüksek',inout:'Değişmez',dwi:'Hafif',adc:'Normal',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'',
+ diger:'Lineer/irregüler hiperintens alan, periferik hematom olabilir',
+ keys:{t1_hipo:2,t2_hiper:2,dwi_hafif:1,adc_normal:1,art_yok:2,pvf_yok:2,gec_yok:2,travma:5,periferik_yerlesim:2,kontur_irregüler:3}},
+{id:'biloma',name:'Biloma',organ:'KC',cat:'Travmatik',t1:'Düşük',t2:'Çok yüksek',inout:'Değişmez',dwi:'Shine-through',adc:'Yüksek',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'Merkez hipo; içerikte kaçış olabilir',
+ diger:'Post-op safra koleksiyonu, HBP\'de kontrast içeriğe ekskrese olabilir',
+ keys:{t1_hipo:2,t2_cok_hiper:3,inout_deg:1,dwi_shine:2,adc_yuksek:2,art_yok:2,pvf_yok:2,gec_yok:2,cerrahi:4,safra_koleksiyon:5,hbp_kacis:5}},
+
+// ======= SAFRA YOLU PATOLOJİLERİ =======
+{id:'koledokolityaz',name:'Koledokolityazis (CBD Taşı)',organ:'SY',cat:'Biliyer',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Koledok içinde T2 hipointens dolum defekti, proksimal dilatasyon',
+ keys:{ehsy_tas:5,ehsy_dilate:3,ihsy_dilate:2,safra_obstruksiyon:3}},
+{id:'kolanjit_akut',name:'Akut Kolanjit',organ:'SY',cat:'Biliyer',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Safra yolu duvar kalınlaşması-kontrastlanması, periduktal ödem, Charcot triadı',
+ keys:{ihsy_duvar_kalin:4,ihsy_duvar_kontrast:4,ehsy_duvar_kalin:3,ehsy_duvar_kontrast:3,periportal_odem:3,ehsy_dilate:2}},
+{id:'psc',name:'Primer Sklerozan Kolanjit (PSC)',organ:'SY',cat:'Biliyer',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Multifokal safra yolu darlık ve dilatasyonları (boncuk dizisi), periportal fibrozis',
+ keys:{ihsy_beading:5,ihsy_daralma:4,ehsy_daralma:3,ihsy_duvar_irregüler:3,perihiler_lap:2,ihsy_dilate:2}},
+{id:'pbc',name:'Primer Biliyer Kolanjit (PBC)',organ:'SY',cat:'Biliyer',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Küçük duktuslarda hasar, periportal halo, lenfadenopati, portal HT',
+ keys:{periportal_odem:3,perihiler_lap:3,portal_ht:3,ihsy_normal_gorunum:2}},
+{id:'pnomobilia',name:'Pnömobilia (Safra Yollarında Hava)',organ:'SY',cat:'Biliyer',t1:'',t2:'',inout:'',dwi:'',adc:'',art:'',pvf:'',gec:'',hbp:'',
+ diger:'Safra yolları içinde hava, santrale uzanır, ERCP/sfinkterotomi sonrası',
+ keys:{ihsy_hava:5,ehsy_hava:4,cerrahi:3,ercp_sonrasi:4}},
+
+// ======= SAFRA KESESİ =======
+{id:'sk_kolelityaz',name:'Kolelityazis (Safra Taşı)',organ:'SK',cat:'Safra',t1:'Değişken',t2:'Düşük (çoğu)',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'',
+ diger:'T2 hipointens dolum defekti, gravitasyonla yer değiştirir',
+ keys:{sk:1,sk_tas:4,dolum_defekti:4,yer_degistir:4,sk_duvar_normal:2}},
+{id:'sk_akut_kolesistit',name:'Akut Kolesistit',organ:'SK',cat:'Safra',t1:'Normal',t2:'Perikolesistik sıvı',inout:'Değişmez',dwi:'Duvar restriksiyonu',adc:'Düşük',art:'Duvar kontrast artışı',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Duvar kalınlaşması (>3mm), perikolesistik sıvı/ödem, Murphy pozitif, taş sık',
+ keys:{sk:1,sk_duvar_kalin:5,perikolesistik_sivi:5,dwi_duvar_rest:3,art_duvar_kontrast:3,murphy:3,sk_tas:2,sk_odem:3}},
+{id:'sk_amfizematoz',name:'Amfizematöz Kolesistit',organ:'SK',cat:'Safra',t1:'Hava artefaktı',t2:'Hava artefaktı',inout:'Susceptibility',dwi:'Değişken',adc:'Değişken',art:'Duvar kontrast',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Safra kesesi duvarında ve/veya lümeninde hava, gangren riski, acil cerrahi',
+ keys:{sk:1,sk_hava_duvar:5,sk_hava_lumen:5,sk_duvar_kalin:3,sk_duvar_irregüler:3,perikolesistik_sivi:3,acil:4}},
+{id:'sk_kronik_kolesistit',name:'Kronik Kolesistit',organ:'SK',cat:'Safra',t1:'Normal',t2:'Normal',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Duvar kontrast',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Kontrakte kesebelirgin, duvar kalınlaşması (düzgün), taş sık',
+ keys:{sk:1,sk_duvar_kalin:3,sk_kontrakte:4,sk_tas:3,sk_kucuk_lumen:3,sk_duvar_duzgun:2}},
+{id:'sk_porselen',name:'Porselen Safra Kesesi',organ:'SK',cat:'Safra',t1:'Düşük duvar',t2:'Düşük duvar',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Minimal',pvf:'Minimal',gec:'Minimal',hbp:'',
+ diger:'Duvarda kalsifikasyon, T1-T2 hipointens duvar, malignite riski artmış',
+ keys:{sk:1,sk_duvar_kalsifik:5,sk_duvar_hipo:3,malignite_riski:2}},
+{id:'sk_adenom_polip',name:'Safra Kesesi Adenomu/Polip',organ:'SK',cat:'Safra',t1:'İzointens',t2:'İzo/hafif hiper',inout:'Değişmez',dwi:'Hafif',adc:'Normal',art:'Kontrast tutulumu',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Yer değiştirmez, saplı/geniş tabanlı, <10mm genelde benign',
+ keys:{sk:1,sk_polip:5,yer_degistirmez:4,sk_kontrast_tutan:3,kucuk_boyut:2,sk_polip_kucuk:3}},
+{id:'sk_adenomyomatoz',name:'Adenomyomatozis',organ:'SK',cat:'Safra',t1:'Normal',t2:'Pearl-necklace sign',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Duvar kontrast',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Rokitansky-Aschoff sinüsleri, pearl-necklace sign, fundal/segmental/diffüz',
+ keys:{sk:1,sk_duvar_kalin:3,pearl_necklace:5,ras_sinusleri:4,sk_adenomyomatoz:5}},
+{id:'sk_debris',name:'Safra Kesesi İçi Debris/Çamur',organ:'SK',cat:'Safra',t1:'Değişken',t2:'Değişken (düşük-orta)',inout:'Değişmez',dwi:'Yok',adc:'Normal',art:'Yok',pvf:'Yok',gec:'Yok',hbp:'',
+ diger:'Sıvı-debris seviyesi, T1 yüksek olabilir (mukus), yer değiştirir',
+ keys:{sk:1,sk_debris:5,sk_sivi_seviye:4,yer_degistir:3}},
+{id:'sk_karsinom',name:'Safra Kesesi Karsinomu',organ:'SK',cat:'Malign',t1:'Düşük/izo',t2:'Hafif yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Heterojen kontrast',pvf:'Persistan',gec:'Persistan',hbp:'',
+ diger:'KC invazyonu, irregüler duvar kalınlaşması, polipoid kitle >10mm, LAP',
+ keys:{sk:1,dwi_rest:3,adc_dusuk:3,art_heterojen:2,pvf_persistan:2,gec_persistan:2,sk_duvar_irregüler:4,sk_kitle:5,kc_invazyon:4,sk_polip_buyuk:4,perihiler_lap:3}},
+{id:'sk_met',name:'Safra Kesesi Metastazı',organ:'SK',cat:'Malign',t1:'Düşük',t2:'Hafif yüksek',inout:'Değişmez',dwi:'Restriksiyon',adc:'Düşük',art:'Heterojen',pvf:'Rim',gec:'Rim',hbp:'',
+ diger:'Melanom en sık metastaz kaynağı, bilinen primer',
+ keys:{sk:1,dwi_rest:2,adc_dusuk:2,art_heterojen:2,pvf_rim:2,gec_rim:2,primer_tumor:4,melanom:3}},
+{id:'sk_ksantogranulom',name:'Ksantogranülomatöz Kolesistit',organ:'SK',cat:'Safra',t1:'Heterojen',t2:'Heterojen',inout:'Değişmez',dwi:'Değişken',adc:'Değişken',art:'Duvar kontrast',pvf:'Devam',gec:'Devam',hbp:'',
+ diger:'Fokal/diffüz duvar kalınlaşması, intramural nodül, CA ile karışabilir',
+ keys:{sk:1,sk_duvar_kalin:4,sk_duvar_irregüler:3,intramural_nodul:4,sk_tas:2}},
+];
+
+// =====================================================
+// LESION STEPS (her lezyon için)
+// =====================================================
+const LESION_STEPS=[
+{id:'segment',title:'Segment Lokalizasyonu',section:'Lezyon Değerlendirme',icon:'📍',type:'segment',label:'Lezyonun yerleşim gösterdiği Couinaud segmenti'},
+{id:'lez_boyut',title:'Lezyon Boyutu',section:'Lezyon Değerlendirme',icon:'📏',type:'measurement_lesion',label:'Lezyon boyut ölçümleri (mm)'},
+{id:'lez_kontur',title:'Lezyon Konturu',section:'Lezyon Değerlendirme',icon:'🔲',type:'radio',label:'Lezyon kontur özellikleri',opts:[
+  {v:'kontur_duzgun',t:'Düzgün, keskin sınırlı'},
+  {v:'kontur_lobule',t:'Lobüle kontur'},
+  {v:'kontur_irregüler',t:'İrregüler / düzensiz'},
+  {v:'kontur_infiltratif',t:'İnfiltratif (sınır belirsiz)'},
+  {v:'ince_duvar',t:'İnce duvarlı kist görünümü'},
+  {v:'kalin_duvar',t:'Kalın duvarlı'}
+]},
+{id:'lez_odem',title:'Perilezyonel Ödem',section:'Lezyon Değerlendirme',icon:'💧',type:'radio',label:'Çevre parankim ödemi',opts:[
+  {v:'odem_yok',t:'Perilezyonel ödem yok'},
+  {v:'odem_var',t:'Perilezyonel ödem mevcut'},
+  {v:'odem_belirgin',t:'Belirgin perilezyonel ödem (halo)'},
+  {v:'odem_septalar',t:'Septal ödem'}
+]},
+{id:'t1',title:'T1 Ağırlıklı Sinyal',section:'Lezyon Değerlendirme',icon:'🧲',type:'radio',label:'Lezyonun T1 sinyali',opts:[
+  {v:'t1_cok_hipo',t:'Çok hipointens'},
+  {v:'t1_hipo',t:'Hipointens'},
+  {v:'t1_izo',t:'İzointens'},
+  {v:'t1_hafif_hiper',t:'Hafif hiperintens'},
+  {v:'t1_hiper',t:'Hiperintens'},
+  {v:'t1_cok_hiper',t:'Çok hiperintens'},
+  {v:'t1_heterojen',t:'Heterojen'}
+]},
+{id:'t2',title:'T2 Ağırlıklı Sinyal',section:'Lezyon Değerlendirme',icon:'🧲',type:'radio',label:'Lezyonun T2 sinyali',opts:[
+  {v:'t2_cok_hipo',t:'Çok hipointens'},
+  {v:'t2_hipo',t:'Hipointens'},
+  {v:'t2_izo',t:'İzointens'},
+  {v:'t2_orta',t:'Orta intensite'},
+  {v:'t2_hafif_hiper',t:'Hafif hiperintens'},
+  {v:'t2_hiper',t:'Hiperintens'},
+  {v:'t2_cok_hiper',t:'Çok hiperintens ("light-bulb")'},
+  {v:'t2_orta_hiper',t:'Orta-yüksek hiperintens'},
+  {v:'t2_heterojen',t:'Heterojen'},
+  {v:'t2_normal',t:'Normal'}
+]},
+{id:'inout',title:'In-Phase / Out-Phase',section:'Lezyon Değerlendirme',icon:'🧲',type:'radio',label:'Chemical shift bulgusu',opts:[
+  {v:'inout_deg',t:'Değişmez (sinyal kaybı yok)'},
+  {v:'inout_dusus',t:'Out-phase sinyal düşüşü (intralezyonel yağ)'},
+  {v:'inout_suscept',t:'Susceptibility artefaktı (demir/kalsifikasyon)'}
+]},
+{id:'dwi',title:'DWI / Difüzyon',section:'Lezyon Değerlendirme',icon:'🧲',type:'radio',label:'Difüzyon bulgusu',opts:[
+  {v:'dwi_yok',t:'Restriksiyon yok'},
+  {v:'dwi_shine',t:'T2 shine-through (yalancı restriksiyon)'},
+  {v:'dwi_hafif',t:'Hafif restriksiyon'},
+  {v:'dwi_rest',t:'Restriksiyon var'},
+  {v:'dwi_guclu_rest',t:'Çok güçlü restriksiyon'},
+  {v:'dwi_degisken',t:'Değişken'}
+]},
+{id:'adc',title:'ADC Haritası',section:'Lezyon Değerlendirme',icon:'🧲',type:'radio',label:'ADC değeri',opts:[
+  {v:'adc_cok_dusuk',t:'Çok düşük'},
+  {v:'adc_dusuk',t:'Düşük'},
+  {v:'adc_normal',t:'Normal'},
+  {v:'adc_yuksek',t:'Yüksek'},
+  {v:'adc_degisken',t:'Değişken'}
+]},
+{id:'art',title:'Arteriyel Faz',section:'Lezyon Değerlendirme',icon:'💉',type:'radio',label:'Arteriyel faz paterni',showIfKontrast:true,opts:[
+  {v:'art_yok',t:'Kontrastlanma yok'},
+  {v:'art_minimal',t:'Minimal'},
+  {v:'art_rim',t:'Rim (periferik halka)'},
+  {v:'art_noduler_per',t:'Nodüler periferik (hemanjiyom tipi)'},
+  {v:'art_periferik',t:'Periferik'},
+  {v:'art_homojen_guclu',t:'Homojen güçlü'},
+  {v:'art_hiper',t:'Arteriyel hiperintens (hipervask.)'},
+  {v:'art_guclu',t:'Güçlü kontrastlanma'},
+  {v:'art_hafif_hiper',t:'Hafif hiperintens'},
+  {v:'art_heterojen',t:'Heterojen'},
+  {v:'art_noduler',t:'Nodüler'},
+  {v:'art_septal',t:'Septal kontrastlanma'},
+  {v:'art_normal',t:'Normal (parankimle eş)'}
+]},
+{id:'pvf',title:'Portal Venöz Faz',section:'Lezyon Değerlendirme',icon:'💉',type:'radio',label:'PVF paterni',showIfKontrast:true,opts:[
+  {v:'pvf_yok',t:'Kontrastlanma yok'},
+  {v:'pvf_rim',t:'Rim kontrastlanma'},
+  {v:'pvf_santral_dolum',t:'Santrale dolum (fill-in)'},
+  {v:'pvf_izo',t:'İzointens'},
+  {v:'pvf_washout',t:'Washout (yıkanma)'},
+  {v:'pvf_progressif',t:'Progressif artış'},
+  {v:'pvf_persistan',t:'Persistan'},
+  {v:'pvf_minimal',t:'Minimal'},
+  {v:'pvf_kama',t:'Kama şeklinde defekt'},
+  {v:'pvf_normal',t:'Normal'}
+]},
+{id:'gec',title:'Geç / Transisyonel Faz',section:'Lezyon Değerlendirme',icon:'💉',type:'radio',label:'Geç faz paterni (3-5 dk)',showIfKontrast:true,opts:[
+  {v:'gec_yok',t:'Kontrastlanma yok'},
+  {v:'gec_rim',t:'Rim persistan'},
+  {v:'gec_tam_dolum',t:'Tam homojen dolum'},
+  {v:'gec_skar_kontrast',t:'Skar geç kontrast'},
+  {v:'gec_gec_kontrast',t:'Progressif geç kontrast (fibrotik)'},
+  {v:'gec_kapsul',t:'Kapsül kontrastlanması'},
+  {v:'gec_persistan',t:'Persistan'},
+  {v:'gec_nekroz',t:'Nekroz alanları'},
+  {v:'gec_minimal',t:'Minimal'},
+  {v:'gec_izo',t:'İzointens'},
+  {v:'gec_dusuk',t:'Hafif düşük sinyal'},
+  {v:'gec_heterojen',t:'Heterojen'},
+  {v:'gec_normal',t:'Normal'}
+]},
+{id:'hbp',title:'Hepatobiliyer Faz (HBP)',section:'Lezyon Değerlendirme',icon:'🟢',type:'radio',label:'Hepatobiliyer faz paterni (Gd-EOB/BOPTA 20 dk)',showIfHBP:true,opts:[
+  {v:'hbp_hipo',t:'Hipointens (parankime göre)'},
+  {v:'hbp_izo',t:'İzointens'},
+  {v:'hbp_hiper',t:'Hiperintens'},
+  {v:'hbp_heterojen',t:'Heterojen'},
+  {v:'hbp_kacis',t:'İçine kontrast kaçışı (bilom/safra fistülü)'},
+  {v:'hbp_rim',t:'Rim tipi (halo sign)'},
+  {v:'hbp_yapilmadi',t:'HBP değerlendirilemedi'}
+]},
+{id:'ek_bulgular',title:'Ek Lezyon Bulguları',section:'Lezyon Değerlendirme',icon:'🔍',type:'multi',label:'Eşlik eden ek bulgular',opts:[
+  {v:'santral_skar',t:'Santral skar'},
+  {v:'spoke_wheel',t:'Spoke-wheel vaskülarite'},
+  {v:'kapsul_retraksiyon',t:'Kapsül retraksiyonu'},
+  {v:'daughter_kist',t:'Daughter (kız) kistler'},
+  {v:'perikist',t:'Perikist / laminer membran'},
+  {v:'membran',t:'Membran ayrışması'},
+  {v:'gaz_lezyon',t:'İntralezyone gaz'},
+  {v:'cluster',t:'Cluster sign'},
+  {v:'double_target',t:'Double target sign'},
+  {v:'target_sign',t:'Target sign'},
+  {v:'kanama',t:'Kanama bulgusu'},
+  {v:'nekroz',t:'Nekroz'},
+  {v:'septasyon_yok',t:'Septasyon yok'},
+  {v:'septalar',t:'İnternal septalar'},
+  {v:'multilokule',t:'Multilokülasyon'},
+  {v:'solid_nodul',t:'Solid nodül komponenti'},
+  {v:'papiller',t:'Papiller projeksiyonlar'},
+  {v:'lightbulb',t:'"Light-bulb" T2 sign'},
+  {v:'flash_fill',t:'Flash filling'},
+  {v:'mozaik',t:'Mozaik patern'},
+  {v:'kama_sekli',t:'Kama şeklinde lezyon'},
+  {v:'fibrotik',t:'Fibrotik yapı'},
+  {v:'kalsifiye_skar',t:'Kalsifiye santral skar'},
+  {v:'kalsifikasyon',t:'Kalsifikasyon'},
+  {v:'skoleks',t:'Skoleks görünümü'},
+  {v:'saf_yag',t:'Saf yağ sinyali'},
+  {v:'kan_bosluk',t:'Kan dolu boşluklar'},
+  {v:'safra_koleksiyon',t:'Safra koleksiyonu'},
+  {v:'damar_normal',t:'İçinden geçen damar yapıları normal'},
+  {v:'kutle_etkisi_yok',t:'Kütle etkisi yok'},
+  {v:'vaskuler_invazyon',t:'Vasküler invazyon'}
+]}
+];
+
+// =====================================================
+// GLOBAL STEPS
+// =====================================================
+const STEPS_PRE=[
+// === BÖLÜM 1: KARACİĞER PARANKİMİ ===
+{id:'kc_boyut',title:'Karaciğer Boyutu',section:'Karaciğer Parankimi',icon:'🫁',type:'radio',label:'Karaciğer boyutu (genel değerlendirme)',opts:[
+  {v:'kc_normal_boyut',t:'Normal boyut'},
+  {v:'kc_hepatomegali',t:'Hepatomegali (büyümüş)'},
+  {v:'kc_atrofik',t:'Atrofik (küçülmüş)'},
+  {v:'kc_atrofi_sag',t:'Sağ lob atrofisi'},
+  {v:'kc_hipertrofi_sol',t:'Sol lob hipertrofisi'},
+  {v:'kc_hipertrofi_kaudat',t:'Kaudat lob hipertrofisi'}
+]},
+{id:'kc_olcum',title:'Karaciğer Boyut Ölçümleri',section:'Karaciğer Parankimi',icon:'📐',type:'measurement_liver',label:'Karaciğer boyut ölçümleri (mm)'},
+{id:'kc_kontur',title:'Karaciğer Konturu',section:'Karaciğer Parankimi',icon:'🫁',type:'radio',label:'Karaciğer yüzey konturu',opts:[
+  {v:'kc_duzgun',t:'Düzgün kontur'},
+  {v:'kc_lobule',t:'Lobüle kontur'},
+  {v:'kc_noduler',t:'Nodüler kontur'},
+  {v:'kc_irregüler',t:'İrregüler kontur'}
+]},
+{id:'kc_parankim',title:'Parankim Sinyali',section:'Karaciğer Parankimi',icon:'🫁',type:'multi',label:'Parankim sinyal özellikleri (birden fazla seçilebilir)',opts:[
+  {v:'kc_homojen',t:'Homojen parankim'},
+  {v:'kc_heterojen',t:'Heterojen parankim'},
+  {v:'kc_t1_diffuz_dusuk',t:'Diffüz T1 sinyal düşüklüğü'},
+  {v:'kc_t2_diffuz_dusuk',t:'Diffüz T2 sinyal düşüklüğü (demir?)'},
+  {v:'inout_diffuz_dusus',t:'Diffüz out-phase sinyal düşüşü (yağ?)'},
+  {v:'kc_diffuz_yag',t:'Diffüz steatoz bulguları'},
+  {v:'demir',t:'Demir birikimi bulguları (T2* düşük)'},
+  {v:'rejeneratif_nodul',t:'Rejeneratif nodüller'},
+  {v:'displastik_nodul',t:'Displastik nodül şüphesi'},
+  {v:'nodul_icinde_nodul',t:'Nodül-içinde-nodül bulgusu'}
+]},
+
+// === BÖLÜM 2: KONTRAST PROTOKOLÜ ===
+{id:'kontrast_tipi',title:'Kontrast Protokolü',section:'Kontrast Protokolü',icon:'💉',type:'radio',label:'Kullanılan IV kontrast ajanı tipi',opts:[
+  {v:'kontrast_ekstrasel',t:'Ekstrasellüler (Gd-DTPA / Gd-DOTA / Magnevist / Dotarem) — 3 fazlı (Art + PVF + Geç)'},
+  {v:'kontrast_intrasel_eob',t:'Hepatobiliyer (Gd-EOB-DTPA / Primovist) — 4 fazlı + HBP (20 dk)'},
+  {v:'kontrast_intrasel_bopta',t:'Hepatobiliyer (Gd-BOPTA / MultiHance) — 4 fazlı + HBP (60-120 dk)'},
+  {v:'kontrast_yok',t:'Kontrastsız inceleme (IV kontrast verilmedi)'}
+]},
+
+// === BÖLÜM 3: FOKAL LEZYON ===
+{id:'fokal_var',title:'Fokal Lezyon Varlığı',section:'Fokal Lezyon',icon:'🔴',type:'radio',label:'Fokal karaciğer lezyonu var mı?',opts:[
+  {v:'fokal_var',t:'Evet, fokal lezyon mevcut'},
+  {v:'fokal_yok',t:'Hayır, fokal lezyon yok'}
+]},
+{id:'lezyon_sayisi',title:'Lezyon Sayısı',section:'Fokal Lezyon',icon:'🔴',showIf:s=>s.fokal_var==='fokal_var',type:'radio',label:'Toplam lezyon sayısı (loop bu sayıya göre açılır)',opts:[
+  {v:'n1',t:'1 lezyon'},
+  {v:'n2',t:'2 lezyon'},
+  {v:'n3',t:'3 lezyon'},
+  {v:'n4',t:'4 lezyon'},
+  {v:'n5',t:'5 veya daha fazla — en baskın 3 lezyon değerlendirilir'}
+]}
+];
+
+const STEPS_POST=[
+// === SAFRA YOLLARI ===
+{id:'ihsy',title:'İntrahepatik Safra Yolları',section:'Safra Yolları',icon:'🟡',type:'multi',label:'İntrahepatik safra yolu bulguları',opts:[
+  {v:'ihsy_normal',t:'Normal kalibrasyonda'},
+  {v:'ihsy_dilate',t:'Dilate (genişlemiş)'},
+  {v:'ihsy_daralma',t:'Fokal/multifokal darlık'},
+  {v:'ihsy_beading',t:'Boncuk dizisi (beading) görünümü'},
+  {v:'ihsy_sakkuler',t:'Sakküler dilatasyon'},
+  {v:'ihsy_duvar_kalin',t:'Duvar kalınlaşması'},
+  {v:'ihsy_duvar_kontrast',t:'Duvar kontrastlanması'},
+  {v:'ihsy_duvar_irregüler',t:'Duvar irregülaritesi'},
+  {v:'ihsy_tas',t:'İntrahepatik taş'},
+  {v:'ihsy_hava',t:'İntrahepatik safra yollarında hava (pnömobilia)'},
+  {v:'ihsy_normal_gorunum',t:'Belirgin patoloji yok'},
+  {v:'central_dot',t:'Central dot sign'},
+  {v:'periportal_odem',t:'Periportal ödem/hiperintensite'}
+]},
+{id:'ehsy',title:'Ekstrahepatik Safra Yolları / Koledok',section:'Safra Yolları',icon:'🟡',type:'multi',label:'CBD ve ekstrahepatik safra yolu bulguları',opts:[
+  {v:'ehsy_normal',t:'Normal kalibrasyonda (<7mm)'},
+  {v:'ehsy_dilate',t:'Dilate (genişlemiş ≥7mm)'},
+  {v:'ehsy_daralma',t:'Fokal darlık'},
+  {v:'ehsy_duvar_kalin',t:'Duvar kalınlaşması'},
+  {v:'ehsy_duvar_kontrast',t:'Duvar kontrastlanması'},
+  {v:'ehsy_tas',t:'Koledok taşı (dolum defekti)'},
+  {v:'ehsy_hava',t:'Koledok içinde hava'},
+  {v:'safra_obstruksiyon',t:'Safra yolu obstrüksiyonu (proksimal dilatasyon)'},
+  {v:'hiler_kitle',t:'Hiler bölgede kitle/darlık'}
+]},
+
+// === SAFRA KESESİ ===
+{id:'sk_genel',title:'Safra Kesesi — Genel',section:'Safra Kesesi',icon:'💚',type:'multi',label:'Safra kesesi genel bulguları',opts:[
+  {v:'sk',t:'Safra kesesi değerlendirildi'},
+  {v:'sk_normal',t:'Normal safra kesesi'},
+  {v:'sk_distendu',t:'Distendu (gergin)'},
+  {v:'sk_kontrakte',t:'Kontrakte (küçülmüş)'},
+  {v:'sk_kucuk_lumen',t:'Küçük lümen'},
+  {v:'sk_yok',t:'Safra kesesi mevcut değil (kolesistektomi)'}
+]},
+{id:'sk_duvar',title:'Safra Kesesi — Duvar',section:'Safra Kesesi',icon:'💚',showIf:s=>!(s.sk_genel||[]).includes('sk_yok'),type:'multi',label:'Safra kesesi duvar bulguları',opts:[
+  {v:'sk_duvar_normal',t:'Normal duvar kalınlığı (<3mm)'},
+  {v:'sk_duvar_kalin',t:'Duvar kalınlaşması (≥3mm)'},
+  {v:'sk_duvar_duzgun',t:'Düzgün duvar kalınlaşması'},
+  {v:'sk_duvar_irregüler',t:'İrregüler duvar kalınlaşması'},
+  {v:'sk_duvar_kalsifik',t:'Duvarda kalsifikasyon (porselen SK)'},
+  {v:'sk_duvar_hipo',t:'Duvarda T1-T2 hipointens sinyal'},
+  {v:'sk_hava_duvar',t:'Duvarda hava (amfizematöz)'},
+  {v:'sk_odem',t:'Subserozal ödem'},
+  {v:'art_duvar_kontrast',t:'Duvar kontrastlanması artmış'},
+  {v:'dwi_duvar_rest',t:'Duvarda difüzyon restriksiyonu'},
+  {v:'pearl_necklace',t:'Pearl-necklace sign'},
+  {v:'ras_sinusleri',t:'Rokitansky-Aschoff sinüsleri'},
+  {v:'sk_adenomyomatoz',t:'Adenomyomatozis bulgusu'},
+  {v:'intramural_nodul',t:'İntramural nodül'}
+]},
+{id:'sk_icerik',title:'Safra Kesesi — İçerik',section:'Safra Kesesi',icon:'💚',showIf:s=>!(s.sk_genel||[]).includes('sk_yok'),type:'multi',label:'Safra kesesi lümen içeriği',opts:[
+  {v:'sk_temiz',t:'Temiz (anormal içerik yok)'},
+  {v:'sk_tas',t:'Taş (T2 hipointens dolum defekti)'},
+  {v:'dolum_defekti',t:'Dolum defekti'},
+  {v:'yer_degistir',t:'Yer değiştiren yapı (gravitasyonel)'},
+  {v:'yer_degistirmez',t:'Yer değiştirmeyen yapı (sabit)'},
+  {v:'sk_debris',t:'Debris / çamur (sludge)'},
+  {v:'sk_sivi_seviye',t:'Sıvı-debris seviyesi'},
+  {v:'sk_hava_lumen',t:'Lümen içinde hava'},
+  {v:'sk_polip',t:'Polipoid lezyon'},
+  {v:'sk_polip_kucuk',t:'Polip <10mm'},
+  {v:'sk_polip_buyuk',t:'Polip ≥10mm'},
+  {v:'sk_kitle',t:'Kitle lezyonu'},
+  {v:'sk_kontrast_tutan',t:'Kontrast tutan intralüminal yapı'},
+  {v:'perikolesistik_sivi',t:'Perikolesistik sıvı'},
+  {v:'kc_invazyon',t:'Karaciğer invazyonu'}
+]},
+
+// === VASKÜLER ===
+{id:'portal_ven',title:'Portal Ven',section:'Vasküler Yapılar',icon:'🔵',type:'multi',label:'Portal ven bulguları',opts:[
+  {v:'pv_normal',t:'Normal kalibrasyon ve akım'},
+  {v:'pv_dilate',t:'Dilate (>13mm)'},
+  {v:'pv_genislemis',t:'Genişlemiş'},
+  {v:'pv_tromboz',t:'Trombüs mevcut'},
+  {v:'pv_tromb_tumor',t:'Tümör trombozu şüphesi'},
+  {v:'pv_kontrast_defekt',t:'Lümen içi kontrast dolum defekti'},
+  {v:'art_tromb_kontrast',t:'Trombüste arteriyel kontrast tutulumu'},
+  {v:'pv_hava',t:'Portal ven içinde hava (portal venöz gaz)'},
+  {v:'pv_kavernom',t:'Kavernöz transformasyon'},
+  {v:'kollateral',t:'Portokaval/portosistemik kollateraller'}
+]},
+{id:'pv_olcum',title:'Portal Ven Çap Ölçümü',section:'Vasküler Yapılar',icon:'📐',type:'single_measure',label:'Portal ven ana dal çapı (mm)',field:'pv_cap',ref:'Normal <13 mm; ≥13 mm portal HT lehine',keyTriggers:[{min:13,key:'pv_dilate'}]},
+{id:'hepatik_ven',title:'Hepatik Venler',section:'Vasküler Yapılar',icon:'🔵',type:'multi',label:'Hepatik ven bulguları',opts:[
+  {v:'hv_normal',t:'Her üç hepatik ven (sağ/orta/sol) patent, normal kalibre'},
+  {v:'hv_dilate',t:'Dilate hepatik venler'},
+  {v:'hv_daralma',t:'Darlık / stenoz'},
+  {v:'hv_okluzyon',t:'Oklüzyon / tıkanıklık'},
+  {v:'hv_tromboz',t:'Hepatik ven trombozu'},
+  {v:'hv_hava',t:'Hepatik ven içinde hava'},
+  {v:'hv_gorunmuyor',t:'Hepatik venler seçilemiyor'}
+]},
+{id:'hepatik_arter',title:'Hepatik Arter',section:'Vasküler Yapılar',icon:'🔴',type:'multi',label:'Hepatik arter ve varyasyonları',opts:[
+  {v:'ha_normal',t:'Normal (klasik anatomi, çöliyak kökünden)'},
+  {v:'ha_genislemis',t:'Genişlemiş (kompansatuvar)'},
+  {v:'ha_replaced_sag',t:'Replaced sağ hepatik arter (SMA\'dan)'},
+  {v:'ha_replaced_sol',t:'Replaced sol hepatik arter (sol gastrik\'ten)'},
+  {v:'ha_accessory',t:'Aksesuar hepatik arter'},
+  {v:'ha_stenoz',t:'Stenoz / darlık'},
+  {v:'ha_tromboz',t:'Tromboz'},
+  {v:'ha_anevrizma',t:'Anevrizma / psödoanevrizma'},
+  {v:'ha_av_malformasyon',t:'AV malformasyon / şant'},
+  {v:'ha_degerlendirilmedi',t:'Değerlendirilmedi (kontrastsız)'}
+]},
+{id:'vci',title:'Vena Cava Inferior (VCI)',section:'Vasküler Yapılar',icon:'🔵',type:'multi',label:'VCI bulguları',opts:[
+  {v:'vci_normal',t:'Normal kalibre ve akım'},
+  {v:'vci_genislemis',t:'Genişlemiş (sağ kalp yetmezliği?)'},
+  {v:'vci_daralma',t:'Daralma / bası (kitle basısı)'},
+  {v:'vci_tromboz',t:'Tromboz'},
+  {v:'vci_tumor_tromb',t:'Tümör trombozu (HCC/böbrek CA yayılımı)'},
+  {v:'vci_invazyon',t:'Duvar invazyonu'},
+  {v:'vci_kollabe',t:'Kollabe (hipovolemi)'}
+]},
+
+// === PERİHEPATİK & KLİNİK ===
+{id:'perihepatik',title:'Perihepatik & Perihiler',section:'Perihepatik',icon:'🟣',type:'multi',label:'Perihepatik bölge bulguları',opts:[
+  {v:'perihepatik_normal',t:'Perihepatik alan normal'},
+  {v:'perihepatik_sivi',t:'Perihepatik sıvı'},
+  {v:'asit',t:'Asit'},
+  {v:'perihiler_lap',t:'Perihiler lenfadenopati'},
+  {v:'lap',t:'Peripankreatik/retroperitoneal LAP'},
+  {v:'splenomegali',t:'Splenomegali'},
+  {v:'hepatosplenomegali',t:'Hepatosplenomegali'},
+  {v:'portal_ht',t:'Portal hipertansiyon bulguları'},
+  {v:'murphy',t:'Murphy bulgusu pozitif'}
+]},
+{id:'klinik',title:'Klinik Bilgiler',section:'Klinik',icon:'📋',type:'multi',label:'Klinik öykü ve ek bilgiler',opts:[
+  {v:'siroz',t:'Siroz / kronik karaciğer hastalığı'},
+  {v:'siroz_yok',t:'Normal karaciğer (siroz yok)'},
+  {v:'afp',t:'AFP yüksek'},
+  {v:'primer_tumor',t:'Bilinen primer tümör'},
+  {v:'hcc_bilinen',t:'Bilinen/şüpheli HCC'},
+  {v:'net_primer',t:'Nöroendokrin tümör öyküsü'},
+  {v:'melanom',t:'Melanom öyküsü'},
+  {v:'travma',t:'Travma öyküsü'},
+  {v:'cerrahi',t:'Hepatobiliyer cerrahi öyküsü'},
+  {v:'ercp_sonrasi',t:'ERCP / sfinkterotomi öyküsü'},
+  {v:'oks',t:'OKS / steroid kullanımı'},
+  {v:'ilac',t:'İlaç kullanımı (azatiyoprin vb.)'},
+  {v:'genc_hasta',t:'Genç hasta (<40 yaş)'},
+  {v:'hipervask',t:'Hipervasküler primer şüphesi'},
+  {v:'kist_bobrekte',t:'Böbrekte de kistler mevcut'},
+  {v:'hizli_buyume',t:'Hızlı büyüme'},
+  {v:'kolanjit_tekrar',t:'Tekrarlayan kolanjit öyküsü'},
+  {v:'malignite_riski',t:'Malignite riski artmış (öykü)'},
+  {v:'acil',t:'Acil klinik tablo'}
+]}
+];
+
+// =====================================================
+// STATE
+// =====================================================
+let state={lesions:[],currentIdx:-1};
+let currentStep=0;
+
+// Lesion count from radio
+function lesionCount(){
+  const n=state.lezyon_sayisi;
+  if(n==='n1') return 1;
+  if(n==='n2') return 2;
+  if(n==='n3') return 3;
+  if(n==='n4') return 4;
+  if(n==='n5') return 3; // ≥5'te baskın 3 değerlendirilir
+  return 0;
+}
+function isContrastGiven(){return state.kontrast_tipi && state.kontrast_tipi!=='kontrast_yok';}
+function isHBPGiven(){return state.kontrast_tipi==='kontrast_intrasel_eob'||state.kontrast_tipi==='kontrast_intrasel_bopta';}
+
+// Dinamik step listesi üretir: PRE + (her lezyon için LESION_STEPS) + POST
+function buildSteps(){
+  const steps=[];
+  // PRE
+  STEPS_PRE.forEach(s=>{
+    if(!s.showIf||s.showIf(state)) steps.push({...s,_phase:'pre'});
+  });
+  // LOOP (fokal_var ve sayı seçilmişse)
+  if(state.fokal_var==='fokal_var' && lesionCount()>0){
+    const n=lesionCount();
+    for(let i=0;i<n;i++){
+      LESION_STEPS.forEach(s=>{
+        // HBP sadece intrasellüler kontrast varsa
+        if(s.showIfHBP && !isHBPGiven()) return;
+        // Kontrast faz adımları sadece kontrast verildiyse
+        if(s.showIfKontrast && !isContrastGiven()) return;
+        steps.push({...s,_phase:'loop',_lidx:i});
+      });
+    }
+    // Loop finalize adımı
+    steps.push({id:'loop_finalize',title:'Lezyon Değerlendirmesi Tamamlandı',section:'Lezyon Değerlendirme',icon:'✅',type:'finalize',_phase:'loop_end',label:'Tüm lezyonlar değerlendirildi. Devam etmek için onayla.'});
+  }
+  // POST
+  STEPS_POST.forEach(s=>{
+    if(!s.showIf||s.showIf(state)) steps.push({...s,_phase:'post'});
+  });
+  return steps;
+}
+function vis(){return buildSteps();}
+
+// Get/set state değerleri — loop içindeysek lesions[idx]'e yazar
+function getVal(step){
+  if(step._phase==='loop'){
+    const lez=state.lesions[step._lidx]||{};
+    return lez[step.id];
+  }
+  return state[step.id];
+}
+function setVal(step,v){
+  if(step._phase==='loop'){
+    while(state.lesions.length<=step._lidx) state.lesions.push({});
+    state.lesions[step._lidx][step.id]=v;
+  } else {
+    state[step.id]=v;
+  }
+}
+
+// =====================================================
+// C/RL ORAN VE BOYUT YORUMU
+// =====================================================
+function crlRatio(){
+  const c=parseFloat(state.kc_kaudat_tv);
+  const r=parseFloat(state.kc_sag_tv);
+  if(!c||!r||r===0) return null;
+  return c/r;
+}
+function crlInterpret(){
+  const ratio=crlRatio();
+  if(ratio===null) return null;
+  let cls='ok',txt='Normal (<0.60)',key=null;
+  if(ratio>=0.65){cls='bad';txt='≥0.65 — SİROZ için yüksek özgüllük (Harbin)';key='crl_yuksek';}
+  else if(ratio>=0.60){cls='warn';txt='0.60-0.65 — Borderline/şüpheli';key='crl_borderline';}
+  return {ratio:ratio.toFixed(2),cls,txt,key};
+}
+function liverSizeInterpret(){
+  const m=state.kc_sag_cc_mcl?parseFloat(state.kc_sag_cc_mcl):null;
+  const out=[];
+  if(m){
+    if(m>160) out.push({field:'Sağ lob CC (MKL)',val:m+' mm',cls:'bad',int:'Hepatomegali lehine (>160 mm)',key:'kc_hepatomegali'});
+    else if(m>=140) out.push({field:'Sağ lob CC (MKL)',val:m+' mm',cls:'ok',int:'Normal sınırlarda (140-160 mm)'});
+    else out.push({field:'Sağ lob CC (MKL)',val:m+' mm',cls:'warn',int:'Küçük boyut (<140 mm) — atrofi?'});
+  }
+  const a=state.kc_sag_cc_mal?parseFloat(state.kc_sag_cc_mal):null;
+  if(a){
+    if(a>150) out.push({field:'Sağ lob CC (MAL)',val:a+' mm',cls:'bad',int:'Hepatomegali (>150 mm)',key:'kc_hepatomegali'});
+    else out.push({field:'Sağ lob CC (MAL)',val:a+' mm',cls:'ok',int:'Normal sınırlarda'});
+  }
+  const sol=state.kc_sol_cc?parseFloat(state.kc_sol_cc):null;
+  if(sol){
+    if(sol>90) out.push({field:'Sol lob CC',val:sol+' mm',cls:'warn',int:'Hipertrofi lehine (>90 mm)',key:'kc_hipertrofi_sol'});
+    else out.push({field:'Sol lob CC',val:sol+' mm',cls:'ok',int:'Normal sınırlarda'});
+  }
+  const k=state.kc_kaudat_tv?parseFloat(state.kc_kaudat_tv):null;
+  if(k){
+    if(k>35) out.push({field:'Kaudat lob transvers',val:k+' mm',cls:'warn',int:'Hipertrofi lehine (>35 mm)',key:'kc_hipertrofi_kaudat'});
+    else out.push({field:'Kaudat lob transvers',val:k+' mm',cls:'ok',int:'Normal sınırlarda'});
+  }
+  const r=state.kc_sag_tv?parseFloat(state.kc_sag_tv):null;
+  if(r) out.push({field:'Sağ lob transvers (portal bif. sev.)',val:r+' mm',cls:'ok',int:'—'});
+  const crl=crlInterpret();
+  if(crl) out.push({field:'Kaudat/Sağ lob oranı (C/RL, Harbin)',val:crl.ratio,cls:crl.cls,int:crl.txt,key:crl.key});
+  return out;
+}
+
+// =====================================================
+// SCORING
+// =====================================================
+function score(){
+  const sel=new Set();
+  // Global state'ten düz key'ler topla
+  for(const k in state){
+    if(k==='lesions'||k==='currentIdx') continue;
+    const v=state[k];
+    if(Array.isArray(v)) v.forEach(x=>sel.add(x));
+    else if(typeof v==='string'&&v) sel.add(v);
+  }
+  // Lezyonlardan key'ler topla
+  state.lesions.forEach(lez=>{
+    for(const k in lez){
+      const v=lez[k];
+      if(Array.isArray(v)) v.forEach(x=>sel.add(x));
+      else if(typeof v==='string'&&v){
+        sel.add(v);
+        // Segment key'i
+        if(k==='segment'){sel.add('seg_'+v);}
+      }
+    }
+  });
+  // Multipl flag'ı
+  if(state.lesions.length>1) sel.add('multipl');
+  else if(state.lesions.length===1) sel.add('tek_lezyon');
+  // Boyut key'leri (lezyonların en büyük uzun çapına göre)
+  let maxLong=0;
+  state.lesions.forEach(l=>{
+    const v=parseFloat(l.lez_uzun_cap);
+    if(v&&v>maxLong) maxLong=v;
+  });
+  if(maxLong>0){
+    if(maxLong<10) sel.add('kucuk_boyut');
+    else if(maxLong<=30) sel.add('orta_boyut');
+    else sel.add('buyuk_boyut');
+  }
+  // Ölçüm kaynaklı key'ler (C/RL, boyut)
+  const szI=liverSizeInterpret();
+  szI.forEach(x=>{if(x.key) sel.add(x.key);});
+  // Portal ven çapı
+  const pvc=parseFloat(state.pv_cap);
+  if(pvc&&pvc>=13) sel.add('pv_dilate');
+
+  const results=DB.map(p=>{
+    let total=0,maxP=0;
+    for(const k in p.keys){maxP+=p.keys[k];if(sel.has(k)) total+=p.keys[k];}
+    return{path:p,score:total,max:maxP,pct:maxP>0?Math.round(100*total/maxP):0};
+  });
+  results.sort((a,b)=>b.pct-a.pct||b.score-a.score);
+  return results.filter(r=>r.score>0);
+}
+
+// =====================================================
+// RENDER
+// =====================================================
+function render(){
+  const steps=vis();
+  if(currentStep>=steps.length) currentStep=steps.length-1;
+  if(currentStep<0) currentStep=0;
+  const step=steps[currentStep];
+  const app=document.getElementById('app');
+  let h='';
+
+  // Progress
+  h+=`<div class="progress-wrap"><div class="progress-bar">`;
+  for(let i=0;i<steps.length;i++){
+    let c=i<currentStep?'done':i===currentStep?'active':'';
+    if(steps[i]._phase==='loop'||steps[i]._phase==='loop_end') c+=' loop';
+    h+=`<div class="dot ${c}" onclick="currentStep=${i};render()" title="${steps[i].title}"></div>`;
+  }
+  const loopInfo=step._phase==='loop'?` | Lezyon ${step._lidx+1}/${lesionCount()}`:'';
+  h+=`</div><div class="prog-label">Adım ${currentStep+1}/${steps.length} — ${step.section||''}${loopInfo}</div></div>`;
+
+  // Section header
+  if(step.section){
+    h+=`<div class="section-header"><span class="icon">${step.icon||''}</span>${step.section}${step._phase==='loop'?' — Lezyon '+(step._lidx+1):''}</div>`;
+  }
+
+  // Card
+  h+=`<div class="step-card">`;
+  h+=`<div class="step-title"><span class="num">${currentStep+1}</span>${step.title}`;
+  if(step._phase==='loop') h+=`<span class="lesion-tag">L${step._lidx+1}</span>`;
+  h+='</div>';
+  if(step.label) h+=`<div class="step-subtitle">${step.label}</div>`;
+
+  // Lesion list (loop içindeyken üstte göster)
+  if(step._phase==='loop'){
+    h+='<div class="lesion-list">';
+    for(let i=0;i<lesionCount();i++){
+      const lez=state.lesions[i]||{};
+      const seg=lez.segment?SEGMENTS.find(x=>x.v===lez.segment)?.t:'?';
+      const sz=(lez.lez_uzun_cap&&lez.lez_kisa_cap)?`${lez.lez_uzun_cap}×${lez.lez_kisa_cap}mm`:(lez.lez_uzun_cap?lez.lez_uzun_cap+'mm':'');
+      const done=Object.keys(lez).length>5;
+      const cur=i===step._lidx;
+      const cls=cur?'current':done?'done':'';
+      h+=`<div class="lesion-pill ${cls}"><span class="lp-num">L${i+1}</span>${seg} ${sz}</div>`;
+    }
+    h+='</div>';
+  }
+
+  // --- Input tiplerine göre render ---
+  if(step.type==='radio'){
+    const cur=getVal(step);
+    h+='<div class="opt-group">';
+    step.opts.forEach(o=>{
+      const s=cur===o.v?'selected':'';
+      h+=`<div class="opt-btn ${s}" onclick="pickR('${step.id}','${o.v}')">${o.t}</div>`;
+    });
+    h+='</div>';
+  } else if(step.type==='multi'){
+    const arr=getVal(step)||[];
+    h+='<div class="opt-group">';
+    step.opts.forEach(o=>{
+      const chk=arr.includes(o.v);
+      h+=`<div class="cb-row ${chk?'checked':''}" onclick="togC('${step.id}','${o.v}')">
+        <input type="checkbox" ${chk?'checked':''}> ${o.t}</div>`;
+    });
+    h+='</div>';
+  } else if(step.type==='segment'){
+    const cur=getVal(step);
+    h+='<div class="seg-grid">';
+    SEGMENTS.forEach(s=>{
+      const sel=cur===s.v?'selected':'';
+      h+=`<div class="seg-btn ${sel}" onclick="pickR('${step.id}','${s.v}')">${s.t}<small>${s.d}</small></div>`;
+    });
+    h+='</div>';
+    h+=`<div class="meas-hint">Couinaud: S1 Kaudat | S2-S3 Sol lateral (süp/inf) | S4a-S4b Sol medial (süp/inf) | S5-S8 Sağ (ant-inf / post-inf / post-süp / ant-süp)</div>`;
+  } else if(step.type==='measurement_liver'){
+    h+=`<div class="opt-group-label">Kraniokaudal (CC) Ölçümler</div>`;
+    h+=measRow('Sağ lob CC — Midklaviküler hat','kc_sag_cc_mcl','mm','Normal: <160 mm');
+    h+=measRow('Sağ lob CC — Midaksiller hat','kc_sag_cc_mal','mm','Normal: ~110-150 mm');
+    h+=measRow('Sol lob CC','kc_sol_cc','mm','Normal: <90 mm');
+    h+=`<div class="opt-group-label">Transvers Ölçümler (C/RL oranı için)</div>`;
+    h+=measRow('Kaudat lob transvers çapı','kc_kaudat_tv','mm','Portal bif. sev. aksiyel — Normal: <35 mm');
+    h+=measRow('Sağ lob transvers çapı','kc_sag_tv','mm','Portal bif. sev. aksiyel — sağ lob lateral kenarına');
+    // Live interpret
+    const sz=liverSizeInterpret();
+    if(sz.length>0){
+      h+='<div class="meas-result"><b>Canlı Değerlendirme:</b><br>';
+      sz.forEach(x=>{h+=`<span class="${x.cls}">• ${x.field}: ${x.val} → ${x.int}</span><br>`;});
+      h+='</div>';
+    }
+  } else if(step.type==='measurement_lesion'){
+    h+=measRowLesion('Uzun çap (aksiyel)','lez_uzun_cap','mm',step._lidx);
+    h+=measRowLesion('Kısa çap (aksiyel)','lez_kisa_cap','mm',step._lidx);
+    h+=measRowLesion('Kraniokaudal (CC) boyut','lez_cc','mm',step._lidx);
+    // Live size preview
+    const lez=state.lesions[step._lidx]||{};
+    const u=parseFloat(lez.lez_uzun_cap),k=parseFloat(lez.lez_kisa_cap),c=parseFloat(lez.lez_cc);
+    if(u||k||c){
+      let kat='';
+      if(u){
+        if(u<10) kat='Küçük lezyon (<10 mm)';
+        else if(u<=30) kat='Orta boyut (10-30 mm)';
+        else kat='Büyük lezyon (>30 mm)';
+      }
+      h+=`<div class="meas-result"><b>Boyut özeti:</b> ${[u,k,c].filter(x=>x).map((x,i)=>['Uzun','Kısa','CC'][i]+':'+x+'mm').join(' × ')} ${kat?'<br><b>Kategori:</b> <span class="'+(u>30?'warn':'ok')+'">'+kat+'</span>':''}</div>`;
+    }
+  } else if(step.type==='single_measure'){
+    h+=measRow(step.label,step.field,'mm',step.ref);
+    const v=parseFloat(state[step.field]);
+    if(v){
+      h+=`<div class="meas-result"><b>Ölçülen:</b> ${v} mm — <span class="${v>=13?'warn':'ok'}">${step.ref}</span></div>`;
+    }
+  } else if(step.type==='finalize'){
+    // Lezyon özeti
+    h+='<div class="info-box"><b>✓ Lezyon değerlendirmesi özeti:</b><br>';
+    for(let i=0;i<lesionCount();i++){
+      const lez=state.lesions[i]||{};
+      const seg=lez.segment?SEGMENTS.find(x=>x.v===lez.segment):null;
+      const segTxt=seg?seg.t+' ('+SEG_TO_LOBE[seg.v]+')':'segment?';
+      const sz=lez.lez_uzun_cap?lez.lez_uzun_cap+(lez.lez_kisa_cap?'×'+lez.lez_kisa_cap:'')+'mm':'boyut?';
+      h+=`<b>L${i+1}</b> — ${segTxt}, ${sz}<br>`;
+    }
+    h+='</div>';
+    h+='<button class="btn btn-finalize" onclick="finalizeLoop()" style="width:100%">✅ Lezyon değerlendirmesini tamamla ve genel değerlendirmeye devam et</button>';
+  }
+
+  // Nav
+  h+='<div class="nav-bar">';
+  if(step.type!=='finalize'){
+    h+=currentStep>0?`<button class="btn btn-prev" onclick="goP()">← Geri</button>`:'<div></div>';
+    if(currentStep<steps.length-1){
+      h+=`<button class="btn btn-next" onclick="goN()">İleri →</button>`;
+    } else {
+      h+=`<button class="btn btn-report" onclick="showRes()">📊 Sonuçları Göster</button>`;
+    }
+  } else {
+    h+=`<button class="btn btn-prev" onclick="goP()">← Geri</button><div></div>`;
+  }
+  h+='</div></div>';
+
+  // Live diff
+  const filled=countFilled();
+  if(filled>=3){
+    const res=score();
+    if(res.length>0){
+      h+=`<div class="step-card"><div class="step-title" style="font-size:.88rem">📊 Canlı Ayırıcı Tanı</div>`;
+      const top=res.slice(0,6);
+      const mx=top[0]?.pct||1;
+      top.forEach(r=>{
+        const w=Math.max(4,Math.round(100*r.pct/mx));
+        const c=r.path.cat==='Malign'?'var(--red)':r.path.cat==='Benign'?'var(--green)':r.path.cat==='Enfektif'?'var(--orange)':r.path.cat==='Diffüz'?'var(--pink)':'var(--purple)';
+        h+=`<div class="diff-bar-wrap"><div class="diff-label"><span class="name">${r.path.name}<span class="cat-tag cat-${r.path.cat}">${r.path.cat}</span></span><span class="pct">${r.pct}%</span></div><div class="diff-bar"><div class="diff-bar-fill" style="width:${w}%;background:${c}"></div></div></div>`;
+      });
+      h+='</div>';
+    }
+  }
+
+  app.innerHTML=h;
+}
+
+function measRow(label,field,unit,hint){
+  const v=state[field]||'';
+  let h=`<div class="meas-grid"><label>${label}</label><input type="number" value="${v}" step="0.1" onchange="setMeas('${field}',this.value)" placeholder="0"><span class="unit">${unit}</span></div>`;
+  if(hint) h+=`<div class="meas-hint">${hint}</div>`;
+  return h;
+}
+function measRowLesion(label,field,unit,lidx){
+  const lez=state.lesions[lidx]||{};
+  const v=lez[field]||'';
+  return `<div class="meas-grid"><label>${label}</label><input type="number" value="${v}" step="0.1" onchange="setLesionMeas(${lidx},'${field}',this.value)" placeholder="0"><span class="unit">${unit}</span></div>`;
+}
+function setMeas(f,v){state[f]=v;render();}
+function setLesionMeas(lidx,f,v){
+  while(state.lesions.length<=lidx) state.lesions.push({});
+  state.lesions[lidx][f]=v;
+  render();
+}
+
+function countFilled(){
+  let c=0;
+  for(const k in state){
+    if(k==='lesions'||k==='currentIdx') continue;
+    const v=state[k];
+    if(v&&(!Array.isArray(v)||v.length>0)) c++;
+  }
+  state.lesions.forEach(l=>{for(const k in l){if(l[k]) c++;}});
+  return c;
+}
+
+function pickR(id,v){
+  const step=vis()[currentStep];
+  setVal(step,v);
+  render();
+}
+function togC(id,v){
+  const step=vis()[currentStep];
+  let arr=getVal(step)||[];
+  arr=[...arr];
+  const i=arr.indexOf(v);
+  if(i>=0) arr.splice(i,1);
+  else arr.push(v);
+  setVal(step,arr);
+  render();
+}
+
+// === 3-PART LESION LOOP FIX ===
+// 1) finalize: currentIdx = -1 (post-loop)
+// 2) goNext: idx===-1 ise loop'u atla (pre-loop'tan post-loop'a)
+// 3) goPrev: post-loop'tan pre-loop'a dön, loop'u atla
+
+function finalizeLoop(){
+  state.currentIdx=-1;
+  // loop_finalize adımı zaten son loop adımı, sonraki adıma geç
+  goN();
+}
+
+function goN(){
+  const s=vis();
+  if(currentStep<s.length-1){
+    currentStep++;
+    render();
+    window.scrollTo(0,0);
+  }
+}
+function goP(){
+  if(currentStep>0){
+    currentStep--;
+    render();
+    window.scrollTo(0,0);
+  }
+}
+
+// =====================================================
+// RESULTS
+// =====================================================
+function showRes(){
+  const res=score();
+  const app=document.getElementById('app');
+  let h='<div class="step-card"><div class="step-title">📊 Ayırıcı Tanı Sonuçları</div>';
+  if(res.length===0){
+    h+='<p style="color:var(--textDim)">Girilen bulgularla eşleşen patoloji bulunamadı.</p>';
+  } else {
+    const top=res.slice(0,20);
+    const mx=top[0]?.pct||1;
+    top.forEach((r,i)=>{
+      const w=Math.max(4,Math.round(100*r.pct/mx));
+      const c=r.path.cat==='Malign'?'var(--red)':r.path.cat==='Benign'?'var(--green)':r.path.cat==='Enfektif'?'var(--orange)':r.path.cat==='Diffüz'?'var(--pink)':'var(--purple)';
+      h+=`<div class="diff-bar-wrap" style="margin-bottom:8px">
+        <div class="diff-label"><span class="name"><b>${i+1}.</b> ${r.path.name}<span class="cat-tag cat-${r.path.cat}">${r.path.cat}</span></span><span class="pct">${r.pct}%</span></div>
+        <div class="diff-bar"><div class="diff-bar-fill" style="width:${w}%;background:${c}"></div></div>
+        <div class="diff-extra">${r.path.diger}</div></div>`;
+    });
+  }
+  h+='<div class="nav-bar" style="margin-top:16px">';
+  h+='<button class="btn btn-prev" onclick="currentStep=0;render()">← Başa Dön</button>';
+  h+='<button class="btn btn-report" onclick="genReport()">📋 Rapor Oluştur</button>';
+  h+='</div></div>';
+  app.innerHTML=h;
+}
+
+// =====================================================
+// REPORT
+// =====================================================
+function kontrastLabel(){
+  const m={kontrast_ekstrasel:'Ekstrasellüler Gd (Gd-DTPA / Gd-DOTA) — 3 fazlı',
+          kontrast_intrasel_eob:'Hepatobiliyer Gd-EOB-DTPA (Primovist) — 4 fazlı + HBP (20 dk)',
+          kontrast_intrasel_bopta:'Hepatobiliyer Gd-BOPTA (MultiHance) — 4 fazlı + HBP (60-120 dk)',
+          kontrast_yok:'Kontrastsız'};
+  return m[state.kontrast_tipi]||'Belirtilmedi';
+}
+function labelFor(step,val){
+  const o=step.opts?.find(x=>x.v===val);
+  return o?o.t:val;
+}
+
+function genReport(){
+  const res=score();
+  const ov=document.getElementById('reportOverlay');
+  let r='<div class="toolbar">';
+  r+='<button class="btn btn-print" onclick="window.print()">🖨️ Yazdır</button>';
+  r+='<button class="btn btn-copy" onclick="copyR()">📋 Kopyala</button>';
+  r+='<button class="btn btn-download" onclick="downloadR()">💾 HTML İndir</button>';
+  r+='<button class="btn btn-close" onclick="closeR()">✕ Kapat</button></div>';
+
+  r+='<div class="report-sheet" id="rptC">';
+  r+='<h2 style="text-align:center;border-bottom:3px solid #4c1d95;padding-bottom:6px;font-size:1.1rem">KARACİĞER & SAFRA KESESİ MRI<br>KAPSAMLI RAPOR</h2>';
+  r+=`<p style="text-align:center;color:#6b7280;font-size:.75rem">Tarih: ${new Date().toLocaleDateString('tr-TR')} &nbsp;|&nbsp; Gülhane EAH — Radyoloji</p>`;
+
+  // Teknik Protokol
+  r+='<h2>TEKNİK PROTOKOL</h2>';
+  r+=`<p><b>Kontrast ajanı:</b> ${kontrastLabel()}</p>`;
+  if(isHBPGiven()){
+    r+='<p style="font-size:.75rem;color:#6b21a8"><i>Hepatobiliyer faz değerlendirmesi bu incelemede mevcuttur. Normal parankim HBP\'de hiperintens olur; hepatositik fonksiyon içermeyen lezyonlar (HCC, metastaz, kist, hemanjiyom) hipointens; FNH OATP1 expresse ettiğinden izo/hiperintens izlenir.</i></p>';
+  }
+
+  // KARACİĞER ÖLÇÜMLERİ
+  const szI=liverSizeInterpret();
+  if(szI.length>0){
+    r+='<h2>KARACİĞER BOYUT ÖLÇÜMLERİ</h2>';
+    r+='<table><tr><th>Ölçüm</th><th>Değer</th><th>Yorum</th></tr>';
+    szI.forEach(x=>{
+      const c=x.cls==='bad'?'#991b1b':x.cls==='warn'?'#92400e':'#166534';
+      r+=`<tr><td>${x.field}</td><td><b>${x.val}</b></td><td style="color:${c}">${x.int}</td></tr>`;
+    });
+    r+='</table>';
+    const crl=crlInterpret();
+    if(crl&&(crl.cls==='bad'||crl.cls==='warn')){
+      r+=`<div class="yorum-amber"><b>C/RL ORAN YORUMU:</b> Kaudat/sağ lob oranı ${crl.ratio} (${crl.txt}). Harbin kriterine göre C/RL ≥0.65 siroz için %96 özgüllüğe sahiptir. Klinik ve diğer siroz bulguları ile korelasyon önerilir.</div>`;
+    }
+  }
+
+  // PARANKİM
+  r+='<h2>KARACİĞER PARANKİMİ</h2>';
+  const preSections=['Karaciğer Parankimi'];
+  STEPS_PRE.filter(s=>preSections.includes(s.section)&&s.type!=='measurement_liver').forEach(s=>{
+    const v=state[s.id];
+    if(!v||(Array.isArray(v)&&v.length===0)) return;
+    let disp=Array.isArray(v)?v.map(x=>labelFor(s,x)).join(', '):labelFor(s,v);
+    r+=`<p><b>${s.title}:</b> ${disp}</p>`;
+  });
+
+  // FOKAL LEZYON
+  if(state.fokal_var==='fokal_var' && state.lesions.length>0){
+    r+='<h2>FOKAL LEZYON DEĞERLENDİRMESİ</h2>';
+    r+=`<p><b>Lezyon sayısı:</b> ${labelFor({opts:STEPS_PRE.find(x=>x.id==='lezyon_sayisi').opts},state.lezyon_sayisi)}</p>`;
+    state.lesions.forEach((lez,idx)=>{
+      const seg=lez.segment?SEGMENTS.find(x=>x.v===lez.segment):null;
+      const segTxt=seg?`${seg.t} — ${SEG_TO_LOBE[seg.v]}`:'segment belirtilmedi';
+      const sz=[lez.lez_uzun_cap,lez.lez_kisa_cap,lez.lez_cc].filter(x=>x).map((x,i)=>['Uzun','Kısa','CC'][i]+' '+x+'mm').join(' × ');
+      r+=`<h3>Lezyon ${idx+1} — ${segTxt}</h3>`;
+      r+='<table>';
+      r+=`<tr><th style="width:32%">Özellik</th><th>Bulgu</th></tr>`;
+      if(sz) r+=`<tr><td>Boyut</td><td><b>${sz}</b></td></tr>`;
+      LESION_STEPS.forEach(s=>{
+        if(s.type==='measurement_lesion'||s.type==='segment') return;
+        const v=lez[s.id];
+        if(!v||(Array.isArray(v)&&v.length===0)) return;
+        let disp=Array.isArray(v)?v.map(x=>labelFor(s,x)).join(', '):labelFor(s,v);
+        r+=`<tr><td>${s.title}</td><td>${disp}</td></tr>`;
+      });
+      r+='</table>';
+    });
+  } else if(state.fokal_var==='fokal_yok'){
+    r+='<h2>FOKAL LEZYON DEĞERLENDİRMESİ</h2><p>Fokal karaciğer lezyonu saptanmadı.</p>';
+  }
+
+  // SAFRA YOLLARI & SK
+  const syksections=['Safra Yolları','Safra Kesesi','Vasküler Yapılar','Perihepatik','Klinik'];
+  syksections.forEach(sec=>{
+    const inSec=STEPS_POST.filter(s=>s.section===sec);
+    const hasData=inSec.some(s=>{const v=state[s.id];return v&&(!Array.isArray(v)||v.length>0);})||inSec.some(s=>s.type==='single_measure'&&state[s.field]);
+    if(!hasData) return;
+    r+=`<h2>${sec.toUpperCase()}</h2>`;
+    inSec.forEach(s=>{
+      if(s.type==='single_measure'){
+        const v=state[s.field];
+        if(v) r+=`<p><b>${s.title}:</b> ${v} mm</p>`;
+        return;
+      }
+      const v=state[s.id];
+      if(!v||(Array.isArray(v)&&v.length===0)) return;
+      let disp=Array.isArray(v)?v.map(x=>labelFor(s,x)).join(', '):labelFor(s,v);
+      r+=`<p><b>${s.title}:</b> ${disp}</p>`;
+    });
+  });
+
+  // AYIRICI TANI
+  r+='<h2>AYIRICI TANI SONUÇLARI</h2>';
+  if(res.length>0){
+    r+='<table><tr><th>#</th><th>Patoloji</th><th>Kategori</th><th>Uyum</th><th>Ayırıcı Özellikler</th></tr>';
+    res.slice(0,12).forEach((x,i)=>{
+      r+=`<tr><td>${i+1}</td><td><b>${x.path.name}</b></td><td>${x.path.cat}</td><td>%${x.pct}</td><td style="font-size:.7rem">${x.path.diger}</td></tr>`;
+    });
+    r+='</table>';
+  } else {r+='<p>Eşleşen patoloji bulunamadı.</p>';}
+
+  // En olası tanıların MRI özellikleri (HBP dahil)
+  if(res.length>0){
+    const top=res.slice(0,3).filter(x=>x.path.t1||x.path.hbp);
+    if(top.length>0){
+      r+='<h2>EN OLASI TANILARIN MRI SINYAL ÖZELLİKLERİ</h2>';
+      r+='<table><tr><th>Patoloji</th><th>T1</th><th>T2</th><th>DWI</th><th>ADC</th><th>Art</th><th>PVF</th><th>Geç</th>'+(isHBPGiven()?'<th>HBP</th>':'')+'</tr>';
+      top.forEach(x=>{
+        const p=x.path;
+        r+=`<tr><td><b>${p.name}</b></td><td>${p.t1||'-'}</td><td>${p.t2||'-'}</td><td>${p.dwi||'-'}</td><td>${p.adc||'-'}</td><td>${p.art||'-'}</td><td>${p.pvf||'-'}</td><td>${p.gec||'-'}</td>${isHBPGiven()?'<td>'+(p.hbp||'-')+'</td>':''}</tr>`;
+      });
+      r+='</table>';
+    }
+  }
+
+  // YORUM
+  if(res.length>0){
+    const t=res[0];
+    const maligTop3=res.slice(0,3).filter(x=>x.path.cat==='Malign');
+    if(maligTop3.length>0){
+      r+='<div class="yorum-red"><b>⚠️ MALİGNİTE UYARISI:</b> ';
+      r+=`Ayırıcı tanıda malign patoloji(ler) ön sıralarda yer almaktadır: ${maligTop3.map(x=>x.path.name+' (%'+x.pct+')').join(', ')}. `;
+      r+='Klinik korelasyon, biyopsi ve/veya ileri tetkik önerilir.</div>';
+    }
+    r+='<div class="yorum"><b>YORUM:</b> ';
+    r+=`Girilen MRI ve klinik bulguları en yüksek oranda <b>${t.path.name}</b> (%${t.pct}) ile uyumludur. `;
+    r+=`${t.path.diger}. `;
+    if(res.length>1) r+=`Ayırıcı tanıda ${res.slice(1,4).map(x=>x.path.name+' (%'+x.pct+')').join(', ')} da değerlendirilmelidir. `;
+    r+='Kesin tanı için klinik, laboratuvar ve gerekirse patolojik korelasyon önerilir.</div>';
+
+    const diffuz=res.filter(x=>x.path.cat==='Diffüz'&&x.pct>=30);
+    if(diffuz.length>0){
+      r+='<div class="yorum-blue"><b>DİFFÜZ PARANKİMAL YORUM:</b> ';
+      r+=diffuz.map(x=>`${x.path.name} ile uyumlu bulgular mevcuttur (%${x.pct})`).join('. ')+'. ';
+      r+='</div>';
+    }
+    const vask=res.filter(x=>x.path.cat==='Vasküler'&&x.pct>=30);
+    if(vask.length>0){
+      r+='<div class="yorum-blue"><b>VASKÜLER YORUM:</b> ';
+      r+=vask.map(x=>`${x.path.name} bulguları değerlendirilmelidir (%${x.pct})`).join('. ')+'. ';
+      r+='</div>';
+    }
+    if(isHBPGiven()){
+      r+='<div class="yorum-amber"><b>HEPATOBİLİYER FAZ YORUMU:</b> ';
+      r+='HBP fazında <b>hipointens</b> lezyonlar hepatositik fonksiyon içermeyen patolojileri (HCC, metastaz, kolanjiyokarsinom, kist, abse) düşündürür. ';
+      r+='<b>İzo/hiperintens</b> lezyonlar ise FNH (OATP1+) için tipiktir. β-katenin mutant adenom da hiperintens olabilir. ';
+      r+='HCC ile FNH ayırımında HBP bulgusu yüksek diagnostik değer taşır.</div>';
+    }
+  }
+
+  // Kritik kombinasyonlar
+  r+='<h2>KRİTİK MRI KOMBİNASYONLARI — HIZLI REFERANS</h2>';
+  r+='<table><tr><th>MRI Bulgusu</th><th>En Olası Tanı</th></tr>';
+  [['T2 çok hiperintens + nodüler periferik kontrast','Hemanjiyom'],
+   ['Arteriyel hiper + washout + kapsül + siroz','HCC'],
+   ['Arteriyel hiper + HBP hipointens (EOB)','HCC (HBP kanıtı ile)'],
+   ['Santral skar + homojen güçlü art. kontrast + HBP izo/hiper','FNH'],
+   ['Rim kontrast + çok güçlü DWI restriksiyonu','Abse'],
+   ['Multipl rim lezyon + restriksiyon + HBP hipointens','Metastaz'],
+   ['Progressif geç kontrast (fibrotik) + HBP hipo','Kolanjiyokarsinom'],
+   ['Out-phase diffüz sinyal düşüşü','Hepatosteatoz'],
+   ['T1-T2 diffüz düşük + susceptibility','Siderozis'],
+   ['Nodüler kontur + C/RL ≥0.65 + portal HT','Siroz'],
+   ['Portal ven genişlemiş + arteriyel kontrast tutan trombüs','Tümör trombozu (HCC)'],
+   ['HV tromboz + kaudat lob hipertrofisi','Budd-Chiari'],
+   ['Beading + multifokal darlık + safra yolları','PSC'],
+   ['SK duvarında hava','Amfizematöz kolesistit'],
+   ['Pearl-necklace sign','Adenomyomatozis'],
+   ['İrregüler SK duvar + KC invazyon','SK karsinomu']
+  ].forEach(c=>{r+=`<tr><td>${c[0]}</td><td><b>${c[1]}</b></td></tr>`;});
+  r+='</table>';
+
+  r+='<p style="text-align:center;color:#9ca3af;font-size:.68rem;margin-top:16px">Bu rapor klinik karar destek amaçlıdır. Kesin tanı için klinik, laboratuvar ve patolojik korelasyon gereklidir.</p>';
+  r+='</div>';
+  ov.innerHTML=r;
+  ov.classList.add('open');
+}
+
+function closeR(){document.getElementById('reportOverlay').classList.remove('open');}
+function copyR(){
+  const el=document.getElementById('rptC');
+  const rng=document.createRange();rng.selectNodeContents(el);
+  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);
+  document.execCommand('copy');sel.removeAllRanges();
+  alert('Rapor panoya kopyalandı!');
+}
+function downloadR(){
+  const el=document.getElementById('rptC');
+  const html=`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>KC MRI Rapor</title><style>
+    body{font-family:'Segoe UI',sans-serif;color:#1a1a1a;max-width:820px;margin:20px auto;padding:24px;line-height:1.5;font-size:.86rem}
+    h2{color:#4c1d95;font-size:1rem;margin:16px 0 6px;border-bottom:2px solid #7c3aed;padding-bottom:3px}
+    h3{color:#6d28d9;font-size:.88rem;margin:10px 0 4px}
+    table{width:100%;border-collapse:collapse;margin:6px 0 10px}
+    th{background:#4c1d95;color:#fff;padding:5px 7px;text-align:left;font-size:.78rem}
+    td{padding:4px 7px;font-size:.78rem;border-bottom:1px solid #e5e7eb;vertical-align:top}
+    tr:nth-child(even) td{background:#f5f3ff}
+    .yorum{background:#f0fdf4;border-left:4px solid #22c55e;padding:10px 14px;margin:10px 0;border-radius:4px}
+    .yorum-red{background:#fef2f2;border-left:4px solid #ef4444;padding:10px 14px;margin:10px 0;border-radius:4px}
+    .yorum-blue{background:#eff6ff;border-left:4px solid #3b82f6;padding:10px 14px;margin:10px 0;border-radius:4px}
+    .yorum-amber{background:#fef3c7;border-left:4px solid #eab308;padding:10px 14px;margin:10px 0;border-radius:4px}
+  </style></head><body>`+el.innerHTML+'</body></html>';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`KC_MRI_Rapor_${new Date().toISOString().slice(0,10)}.html`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// Init
+render();
+</script>
+</body>
+</html>

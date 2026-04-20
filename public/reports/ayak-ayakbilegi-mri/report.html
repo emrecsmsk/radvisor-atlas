@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ayak & Ayak Bileği MRI Karar Destek Sistemi</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root{--bg:#0f1923;--card:#152232;--card2:#1a2d42;--accent:#00bfa5;--accent2:#26a69a;--accentDim:rgba(0,191,165,0.15);--accentGlow:rgba(0,191,165,0.4);--txt:#e0e0e0;--txt2:#90a4ae;--border:#263850;--danger:#ef5350;--warn:#ffa726;--success:#66bb6a;--info:#42a5f5}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh}
+.app-header{background:linear-gradient(135deg,#0a1628 0%,#152232 50%,#0d2137 100%);border-bottom:2px solid var(--accent);padding:18px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.app-header h1{font-size:1.3rem;color:var(--accent);font-weight:700;letter-spacing:0.5px}
+.app-header .subtitle{font-size:0.8rem;color:var(--txt2)}
+.logo-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#009688);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#fff;flex-shrink:0}
+.progress-bar{display:flex;align-items:center;gap:2px;padding:10px 24px;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto}
+.progress-bar::-webkit-scrollbar{height:4px}
+.progress-bar::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+.prog-step{min-width:10px;height:6px;border-radius:3px;background:var(--border);flex:1;transition:all 0.3s}
+.prog-step.active{background:var(--accent);box-shadow:0 0 8px var(--accentGlow)}
+.prog-step.done{background:var(--accent2)}
+.prog-step.loop{background:#ff9800}
+.prog-step.loop.active{background:#ff9800;box-shadow:0 0 8px rgba(255,152,0,0.5)}
+.main-content{max-width:900px;margin:0 auto;padding:20px}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px;animation:fadeIn 0.3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.step-title{font-size:1.15rem;color:var(--accent);margin-bottom:6px;font-weight:700;display:flex;align-items:center;gap:10px}
+.step-num{background:var(--accent);color:#000;font-size:0.75rem;font-weight:800;padding:3px 9px;border-radius:20px;min-width:28px;text-align:center}
+.step-desc{font-size:0.82rem;color:var(--txt2);margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:0.85rem;color:var(--accent2);margin-bottom:6px;font-weight:600}
+.form-group input[type=text],.form-group input[type=number],.form-group select,.form-group textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--txt);font-size:0.9rem;outline:none;transition:border 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{min-height:70px;resize:vertical}
+.radio-group,.check-group{display:flex;flex-wrap:wrap;gap:8px}
+.radio-btn,.check-btn{padding:8px 16px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.83rem;color:var(--txt2);transition:all 0.2s;user-select:none}
+.radio-btn:hover,.check-btn:hover{border-color:var(--accent);color:var(--txt)}
+.radio-btn.selected{background:var(--accentDim);border-color:var(--accent);color:var(--accent);font-weight:600}
+.check-btn.selected{background:var(--accentDim);border-color:var(--accent);color:var(--accent);font-weight:600}
+.grade-btn{padding:10px 14px;background:var(--card2);border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.82rem;color:var(--txt2);transition:all 0.2s;text-align:center;min-width:70px}
+.grade-btn.selected{background:var(--accentDim);border-color:var(--accent);color:var(--accent);font-weight:700}
+.grade-btn:hover{border-color:var(--accent2)}
+.nav-bar{display:flex;gap:12px;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.nav-btn{padding:11px 28px;border:none;border-radius:10px;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all 0.2s}
+.nav-btn.prev{background:var(--card2);color:var(--txt2);border:1px solid var(--border)}
+.nav-btn.prev:hover{background:var(--border);color:var(--txt)}
+.nav-btn.next{background:linear-gradient(135deg,var(--accent),#009688);color:#000}
+.nav-btn.next:hover{box-shadow:0 4px 16px var(--accentGlow)}
+.nav-btn:disabled{opacity:0.35;cursor:not-allowed}
+.section-divider{border:none;border-top:1px dashed var(--border);margin:16px 0}
+.info-box{background:rgba(0,191,165,0.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.82rem;color:var(--txt2)}
+.warn-box{background:rgba(255,167,38,0.1);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.82rem;color:var(--warn)}
+.lesion-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#000;font-size:0.75rem;font-weight:800;padding:4px 12px;border-radius:20px}
+.lesion-list{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.lesion-chip{padding:6px 14px;background:var(--card2);border:1px solid #ff9800;border-radius:20px;font-size:0.8rem;color:#ff9800;cursor:pointer;transition:all 0.2s}
+.lesion-chip:hover{background:rgba(255,152,0,0.15)}
+.lesion-chip.active{background:rgba(255,152,0,0.2);font-weight:700}
+/* REPORT STYLES */
+.report-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000;overflow-y:auto;padding:20px}
+.report-sheet{max-width:800px;margin:0 auto;background:#fff;color:#1a1a1a;border-radius:8px;padding:0;font-family:'Segoe UI',sans-serif;font-size:11pt;line-height:1.5}
+.report-header-band{background:linear-gradient(135deg,#00796b,#00bfa5);color:#fff;padding:20px 30px;border-radius:8px 8px 0 0}
+.report-header-band h2{font-size:15pt;margin-bottom:4px}
+.report-header-band .rh-sub{font-size:9pt;opacity:0.85}
+.report-body{padding:24px 30px}
+.report-section{margin-bottom:14px}
+.report-section-title{font-size:10pt;font-weight:700;color:#00796b;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #00796b;padding-bottom:4px;margin-bottom:8px}
+.report-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10pt}
+.report-table th{background:#e0f2f1;color:#00796b;padding:7px 10px;text-align:left;font-weight:700;border:1px solid #b2dfdb;font-size:9pt}
+.report-table td{padding:6px 10px;border:1px solid #e0e0e0;vertical-align:top}
+.report-table tr:nth-child(even) td{background:#f5f5f5}
+.report-table tr:nth-child(odd) td{background:#fff}
+.yorum-box{background:linear-gradient(135deg,#e0f7fa,#b2ebf2);border:2px solid #00897b;border-radius:8px;padding:14px 18px;margin:12px 0}
+.yorum-box h4{color:#00695c;font-size:10pt;margin-bottom:6px}
+.yorum-box p,.yorum-box ul{font-size:10pt;color:#1a1a1a;margin:4px 0}
+.diff-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:9.5pt}
+.diff-table th{background:#00796b;color:#fff;padding:7px 10px;text-align:left;font-size:8.5pt;text-transform:uppercase}
+.diff-table td{padding:6px 10px;border:1px solid #e0e0e0}
+.diff-table tr:nth-child(even) td{background:#f5f5f5}
+.diff-table tr:nth-child(odd) td{background:#fafafa}
+.score-high{color:#c62828;font-weight:700}
+.score-med{color:#ef6c00;font-weight:600}
+.score-low{color:#2e7d32}
+.report-actions{display:flex;gap:10px;justify-content:center;padding:16px;position:sticky;top:0;z-index:10}
+.report-actions button{padding:10px 24px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;transition:all 0.2s}
+.btn-print{background:#00796b;color:#fff}
+.btn-copy{background:#0288d1;color:#fff}
+.btn-html{background:#7b1fa2;color:#fff}
+.btn-close{background:#c62828;color:#fff}
+.finding-normal{color:#388e3c}
+.finding-abnormal{color:#d32f2f;font-weight:600}
+.inline-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.cond-block{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;animation:fadeIn 0.3s}
+.sub-label{font-size:0.78rem;color:var(--txt2);margin-bottom:4px}
+@media print{
+.report-actions{display:none!important}
+.report-overlay{position:static;background:#fff;padding:0}
+.report-sheet{box-shadow:none;border-radius:0}
+}
+@media(max-width:640px){
+.main-content{padding:12px}
+.step-card{padding:18px}
+.radio-group,.check-group{gap:6px}
+.radio-btn,.check-btn{padding:6px 12px;font-size:0.78rem}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback,useMemo,useRef,useEffect} = React;
+
+/* ═══════════════════════ DATA ═══════════════════════ */
+const STEPS=[
+{id:'hasta',title:'Hasta Bilgileri',icon:'📋'},
+{id:'klinik',title:'Klinik Bilgi',icon:'🩺'},
+{id:'teknik',title:'Teknik Parametreler',icon:'⚙️'},
+{id:'kemik',title:'Kemik Yapılar & İlik',icon:'🦴'},
+{id:'asil',title:'Aşil Tendonu',icon:'🔗'},
+{id:'tibPost',title:'Tibialis Posterior',icon:'🔗'},
+{id:'peroneal',title:'Peroneal Tendonlar',icon:'🔗'},
+{id:'digerTendon',title:'Diğer Tendonlar',icon:'🔗'},
+{id:'lateral',title:'Lateral Ligaman Kompleksi',icon:'🔗'},
+{id:'deltoid',title:'Medial (Deltoid) Ligaman',icon:'🔗'},
+{id:'spring',title:'Spring & Lisfranc & Diğer',icon:'🔗'},
+{id:'tibiotalar',title:'Tibiotalar Eklem & Kıkırdak',icon:'🦴'},
+{id:'subtalar',title:'Subtalar Eklem & Sinus Tarsi',icon:'🦴'},
+{id:'plantar',title:'Plantar Fasya & Yapılar',icon:'🦶'},
+{id:'tarsal',title:'Tarsal Tünel & Nöral Yapılar',icon:'⚡'},
+{id:'preLoop',title:'Ek Lezyon Tespiti',icon:'🔍'},
+{id:'loopLoc',title:'Lezyon — Lokalizasyon',icon:'📍',loop:true},
+{id:'loopSize',title:'Lezyon — Boyut & Morfoloji',icon:'📐',loop:true},
+{id:'loopSignal',title:'Lezyon — Sinyal Özellikleri',icon:'📡',loop:true},
+{id:'loopContrast',title:'Lezyon — Kontrast Tutulumu',icon:'💉',loop:true},
+{id:'loopEnv',title:'Lezyon — Çevre Doku İlişkisi',icon:'🔬',loop:true},
+{id:'loopExtra',title:'Lezyon — Ek Özellikler',icon:'📝',loop:true},
+{id:'loopSum',title:'Lezyon Özeti',icon:'✅',loop:true},
+{id:'ek',title:'Ek Bulgular',icon:'📌'},
+{id:'rapor',title:'Yapılandırılmış Rapor',icon:'📄'}
+];
+const LOOP_START=16, LOOP_END=22;
+
+const PATHOLOGY_DB=[
+{id:'achilles_tend',name:'Aşil Tendinopatisi / Rüptürü',cat:'Tendon',keys:['achilles_morph','achilles_loc','achilles_signal','retrocal_bursit']},
+{id:'tib_post_dysf',name:'Tibialis Posterior Tendon Disfonksiyonu',cat:'Tendon',keys:['tibpost_morph','tibpost_loc','accessory_nav']},
+{id:'peroneal_path',name:'Peroneal Tendon Patolojisi',cat:'Tendon',keys:['pb_morph','pl_morph','peroneal_sublux','spr_status']},
+{id:'lat_lig_inj',name:'Lateral Ligaman Yaralanması',cat:'Ligaman',keys:['atfl','cfl','ptfl']},
+{id:'deltoid_inj',name:'Deltoid Ligaman Yaralanması',cat:'Ligaman',keys:['deltoid_sup','deltoid_deep']},
+{id:'spring_inj',name:'Spring Ligaman Yaralanması',cat:'Ligaman',keys:['spring_lig']},
+{id:'lisfranc_inj',name:'Lisfranc Yaralanması',cat:'Ligaman',keys:['lisfranc_lig','midfoot_edema']},
+{id:'ocd_talus',name:'Talus Osteokondral Lezyonu (OKL)',cat:'Kemik/Kıkırdak',keys:['ocd_present','ocd_loc','cartilage_grade','tibiotalar_effusion']},
+{id:'stress_fx',name:'Stres Kırığı / Reaksiyonu',cat:'Kemik',keys:['bone_edema','fracture','periosteal_rx']},
+{id:'plantar_fasc',name:'Plantar Fasiit',cat:'Yumuşak Doku',keys:['plantar_fascia','pf_thickness','pf_signal','heel_edema']},
+{id:'plantar_fibr',name:'Plantar Fibroma',cat:'Yumuşak Doku',keys:['plantar_fibroma']},
+{id:'tarsal_coal',name:'Tarsal Koalisyon',cat:'Kemik',keys:['coalition','coalition_type']},
+{id:'avn',name:'Avasküler Nekroz',cat:'Kemik',keys:['avn_present','avn_loc','bone_edema']},
+{id:'morton',name:'Morton Nöroması',cat:'Nöral',keys:['morton_present','morton_space']},
+{id:'tarsal_tunnel',name:'Tarsal Tünel Sendromu',cat:'Nöral',keys:['tarsal_tunnel_finding','tibial_nerve']},
+{id:'sinus_tarsi',name:'Sinus Tarsi Sendromu',cat:'Eklem',keys:['sinus_tarsi','subtalar_effusion','atfl']},
+{id:'bone_tumor',name:'Kemik Tümörü / Metastaz',cat:'Kemik',keys:['bone_lesion','bone_edema']},
+{id:'pvns',name:'PVNS / Dev Hücreli Tümör',cat:'Sinoviyal',keys:['synovial_thick','blooming','tibiotalar_effusion']},
+{id:'ganglion',name:'Ganglion Kisti',cat:'Yumuşak Doku',keys:['ganglion_present']},
+{id:'osteomyelit',name:'Osteomiyelit / Enfeksiyon',cat:'Enfeksiyon',keys:['bone_edema','cortical_irreg','soft_tissue_inflam','enhancement_pattern']},
+{id:'synovitis',name:'Sinovit / Efüzyon',cat:'Sinoviyal',keys:['tibiotalar_effusion','synovial_thick','subtalar_effusion']},
+{id:'plantar_plate',name:'Plantar Plak Yaralanması',cat:'Yumuşak Doku',keys:['plantar_plate_status']},
+{id:'retrocal_burs',name:'Retrokalkaneal Bursit',cat:'Yumuşak Doku',keys:['retrocal_bursit','haglund']}
+];
+
+const TENDON_GRADES=['Normal','Tendinoz','Parsiyel yırtık','Komplet rüptür'];
+const TENDON_GRADES_EXT=['Normal','Tendinoz','Parsiyel yırtık','Komplet rüptür','Longitudinal split'];
+const LIG_GRADES=['Normal','Sprain (Grade I)','Parsiyel yırtık (Grade II)','Komplet yırtık (Grade III)','Kronik kalınlaşma'];
+const SIGNAL_OPTS=['Hipointens','İzointens','Hiperintens','Heterojen'];
+const ENH_OPTS=['Yok','Homojen','Heterojen','Rim (periferal)','Lineer','Nodüler'];
+const MARGIN_OPTS=['Düzgün','Lobüle','İrregüler','İnfiltratif'];
+const BONE_SITES=['Talus','Kalkaneus','Naviküler','Kuboid','Küneiform (medial)','Küneiform (orta)','Küneiform (lateral)','1. Metatars','2. Metatars','3. Metatars','4. Metatars','5. Metatars','Sesamoid','Falankslar','Tibia distali','Fibula distali'];
+const LESION_SITES=['Achilles bölgesi','Medial malleol','Lateral malleol','Plantar bölge','Sinus tarsi','Tarsal tünel','Forefoot dorsal','Forefoot plantar','Midfoot','Hindfoot','Intermetatarsal aralık','Subkutan doku','İntraosseöz','Eklem içi','Tendon kılıfı'];
+const CARTILAGE_GRADES=['Normal','Grade I — Sinyal artışı (yüzey sağlam)','Grade II — Yüzeyel defekt (<50%)','Grade III — Derin defekt (>50%)','Grade IV — Tam kat defekt / subkondral kemik açık'];
+
+function initData(){return{
+hasta_ad:'',hasta_id:'',hasta_yas:'',hasta_cinsiyet:'',tarih:new Date().toISOString().slice(0,10),
+klinik_endikasyon:[],klinik_taraf:'',klinik_sure:'',klinik_travma:'',klinik_notu:'',
+sekanslar:[],alan_gucu:'1.5T',kontrast:'',
+kemik_dizilim:'Normal',dizilim_detay:[],kemik_ilik:'Normal',ilik_pattern:'',ilik_lokalizasyon:[],fracture:'Yok',fracture_loc:'',fracture_type:'',bone_contusion:'Yok',contusion_loc:'',periosteal_rx:'Yok',
+achilles_morph:'Normal',achilles_loc:'',achilles_kalinlik:'',achilles_signal:'',haglund:'Yok',retrocal_bursit:'Yok',paratenon:'Normal',
+tibpost_morph:'Normal',tibpost_loc:'',tibpost_signal:'',accessory_nav:'Yok',
+pb_morph:'Normal',pl_morph:'Normal',peroneal_sublux:'Yok',spr_status:'İntakt',peroneal_tub:'Normal',
+tibant_morph:'Normal',fhl_morph:'Normal',fhl_os_trigonum:'Yok',fdl_morph:'Normal',extensor_morph:'Normal',
+atfl:'Normal',cfl:'Normal',ptfl:'Normal',
+deltoid_sup:'Normal',deltoid_deep:'Normal',
+spring_lig:'Normal',lisfranc_lig:'Normal',bifurcate_lig:'Normal',midfoot_edema:'Yok',
+tibiotalar_effusion:'Yok',synovial_thick:'Yok',cartilage_grade:'Normal',ocd_present:'Yok',ocd_loc:'',ocd_size:'',ocd_stability:'',ocd_class:'',loose_body:'Yok',
+subtalar_effusion:'Yok',subtalar_cartilage:'Normal',sinus_tarsi:'Normal',coalition:'Yok',coalition_type:'',coalition_loc:'',
+plantar_fascia:'Normal',pf_thickness:'',pf_signal:'',pf_loc:'',plantar_fibroma:'Yok',fibroma_size:'',plantar_plate_status:'Normal',pp_loc:'',heel_edema:'Yok',
+tarsal_tunnel_finding:'Normal',tibial_nerve:'Normal',morton_present:'Yok',morton_space:'',morton_size:'',baxter_nerve:'Normal',
+soft_tissue_inflam:'Yok',blooming:'Yok',ganglion_present:'Yok',bone_lesion:'Yok',cortical_irreg:'Yok',enhancement_pattern:'',avn_present:'Yok',avn_loc:'',
+has_lesion:'Hayır',lesions:[],currentLesionIdx:-1,
+ek_effusion_detail:'',ek_subkutan:'Yok',ek_incidental:'',ek_freetext:''
+}}
+function initLesion(){return{
+loc:'',loc_detail:'',size_ap:'',size_tr:'',size_cc:'',morph:'',margin:'',
+t1:'',t2:'',stir:'',dwi:'',t2star:'',
+enh:'',enh_detail:'',
+env_invasion:'Yok',env_edema:'Yok',env_displacement:'Yok',env_bone:'Yok',
+extra_calc:'Yok',extra_hemorrhage:'Yok',extra_necrosis:'Yok',extra_fat:'Yok',extra_flow_void:'Yok',extra_note:''
+}}
+
+/* ═══════════════════════ SCORING ENGINE ═══════════════════════ */
+function computeScores(d){
+const sc={};
+PATHOLOGY_DB.forEach(p=>{
+let s=0,max=0;
+// Tendon pathologies
+if(p.id==='achilles_tend'){
+max=30;
+if(d.achilles_morph==='Tendinoz')s+=8;
+if(d.achilles_morph==='Parsiyel yırtık')s+=15;
+if(d.achilles_morph==='Komplet rüptür')s+=25;
+if(d.retrocal_bursit!=='Yok')s+=3;
+if(d.paratenon!=='Normal')s+=2;
+}
+else if(p.id==='tib_post_dysf'){
+max=28;
+if(d.tibpost_morph==='Tendinoz')s+=8;
+if(d.tibpost_morph==='Parsiyel yırtık')s+=14;
+if(d.tibpost_morph==='Komplet rüptür')s+=22;
+if(d.tibpost_morph==='Longitudinal split')s+=16;
+if(d.accessory_nav!=='Yok')s+=4;
+if(d.spring_lig!=='Normal')s+=2;
+}
+else if(p.id==='peroneal_path'){
+max=30;
+if(d.pb_morph!=='Normal')s+=(['Tendinoz','Parsiyel yırtık','Komplet rüptür','Longitudinal split'].indexOf(d.pb_morph)+1)*4;
+if(d.pl_morph!=='Normal')s+=(['Tendinoz','Parsiyel yırtık','Komplet rüptür','Longitudinal split'].indexOf(d.pl_morph)+1)*4;
+if(d.peroneal_sublux!=='Yok')s+=6;
+if(d.spr_status!=='İntakt')s+=4;
+if(d.peroneal_tub!=='Normal')s+=2;
+}
+else if(p.id==='lat_lig_inj'){
+max=30;
+['atfl','cfl','ptfl'].forEach(k=>{
+const v=d[k];
+if(v==='Sprain (Grade I)')s+=3;
+else if(v==='Parsiyel yırtık (Grade II)')s+=7;
+else if(v==='Komplet yırtık (Grade III)')s+=10;
+else if(v==='Kronik kalınlaşma')s+=4;
+});
+}
+else if(p.id==='deltoid_inj'){
+max=20;
+['deltoid_sup','deltoid_deep'].forEach(k=>{
+const v=d[k];
+if(v==='Sprain (Grade I)')s+=3;
+else if(v==='Parsiyel yırtık (Grade II)')s+=6;
+else if(v==='Komplet yırtık (Grade III)')s+=10;
+});
+}
+else if(p.id==='spring_inj'){
+max=18;
+const v=d.spring_lig;
+if(v==='Sprain (Grade I)')s+=4;
+else if(v==='Parsiyel yırtık (Grade II)')s+=10;
+else if(v==='Komplet yırtık (Grade III)')s+=16;
+if(d.tibpost_morph!=='Normal')s+=2;
+}
+else if(p.id==='lisfranc_inj'){
+max=20;
+const v=d.lisfranc_lig;
+if(v==='Sprain (Grade I)')s+=4;
+else if(v==='Parsiyel yırtık (Grade II)')s+=10;
+else if(v==='Komplet yırtık (Grade III)')s+=16;
+if(d.midfoot_edema!=='Yok')s+=4;
+}
+else if(p.id==='ocd_talus'){
+max=30;
+if(d.ocd_present!=='Yok')s+=18;
+if(d.cartilage_grade!=='Normal')s+=(['','Grade I','Grade II','Grade III','Grade IV'].indexOf(d.cartilage_grade.split(' ')[0])||0)*2;
+if(d.tibiotalar_effusion!=='Yok')s+=3;
+if(d.bone_contusion!=='Yok')s+=2;
+}
+else if(p.id==='stress_fx'){
+max=25;
+if(d.fracture!=='Yok')s+=12;
+if(d.bone_contusion!=='Yok')s+=5;
+if(d.periosteal_rx!=='Yok')s+=5;
+if(d.kemik_ilik!=='Normal')s+=3;
+}
+else if(p.id==='plantar_fasc'){
+max=25;
+const v=d.plantar_fascia;
+if(v==='Kalınlaşma')s+=8;
+else if(v==='Parsiyel yırtık')s+=14;
+else if(v==='Komplet yırtık')s+=20;
+if(d.heel_edema!=='Yok')s+=5;
+}
+else if(p.id==='plantar_fibr'){
+max=15;
+if(d.plantar_fibroma!=='Yok')s+=15;
+}
+else if(p.id==='tarsal_coal'){
+max=18;
+if(d.coalition!=='Yok')s+=18;
+}
+else if(p.id==='avn'){
+max=22;
+if(d.avn_present!=='Yok')s+=18;
+if(d.kemik_ilik!=='Normal')s+=4;
+}
+else if(p.id==='morton'){
+max=16;
+if(d.morton_present!=='Yok')s+=16;
+}
+else if(p.id==='tarsal_tunnel'){
+max=18;
+const v=d.tarsal_tunnel_finding;
+if(v==='Yer kaplayan lezyon')s+=10;
+else if(v==='Sinir kompresyonu')s+=14;
+if(d.tibial_nerve!=='Normal')s+=4;
+}
+else if(p.id==='sinus_tarsi'){
+max=20;
+const v=d.sinus_tarsi;
+if(v==='Ödem')s+=8;
+else if(v==='Fibrozis')s+=12;
+else if(v==='Kitle')s+=6;
+if(d.subtalar_effusion!=='Yok')s+=4;
+if(d.atfl!=='Normal')s+=4;
+}
+else if(p.id==='bone_tumor'){
+max=20;
+if(d.bone_lesion!=='Yok')s+=10;
+if(d.cortical_irreg!=='Yok')s+=5;
+if(d.kemik_ilik!=='Normal')s+=3;
+if(d.periosteal_rx!=='Yok')s+=2;
+}
+else if(p.id==='pvns'){
+max=22;
+if(d.synovial_thick!=='Yok')s+=6;
+if(d.blooming!=='Yok')s+=10;
+if(d.tibiotalar_effusion!=='Yok')s+=3;
+if(d.subtalar_effusion!=='Yok')s+=3;
+}
+else if(p.id==='ganglion'){
+max=12;
+if(d.ganglion_present!=='Yok')s+=12;
+}
+else if(p.id==='osteomyelit'){
+max=28;
+if(d.kemik_ilik!=='Normal')s+=6;
+if(d.cortical_irreg!=='Yok')s+=6;
+if(d.soft_tissue_inflam!=='Yok')s+=6;
+if(d.bone_contusion!=='Yok')s+=4;
+if(d.periosteal_rx!=='Yok')s+=4;
+if(d.enhancement_pattern&&d.enhancement_pattern!=='Yok')s+=2;
+}
+else if(p.id==='synovitis'){
+max=18;
+if(d.tibiotalar_effusion!=='Yok')s+=(['','Minimal','Orta','Belirgin'].indexOf(d.tibiotalar_effusion)||0)*3;
+if(d.synovial_thick!=='Yok')s+=6;
+if(d.subtalar_effusion!=='Yok')s+=3;
+}
+else if(p.id==='plantar_plate'){
+max=14;
+const v=d.plantar_plate_status;
+if(v==='Parsiyel yırtık')s+=10;
+else if(v==='Komplet yırtık')s+=14;
+}
+else if(p.id==='retrocal_burs'){
+max=16;
+if(d.retrocal_bursit!=='Yok')s+=10;
+if(d.haglund!=='Yok')s+=6;
+}
+const pct=max>0?Math.min(100,Math.round(s/max*100)):0;
+sc[p.id]={score:s,max,pct};
+});
+return sc;
+}
+
+/* ═══════════════════════ COMPONENTS ═══════════════════════ */
+function RadioGroup({options,value,onChange,cols}){
+return(<div className="radio-group" style={cols?{display:'grid',gridTemplateColumns:`repeat(${cols},1fr)`}:{}}>
+{options.map(o=>{
+const label=typeof o==='string'?o:o.label;
+const val=typeof o==='string'?o:o.value;
+return <div key={val} className={`radio-btn${value===val?' selected':''}`} onClick={()=>onChange(val)}>{label}</div>
+})}
+</div>);
+}
+function CheckGroup({options,values=[],onChange,cols}){
+const toggle=v=>{
+const next=values.includes(v)?values.filter(x=>x!==v):[...values,v];
+onChange(next);
+};
+return(<div className="check-group" style={cols?{display:'grid',gridTemplateColumns:`repeat(${cols},1fr)`}:{}}>
+{options.map(o=>{
+const label=typeof o==='string'?o:o.label;
+const val=typeof o==='string'?o:o.value;
+return <div key={val} className={`check-btn${values.includes(val)?' selected':''}`} onClick={()=>toggle(val)}>{label}</div>
+})}
+</div>);
+}
+function Field({label,children}){return <div className="form-group"><label>{label}</label>{children}</div>}
+
+/* ═══════════════════════ STEP RENDERERS ═══════════════════════ */
+function StepHasta({d,u}){return(<div>
+<Field label="Hasta Adı"><input type="text" value={d.hasta_ad} onChange={e=>u('hasta_ad',e.target.value)}/></Field>
+<div className="inline-grid">
+<Field label="Protokol No"><input type="text" value={d.hasta_id} onChange={e=>u('hasta_id',e.target.value)}/></Field>
+<Field label="Yaş"><input type="number" value={d.hasta_yas} onChange={e=>u('hasta_yas',e.target.value)}/></Field>
+<Field label="Cinsiyet"><RadioGroup options={['Erkek','Kadın']} value={d.hasta_cinsiyet} onChange={v=>u('hasta_cinsiyet',v)}/></Field>
+<Field label="Tetkik Tarihi"><input type="text" value={d.tarih} onChange={e=>u('tarih',e.target.value)}/></Field>
+</div>
+</div>)}
+
+function StepKlinik({d,u}){return(<div>
+<Field label="Klinik Endikasyon">
+<CheckGroup options={['Ağrı','Şişlik','Hareket kısıtlılığı','Travma','İnstabilite','Topallama','Uyuşma/Karıncalanma','Deformite','Postoperatif kontrol','Kitle','Diyabetik ayak şüphesi','Diğer']} values={d.klinik_endikasyon} onChange={v=>u('klinik_endikasyon',v)} cols={3}/>
+</Field>
+<Field label="Taraf"><RadioGroup options={['Sağ','Sol','Bilateral']} value={d.klinik_taraf} onChange={v=>u('klinik_taraf',v)}/></Field>
+<div className="inline-grid">
+<Field label="Semptom Süresi"><input type="text" value={d.klinik_sure} onChange={e=>u('klinik_sure',e.target.value)} placeholder="örn: 3 ay"/></Field>
+<Field label="Travma Öyküsü"><RadioGroup options={['Yok','Akut','Kronik/Tekrarlayan']} value={d.klinik_travma} onChange={v=>u('klinik_travma',v)}/></Field>
+</div>
+<Field label="Ek Klinik Not"><textarea value={d.klinik_notu} onChange={e=>u('klinik_notu',e.target.value)} placeholder="Ek klinik bilgi..."/></Field>
+</div>)}
+
+function StepTeknik({d,u}){return(<div>
+<Field label="Uygulanan Sekanslar">
+<CheckGroup options={['T1A Sagittal','T1A Koronal','T1A Aksiyel','T2A Sagittal','T2A Koronal','T2A Aksiyel','PD Sagittal','PD Koronal','PD Aksiyel','PD FS','STIR Sagittal','STIR Koronal','STIR Aksiyel','T1A+K Sagittal','T1A+K Koronal','T1A+K Aksiyel','T1A+K FS','T2*','DWI/ADC','3D İzotropik']} values={d.sekanslar} onChange={v=>u('sekanslar',v)} cols={4}/>
+</Field>
+<Field label="Alan Gücü"><RadioGroup options={['1.5T','3T']} value={d.alan_gucu} onChange={v=>u('alan_gucu',v)}/></Field>
+<Field label="IV Kontrast"><RadioGroup options={['Uygulandı','Uygulanmadı']} value={d.kontrast} onChange={v=>u('kontrast',v)}/></Field>
+</div>)}
+
+function StepKemik({d,u}){return(<div>
+<Field label="Kemik Dizilimi"><RadioGroup options={['Normal','Anormal']} value={d.kemik_dizilim} onChange={v=>u('kemik_dizilim',v)}/></Field>
+{d.kemik_dizilim==='Anormal'&&<div className="cond-block">
+<Field label="Dizilim Patolojisi"><CheckGroup options={['Pes planus','Pes kavus','Halluks valgus','Halluks varus','Metatarsus adduktus','Koalisyon ilişkili','Charcot deformitesi','Postoperatif değişiklik','Diğer']} values={d.dizilim_detay} onChange={v=>u('dizilim_detay',v)} cols={3}/></Field></div>}
+<hr className="section-divider"/>
+<Field label="Kemik İliği Sinyali"><RadioGroup options={['Normal','Anormal']} value={d.kemik_ilik} onChange={v=>u('kemik_ilik',v)}/></Field>
+{d.kemik_ilik==='Anormal'&&<div className="cond-block">
+<Field label="Patern"><RadioGroup options={['Diffüz','Fokal','Multifokal']} value={d.ilik_pattern} onChange={v=>u('ilik_pattern',v)}/></Field>
+<Field label="Lokalizasyon"><CheckGroup options={BONE_SITES} values={d.ilik_lokalizasyon} onChange={v=>u('ilik_lokalizasyon',v)} cols={4}/></Field>
+</div>}
+<hr className="section-divider"/>
+<Field label="Kırık"><RadioGroup options={['Yok','Akut','Stres kırığı','Stres reaksiyonu','Patolojik','Kronik/İyileşmiş']} value={d.fracture} onChange={v=>u('fracture',v)}/></Field>
+{d.fracture!=='Yok'&&<div className="cond-block">
+<Field label="Kırık Lokalizasyonu"><input type="text" value={d.fracture_loc} onChange={e=>u('fracture_loc',e.target.value)} placeholder="örn: 2. metatars şaft"/></Field>
+<Field label="Kırık Detayı"><input type="text" value={d.fracture_type} onChange={e=>u('fracture_type',e.target.value)} placeholder="örn: non-deplase transvers"/></Field>
+</div>}
+<Field label="Kemik Kontüzyonu"><RadioGroup options={['Yok','Var']} value={d.bone_contusion} onChange={v=>u('bone_contusion',v)}/></Field>
+{d.bone_contusion==='Var'&&<div className="cond-block">
+<Field label="Kontüzyon Lokalizasyonu"><input type="text" value={d.contusion_loc} onChange={e=>u('contusion_loc',e.target.value)}/></Field></div>}
+<Field label="Periosteal Reaksiyon"><RadioGroup options={['Yok','Var']} value={d.periosteal_rx} onChange={v=>u('periosteal_rx',v)}/></Field>
+</div>)}
+
+function StepAchilles({d,u}){return(<div>
+<Field label="Aşil Tendonu Morfolojisi"><RadioGroup options={TENDON_GRADES} value={d.achilles_morph} onChange={v=>u('achilles_morph',v)}/></Field>
+{d.achilles_morph!=='Normal'&&<div className="cond-block">
+<Field label="Lokalizasyon"><RadioGroup options={['İnsersiyonel','Midsubstans (2-6 cm proksimal)','Muskulotendinöz bileşke']} value={d.achilles_loc} onChange={v=>u('achilles_loc',v)}/></Field>
+<Field label="Tendon Kalınlığı (mm)"><input type="text" value={d.achilles_kalinlik} onChange={e=>u('achilles_kalinlik',e.target.value)} placeholder="AP çap, mm"/></Field>
+<Field label="İntratendinöz Sinyal"><RadioGroup options={['T2 hiperintens odak','Diffüz sinyal artışı','İntrasubstans yırtık alanı','Gap (tendon devamlılığında kayıp)']} value={d.achilles_signal} onChange={v=>u('achilles_signal',v)}/></Field>
+</div>}
+<hr className="section-divider"/>
+<Field label="Haglund Deformitesi"><RadioGroup options={['Yok','Var']} value={d.haglund} onChange={v=>u('haglund',v)}/></Field>
+<Field label="Retrokalkaneal Bursit"><RadioGroup options={['Yok','Var']} value={d.retrocal_bursit} onChange={v=>u('retrocal_bursit',v)}/></Field>
+<Field label="Paratenon"><RadioGroup options={['Normal','Kalınlaşmış','Peritendinöz sıvı']} value={d.paratenon} onChange={v=>u('paratenon',v)}/></Field>
+</div>)}
+
+function StepTibPost({d,u}){return(<div>
+<Field label="Tibialis Posterior Tendonu"><RadioGroup options={TENDON_GRADES_EXT} value={d.tibpost_morph} onChange={v=>u('tibpost_morph',v)}/></Field>
+{d.tibpost_morph!=='Normal'&&<div className="cond-block">
+<Field label="Lokalizasyon"><RadioGroup options={['Retromalleolar','İnframalleolar','İnsersiyonel','Diffüz']} value={d.tibpost_loc} onChange={v=>u('tibpost_loc',v)}/></Field>
+<Field label="Sinyal Değişikliği"><RadioGroup options={['Tendon içi T2 hiperintens odak','Diffüz kalınlaşma ve sinyal artışı','Tendon incelmesi','Komplet gap']} value={d.tibpost_signal} onChange={v=>u('tibpost_signal',v)}/></Field>
+</div>}
+<hr className="section-divider"/>
+<Field label="Aksesuar Naviküler Kemik"><RadioGroup options={['Yok','Tip I (os tibiale externum)','Tip II (kornuat naviküler)','Tip III (kornuat ridge)']} value={d.accessory_nav} onChange={v=>u('accessory_nav',v)}/></Field>
+</div>)}
+
+function StepPeroneal({d,u}){return(<div>
+<Field label="Peroneus Brevis"><RadioGroup options={TENDON_GRADES_EXT} value={d.pb_morph} onChange={v=>u('pb_morph',v)}/></Field>
+<Field label="Peroneus Longus"><RadioGroup options={TENDON_GRADES_EXT} value={d.pl_morph} onChange={v=>u('pl_morph',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Subluksasyon / Dislokasyon"><RadioGroup options={['Yok','Subluksasyon','Dislokasyon']} value={d.peroneal_sublux} onChange={v=>u('peroneal_sublux',v)}/></Field>
+<Field label="Superior Peroneal Retinakulum (SPR)"><RadioGroup options={['İntakt','Yırtık','Avulsiyon','Kalınlaşmış']} value={d.spr_status} onChange={v=>u('spr_status',v)}/></Field>
+<Field label="Peroneal Tüberkül"><RadioGroup options={['Normal','Hipertrofik']} value={d.peroneal_tub} onChange={v=>u('peroneal_tub',v)}/></Field>
+</div>)}
+
+function StepDigerTendon({d,u}){return(<div>
+<Field label="Tibialis Anterior"><RadioGroup options={TENDON_GRADES} value={d.tibant_morph} onChange={v=>u('tibant_morph',v)}/></Field>
+<Field label="Fleksör Hallusis Longus (FHL)"><RadioGroup options={TENDON_GRADES} value={d.fhl_morph} onChange={v=>u('fhl_morph',v)}/></Field>
+<Field label="Os Trigonum / Posterior İmpingement"><RadioGroup options={['Yok','Os trigonum mevcut — asemptomatik','Os trigonum + çevre ödem (semptomatik)','Stieda prosesi']} value={d.fhl_os_trigonum} onChange={v=>u('fhl_os_trigonum',v)}/></Field>
+<Field label="Fleksör Digitorum Longus (FDL)"><RadioGroup options={TENDON_GRADES} value={d.fdl_morph} onChange={v=>u('fdl_morph',v)}/></Field>
+<Field label="Ekstansör Tendonlar (EHL, EDL, TA)"><RadioGroup options={['Normal','Tendinoz','Parsiyel yırtık','Komplet rüptür']} value={d.extensor_morph} onChange={v=>u('extensor_morph',v)}/></Field>
+</div>)}
+
+function StepLateral({d,u}){return(<div>
+<div className="info-box">Lateral ligaman kompleksi: ATFL en sık yaralanan, CFL ikinci sıklıkta, PTFL en nadir yaralanan komponenttir.</div>
+<Field label="Anterior Talofibular Ligaman (ATFL)"><RadioGroup options={LIG_GRADES} value={d.atfl} onChange={v=>u('atfl',v)}/></Field>
+<Field label="Kalkaneofibular Ligaman (CFL)"><RadioGroup options={LIG_GRADES} value={d.cfl} onChange={v=>u('cfl',v)}/></Field>
+<Field label="Posterior Talofibular Ligaman (PTFL)"><RadioGroup options={LIG_GRADES} value={d.ptfl} onChange={v=>u('ptfl',v)}/></Field>
+</div>)}
+
+function StepDeltoid({d,u}){return(<div>
+<div className="info-box">Deltoid (medial) ligaman: Yüzeyel tabaka (tibionavicular, tibiocalcaneal, tibiotalar yüzeyel) ve derin tabaka (derin tibiotalar) komponentlerinden oluşur.</div>
+<Field label="Yüzeyel Deltoid"><RadioGroup options={LIG_GRADES} value={d.deltoid_sup} onChange={v=>u('deltoid_sup',v)}/></Field>
+<Field label="Derin Deltoid"><RadioGroup options={LIG_GRADES} value={d.deltoid_deep} onChange={v=>u('deltoid_deep',v)}/></Field>
+</div>)}
+
+function StepSpring({d,u}){return(<div>
+<Field label="Spring (Kalkaneonaviküler) Ligaman"><RadioGroup options={LIG_GRADES} value={d.spring_lig} onChange={v=>u('spring_lig',v)}/></Field>
+<Field label="Lisfranc Ligamanı"><RadioGroup options={LIG_GRADES} value={d.lisfranc_lig} onChange={v=>u('lisfranc_lig',v)}/></Field>
+<Field label="Bifurkat Ligaman"><RadioGroup options={['Normal','Sprain','Parsiyel yırtık','Komplet yırtık']} value={d.bifurcate_lig} onChange={v=>u('bifurcate_lig',v)}/></Field>
+{d.lisfranc_lig!=='Normal'&&<div className="cond-block">
+<Field label="Midfoot Kemik İliği Ödemi"><RadioGroup options={['Yok','Var — 1. ve 2. metatars bazisleri','Var — medial küneiform','Var — yaygın']} value={d.midfoot_edema} onChange={v=>u('midfoot_edema',v)}/></Field>
+</div>}
+</div>)}
+
+function StepTibiotalar({d,u}){return(<div>
+<Field label="Tibiotalar Eklem Efüzyonu"><RadioGroup options={['Yok','Minimal','Orta','Belirgin']} value={d.tibiotalar_effusion} onChange={v=>u('tibiotalar_effusion',v)}/></Field>
+<Field label="Sinoviyal Kalınlaşma"><RadioGroup options={['Yok','Hafif','Belirgin','Nodüler']} value={d.synovial_thick} onChange={v=>u('synovial_thick',v)}/></Field>
+<Field label="Artiküler Kıkırdak"><RadioGroup options={CARTILAGE_GRADES} value={d.cartilage_grade} onChange={v=>u('cartilage_grade',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Osteokondral Lezyon (OKL)"><RadioGroup options={['Yok','Var']} value={d.ocd_present} onChange={v=>u('ocd_present',v)}/></Field>
+{d.ocd_present==='Var'&&<div className="cond-block">
+<Field label="OKL Lokalizasyonu"><RadioGroup options={['Medial talar dome (anterolateral)','Medial talar dome (posteromediyal)','Lateral talar dome','Santral','Tibial plafond']} value={d.ocd_loc} onChange={v=>u('ocd_loc',v)}/></Field>
+<Field label="OKL Boyutu (mm)"><input type="text" value={d.ocd_size} onChange={e=>u('ocd_size',e.target.value)} placeholder="AP x TR x CC mm"/></Field>
+<Field label="Stabilite"><RadioGroup options={['Stabil','İnstabil — subkondral kist','İnstabil — fragman deplase','İnstabil — sıvı altlama (rim sign)','Belirsiz']} value={d.ocd_stability} onChange={v=>u('ocd_stability',v)}/></Field>
+<Field label="Hepple/MRI Sınıflandırma"><RadioGroup options={['Evre 1 — Subkondral kompresyon','Evre 2a — Subkondral kist (intakt kıkırdak)','Evre 2b — Açık subkondral kist','Evre 3 — Ayrılmış ama deplase olmamış fragman','Evre 4 — Deplase fragman','Evre 5 — Subkondral kist + kıkırdak defekti']} value={d.ocd_class} onChange={v=>u('ocd_class',v)}/></Field>
+</div>}
+<Field label="Serbest Cisim (Loose Body)"><RadioGroup options={['Yok','Var']} value={d.loose_body} onChange={v=>u('loose_body',v)}/></Field>
+</div>)}
+
+function StepSubtalar({d,u}){return(<div>
+<Field label="Subtalar Eklem Efüzyonu"><RadioGroup options={['Yok','Minimal','Orta','Belirgin']} value={d.subtalar_effusion} onChange={v=>u('subtalar_effusion',v)}/></Field>
+<Field label="Subtalar Kıkırdak"><RadioGroup options={['Normal','Grade I-II defekt','Grade III-IV defekt','Diffüz dejeneratif']} value={d.subtalar_cartilage} onChange={v=>u('subtalar_cartilage',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Sinus Tarsi"><RadioGroup options={['Normal (yağ sinyali)','Ödem','Fibrozis','Kitle / Ganglion','Obliterasyon']} value={d.sinus_tarsi} onChange={v=>u('sinus_tarsi',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Tarsal Koalisyon"><RadioGroup options={['Yok','Var']} value={d.coalition} onChange={v=>u('coalition',v)}/></Field>
+{d.coalition==='Var'&&<div className="cond-block">
+<Field label="Koalisyon Tipi"><RadioGroup options={['Fibröz','Kartilajinöz','Osseöz']} value={d.coalition_type} onChange={v=>u('coalition_type',v)}/></Field>
+<Field label="Koalisyon Lokalizasyonu"><RadioGroup options={['Talokalkaneal (sustentaculum tali)','Kalkaneonaviküler','Talonaviküler','Kalkaneokuboid','Diğer']} value={d.coalition_loc} onChange={v=>u('coalition_loc',v)}/></Field>
+</div>}
+</div>)}
+
+function StepPlantar({d,u}){return(<div>
+<Field label="Plantar Fasya"><RadioGroup options={['Normal','Kalınlaşma','Parsiyel yırtık','Komplet yırtık']} value={d.plantar_fascia} onChange={v=>u('plantar_fascia',v)}/></Field>
+{d.plantar_fascia!=='Normal'&&<div className="cond-block">
+<Field label="Kalınlık (mm)"><input type="text" value={d.pf_thickness} onChange={e=>u('pf_thickness',e.target.value)} placeholder="Normal <4mm"/></Field>
+<Field label="Sinyal Değişikliği"><RadioGroup options={['Hafif T2 sinyal artışı','Belirgin ödem','İntrasubstans yırtık sinyali','Perifasyel ödem']} value={d.pf_signal} onChange={v=>u('pf_signal',v)}/></Field>
+<Field label="Etkilenen Bölge"><RadioGroup options={['Proksimal insersyon (kalkaneal)','Midsubstans','Distal (metatars başları)','Diffüz']} value={d.pf_loc} onChange={v=>u('pf_loc',v)}/></Field>
+</div>}
+<Field label="Kalkaneal (Heel) Kemik İliği Ödemi"><RadioGroup options={['Yok','Var']} value={d.heel_edema} onChange={v=>u('heel_edema',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Plantar Fibroma"><RadioGroup options={['Yok','Var']} value={d.plantar_fibroma} onChange={v=>u('plantar_fibroma',v)}/></Field>
+{d.plantar_fibroma==='Var'&&<div className="cond-block">
+<Field label="Fibroma Boyutu"><input type="text" value={d.fibroma_size} onChange={e=>u('fibroma_size',e.target.value)} placeholder="mm"/></Field>
+</div>}
+<hr className="section-divider"/>
+<Field label="Plantar Plak (MTP eklemleri)"><RadioGroup options={['Normal','Parsiyel yırtık','Komplet yırtık','Değerlendirilemedi']} value={d.plantar_plate_status} onChange={v=>u('plantar_plate_status',v)}/></Field>
+{d.plantar_plate_status!=='Normal'&&d.plantar_plate_status!=='Değerlendirilemedi'&&<div className="cond-block">
+<Field label="Etkilenen MTP Eklemi"><input type="text" value={d.pp_loc} onChange={e=>u('pp_loc',e.target.value)} placeholder="örn: 2. MTP"/></Field>
+</div>}
+</div>)}
+
+function StepTarsal({d,u}){return(<div>
+<Field label="Tarsal Tünel"><RadioGroup options={['Normal','Yer kaplayan lezyon','Sinir kompresyonu','Postoperatif değişiklik']} value={d.tarsal_tunnel_finding} onChange={v=>u('tarsal_tunnel_finding',v)}/></Field>
+<Field label="Tibial Sinir"><RadioGroup options={['Normal','Kalınlaşmış','Anormal sinyal','Nöroma']} value={d.tibial_nerve} onChange={v=>u('tibial_nerve',v)}/></Field>
+<hr className="section-divider"/>
+<Field label="Morton Nöroması"><RadioGroup options={['Yok','Var']} value={d.morton_present} onChange={v=>u('morton_present',v)}/></Field>
+{d.morton_present==='Var'&&<div className="cond-block">
+<Field label="Web Aralığı"><RadioGroup options={['2-3 (en sık)','3-4','1-2','4-5','Multipl']} value={d.morton_space} onChange={v=>u('morton_space',v)}/></Field>
+<Field label="Boyut (mm)"><input type="text" value={d.morton_size} onChange={e=>u('morton_size',e.target.value)}/></Field>
+</div>}
+<hr className="section-divider"/>
+<Field label="Baxter Siniri (İnferior Kalkaneal Sinir)"><RadioGroup options={['Normal','Sıkışma bulguları','Değerlendirilemedi']} value={d.baxter_nerve} onChange={v=>u('baxter_nerve',v)}/></Field>
+</div>)}
+
+function StepPreLoop({d,u}){return(<div>
+<div className="info-box">Bu adımda anatomik bölgelerde tanımlanan bulgulara ek olarak, ayrıca karakterize edilmesi gereken fokal lezyonların varlığını belirleyin.</div>
+<Field label="Ek Fokal Lezyon Saptandı mı?"><RadioGroup options={['Hayır','Evet']} value={d.has_lesion} onChange={v=>u('has_lesion',v)}/></Field>
+{d.has_lesion==='Evet'&&d.lesions.length>0&&<div>
+<div style={{marginTop:12,marginBottom:8,fontWeight:700,color:'#ff9800',fontSize:'0.9rem'}}>Kayıtlı Lezyonlar ({d.lesions.length})</div>
+<div className="lesion-list">{d.lesions.map((l,i)=><div key={i} className="lesion-chip">Lezyon {i+1}: {l.loc||'—'} {l.size_ap?`(${l.size_ap}mm)`:''}</div>)}</div>
+</div>}
+<Field label="Yumuşak Doku İnflamasyonu"><RadioGroup options={['Yok','Var — lokal','Var — yaygın']} value={d.soft_tissue_inflam} onChange={v=>u('soft_tissue_inflam',v)}/></Field>
+<Field label="Blooming Artefaktı (T2*)"><RadioGroup options={['Yok','Var']} value={d.blooming} onChange={v=>u('blooming',v)}/></Field>
+<Field label="Ganglion Kisti"><RadioGroup options={['Yok','Var']} value={d.ganglion_present} onChange={v=>u('ganglion_present',v)}/></Field>
+<Field label="Kemik Lezyonu (tümör şüphesi)"><RadioGroup options={['Yok','Var']} value={d.bone_lesion} onChange={v=>u('bone_lesion',v)}/></Field>
+<Field label="Kortikal İrregülarite / Destrüksiyon"><RadioGroup options={['Yok','Var']} value={d.cortical_irreg} onChange={v=>u('cortical_irreg',v)}/></Field>
+<Field label="AVN Bulgusu"><RadioGroup options={['Yok','Var']} value={d.avn_present} onChange={v=>u('avn_present',v)}/></Field>
+{d.avn_present==='Var'&&<div className="cond-block">
+<Field label="AVN Lokalizasyonu"><RadioGroup options={['Talus','Naviküler (Müller-Weiss)','Metatars başı (Freiberg)','Kalkaneus','Diğer']} value={d.avn_loc} onChange={v=>u('avn_loc',v)}/></Field>
+</div>}
+<Field label="Kontrast Sonrası Tutulum Paterni"><RadioGroup options={ENH_OPTS} value={d.enhancement_pattern} onChange={v=>u('enhancement_pattern',v)}/></Field>
+</div>)}
+
+/* LESION LOOP STEPS */
+function LoopLoc({les,ul}){return(<div>
+<Field label="Lezyon Lokalizasyonu"><RadioGroup options={LESION_SITES} value={les.loc} onChange={v=>ul('loc',v)}/></Field>
+<Field label="Detay"><input type="text" value={les.loc_detail} onChange={e=>ul('loc_detail',e.target.value)} placeholder="Spesifik anatomik detay"/></Field>
+</div>)}
+function LoopSize({les,ul}){return(<div>
+<div className="inline-grid">
+<Field label="AP (mm)"><input type="number" value={les.size_ap} onChange={e=>ul('size_ap',e.target.value)}/></Field>
+<Field label="TR (mm)"><input type="number" value={les.size_tr} onChange={e=>ul('size_tr',e.target.value)}/></Field>
+<Field label="CC (mm)"><input type="number" value={les.size_cc} onChange={e=>ul('size_cc',e.target.value)}/></Field>
+</div>
+<Field label="Morfoloji"><RadioGroup options={['Solid','Kistik','Mikst (solid-kistik)','İrregüler','Lobüle']} value={les.morph} onChange={v=>ul('morph',v)}/></Field>
+<Field label="Sınır"><RadioGroup options={MARGIN_OPTS} value={les.margin} onChange={v=>ul('margin',v)}/></Field>
+</div>)}
+function LoopSignal({les,ul}){return(<div>
+<Field label="T1A Sinyal"><RadioGroup options={SIGNAL_OPTS} value={les.t1} onChange={v=>ul('t1',v)}/></Field>
+<Field label="T2A / STIR Sinyal"><RadioGroup options={SIGNAL_OPTS} value={les.t2} onChange={v=>ul('t2',v)}/></Field>
+<Field label="STIR Supresyon"><RadioGroup options={['Baskılanıyor','Baskılanmıyor','Kısmen baskılanıyor','Değerlendirilemedi']} value={les.stir} onChange={v=>ul('stir',v)}/></Field>
+<Field label="DWI Sinyal"><RadioGroup options={['Kısıtlanma yok','Kısıtlanma var','Değerlendirilemedi','Uygulanmadı']} value={les.dwi} onChange={v=>ul('dwi',v)}/></Field>
+<Field label="T2* / Hemosiderin"><RadioGroup options={['Normal','Blooming (+)','Değerlendirilemedi','Uygulanmadı']} value={les.t2star} onChange={v=>ul('t2star',v)}/></Field>
+</div>)}
+function LoopContrast({les,ul}){return(<div>
+<Field label="Kontrast Tutulumu"><RadioGroup options={ENH_OPTS} value={les.enh} onChange={v=>ul('enh',v)}/></Field>
+{les.enh&&les.enh!=='Yok'&&<div className="cond-block">
+<Field label="Tutulum Detayı"><textarea value={les.enh_detail} onChange={e=>ul('enh_detail',e.target.value)} placeholder="Kontrast tutulum paternini detaylandırın..."/></Field>
+</div>}
+</div>)}
+function LoopEnv({les,ul}){return(<div>
+<Field label="Çevre Doku İnvazyonu"><RadioGroup options={['Yok','Var','Şüpheli']} value={les.env_invasion} onChange={v=>ul('env_invasion',v)}/></Field>
+<Field label="Perileziyonel Ödem"><RadioGroup options={['Yok','Hafif','Belirgin']} value={les.env_edema} onChange={v=>ul('env_edema',v)}/></Field>
+<Field label="Komşu Yapı Deplasmanı"><RadioGroup options={['Yok','Var']} value={les.env_displacement} onChange={v=>ul('env_displacement',v)}/></Field>
+<Field label="Kemik Tutulumu / Erozyon"><RadioGroup options={['Yok','Var — pressure erozyon','Var — infiltratif destrüksiyon']} value={les.env_bone} onChange={v=>ul('env_bone',v)}/></Field>
+</div>)}
+function LoopExtra({les,ul}){return(<div>
+<Field label="Kalsifikasyon / Ossifikasyon"><RadioGroup options={['Yok','Var']} value={les.extra_calc} onChange={v=>ul('extra_calc',v)}/></Field>
+<Field label="Hemoraji"><RadioGroup options={['Yok','Var']} value={les.extra_hemorrhage} onChange={v=>ul('extra_hemorrhage',v)}/></Field>
+<Field label="Nekroz"><RadioGroup options={['Yok','Var']} value={les.extra_necrosis} onChange={v=>ul('extra_necrosis',v)}/></Field>
+<Field label="Yağ İçeriği"><RadioGroup options={['Yok','Var — makroskopik yağ','Var — mikroskopik yağ (CSI)']} value={les.extra_fat} onChange={v=>ul('extra_fat',v)}/></Field>
+<Field label="Flow Void"><RadioGroup options={['Yok','Var']} value={les.extra_flow_void} onChange={v=>ul('extra_flow_void',v)}/></Field>
+<Field label="Ek Not"><textarea value={les.extra_note} onChange={e=>ul('extra_note',e.target.value)} placeholder="Ek lezyon özellikleri..."/></Field>
+</div>)}
+function LoopSum({les,idx}){return(<div>
+<div style={{background:'var(--card2)',borderRadius:12,padding:16,border:'1px solid #ff9800'}}>
+<h4 style={{color:'#ff9800',marginBottom:10}}>Lezyon {idx+1} Özeti</h4>
+<table style={{width:'100%',fontSize:'0.85rem'}}>
+<tbody>
+{[['Lokalizasyon',`${les.loc} ${les.loc_detail?'— '+les.loc_detail:''}`],
+['Boyut',`${les.size_ap||'-'} x ${les.size_tr||'-'} x ${les.size_cc||'-'} mm`],
+['Morfoloji / Sınır',`${les.morph||'-'} / ${les.margin||'-'}`],
+['T1A / T2A',`${les.t1||'-'} / ${les.t2||'-'}`],
+['DWI',les.dwi||'-'],
+['Kontrast',`${les.enh||'-'} ${les.enh_detail?'— '+les.enh_detail:''}`],
+['Çevre Doku',`İnvazyon: ${les.env_invasion}, Ödem: ${les.env_edema}, Deplasman: ${les.env_displacement}`],
+['Ek',`Kals: ${les.extra_calc}, Hem: ${les.extra_hemorrhage}, Nekroz: ${les.extra_necrosis}, Yağ: ${les.extra_fat}`]
+].map((r,i)=><tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+<td style={{padding:'5px 8px',color:'var(--accent2)',fontWeight:600,width:'35%'}}>{r[0]}</td>
+<td style={{padding:'5px 8px'}}>{r[1]}</td>
+</tr>)}
+</tbody></table>
+</div>
+</div>)}
+
+function StepEk({d,u}){return(<div>
+<Field label="Efüzyon Detayı"><textarea value={d.ek_effusion_detail} onChange={e=>u('ek_effusion_detail',e.target.value)} placeholder="Eklem efüzyonlarının dağılımı ve miktarı hakkında ek bilgi..."/></Field>
+<Field label="Subkutan Ödem"><RadioGroup options={['Yok','Lokal','Yaygın']} value={d.ek_subkutan} onChange={v=>u('ek_subkutan',v)}/></Field>
+<Field label="İnsidental Bulgular"><textarea value={d.ek_incidental} onChange={e=>u('ek_incidental',e.target.value)} placeholder="Araştırma alanı içinde insidental bulgular..."/></Field>
+<Field label="Serbest Metin (Ek)"><textarea value={d.ek_freetext} onChange={e=>u('ek_freetext',e.target.value)} placeholder="Rapora eklemek istediğiniz ek bulgular..."/></Field>
+</div>)}
+
+/* ═══════════════════════ REPORT GENERATOR ═══════════════════════ */
+function generateReportHTML(d,scores){
+const N='Normal', nf=(v,label)=>v&&v!==N&&v!=='Yok'&&v!=='Hayır'?`<span class="finding-abnormal">${label||''}: ${v}</span>`:`<span class="finding-normal">${label||''}: ${v||N}</span>`;
+const row=(label,val,cls)=>`<tr><td style="width:40%;font-weight:600;color:#37474f">${label}</td><td class="${cls||''}">${val}</td></tr>`;
+const abnRow=(label,val)=>row(label,val,val===N||val==='Yok'?'finding-normal':'finding-abnormal');
+const sec=(title,content)=>`<div class="report-section"><div class="report-section-title">${title}</div>${content}</div>`;
+
+let h='';
+// Header
+h+=`<div class="report-header-band"><h2>AYAK & AYAK BİLEĞİ MRG — YAPILANDIRILMIŞ RAPOR</h2><div class="rh-sub">${d.hasta_ad?d.hasta_ad+' | ':''}${d.hasta_id?'Protokol: '+d.hasta_id+' | ':''}${d.tarih} | ${d.klinik_taraf||''} Ayak/Ayak Bileği</div></div>`;
+h+='<div class="report-body">';
+
+// Patient & Clinical
+h+=sec('HASTA & KLİNİK BİLGİ',`<table class="report-table">
+${row('Hasta',`${d.hasta_ad||'-'}, ${d.hasta_yas||'-'} yaş, ${d.hasta_cinsiyet||'-'}`)}
+${row('Endikasyon',d.klinik_endikasyon.join(', ')||'-')}
+${row('Taraf',d.klinik_taraf||'-')}
+${row('Semptom Süresi',d.klinik_sure||'-')}
+${row('Travma',d.klinik_travma||'-')}
+${d.klinik_notu?row('Not',d.klinik_notu):''}
+</table>`);
+
+// Technique
+h+=sec('TEKNİK',`<table class="report-table">
+${row('Alan Gücü',d.alan_gucu)}
+${row('Sekanslar',d.sekanslar.join(', ')||'-')}
+${row('IV Kontrast',d.kontrast||'-')}
+</table>`);
+
+// Bone
+const boneFindings=[];
+if(d.kemik_dizilim!=='Normal')boneFindings.push('Dizilim: '+d.kemik_dizilim+(d.dizilim_detay.length?' ('+d.dizilim_detay.join(', ')+')':''));
+if(d.kemik_ilik!=='Normal')boneFindings.push('İlik sinyali: '+d.ilik_pattern+(d.ilik_lokalizasyon.length?' — '+d.ilik_lokalizasyon.join(', '):''));
+if(d.fracture!=='Yok')boneFindings.push('Kırık: '+d.fracture+(d.fracture_loc?' — '+d.fracture_loc:'')+(d.fracture_type?' ('+d.fracture_type+')':''));
+if(d.bone_contusion==='Var')boneFindings.push('Kemik kontüzyonu: '+d.contusion_loc);
+if(d.periosteal_rx==='Var')boneFindings.push('Periosteal reaksiyon mevcut');
+h+=sec('KEMİK YAPILAR & İLİK',`<table class="report-table">
+${abnRow('Dizilim',d.kemik_dizilim)}
+${d.kemik_dizilim!=='Normal'?row('Detay',d.dizilim_detay.join(', ')||'-'):''}
+${abnRow('Kemik İliği',d.kemik_ilik)}
+${d.kemik_ilik!=='Normal'?row('Patern / Yer',d.ilik_pattern+' — '+(d.ilik_lokalizasyon.join(', ')||'-')):''}
+${abnRow('Kırık',d.fracture)}
+${d.fracture!=='Yok'?row('Kırık Detay',d.fracture_loc+' '+d.fracture_type):''}
+${abnRow('Kemik Kontüzyonu',d.bone_contusion==='Var'?d.contusion_loc:'Yok')}
+${abnRow('Periosteal Reaksiyon',d.periosteal_rx)}
+</table>`);
+
+// Tendons
+h+=sec('TENDON DEĞERLENDİRMESİ',`<table class="report-table">
+<tr><th colspan="2">AŞİL TENDONU</th></tr>
+${abnRow('Morfoloji',d.achilles_morph)}
+${d.achilles_morph!==N?row('Lokalizasyon',d.achilles_loc||'-'):''}
+${d.achilles_morph!==N?row('Kalınlık',d.achilles_kalinlik?d.achilles_kalinlik+' mm':'-'):''}
+${d.achilles_morph!==N?row('Sinyal',d.achilles_signal||'-'):''}
+${abnRow('Haglund',d.haglund)}
+${abnRow('Retrokalkaneal Bursit',d.retrocal_bursit)}
+${abnRow('Paratenon',d.paratenon)}
+<tr><th colspan="2">TİBİALİS POSTERİOR</th></tr>
+${abnRow('Morfoloji',d.tibpost_morph)}
+${d.tibpost_morph!==N?row('Lokalizasyon',d.tibpost_loc||'-'):''}
+${abnRow('Aksesuar Naviküler',d.accessory_nav)}
+<tr><th colspan="2">PERONEAL TENDONLAR</th></tr>
+${abnRow('Peroneus Brevis',d.pb_morph)}
+${abnRow('Peroneus Longus',d.pl_morph)}
+${abnRow('Subluksasyon',d.peroneal_sublux)}
+${abnRow('SPR',d.spr_status)}
+${abnRow('Peroneal Tüberkül',d.peroneal_tub)}
+<tr><th colspan="2">DİĞER TENDONLAR</th></tr>
+${abnRow('Tibialis Anterior',d.tibant_morph)}
+${abnRow('FHL',d.fhl_morph)}
+${abnRow('Os Trigonum',d.fhl_os_trigonum)}
+${abnRow('FDL',d.fdl_morph)}
+${abnRow('Ekstansörler',d.extensor_morph)}
+</table>`);
+
+// Ligaments
+h+=sec('LİGAMAN DEĞERLENDİRMESİ',`<table class="report-table">
+<tr><th colspan="2">LATERAL LİGAMAN KOMPLEKSİ</th></tr>
+${abnRow('ATFL',d.atfl)}
+${abnRow('CFL',d.cfl)}
+${abnRow('PTFL',d.ptfl)}
+<tr><th colspan="2">MEDİAL (DELTOİD) LİGAMAN</th></tr>
+${abnRow('Yüzeyel',d.deltoid_sup)}
+${abnRow('Derin',d.deltoid_deep)}
+<tr><th colspan="2">DİĞER LİGAMANLAR</th></tr>
+${abnRow('Spring Ligaman',d.spring_lig)}
+${abnRow('Lisfranc Ligamanı',d.lisfranc_lig)}
+${d.lisfranc_lig!==N?abnRow('Midfoot Ödemi',d.midfoot_edema):''}
+${abnRow('Bifurkat Ligaman',d.bifurcate_lig)}
+</table>`);
+
+// Joints
+h+=sec('EKLEM DEĞERLENDİRMESİ',`<table class="report-table">
+<tr><th colspan="2">TİBİOTALAR EKLEM</th></tr>
+${abnRow('Efüzyon',d.tibiotalar_effusion)}
+${abnRow('Sinoviyal Kalınlaşma',d.synovial_thick)}
+${abnRow('Kıkırdak',d.cartilage_grade)}
+${abnRow('OKL',d.ocd_present)}
+${d.ocd_present==='Var'?row('OKL Lokalizasyon',d.ocd_loc||'-'):''}
+${d.ocd_present==='Var'?row('OKL Boyut',d.ocd_size||'-'):''}
+${d.ocd_present==='Var'?row('OKL Stabilite',d.ocd_stability||'-'):''}
+${d.ocd_present==='Var'?row('OKL Evre',d.ocd_class||'-'):''}
+${abnRow('Serbest Cisim',d.loose_body)}
+<tr><th colspan="2">SUBTALAR EKLEM & SİNUS TARSİ</th></tr>
+${abnRow('Subtalar Efüzyon',d.subtalar_effusion)}
+${abnRow('Subtalar Kıkırdak',d.subtalar_cartilage)}
+${abnRow('Sinus Tarsi',d.sinus_tarsi)}
+${abnRow('Tarsal Koalisyon',d.coalition)}
+${d.coalition==='Var'?row('Tip / Yer',d.coalition_type+' — '+d.coalition_loc):''}
+</table>`);
+
+// Plantar
+h+=sec('PLANTAR YAPILAR',`<table class="report-table">
+${abnRow('Plantar Fasya',d.plantar_fascia)}
+${d.plantar_fascia!==N?row('Kalınlık',d.pf_thickness?d.pf_thickness+' mm':'-'):''}
+${d.plantar_fascia!==N?row('Sinyal',d.pf_signal||'-'):''}
+${d.plantar_fascia!==N?row('Bölge',d.pf_loc||'-'):''}
+${abnRow('Heel Ödemi',d.heel_edema)}
+${abnRow('Plantar Fibroma',d.plantar_fibroma)}
+${d.plantar_fibroma==='Var'?row('Boyut',d.fibroma_size?d.fibroma_size+' mm':'-'):''}
+${abnRow('Plantar Plak',d.plantar_plate_status)}
+${d.plantar_plate_status!==N&&d.plantar_plate_status!=='Değerlendirilemedi'?row('MTP',d.pp_loc||'-'):''}
+</table>`);
+
+// Neural
+h+=sec('NÖRAL YAPILAR',`<table class="report-table">
+${abnRow('Tarsal Tünel',d.tarsal_tunnel_finding)}
+${abnRow('Tibial Sinir',d.tibial_nerve)}
+${abnRow('Morton Nöroması',d.morton_present)}
+${d.morton_present==='Var'?row('Web Aralığı',d.morton_space||'-'):''}
+${d.morton_present==='Var'?row('Boyut',d.morton_size?d.morton_size+' mm':'-'):''}
+${abnRow('Baxter Siniri',d.baxter_nerve)}
+</table>`);
+
+// Soft tissue / misc
+h+=sec('EK BULGULAR',`<table class="report-table">
+${abnRow('Yumuşak Doku İnflamasyonu',d.soft_tissue_inflam)}
+${abnRow('Blooming (T2*)',d.blooming)}
+${abnRow('Ganglion Kisti',d.ganglion_present)}
+${abnRow('Kemik Lezyonu',d.bone_lesion)}
+${abnRow('Kortikal İrregülarite',d.cortical_irreg)}
+${abnRow('AVN',d.avn_present)}
+${d.avn_present==='Var'?row('AVN Yer',d.avn_loc||'-'):''}
+${d.enhancement_pattern&&d.enhancement_pattern!=='Yok'?row('Kontrast Paterni',d.enhancement_pattern):''}
+${abnRow('Subkutan Ödem',d.ek_subkutan)}
+${d.ek_effusion_detail?row('Efüzyon Detayı',d.ek_effusion_detail):''}
+${d.ek_incidental?row('İnsidental',d.ek_incidental):''}
+${d.ek_freetext?row('Ek Not',d.ek_freetext):''}
+</table>`);
+
+// Lesions
+if(d.lesions.length>0){
+let lt='';
+d.lesions.forEach((l,i)=>{
+lt+=`<table class="report-table" style="margin-bottom:10px"><tr><th colspan="2" style="background:#e65100;color:#fff">LEZYON ${i+1}</th></tr>
+${row('Lokalizasyon',l.loc+(l.loc_detail?' — '+l.loc_detail:''))}
+${row('Boyut',`${l.size_ap||'-'} x ${l.size_tr||'-'} x ${l.size_cc||'-'} mm`)}
+${row('Morfoloji / Sınır',`${l.morph||'-'} / ${l.margin||'-'}`)}
+${row('T1A',l.t1||'-')} ${row('T2A',l.t2||'-')} ${row('STIR',l.stir||'-')} ${row('DWI',l.dwi||'-')} ${row('T2*',l.t2star||'-')}
+${row('Kontrast',l.enh||'-')} ${l.enh_detail?row('Kontrast Detay',l.enh_detail):''}
+${row('İnvazyon',l.env_invasion)} ${row('Ödem',l.env_edema)} ${row('Deplasman',l.env_displacement)} ${row('Kemik',l.env_bone)}
+${row('Kalsifikasyon',l.extra_calc)} ${row('Hemoraji',l.extra_hemorrhage)} ${row('Nekroz',l.extra_necrosis)} ${row('Yağ',l.extra_fat)} ${row('Flow Void',l.extra_flow_void)}
+${l.extra_note?row('Not',l.extra_note):''}
+</table>`;
+});
+h+=sec('FOKAL LEZYONLAR',lt);
+}
+
+// YORUM
+const abnormals=[];
+if(d.achilles_morph!==N)abnormals.push(`Aşil tendonu: ${d.achilles_morph}${d.achilles_loc?' ('+d.achilles_loc+')':''}`);
+if(d.tibpost_morph!==N)abnormals.push(`Tibialis posterior: ${d.tibpost_morph}`);
+if(d.pb_morph!==N||d.pl_morph!==N)abnormals.push(`Peroneal tendonlar: PB-${d.pb_morph}, PL-${d.pl_morph}`);
+if(d.atfl!==N||d.cfl!==N||d.ptfl!==N)abnormals.push(`Lateral ligaman: ATFL-${d.atfl}, CFL-${d.cfl}, PTFL-${d.ptfl}`);
+if(d.deltoid_sup!==N||d.deltoid_deep!==N)abnormals.push(`Deltoid ligaman: Yüzeyel-${d.deltoid_sup}, Derin-${d.deltoid_deep}`);
+if(d.spring_lig!==N)abnormals.push(`Spring ligaman: ${d.spring_lig}`);
+if(d.lisfranc_lig!==N)abnormals.push(`Lisfranc: ${d.lisfranc_lig}`);
+if(d.ocd_present==='Var')abnormals.push(`Talus OKL: ${d.ocd_loc||''}, ${d.ocd_stability||''}, ${d.ocd_class||''}`);
+if(d.fracture!=='Yok')abnormals.push(`Kırık: ${d.fracture} — ${d.fracture_loc||''}`);
+if(d.plantar_fascia!==N)abnormals.push(`Plantar fasya: ${d.plantar_fascia}`);
+if(d.plantar_fibroma!=='Yok')abnormals.push(`Plantar fibroma (${d.fibroma_size||'?'} mm)`);
+if(d.coalition==='Var')abnormals.push(`Tarsal koalisyon: ${d.coalition_type} — ${d.coalition_loc}`);
+if(d.avn_present==='Var')abnormals.push(`AVN: ${d.avn_loc}`);
+if(d.morton_present==='Var')abnormals.push(`Morton nöroması: ${d.morton_space} aralık`);
+if(d.sinus_tarsi!=='Normal (yağ sinyali)')abnormals.push(`Sinus tarsi: ${d.sinus_tarsi}`);
+if(d.tarsal_tunnel_finding!==N)abnormals.push(`Tarsal tünel: ${d.tarsal_tunnel_finding}`);
+if(d.ganglion_present!=='Yok')abnormals.push('Ganglion kisti');
+if(d.bone_lesion!=='Yok')abnormals.push('Kemik lezyonu — tümör şüphesi');
+
+h+=`<div class="yorum-box"><h4>YORUM</h4>`;
+if(abnormals.length===0){
+h+=`<p>Ayak/ayak bileği MRG incelemesinde belirgin patolojik bulgu saptanmamıştır.</p>`;
+}else{
+h+=`<p><strong>Tespit edilen başlıca bulgular:</strong></p><ul>${abnormals.map(a=>'<li>'+a+'</li>').join('')}</ul>`;
+if(d.fracture!=='Yok')h+=`<p><strong>⚠️ Kırık:</strong> ${d.fracture} — ${d.fracture_loc||''} ${d.fracture_type||''} — Klinik korelasyon ve gerekirse BT önerilir.</p>`;
+if(d.ocd_present==='Var')h+=`<p><strong>⚠️ OKL:</strong> ${d.ocd_loc||''} yerleşimli osteokondral lezyon — ${d.ocd_stability||''} — Evreleme ve tedavi planlaması için ortopedi konsültasyonu önerilir.</p>`;
+if(d.avn_present==='Var')h+=`<p><strong>⚠️ AVN:</strong> ${d.avn_loc||''} — Evre tayini ve takip için klinik korelasyon önerilir.</p>`;
+if(d.bone_lesion!=='Yok')h+=`<p><strong>⚠️ Kemik lezyonu:</strong> Malignite ayırıcı tanıda düşünülmelidir — biyopsi ve/veya ileri tetkik önerilir.</p>`;
+}
+h+=`</div>`;
+
+// Differential Diagnosis
+const scored=Object.entries(scores).filter(([k,v])=>v.pct>0).sort((a,b)=>b[1].pct-a[1].pct);
+if(scored.length>0){
+let dt=`<table class="diff-table"><tr><th>Sıra</th><th>Patoloji</th><th>Kategori</th><th>Skor</th><th>Olasılık</th></tr>`;
+scored.forEach(([id,v],i)=>{
+const p=PATHOLOGY_DB.find(x=>x.id===id);
+const cls=v.pct>=60?'score-high':v.pct>=30?'score-med':'score-low';
+dt+=`<tr><td>${i+1}</td><td>${p?p.name:id}</td><td>${p?p.cat:''}</td><td class="${cls}">${v.pct}%</td><td class="${cls}">${v.pct>=60?'YÜKSEK':v.pct>=30?'ORTA':'DÜŞÜK'}</td></tr>`;
+});
+dt+='</table>';
+h+=sec('AYIRICI TANI',dt);
+}
+
+h+='</div>';
+return h;
+}
+
+/* ═══════════════════════ MAIN APP ═══════════════════════ */
+function App(){
+const [step,setStep]=useState(0);
+const [data,setData]=useState(initData);
+const [showReport,setShowReport]=useState(false);
+const reportRef=useRef(null);
+
+const u=useCallback((k,v)=>setData(prev=>({...prev,[k]:v})),[]);
+const ul=useCallback((k,v)=>{
+setData(prev=>{
+const ls=[...prev.lesions];
+const idx=prev.currentLesionIdx;
+if(idx>=0&&idx<ls.length){ls[idx]={...ls[idx],[k]:v};}
+return{...prev,lesions:ls};
+});
+},[]);
+
+const curLes=data.currentLesionIdx>=0&&data.currentLesionIdx<data.lesions.length?data.lesions[data.currentLesionIdx]:null;
+const scores=useMemo(()=>computeScores(data),[data]);
+const isLoop=step>=LOOP_START&&step<=LOOP_END;
+
+const goNext=useCallback(()=>{
+if(step===LOOP_START-1){// preLoop
+if(data.has_lesion==='Evet'){
+// Start new lesion
+const newLes=initLesion();
+setData(prev=>({...prev,lesions:[...prev.lesions,newLes],currentLesionIdx:prev.lesions.length}));
+setStep(LOOP_START);
+}else{
+setStep(LOOP_END+1);// skip to ek
+}
+}else if(step===LOOP_END){// loopSum → ask for more or exit
+// handled by buttons in LoopSum
+}else if(step>=LOOP_START&&step<LOOP_END){
+setStep(step+1);
+}else{
+setStep(step+1);
+}
+},[step,data]);
+
+const goPrev=useCallback(()=>{
+if(step===LOOP_START&&data.currentLesionIdx>=0){
+// Going back from first loop step: if idx===0, go to preLoop; else go to loopSum of previous
+if(data.currentLesionIdx===0){
+setData(prev=>({...prev,currentLesionIdx:-1}));
+setStep(LOOP_START-1);
+}else{
+setData(prev=>({...prev,currentLesionIdx:prev.currentLesionIdx-1}));
+setStep(LOOP_END);
+}
+}else if(step===LOOP_END+1){
+// Coming back from ek: go to preLoop if no lesions, else loopSum of last
+if(data.lesions.length>0){
+setData(prev=>({...prev,currentLesionIdx:prev.lesions.length-1}));
+setStep(LOOP_END);
+}else{
+setStep(LOOP_START-1);
+}
+}else if(step>0){
+setStep(step-1);
+}
+},[step,data]);
+
+const addAnotherLesion=()=>{
+const newLes=initLesion();
+setData(prev=>({...prev,lesions:[...prev.lesions,newLes],currentLesionIdx:prev.lesions.length}));
+setStep(LOOP_START);
+};
+const finishLesions=()=>{
+setData(prev=>({...prev,currentLesionIdx:-1}));
+setStep(LOOP_END+1);
+};
+
+const renderStep=()=>{
+const sid=STEPS[step]?.id;
+switch(sid){
+case 'hasta':return <StepHasta d={data} u={u}/>;
+case 'klinik':return <StepKlinik d={data} u={u}/>;
+case 'teknik':return <StepTeknik d={data} u={u}/>;
+case 'kemik':return <StepKemik d={data} u={u}/>;
+case 'asil':return <StepAchilles d={data} u={u}/>;
+case 'tibPost':return <StepTibPost d={data} u={u}/>;
+case 'peroneal':return <StepPeroneal d={data} u={u}/>;
+case 'digerTendon':return <StepDigerTendon d={data} u={u}/>;
+case 'lateral':return <StepLateral d={data} u={u}/>;
+case 'deltoid':return <StepDeltoid d={data} u={u}/>;
+case 'spring':return <StepSpring d={data} u={u}/>;
+case 'tibiotalar':return <StepTibiotalar d={data} u={u}/>;
+case 'subtalar':return <StepSubtalar d={data} u={u}/>;
+case 'plantar':return <StepPlantar d={data} u={u}/>;
+case 'tarsal':return <StepTarsal d={data} u={u}/>;
+case 'preLoop':return <StepPreLoop d={data} u={u}/>;
+case 'loopLoc':return curLes?<LoopLoc les={curLes} ul={ul}/>:null;
+case 'loopSize':return curLes?<LoopSize les={curLes} ul={ul}/>:null;
+case 'loopSignal':return curLes?<LoopSignal les={curLes} ul={ul}/>:null;
+case 'loopContrast':return curLes?<LoopContrast les={curLes} ul={ul}/>:null;
+case 'loopEnv':return curLes?<LoopEnv les={curLes} ul={ul}/>:null;
+case 'loopExtra':return curLes?<LoopExtra les={curLes} ul={ul}/>:null;
+case 'loopSum':return curLes?<LoopSum les={curLes} idx={data.currentLesionIdx}/>:null;
+case 'ek':return <StepEk d={data} u={u}/>;
+case 'rapor':return null;
+default:return <div>Bilinmeyen adım</div>;
+}
+};
+
+// Report view
+if(showReport){
+const rhtml=generateReportHTML(data,scores);
+return(<div className="report-overlay">
+<div className="report-actions">
+<button className="btn-print" onClick={()=>window.print()}>🖨️ Yazdır</button>
+<button className="btn-copy" onClick={()=>{
+const el=reportRef.current;
+if(el){
+const range=document.createRange();range.selectNodeContents(el);
+const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+document.execCommand('copy');sel.removeAllRanges();
+alert('Rapor panoya kopyalandı!');
+}
+}}>📋 Kopyala</button>
+<button className="btn-html" onClick={()=>{
+const blob=new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapor</title><style>${document.querySelector('style').textContent}</style></head><body style="background:#fff">${rhtml}</body></html>`],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');a.href=url;a.download=`AyakMRI_${data.hasta_ad||'rapor'}_${data.tarih}.html`;
+a.click();URL.revokeObjectURL(url);
+}}>💾 HTML İndir</button>
+<button className="btn-close" onClick={()=>setShowReport(false)}>✕ Kapat</button>
+</div>
+<div className="report-sheet" ref={reportRef} dangerouslySetInnerHTML={{__html:rhtml}}/>
+</div>);
+}
+
+const isLastStep=step===STEPS.length-1;
+const isRaporStep=STEPS[step]?.id==='rapor';
+
+return(<div>
+<div className="app-header">
+<div className="logo-icon">AA</div>
+<div><h1>Ayak & Ayak Bileği MRI Karar Destek Sistemi</h1><div className="subtitle">Yapılandırılmış Raporlama & Ayırıcı Tanı • v1.0</div></div>
+</div>
+<div className="progress-bar">
+{STEPS.map((s,i)=><div key={i} className={`prog-step${i===step?' active':''}${i<step?' done':''}${s.loop?' loop':''}`}/>)}
+</div>
+<div className="main-content">
+<div className="step-card">
+<div className="step-title">
+<span className="step-num">{step+1}/{STEPS.length}</span>
+{STEPS[step]?.icon} {STEPS[step]?.title}
+{isLoop&&data.currentLesionIdx>=0&&<span className="lesion-badge">Lezyon {data.currentLesionIdx+1}</span>}
+</div>
+<div className="step-desc">
+{isLoop?'Lezyon karakterizasyonu — her lezyon için 7 alt adım':
+STEPS[step]?.id==='rapor'?'Tüm veriler toplanmıştır. Raporu oluşturun.':''}
+</div>
+{isRaporStep?
+<div>
+<div style={{textAlign:'center',padding:'30px 0'}}>
+<div style={{fontSize:'3rem',marginBottom:16}}>📄</div>
+<h3 style={{color:'var(--accent)',marginBottom:12}}>Rapor Oluşturmaya Hazır</h3>
+<p style={{color:'var(--txt2)',marginBottom:8}}>Toplam {Object.values(scores).filter(v=>v.pct>0).length} olası patoloji tespit edildi.</p>
+{data.lesions.length>0&&<p style={{color:'#ff9800'}}>{data.lesions.length} adet fokal lezyon kaydedildi.</p>}
+<button className="nav-btn next" style={{marginTop:20,fontSize:'1rem',padding:'14px 40px'}} onClick={()=>setShowReport(true)}>📄 Raporu Oluştur</button>
+</div>
+</div>
+:renderStep()}
+<div className="nav-bar">
+<button className="nav-btn prev" onClick={goPrev} disabled={step===0}>← Geri</button>
+{STEPS[step]?.id==='loopSum'?
+<div style={{display:'flex',gap:10}}>
+<button className="nav-btn next" style={{background:'linear-gradient(135deg,#ff9800,#f57c00)'}} onClick={addAnotherLesion}>+ Yeni Lezyon</button>
+<button className="nav-btn next" onClick={finishLesions}>Lezyonları Bitir →</button>
+</div>
+:!isRaporStep&&<button className="nav-btn next" onClick={goNext} disabled={isLastStep}>İleri →</button>
+}
+</div>
+</div>
+</div>
+</div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

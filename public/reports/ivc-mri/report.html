@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IVC MRI Karar Destek Sistemi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0f0f14;--bg2:#16161e;--bg3:#1c1c28;--bg4:#24243a;
+--accent:#0ea5e9;--accent2:#38bdf8;--accent3:#0284c7;--accent-glow:rgba(14,165,233,.15);
+--text:#e2e2ee;--text2:#9999b0;--text3:#6666a0;
+--border:#2a2a40;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--cyan:#06b6d4;
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app-wrap{max-width:900px;margin:0 auto;padding:20px}
+.header{text-align:center;padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--accent2),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+.header p{color:var(--text2);font-size:.82rem;margin-top:4px}
+.progress-bar{display:flex;gap:3px;margin-bottom:24px;padding:0 4px}
+.progress-seg{height:4px;flex:1;border-radius:2px;background:var(--bg4);transition:background .3s}
+.progress-seg.done{background:var(--accent)}
+.progress-seg.active{background:var(--accent2);box-shadow:0 0 8px var(--accent-glow)}
+.step-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 32px;min-height:320px;position:relative}
+.step-title{font-size:1.1rem;font-weight:600;color:var(--accent2);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.step-title .num{background:var(--accent3);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+.step-desc{color:var(--text2);font-size:.82rem;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-group input[type=text],.form-group input[type=number],.form-group select,.form-group textarea{
+width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.opt-btn{padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.85rem;color:var(--text2);transition:all .2s;text-align:center;user-select:none}
+.opt-btn:hover{border-color:var(--accent);color:var(--text)}
+.opt-btn.sel{background:var(--accent-glow);border-color:var(--accent);color:var(--accent2);font-weight:600}
+.chk-grid{display:flex;flex-wrap:wrap;gap:8px}
+.chk-btn{padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--text2);transition:all .2s}
+.chk-btn.sel{background:var(--accent-glow);border-color:var(--accent);color:var(--accent2)}
+.btn-row{display:flex;justify-content:space-between;margin-top:24px}
+.btn{padding:10px 28px;border:none;border-radius:8px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-prev{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.btn-prev:hover{border-color:var(--accent);color:var(--text)}
+.btn-next{background:linear-gradient(135deg,var(--accent3),var(--accent));color:#fff}
+.btn-next:hover{opacity:.9;transform:translateY(-1px)}
+.btn-next:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.cond-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:12px}
+.cond-box .cond-title{font-size:.85rem;font-weight:600;color:var(--amber);margin-bottom:10px}
+/* Patoloji List */
+.pat-list{margin:16px 0}
+.pat-item{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;transition:border-color .2s}
+.pat-item:hover{border-color:var(--accent)}
+.pat-item-info{flex:1}
+.pat-item-title{font-size:.88rem;font-weight:600;color:var(--text)}
+.pat-item-sub{font-size:.75rem;color:var(--text2);margin-top:2px}
+.pat-item-actions{display:flex;gap:6px}
+.pat-item-btn{padding:6px 12px;border:none;border-radius:6px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s}
+.pat-edit{background:var(--accent-glow);color:var(--accent2);border:1px solid var(--accent)}
+.pat-del{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:var(--bg3);border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:600;color:var(--accent2);transition:all .2s;margin:12px 0}
+.add-btn:hover{border-color:var(--accent);background:var(--accent-glow)}
+.report-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:linear-gradient(135deg,var(--accent3),var(--accent));border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:.92rem;font-weight:700;color:#fff;transition:all .2s;margin:8px 0}
+.report-btn:hover{opacity:.9;transform:translateY(-1px)}
+/* Report */
+.report-wrap{background:#fff;color:#111;border-radius:12px;padding:32px;font-size:.88rem;line-height:1.7}
+.report-wrap h2{font-size:1.15rem;color:#111;border-bottom:2px solid var(--accent3);padding-bottom:6px;margin:20px 0 12px}
+.report-wrap h3{font-size:.95rem;color:var(--accent3);margin:14px 0 8px}
+.report-table{width:100%;border-collapse:collapse;margin:10px 0 18px}
+.report-table th{background:#e0f2fe;color:var(--accent3);text-align:left;padding:8px 10px;font-weight:600;font-size:.8rem;border:1px solid #bae6fd}
+.report-table td{padding:7px 10px;border:1px solid #e8e8f0;font-size:.82rem}
+.report-table tr:nth-child(even) td{background:#f0f9ff}
+.report-table tr:nth-child(odd) td{background:#fff}
+.yorum-box{background:#f0f9ff;border-left:4px solid var(--accent3);padding:14px 18px;border-radius:0 8px 8px 0;margin:12px 0}
+.yorum-box .yorum-title{font-weight:700;color:var(--accent3);font-size:.85rem;margin-bottom:6px}
+.yorum-box p{font-size:.82rem;color:#333;margin:3px 0}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:700;margin-left:6px}
+.badge-warning{background:#fef3c7;color:#92400e}
+.badge-danger{background:#fee2e2;color:#991b1b}
+.export-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.export-btn{padding:10px 22px;border:none;border-radius:8px;font-family:inherit;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s}
+.export-print{background:var(--accent);color:#fff}
+.export-copy{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.export-html{background:var(--green);color:#fff}
+@media print{body{background:#fff!important}.app-wrap{max-width:100%}.header,.progress-bar,.btn-row,.export-row,.step-card{display:none!important}.report-wrap{display:block!important;box-shadow:none;padding:20px}}
+.scroll-x{overflow-x:auto}
+.alert-info{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.8rem;color:var(--accent2)}
+.empty-state{text-align:center;padding:30px;color:var(--text3);font-size:.88rem}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo} = React;
+
+/* ═══ CONSTANTS ═══ */
+const LOKALIZASYONLAR=[
+ {key:"ivc_celiak",label:"IVC - Çöliak Kesim"},
+ {key:"ivc_infrarenal",label:"IVC - İnfrarenal Kesim"},
+ {key:"ivc_bifurk",label:"IVC - Bifurkasyon Öncesi"},
+ {key:"smv",label:"SMV (Superior Mezenterik Ven)"},
+ {key:"renalR",label:"Sağ Renal Ven"},
+ {key:"renalL",label:"Sol Renal Ven"},
+ {key:"iliakR",label:"Sağ İliak Ven"},
+ {key:"iliakL",label:"Sol İliak Ven"},
+];
+const PATOLOJI_TIPLERI=[
+ {key:"ektazi",label:"Ektazi / Anevrizma"},
+ {key:"trombus",label:"Trombüs"},
+ {key:"darlik",label:"Darlık / Stenoz"},
+ {key:"kompresyon",label:"Kompresyon"},
+ {key:"diger",label:"Diğer"},
+];
+const MESAFE_LABELS={smv:"IVC'ye ne kadar uzak (mm)",renalR:"IVC'den ayrıldıktan kaç mm sonra",renalL:"IVC'den ayrıldıktan kaç mm sonra",iliakR:"Bifurkasyondan kaç mm sonra",iliakL:"Bifurkasyondan kaç mm sonra"};
+
+const STEP_IDS=["patient","konum","kalibrasyon","duvar","patListesi","patTip","patDetay","report"];
+const STEP_TITLES={patient:"Hasta Bilgileri",konum:"IVC Konumu",kalibrasyon:"Kalibrasyon Ölçümleri",duvar:"Duvar Özellikleri",patListesi:"Patoloji Yönetimi",patTip:"Patoloji Tipi & Lokalizasyon",patDetay:"Patoloji Detayları",report:"Rapor"};
+
+const PRE_LOOP=4, LOOP_START=5, LOOP_END=6, REPORT=7;
+
+const emptyPat=()=>({id:Date.now(),lokalizasyon:"ivc_infrarenal",tip:"trombus",ektBasRel:"yukari",ektBasMm:"",ektBitRel:"asagi",ektBitMm:"",ektDerece:"",tromSaatFrom:"",tromSaatTo:"",tromUzunluk:"",tromKalinlik:"",cap:"",darlikCap:"",mesafe:"",darlikMm:"",kompYon:"",kompNeden:"",aciklama:""});
+
+/* ═══ APP ═══ */
+function App(){
+ const [step,setStep]=useState(0);
+ const [data,setData]=useState({patientName:"",patientAge:"",patientGender:"",patientProtocol:"",konum:"Normal Konum",capCeliak:"",capInfrarenal:"",capBifurk:"",duvar:[]});
+ const [patolojiler,setPatolojiler]=useState([]);
+ const [currentIdx,setCurrentIdx]=useState(-1);
+ const [currentPat,setCurrentPat]=useState(emptyPat());
+
+ const set=(k,v)=>setData(p=>({...p,[k]:v}));
+ const setPat=(k,v)=>setCurrentPat(p=>({...p,[k]:v}));
+ const curStepId=STEP_IDS[step];
+ const lokLabel=k=>LOKALIZASYONLAR.find(l=>l.key===k)?.label||k;
+ const tipLabel=k=>PATOLOJI_TIPLERI.find(t=>t.key===k)?.label||k;
+ const stenosisPct=(cap,d)=>{const c=parseFloat(cap),dd=parseFloat(d);if(!c||!dd||c<=0)return null;return Math.round(((c-dd)/c)*100);};
+
+ /* ─── 3-PART LOOP FIX ─── */
+ // Part 1: finalizePathology resets currentIdx = -1
+ const finalizePathology=()=>{
+  if(currentIdx>=0){setPatolojiler(prev=>prev.map((p,i)=>i===currentIdx?{...currentPat}:p));}
+  else{setPatolojiler(prev=>[...prev,{...currentPat,id:Date.now()}]);}
+  setCurrentIdx(-1); // ← PART 1
+  setCurrentPat(emptyPat());
+  setStep(PRE_LOOP); // return to hub
+ };
+
+ // Part 2: goNext from pre-loop skips loop when idx===-1
+ const goNext=()=>{
+  if(step===PRE_LOOP) return; // hub has its own buttons
+  if(step===LOOP_END){finalizePathology();return;} // save & return
+  if(step<STEP_IDS.length-1) setStep(step+1);
+ };
+
+ // Part 3: goPrev from post-loop returns to pre-loop, never into loop middle
+ const goPrev=()=>{
+  if(step===REPORT){setStep(PRE_LOOP);return;} // ← PART 3
+  if(step===LOOP_START){setCurrentIdx(-1);setCurrentPat(emptyPat());setStep(PRE_LOOP);return;}
+  if(step>0) setStep(step-1);
+ };
+
+ const startNewPat=()=>{setCurrentIdx(-1);setCurrentPat(emptyPat());setStep(LOOP_START);};
+ const editPat=i=>{setCurrentIdx(i);setCurrentPat({...patolojiler[i]});setStep(LOOP_START);};
+ const deletePat=i=>setPatolojiler(prev=>prev.filter((_,j)=>j!==i));
+ const goToReport=()=>setStep(REPORT);
+
+ /* ─── Patoloji detail text ─── */
+ const patDetailText=(p)=>{
+  if(p.tip==="ektazi") return `Başlangıç: sol renal venden ${p.ektBasMm||"?"} mm ${p.ektBasRel==="yukari"?"yukarıda":"aşağıda"}, Bitiş: ${p.ektBitMm||"?"} mm ${p.ektBitRel==="yukari"?"yukarıda":"aşağıda"}, ${p.ektDerece||"?"}°`;
+  if(p.tip==="trombus") return `Saat ${p.tromSaatFrom||"?"}-${p.tromSaatTo||"?"}, ${p.tromUzunluk||"?"} mm uzunluk, ${p.tromKalinlik||"?"} mm kalınlık`;
+  if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap);return `Çap: ${p.cap||"?"} mm, Darlık çapı: ${p.darlikCap||"?"} mm${pct!==null?` (%${pct})`:""}, Mesafe: ${p.mesafe||"?"} mm`;}
+  if(p.tip==="kompresyon") return `Yön: ${p.kompYon||"?"}, Neden: ${p.kompNeden||"?"}`;
+  return p.aciklama||"-";
+ };
+
+ /* ─── YORUM ─── */
+ const generateYorum=()=>{
+  const f=[];
+  if(data.konum!=="Normal Konum") f.push(`IVC konumu: ${data.konum} - anatomik varyant.`);
+  [{n:"Çöliak kesim",v:data.capCeliak},{n:"İnfrarenal kesim",v:data.capInfrarenal},{n:"Bifurkasyon öncesi",v:data.capBifurk}].forEach(c=>{const mm=parseFloat(c.v);if(mm>30) f.push(mm>=50?`${c.n}: ${mm} mm - anevrizmatik genişleme.`:`${c.n}: ${mm} mm - ektazik.`);});
+  if(data.duvar.includes("Kalsifiye")) f.push("IVC duvarında kalsifikasyon.");
+  if(data.duvar.includes("Ülsere")) f.push("IVC duvarında ülserasyon.");
+  if(data.duvar.includes("Düzensiz")) f.push("IVC duvarında düzensizlik - duvar patolojisi.");
+  patolojiler.forEach(p=>{
+   const loc=lokLabel(p.lokalizasyon);
+   if(p.tip==="ektazi") f.push(`${loc}: Ektazi (başlangıç: sol renal venden ${p.ektBasMm||"?"} mm ${p.ektBasRel==="yukari"?"yukarıda":"aşağıda"}, bitiş: ${p.ektBitMm||"?"} mm ${p.ektBitRel==="yukari"?"yukarıda":"aşağıda"}, ${p.ektDerece||"?"}° kapsıyor).`);
+   else if(p.tip==="trombus") f.push(`${loc}: Trombüs (saat ${p.tromSaatFrom||"?"}-${p.tromSaatTo||"?"}, ${p.tromUzunluk||"?"} mm uzunluk, ${p.tromKalinlik||"?"} mm kalınlık). Pulmoner emboli riski açısından klinik korelasyon önerilir.`);
+   else if(p.tip==="darlik"){const pct=stenosisPct(p.cap,p.darlikCap); f.push(`${loc}: Darlık${pct!==null?` (yaklaşık %${pct} stenoz)`:""}, ${p.mesafe||"?"} mm mesafede.`);}
+   else if(p.tip==="kompresyon") f.push(`${loc}: Kompresyon (${p.kompNeden||"neden belirtilmedi"}, yön: ${p.kompYon||"?"}).`);
+   else if(p.tip==="diger") f.push(`${loc}: ${p.aciklama||"Ek bulgu belirtilmedi."}`);
+  });
+  if(f.length===0) f.push("IVC ve dallarında anlamlı patoloji saptanmamıştır.");
+  return f;
+ };
+
+ /* ─── Report HTML export ─── */
+ const buildReportHTML=()=>{
+  const yorumlar=generateYorum();
+  let h=`<div style="font-family:'IBM Plex Sans',sans-serif;color:#111;line-height:1.7;font-size:14px">`;
+  h+=`<h2 style="border-bottom:2px solid #0284c7;padding-bottom:6px">IVC MRI İNCELEME RAPORU</h2>`;
+  h+=`<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr><td style="padding:4px 10px;font-weight:600;width:150px">Hasta Adı</td><td style="padding:4px 10px">${data.patientName||"-"}</td><td style="padding:4px 10px;font-weight:600;width:100px">Yaş</td><td style="padding:4px 10px">${data.patientAge||"-"}</td></tr><tr style="background:#f0f9ff"><td style="padding:4px 10px;font-weight:600">Cinsiyet</td><td style="padding:4px 10px">${data.patientGender||"-"}</td><td style="padding:4px 10px;font-weight:600">Protokol</td><td style="padding:4px 10px">${data.patientProtocol||"-"}</td></tr></table>`;
+  h+=`<h3 style="color:#0284c7;margin:14px 0 8px">IVC Genel Değerlendirme</h3>`;
+  h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">Parametre</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:13px">Değer</th></tr>`;
+  [["Konum",data.konum],["Çöliak kesim çapı",data.capCeliak?data.capCeliak+" mm":"-"],["İnfrarenal kesim çapı",data.capInfrarenal?data.capInfrarenal+" mm":"-"],["İliak bif. öncesi çapı",data.capBifurk?data.capBifurk+" mm":"-"],["Duvar",data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"]].forEach((r,i)=>{h+=`<tr style="background:${i%2===0?"#fff":"#f0f9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-weight:600;font-size:13px">${r[0]}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:13px">${r[1]}</td></tr>`;});
+  h+=`</table>`;
+  if(patolojiler.length>0){
+   h+=`<h3 style="color:#0284c7">Saptanan Patolojiler (${patolojiler.length})</h3>`;
+   h+=`<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr style="background:#e0f2fe"><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">#</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Lokalizasyon</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Tip</th><th style="padding:7px 10px;text-align:left;border:1px solid #bae6fd;font-size:12px">Detaylar</th></tr>`;
+   patolojiler.forEach((p,i)=>{h+=`<tr style="background:${i%2===0?"#fff":"#f0f9ff"}"><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px;font-weight:600">${i+1}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${lokLabel(p.lokalizasyon)}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${tipLabel(p.tip)}</td><td style="padding:6px 10px;border:1px solid #e8e8f0;font-size:12px">${patDetailText(p)}</td></tr>`;});
+   h+=`</table>`;
+  }
+  h+=`<div style="background:#f0f9ff;border-left:4px solid #0284c7;padding:14px 18px;border-radius:0 8px 8px 0;margin:16px 0"><div style="font-weight:700;color:#0284c7;font-size:14px;margin-bottom:8px">YORUM</div>`;
+  yorumlar.forEach(y=>{h+=`<p style="font-size:13px;color:#333;margin:4px 0">• ${y}</p>`;});
+  h+=`</div></div>`;return h;
+ };
+
+ const handlePrint=()=>window.print();
+ const handleCopy=()=>{const el=document.getElementById("report-content");if(!el)return;const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);document.execCommand("copy");s.removeAllRanges();alert("Rapor panoya kopyalandı!");};
+ const handleHTML=()=>{const h=buildReportHTML();const f=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>IVC MRI Raporu</title></head><body>${h}</body></html>`;const b=new Blob([f],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ivc_mri_raporu.html";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);};
+
+ /* ═══ RENDER ═══ */
+ const renderStep=()=>{
+  switch(curStepId){
+   case "patient": return(<>
+    <div className="step-desc">Hasta demografik bilgileri</div>
+    <div className="form-row">
+     <div className="form-group"><label>Hasta Adı</label><input type="text" value={data.patientName} onChange={e=>set("patientName",e.target.value)} placeholder="Ad Soyad"/></div>
+     <div className="form-group"><label>Yaş</label><input type="number" value={data.patientAge} onChange={e=>set("patientAge",e.target.value)} placeholder="Yaş"/></div>
+    </div>
+    <div className="form-row">
+     <div className="form-group"><label>Cinsiyet</label><div className="opt-grid">{["Erkek","Kadın"].map(v=><div key={v} className={"opt-btn"+(data.patientGender===v?" sel":"")} onClick={()=>set("patientGender",v)}>{v}</div>)}</div></div>
+     <div className="form-group"><label>Protokol</label><input type="text" value={data.patientProtocol} onChange={e=>set("patientProtocol",e.target.value)} placeholder="MR Venografi / MR IVC vb."/></div>
+    </div>
+   </>);
+
+   case "konum": return(<>
+    <div className="step-desc">IVC'nin anatomik konumunu seçiniz</div>
+    <div className="opt-grid">{["Normal Konum","Sol Yerleşimli","Duplike","Tortiyoze"].map(v=><div key={v} className={"opt-btn"+(data.konum===v?" sel":"")} onClick={()=>set("konum",v)}>{v}</div>)}</div>
+   </>);
+
+   case "kalibrasyon": return(<>
+    <div className="step-desc">IVC çap ölçümlerini giriniz</div>
+    <div className="form-row3">
+     <div className="form-group"><label>Çöliak kesim çapı (mm)</label><input type="number" value={data.capCeliak} onChange={e=>set("capCeliak",e.target.value)} placeholder="mm"/></div>
+     <div className="form-group"><label>İnfrarenal kesim çapı (mm)</label><input type="number" value={data.capInfrarenal} onChange={e=>set("capInfrarenal",e.target.value)} placeholder="mm"/></div>
+     <div className="form-group"><label>İliak bif. öncesi çapı (mm)</label><input type="number" value={data.capBifurk} onChange={e=>set("capBifurk",e.target.value)} placeholder="mm"/></div>
+    </div>
+   </>);
+
+   case "duvar": return(<>
+    <div className="step-desc">IVC duvar özelliklerini seçiniz (çoklu seçim)</div>
+    <div className="chk-grid">{["Düzenli","Kalsifiye","Ülsere","Düzensiz"].map(v=>{const s=data.duvar.includes(v);return <div key={v} className={"chk-btn"+(s?" sel":"")} onClick={()=>set("duvar",s?data.duvar.filter(x=>x!==v):[...data.duvar,v])}>{v}</div>;})}</div>
+   </>);
+
+   /* ─── PRE-LOOP HUB ─── */
+   case "patListesi": return(<>
+    <div className="step-desc">Saptanan patolojileri yönetin. Yeni ekleyebilir, düzenleyebilir veya silebilirsiniz.</div>
+    {patolojiler.length===0?<div className="empty-state">Henüz patoloji eklenmedi.</div>:(
+     <div className="pat-list">{patolojiler.map((p,i)=>(
+      <div key={p.id} className="pat-item">
+       <div className="pat-item-info">
+        <div className="pat-item-title">{i+1}. {tipLabel(p.tip)}</div>
+        <div className="pat-item-sub">{lokLabel(p.lokalizasyon)}
+         {p.tip==="trombus"&&p.tromUzunluk&&` • ${p.tromUzunluk} mm`}
+         {p.tip==="darlik"&&p.cap&&` • Çap: ${p.cap} mm`}
+         {p.tip==="ektazi"&&p.ektDerece&&` • ${p.ektDerece}°`}
+         {p.tip==="kompresyon"&&p.kompNeden&&` • ${p.kompNeden}`}
+        </div>
+       </div>
+       <div className="pat-item-actions">
+        <button className="pat-item-btn pat-edit" onClick={()=>editPat(i)}>Düzenle</button>
+        <button className="pat-item-btn pat-del" onClick={()=>deletePat(i)}>Sil</button>
+       </div>
+      </div>
+     ))}</div>
+    )}
+    <button className="add-btn" onClick={startNewPat}>＋ Yeni Patoloji Ekle</button>
+    <button className="report-btn" onClick={goToReport}>Rapor Oluştur →</button>
+   </>);
+
+   /* ─── LOOP START: Tip & Lokalizasyon ─── */
+   case "patTip": return(<>
+    <div className="step-desc">Patoloji tipini ve lokalizasyonunu seçiniz</div>
+    <div className="form-group"><label>Lokalizasyon</label>
+     <div className="opt-grid">{LOKALIZASYONLAR.map(l=><div key={l.key} className={"opt-btn"+(currentPat.lokalizasyon===l.key?" sel":"")} onClick={()=>setPat("lokalizasyon",l.key)}>{l.label}</div>)}</div>
+    </div>
+    <div className="form-group" style={{marginTop:16}}><label>Patoloji Tipi</label>
+     <div className="opt-grid">{PATOLOJI_TIPLERI.map(t=><div key={t.key} className={"opt-btn"+(currentPat.tip===t.key?" sel":"")} onClick={()=>setPat("tip",t.key)}>{t.label}</div>)}</div>
+    </div>
+   </>);
+
+   /* ─── LOOP END: Detaylar ─── */
+   case "patDetay": {
+    const loc=currentPat.lokalizasyon;
+    const ml=MESAFE_LABELS[loc]||"Mesafe (mm)";
+    const isBranch=!loc.startsWith("ivc_");
+
+    if(currentPat.tip==="ektazi") return(<>
+     <div className="step-desc">{lokLabel(loc)} - Ektazi / Anevrizma detayları</div>
+     <div className="form-row">
+      <div className="form-group"><label>Başlangıç - Sol renal vene göre</label><div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBasRel===v?" sel":"")} onClick={()=>setPat("ektBasRel",v)}>{l}</div>)}</div></div>
+      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={currentPat.ektBasMm} onChange={e=>setPat("ektBasMm",e.target.value)} placeholder="mm"/></div>
+     </div>
+     <div className="form-row">
+      <div className="form-group"><label>Bitiş - Sol renal vene göre</label><div className="opt-grid">{[["yukari","Yukarıda"],["asagi","Aşağıda"]].map(([v,l])=><div key={v} className={"opt-btn"+(currentPat.ektBitRel===v?" sel":"")} onClick={()=>setPat("ektBitRel",v)}>{l}</div>)}</div></div>
+      <div className="form-group"><label>Mesafe (mm)</label><input type="number" value={currentPat.ektBitMm} onChange={e=>setPat("ektBitMm",e.target.value)} placeholder="mm"/></div>
+     </div>
+     <div className="form-group"><label>IVC'yi kaç derece kapsıyor</label><input type="number" value={currentPat.ektDerece} onChange={e=>setPat("ektDerece",e.target.value)} placeholder="Derece (°)"/></div>
+    </>);
+
+    if(currentPat.tip==="trombus") return(<>
+     <div className="step-desc">{lokLabel(loc)} - Trombüs detayları</div>
+     <div className="form-row">
+      <div className="form-group"><label>Saat pozisyonu (başlangıç)</label><input type="text" value={currentPat.tromSaatFrom} onChange={e=>setPat("tromSaatFrom",e.target.value)} placeholder="ör: 2"/></div>
+      <div className="form-group"><label>Saat pozisyonu (bitiş)</label><input type="text" value={currentPat.tromSaatTo} onChange={e=>setPat("tromSaatTo",e.target.value)} placeholder="ör: 5"/></div>
+     </div>
+     <div className="form-row">
+      <div className="form-group"><label>Trombüs uzunluğu (mm)</label><input type="number" value={currentPat.tromUzunluk} onChange={e=>setPat("tromUzunluk",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>Trombüs kalınlığı (mm)</label><input type="number" value={currentPat.tromKalinlik} onChange={e=>setPat("tromKalinlik",e.target.value)} placeholder="mm"/></div>
+     </div>
+    </>);
+
+    if(currentPat.tip==="darlik") return(<>
+     <div className="step-desc">{lokLabel(loc)} - Darlık / Stenoz detayları</div>
+     <div className="form-row">
+      <div className="form-group"><label>Ven çapı (mm)</label><input type="number" value={currentPat.cap} onChange={e=>setPat("cap",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>Darlık çapı (mm)</label><input type="number" value={currentPat.darlikCap} onChange={e=>setPat("darlikCap",e.target.value)} placeholder="mm"/></div>
+     </div>
+     <div className="form-row">
+      <div className="form-group"><label>{isBranch?ml:"Lokalizasyon mesafesi (mm)"}</label><input type="number" value={currentPat.mesafe} onChange={e=>setPat("mesafe",e.target.value)} placeholder="mm"/></div>
+      <div className="form-group"><label>Darlık uzunluğu (mm)</label><input type="number" value={currentPat.darlikMm} onChange={e=>setPat("darlikMm",e.target.value)} placeholder="mm"/></div>
+     </div>
+     {currentPat.cap&&currentPat.darlikCap&&stenosisPct(currentPat.cap,currentPat.darlikCap)!==null&&<div className="alert-info">Hesaplanan stenoz oranı: %{stenosisPct(currentPat.cap,currentPat.darlikCap)}</div>}
+    </>);
+
+    if(currentPat.tip==="kompresyon") return(<>
+     <div className="step-desc">{lokLabel(loc)} - Kompresyon detayları</div>
+     <div className="form-row">
+      <div className="form-group"><label>Kompresyon yönü</label><div className="opt-grid">{["Anterior","Posterior","Lateral sağ","Lateral sol","Sirkümferansiyal"].map(v=><div key={v} className={"opt-btn"+(currentPat.kompYon===v?" sel":"")} onClick={()=>setPat("kompYon",v)}>{v}</div>)}</div></div>
+      <div className="form-group"><label>Kompresyon nedeni</label><input type="text" value={currentPat.kompNeden} onChange={e=>setPat("kompNeden",e.target.value)} placeholder="Lenfadenopati, kitle, vb."/></div>
+     </div>
+    </>);
+
+    return(<>
+     <div className="step-desc">{lokLabel(loc)} - Ek bulgu</div>
+     <div className="form-group"><label>Açıklama</label><textarea value={currentPat.aciklama} onChange={e=>setPat("aciklama",e.target.value)} placeholder="Bulguyu tanımlayınız..." rows={4}/></div>
+    </>);
+   }
+
+   /* ─── REPORT ─── */
+   case "report": {
+    const yorumlar=generateYorum();
+    return(<>
+     <div className="export-row" style={{marginBottom:16}}>
+      <button className="export-btn export-print" onClick={handlePrint}>Yazdır / PDF</button>
+      <button className="export-btn export-copy" onClick={handleCopy}>Kopyala</button>
+      <button className="export-btn export-html" onClick={handleHTML}>HTML İndir</button>
+     </div>
+     <div className="report-wrap" id="report-content">
+      <h2>IVC MRI İNCELEME RAPORU</h2>
+      <table className="report-table"><tbody>
+       <tr><td style={{fontWeight:600,width:150}}>Hasta Adı</td><td>{data.patientName||"-"}</td><td style={{fontWeight:600,width:100}}>Yaş</td><td>{data.patientAge||"-"}</td></tr>
+       <tr><td style={{fontWeight:600}}>Cinsiyet</td><td>{data.patientGender||"-"}</td><td style={{fontWeight:600}}>Protokol</td><td>{data.patientProtocol||"-"}</td></tr>
+      </tbody></table>
+      <h3>IVC Genel Değerlendirme</h3>
+      <table className="report-table"><thead><tr><th>Parametre</th><th>Değer</th></tr></thead><tbody>
+       <tr><td style={{fontWeight:600}}>Konum</td><td>{data.konum}</td></tr>
+       <tr><td style={{fontWeight:600}}>Çöliak kesim çapı</td><td>{data.capCeliak?data.capCeliak+" mm":"-"}{parseFloat(data.capCeliak)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capCeliak)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>İnfrarenal kesim çapı</td><td>{data.capInfrarenal?data.capInfrarenal+" mm":"-"}{parseFloat(data.capInfrarenal)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capInfrarenal)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>İliak bif. öncesi çapı</td><td>{data.capBifurk?data.capBifurk+" mm":"-"}{parseFloat(data.capBifurk)>30&&<span className="badge badge-warning">Ektazi</span>}{parseFloat(data.capBifurk)>=50&&<span className="badge badge-danger">Anevrizma</span>}</td></tr>
+       <tr><td style={{fontWeight:600}}>Duvar</td><td>{data.duvar.length>0?data.duvar.join(", "):"Belirtilmedi"}</td></tr>
+      </tbody></table>
+      {patolojiler.length>0&&<>
+       <h3>Saptanan Patolojiler ({patolojiler.length})</h3>
+       <div className="scroll-x"><table className="report-table"><thead><tr><th>#</th><th>Lokalizasyon</th><th>Tip</th><th>Detaylar</th></tr></thead><tbody>
+        {patolojiler.map((p,i)=><tr key={p.id}><td style={{fontWeight:600}}>{i+1}</td><td>{lokLabel(p.lokalizasyon)}</td><td>{tipLabel(p.tip)}</td><td style={{fontSize:".78rem"}}>{patDetailText(p)}</td></tr>)}
+       </tbody></table></div>
+      </>}
+      <div className="yorum-box"><div className="yorum-title">YORUM</div>{yorumlar.map((y,i)=><p key={i}>• {y}</p>)}</div>
+     </div>
+    </>);
+   }
+   default: return null;
+  }
+ };
+
+ const isInLoop=step>=LOOP_START&&step<=LOOP_END;
+ const showDefaultNav=!isInLoop&&curStepId!=="patListesi"&&curStepId!=="report";
+ const progressSteps=["patient","konum","kalibrasyon","duvar","patListesi","report"];
+ const currentLinear=isInLoop?4:progressSteps.indexOf(curStepId);
+
+ return(
+  <div className="app-wrap">
+   <div className="header">
+    <h1>IVC MRI Karar Destek Sistemi</h1>
+    <p>Inferior Vena Kava MR İnceleme</p>
+   </div>
+   <div className="progress-bar">
+    {progressSteps.map((s,i)=><div key={s} className={"progress-seg"+(i<currentLinear?" done":"")+(i===currentLinear?" active":"")}/>)}
+   </div>
+   <div className="step-card">
+    {curStepId!=="report"&&curStepId!=="patListesi"&&(
+     <div className="step-title">
+      <span className="num">{isInLoop?"✎":step+1}</span>
+      {STEP_TITLES[curStepId]}
+      {isInLoop&&<span style={{fontSize:".75rem",color:"var(--text3)",marginLeft:8}}>({currentIdx>=0?"Düzenleme":"Yeni patoloji"})</span>}
+     </div>
+    )}
+    {curStepId==="patListesi"&&<div className="step-title"><span className="num">{PRE_LOOP+1}</span>{STEP_TITLES.patListesi}</div>}
+    {renderStep()}
+    {showDefaultNav&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev} disabled={step===0}>Geri</button><button className="btn btn-next" onClick={goNext}>İleri</button></div>}
+    {isInLoop&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>{step===LOOP_START?"İptal":"Geri"}</button>{step===LOOP_START&&<button className="btn btn-next" onClick={()=>setStep(LOOP_END)}>İleri</button>}{step===LOOP_END&&<button className="btn btn-next" onClick={finalizePathology}>Kaydet & Listeye Dön</button>}</div>}
+    {curStepId==="report"&&<div className="btn-row"><button className="btn btn-prev" onClick={goPrev}>Düzenle</button></div>}
+   </div>
+  </div>
+ );
+}
+ReactDOM.render(<App/>,document.getElementById("root"));
+</script>
+</body>
+</html>

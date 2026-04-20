@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metabolik Beyin MRI — Karar Destek</title>
+<style>
+:root {
+  --bg: #0f0f1a;
+  --card: #1a1a2e;
+  --card2: #16213e;
+  --border: #2d2d4e;
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-dim: rgba(124,58,237,0.15);
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.app-header{background:linear-gradient(135deg,#1a0a3d 0%,#0f0f1a 60%);border-bottom:1px solid var(--border);padding:18px 24px;display:flex;align-items:center;gap:14px}
+.app-header .icon{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.app-header h1{font-size:1.2rem;font-weight:700;color:#fff}
+.app-header p{font-size:.8rem;color:var(--text-muted);margin-top:2px}
+.main{max-width:860px;margin:0 auto;padding:28px 20px 60px}
+
+/* Progress */
+.progress-bar{display:flex;align-items:center;gap:0;margin-bottom:28px;overflow-x:auto;padding-bottom:4px}
+.step-node{display:flex;flex-direction:column;align-items:center;position:relative;flex:1;min-width:60px}
+.step-node .circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;color:var(--text-muted);transition:.2s;z-index:1}
+.step-node.done .circle{background:var(--accent);border-color:var(--accent);color:#fff}
+.step-node.active .circle{background:var(--accent-dim);border-color:var(--accent-light);color:var(--accent-light)}
+.step-node .label{font-size:.62rem;color:var(--text-muted);margin-top:4px;text-align:center;white-space:nowrap;max-width:70px;overflow:hidden;text-overflow:ellipsis}
+.step-node.active .label,.step-node.done .label{color:var(--accent-light)}
+.step-line{flex:1;height:2px;background:var(--border);margin-top:-20px;min-width:12px;transition:.2s}
+.step-line.done{background:var(--accent)}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px}
+.card h2{font-size:1.05rem;font-weight:700;color:var(--accent-light);margin-bottom:6px}
+.card .subtitle{font-size:.82rem;color:var(--text-muted);margin-bottom:22px}
+
+/* Form elements */
+.field-group{margin-bottom:22px}
+.field-label{font-size:.83rem;font-weight:600;color:var(--text-muted);margin-bottom:10px;display:block;letter-spacing:.02em}
+.field-label span{color:var(--danger);margin-left:3px}
+.option-grid{display:flex;flex-wrap:wrap;gap:8px}
+.opt{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.82rem;cursor:pointer;transition:.15s;user-select:none;color:var(--text)}
+.opt:hover{border-color:var(--accent-light);background:var(--accent-dim)}
+.opt.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent-light);font-weight:600}
+.opt.checkbox-style{padding:7px 12px;display:flex;align-items:center;gap:8px}
+.opt.checkbox-style .chk{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem}
+.opt.checkbox-style.selected .chk{background:var(--accent);border-color:var(--accent);color:#fff}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.sublabel{font-size:.78rem;color:var(--text-muted);margin-bottom:8px;margin-top:14px;font-weight:500}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:28px;justify-content:flex-end}
+.btn{padding:10px 22px;border-radius:8px;border:none;font-size:.85rem;font-weight:600;cursor:pointer;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#6d28d9}
+.btn-secondary{background:var(--card2);color:var(--text-muted);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent-light);color:var(--text)}
+.btn-outline{background:transparent;color:var(--accent-light);border:1px solid var(--accent)}
+.btn-outline:hover{background:var(--accent-dim)}
+
+/* Results */
+.result-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.result-header h2{font-size:1.1rem;color:#fff}
+.dx-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.dx-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.dx-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+.dx-rank.r1{background:#7c3aed;color:#fff}
+.dx-rank.r2{background:#5b21b6;color:#e9d5ff}
+.dx-rank.r3{background:#3b0764;color:#c4b5fd}
+.dx-rank.r4{background:var(--card);color:var(--text-muted);border:1px solid var(--border)}
+.dx-rank.r5{background:var(--card);color:var(--text-muted);border:1px solid var(--border)}
+.dx-name{flex:1;font-size:.88rem;font-weight:600;color:var(--text)}
+.dx-bar-wrap{width:120px;flex-shrink:0}
+.dx-score-label{font-size:.72rem;color:var(--text-muted);text-align:right;margin-bottom:3px}
+.dx-bar{height:7px;border-radius:4px;background:var(--border);overflow:hidden}
+.dx-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent-light));transition:.3s}
+.dx-pct{font-size:.78rem;color:var(--accent-light);font-weight:700;margin-top:3px;text-align:right}
+
+/* Yorum block */
+.yorum-card{background:linear-gradient(135deg,#1a0a3d,#0f1629);border:1px solid var(--accent);border-radius:12px;padding:18px;margin-bottom:20px}
+.yorum-card .ytag{background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:10px;letter-spacing:.06em}
+.yorum-card .yname{font-size:.95rem;font-weight:700;color:var(--accent-light);margin-bottom:8px}
+.yorum-card .ytext{font-size:.83rem;color:var(--text);line-height:1.7}
+
+/* Report table */
+.report-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:16px}
+.report-table th{background:var(--accent-dim);color:var(--accent-light);font-size:.72rem;font-weight:700;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:.04em}
+.report-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+.report-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.report-table tr:last-child td{border-bottom:none}
+
+/* Print overlay */
+#printOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;overflow-y:auto;padding:20px}
+#printSheet{background:#fff;color:#111;max-width:780px;margin:0 auto;padding:28px 32px;font-family:'Segoe UI',sans-serif;font-size:12px;line-height:1.5;border-radius:4px}
+#printSheet h1{font-size:15px;font-weight:700;border-bottom:2px solid #7c3aed;padding-bottom:6px;margin-bottom:14px;color:#1a0a3d}
+#printSheet h2{font-size:13px;color:#5b21b6;margin:14px 0 6px}
+#printSheet p{margin-bottom:4px}
+#printSheet table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px}
+#printSheet th{background:#ede9fe;color:#5b21b6;padding:5px 8px;text-align:left;font-size:10px;letter-spacing:.04em}
+#printSheet td{padding:5px 8px;border-bottom:1px solid #e5e7eb}
+#printSheet tr:nth-child(even) td{background:#f9fafb}
+#printSheet .dx-badge{display:inline-block;background:#7c3aed;color:#fff;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:4px}
+#printSheet .yorum-block{background:#f5f3ff;border-left:3px solid #7c3aed;padding:8px 12px;margin-bottom:8px;font-size:11px}
+#printSheet .footer{margin-top:20px;font-size:10px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:8px;text-align:right}
+.overlay-toolbar{display:flex;gap:10px;max-width:780px;margin:0 auto 12px;justify-content:flex-end}
+.overlay-btn{padding:8px 18px;border-radius:7px;border:none;font-size:.83rem;font-weight:600;cursor:pointer}
+.overlay-btn.print{background:var(--accent);color:#fff}
+.overlay-btn.copy{background:#1a1a2e;color:var(--accent-light);border:1px solid var(--accent)}
+.overlay-btn.close{background:#1a1a2e;color:var(--text-muted);border:1px solid var(--border)}
+
+/* Reset btn */
+.reset-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:7px 14px;border-radius:7px;font-size:.78rem;cursor:pointer;margin-right:auto}
+.reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+@media print{
+  #printOverlay{position:absolute!important;overflow:visible!important;padding:0!important}
+  .overlay-toolbar{display:none!important}
+  #printSheet{box-shadow:none;border-radius:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="icon">🧠</div>
+  <div>
+    <h1>Metabolik Beyin MRI — Karar Destek</h1>
+    <p>Metabolik / Toksik Ensefalopati ve Leukodistrofi Ayırıcı Tanısı</p>
+  </div>
+</div>
+
+<div class="main">
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="card" id="stepCard"></div>
+</div>
+
+<!-- Print Overlay -->
+<div id="printOverlay">
+  <div class="overlay-toolbar">
+    <button class="overlay-btn copy" onclick="copyReport()">📋 Kopyala (Word)</button>
+    <button class="overlay-btn print" onclick="window.print()">🖨️ Yazdır</button>
+    <button class="overlay-btn close" onclick="closePrint()">✕ Kapat</button>
+  </div>
+  <div id="printSheet"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const STEPS = [
+  'Klinik Bağlam',
+  'T1 Sinyali',
+  'T2/FLAIR',
+  'Lokalizasyon',
+  'DWI/ADC',
+  'Kontrast',
+  'Ek Özellikler',
+  'Sonuç'
+];
+
+const diseases = [
+  {
+    id: 'hie_akut',
+    name: 'Hipoksik-iskemik Ensefalopati (Akut)',
+    category: 'Metabolik/Vasküler',
+    criteria: [
+      {f:'klinik', v:['akut','subakut'], w:2},
+      {f:'yas', v:['yetiskin','cocuk','adolesan'], w:1},
+      {f:'t1', v:['izointens','hafif_hipointens'], w:1},
+      {f:'t2', v:['hiperintens','cok_hiperintens'], w:2},
+      {f:'korteks', v:true, w:3},
+      {f:'putamen', v:true, w:1},
+      {f:'thalamus', v:true, w:2},
+      {f:'dwi', v:['var','olabilir'], w:2},
+      {f:'bilateral', v:true, w:1},
+      {f:'odem', v:true, w:2},
+    ],
+    yorum: 'Akut hipoksik-iskemik ensefalopati paterni ile uyumludur. Perirolandik korteks, bazal ganglia ve talamus tutulumu karakteristiktir. DWI erken dönemde (ilk 24-72 saat) tanıyı destekler; ADC normalizasyonu 7-10. günde görülebilir. Acil nöroloji konsültasyonu önerilir.'
+  },
+  {
+    id: 'hie_kronik',
+    name: 'Hipoksik-iskemik Ensefalopati (Kronik)',
+    category: 'Metabolik/Vasküler',
+    criteria: [
+      {f:'t1', v:['atrofi'], w:3},
+      {f:'t2', v:['hafif_hiperintens','hiperintens'], w:2},
+      {f:'korteks', v:true, w:2},
+      {f:'periventrikular', v:true, w:1},
+      {f:'dwi', v:['yok'], w:1},
+      {f:'klinik', v:['kronik'], w:2},
+    ],
+    yorum: 'Kronik hipoksik-iskemik hasar ile uyumlu bulgular. Kortikal-subkortikal atrofi ve periventriküler glioz alanları eski anoksik hasarı göstermektedir. Aktif diffüzyon kısıtlaması beklenmez. Klinik hikaye ile korelasyon gereklidir.'
+  },
+  {
+    id: 'hipoglisemik',
+    name: 'Hipoglisemik Ensefalopati',
+    category: 'Metabolik/Toksik',
+    criteria: [
+      {f:'t1', v:['izointens','hafif_hipointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'basal_gp', v:true, w:2},
+      {f:'posterior_beyaz', v:true, w:3},
+      {f:'internal_capsule', v:true, w:2},
+      {f:'dwi', v:['var','olabilir'], w:2},
+      {f:'klinik', v:['akut','subakut'], w:1},
+    ],
+    yorum: 'Hipoglisemik ensefalopati paterni ile uyumludur. Posterior beyaz cevher ve bazal ganglia tutulumu, internal capsule/posterior limb tutulumu karakteristiktir. Kan şekeri değerleri ile klinik korelasyon şarttır. Erken tedavi ile kısmi geri dönüşüm mümkündür.'
+  },
+  {
+    id: 'hepatik',
+    name: 'Hepatik Ensefalopati',
+    category: 'Metabolik/Toksik',
+    criteria: [
+      {f:'gp_t1_hiper', v:true, w:5},
+      {f:'t2', v:['hafif_hiperintens'], w:1},
+      {f:'basal_gp', v:true, w:3},
+      {f:'dwi', v:['yok'], w:1},
+      {f:'kontrast', v:['yok','minimal'], w:1},
+      {f:'klinik', v:['kronik','subakut'], w:1},
+    ],
+    yorum: 'Hepatik ensefalopati ile uyumlu bulgular. Globus pallidus T1 hiperintensitesi kronik karaciğer hastalığında mangan birikiminin karakteristik MRI bulgusudur. Karaciğer fonksiyon testleri ve serum amonyak düzeyi ile korelasyon önerilir. Hepatoloji konsültasyonu gereklidir.'
+  },
+  {
+    id: 'uremik',
+    name: 'Üremik Ensefalopati',
+    category: 'Metabolik/Toksik',
+    criteria: [
+      {f:'t1', v:['izointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'korteks', v:true, w:2},
+      {f:'odem', v:true, w:2},
+      {f:'klinik', v:['akut','subakut'], w:1},
+    ],
+    yorum: 'Üremik ensefalopati ile uyumlu bulgular. Diffüz T2/FLAIR hiperintens korteks ve subkorteks, serebral ödem üremik nörolojik komplikasyonla uyumludur. Serum kreatinin, BUN ve böbrek fonksiyonları ile korelasyon gereklidir. Diyaliz tedavisi ile görünüm düzelme gösterebilir.'
+  },
+  {
+    id: 'menkes_wilson',
+    name: 'Menkes / Wilson Hastalığı',
+    category: 'Metal Metabolizma Bozukluğu',
+    criteria: [
+      {f:'t1', v:['hafif_hipointens','izointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'putamen', v:true, w:3},
+      {f:'basal_gp', v:true, w:2},
+      {f:'bilateral', v:true, w:2},
+      {f:'yas', v:['cocuk','adolesan','yetiskin'], w:1},
+    ],
+    yorum: 'Menkes/Wilson hastalığı ile uyumlu bazal ganglia tutulumu izlenmektedir. Bilateral putamen ve globus pallidus T2 hiperintensitesi ve T1 sinyal değişiklikleri bakır metabolizması bozukluklarında görülür. Serum seruloplazmin, 24 saatlik idrar bakır ve göz muayenesi (Kayser-Fleischer halkaları) önerilir.'
+  },
+  {
+    id: 'msud',
+    name: 'Akçaağaç Şurubu İdrar Hastalığı (MSUD)',
+    category: 'Organik Asidemi / Aminoasidopati',
+    criteria: [
+      {f:'yas', v:['neonatal','sut_cocugu'], w:3},
+      {f:'t1', v:['belirgin_hipointens'], w:2},
+      {f:'t2', v:['hiperintens','cok_hiperintens'], w:2},
+      {f:'myelinated', v:true, w:4},
+      {f:'beyin_sapi', v:true, w:3},
+      {f:'serebellum', v:true, w:2},
+      {f:'dwi', v:['var'], w:3},
+      {f:'klinik', v:['akut','subakut'], w:2},
+    ],
+    yorum: 'MSUD (Maple Syrup Urine Disease / Akçaağaç Şurubu İdrar Hastalığı) ile uyumlu bulgular. Myelinated beyaz cevher tutulumu — özellikle beyin sapı, serebellum, internal capsule posterior limbi — bu hastalığın karakteristiğidir. Yenidoğan/süt çocuğunda akut tablo + DWI kısıtlaması + karakteristik idrar kokusu ile birlikte düşünülmelidir. Plazma aminoasit analizi acilen yapılmalıdır.'
+  },
+  {
+    id: 'leigh',
+    name: 'Leigh Sendromu',
+    category: 'Mitokondriyal Hastalık',
+    criteria: [
+      {f:'t1', v:['izointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'putamen', v:true, w:3},
+      {f:'beyin_sapi', v:true, w:3},
+      {f:'bilateral', v:true, w:3},
+      {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
+      {f:'kontrast', v:['yok','minimal'], w:1},
+    ],
+    yorum: 'Leigh sendromu (Subakut nekrotizan ensefalomiyopati) ile uyumlu bulgular. Bilateral simetrik putamen ve beyin sapı tegmentum tutulumu mitokondriyal hastalığın karakteristik görünümüdür. Serum ve BOS laktat, pirüvat düzeyleri ile mitokondriyal DNA analizi önerilir. Genetik konsültasyon gereklidir.'
+  },
+  {
+    id: 'methylmalonic',
+    name: 'Methylmalonic / Propionic Asidemi',
+    category: 'Organik Asidemi',
+    criteria: [
+      {f:'t1', v:['izointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'basal_gp', v:true, w:3},
+      {f:'periventrikular', v:true, w:2},
+      {f:'bilateral', v:true, w:2},
+      {f:'dwi', v:['var','olabilir'], w:1},
+      {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
+    ],
+    yorum: 'Methylmalonic/Propionic asidemi ile uyumlu bulgular. Bilateral globus pallidus ve periventriküler beyaz cevher tutulumu organik asidemi için karakteristiktir. Serum ve idrar organik asit profili, plazma aminoasitleri ile korelasyon gereklidir. Diyetetisyen ve metabolizma uzmanı konsültasyonu önerilir.'
+  },
+  {
+    id: 'canavan',
+    name: 'Canavan Hastalığı',
+    category: 'Leukodistrofi',
+    criteria: [
+      {f:'t1', v:['belirgin_hipointens'], w:2},
+      {f:'t2', v:['cok_hiperintens'], w:3},
+      {f:'diffuz_beyaz', v:true, w:4},
+      {f:'bilateral', v:true, w:2},
+      {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
+      {f:'klinik', v:['kronik'], w:1},
+    ],
+    yorum: 'Canavan hastalığı ile uyumlu bulgular. Diffüz beyaz cevher tutulumu ile çok belirgin T2 hiperintensitesi spongiform dejenerasyonu yansıtır. MR spektroskopide N-asetil aspartat (NAA) belirgin artışı tanı koydurucudur. ASPA gen mutasyon analizi önerilir. Tanıyı desteklemek için idrar N-asetilaspartat ölçümü yapılabilir.'
+  },
+  {
+    id: 'krabbe',
+    name: 'Krabbe Hastalığı',
+    category: 'Leukodistrofi',
+    criteria: [
+      {f:'t1', v:['belirgin_hipointens'], w:2},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'periventrikular', v:true, w:2},
+      {f:'internal_capsule', v:true, w:3},
+      {f:'bilateral', v:true, w:2},
+      {f:'yas', v:['neonatal','sut_cocugu','cocuk'], w:2},
+    ],
+    yorum: 'Krabbe hastalığı (Globoid hücreli leukodistrofi) ile uyumlu bulgular. Periventriküler beyaz cevher ve corticospinal tract tutulumu galaktosilseramid lipidozunda görülür. Lökosit ve kuru kan lekesi galaktosilserebrozidaz enzim aktivitesi ölçümü tanı için gereklidir. GALC gen analizi önerilir.'
+  },
+  {
+    id: 'xald',
+    name: 'Adrenoleukodistrofi (X-ALD)',
+    category: 'Peroksizom Hastalığı',
+    criteria: [
+      {f:'t1', v:['belirgin_hipointens'], w:2},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'posterior_beyaz', v:true, w:4},
+      {f:'bilateral', v:true, w:2},
+      {f:'yas', v:['cocuk','adolesan'], w:3},
+      {f:'kontrast', v:['minimal','var'], w:2},
+    ],
+    yorum: 'X-bağlı adrenoleukodistrofi (X-ALD) ile uyumlu bulgular. Posterior parieto-oksipital beyaz cevherde başlayan ve ilerleyen tutulum, erkek çocukta karakteristik görünümdür. Aktif lezyon kenarında kontrast tutulumu enflamatuar aktiviteyi gösterir. Plazma çok uzun zincirli yağ asitleri (VLCFA) analizi tanıyı doğrular. Adrenal yetmezlik açısından değerlendirme gereklidir.'
+  },
+  {
+    id: 'melas',
+    name: 'MELAS (Mitokondriyal Ensefalomiyopati)',
+    category: 'Mitokondriyal Hastalık',
+    criteria: [
+      {f:'t1', v:['izointens','hafif_hipointens'], w:1},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'korteks', v:true, w:2},
+      {f:'stroke_like', v:true, w:4},
+      {f:'korteks_ribbon', v:true, w:3},
+      {f:'klinik', v:['epizodik'], w:3},
+      {f:'yas', v:['cocuk','adolesan','yetiskin'], w:1},
+    ],
+    yorum: 'MELAS (Mitokondriyal Ensefalomiyopati, Laktik Asidoz, Stroke-like epizodlar) ile uyumlu bulgular. Vasküler teritori ile uyumsuz stroke-like kortikal lezyonlar, posterior temporal-oksipital bölge tutulumu ve epizodik klinik tablo bu sendromun karakteristiğidir. Serum ve BOS laktat, pirüvat, mitokondriyal DNA mutasyon analizi (m.3243A>G en sık) önerilir.'
+  },
+  {
+    id: 'hie_neonatal',
+    name: 'Hipoksik-iskemik Ensefalopati (Neonatal)',
+    category: 'Metabolik/Vasküler',
+    criteria: [
+      {f:'yas', v:['neonatal'], w:4},
+      {f:'t1', v:['belirgin_hipointens'], w:2},
+      {f:'t2', v:['hiperintens'], w:2},
+      {f:'putamen', v:true, w:2},
+      {f:'thalamus', v:true, w:2},
+      {f:'korteks', v:true, w:2},
+      {f:'dwi', v:['var'], w:3},
+      {f:'klinik', v:['akut','subakut'], w:2},
+    ],
+    yorum: 'Neonatal hipoksik-iskemik ensefalopati (HIE) ile uyumlu bulgular. Derin gri cevher (bazal ganglia-talamus) ve perirolandik korteks tutulumu parsiyel-prolonged asfiksi paternini; diffüz kortikal tutulum profund akut asfiksiyi gösterir. MR termometri/spektroskopi, DWI kinetiği ve klinik SARNAT skoru ile korelasyon gereklidir. Terapötik hipoterminin ilk 6 saatte başlatılması kritiktir.'
+  },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let state = {
+  step: 0,
+  yas: null,
+  klinik: null,
+  t1: null,
+  gp_t1_hiper: false,
+  t2: null,
+  putamen: false,
+  basal_gp: false,
+  thalamus: false,
+  periventrikular: false,
+  posterior_beyaz: false,
+  myelinated: false,
+  diffuz_beyaz: false,
+  korteks: false,
+  beyin_sapi: false,
+  serebellum: false,
+  internal_capsule: false,
+  dwi: null,
+  kontrast: null,
+  bilateral: false,
+  odem: false,
+  stroke_like: false,
+  korteks_ribbon: false,
+};
+
+// ─────────────────────────────────────────────
+// SCORING
+// ─────────────────────────────────────────────
+function score(disease) {
+  let raw = 0, maxPossible = 0;
+  for (const c of disease.criteria) {
+    maxPossible += c.w;
+    const val = state[c.f];
+    if (typeof c.v === 'boolean') {
+      if (val === c.v) raw += c.w;
+    } else if (Array.isArray(c.v)) {
+      if (c.v.includes(val)) raw += c.w;
+    }
+  }
+  return maxPossible > 0 ? Math.round((raw / maxPossible) * 100) : 0;
+}
+
+function computeScores() {
+  return diseases
+    .map(d => ({ ...d, pct: score(d) }))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 6);
+}
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function renderProgress() {
+  const pb = document.getElementById('progressBar');
+  pb.innerHTML = '';
+  STEPS.forEach((s, i) => {
+    if (i > 0) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (i <= state.step ? ' done' : '');
+      pb.appendChild(line);
+    }
+    const node = document.createElement('div');
+    node.className = 'step-node' + (i === state.step ? ' active' : i < state.step ? ' done' : '');
+    node.innerHTML = `<div class="circle">${i < state.step ? '✓' : i+1}</div><div class="label">${s}</div>`;
+    pb.appendChild(node);
+  });
+}
+
+function radio(field, value, label) {
+  return `<div class="opt${state[field]===value?' selected':''}" onclick="setState('${field}','${value}')">${label}</div>`;
+}
+
+function chk(field, label) {
+  const on = state[field];
+  return `<div class="opt checkbox-style${on?' selected':''}" onclick="toggleState('${field}')"><div class="chk">${on?'✓':''}</div>${label}</div>`;
+}
+
+function setState(f, v) {
+  state[f] = v;
+  renderStep();
+}
+
+function toggleState(f) {
+  state[f] = !state[f];
+  renderStep();
+}
+
+function renderStep() {
+  renderProgress();
+  const card = document.getElementById('stepCard');
+  let html = '';
+
+  if (state.step === 0) {
+    html = `
+    <h2>Klinik Bağlam</h2>
+    <p class="subtitle">Hasta yaş grubu ve klinik gidişi belirtin</p>
+    <div class="field-group">
+      <label class="field-label">Yaş Grubu <span>*</span></label>
+      <div class="option-grid">
+        ${radio('yas','neonatal','Neonatal (0–28 gün)')}
+        ${radio('yas','sut_cocugu','Süt çocuğu (1 ay–2 yıl)')}
+        ${radio('yas','cocuk','Çocuk (2–12 yıl)')}
+        ${radio('yas','adolesan','Adölesan (12–18 yıl)')}
+        ${radio('yas','yetiskin','Yetişkin (>18 yıl)')}
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Klinik Gidiş <span>*</span></label>
+      <div class="option-grid">
+        ${radio('klinik','akut','Akut (<72 saat)')}
+        ${radio('klinik','subakut','Subakut (3 gün–3 hafta)')}
+        ${radio('klinik','kronik','Kronik / Progresif')}
+        ${radio('klinik','epizodik','Epizodik / Ataklar halinde')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 1) {
+    html = `
+    <h2>T1 Sinyal Özellikleri</h2>
+    <p class="subtitle">Lezyonların T1 ağırlıklı görüntülerdeki baskın sinyali</p>
+    <div class="field-group">
+      <label class="field-label">Baskın T1 Sinyali <span>*</span></label>
+      <div class="option-grid">
+        ${radio('t1','izointens','İzointens')}
+        ${radio('t1','hafif_hipointens','Hafif hipointens')}
+        ${radio('t1','belirgin_hipointens','Belirgin hipointens')}
+        ${radio('t1','atrofi','Atrofi / Volüm kaybı')}
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Özel Bulgu</label>
+      <div class="option-grid">
+        ${chk('gp_t1_hiper','Globus pallidus T1 hiperintens (Mn birikimi?)')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 2) {
+    html = `
+    <h2>T2 / FLAIR Sinyal Özellikleri</h2>
+    <p class="subtitle">Lezyonların T2 ve FLAIR sekanslarındaki baskın sinyali</p>
+    <div class="field-group">
+      <label class="field-label">T2/FLAIR Sinyali <span>*</span></label>
+      <div class="option-grid">
+        ${radio('t2','normal','Normal')}
+        ${radio('t2','hafif_hiperintens','Hafif hiperintens')}
+        ${radio('t2','hiperintens','Belirgin hiperintens')}
+        ${radio('t2','cok_hiperintens','Çok belirgin hiperintens (spongiform?)')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 3) {
+    html = `
+    <h2>Lezyon Lokalizasyonu</h2>
+    <p class="subtitle">Tutulum gösteren anatomik bölgeleri işaretleyin (çoklu seçim)</p>
+
+    <div class="field-group">
+      <div class="sublabel">🔷 Derin Gri Cevher / Bazal Ganglia</div>
+      <div class="option-grid">
+        ${chk('putamen','Putamen')}
+        ${chk('basal_gp','Globus pallidus')}
+        ${chk('thalamus','Talamus')}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="sublabel">🔶 Beyaz Cevher</div>
+      <div class="option-grid">
+        ${chk('periventrikular','Periventriküler beyaz cevher')}
+        ${chk('posterior_beyaz','Posterior parieto-oksipital beyaz cevher')}
+        ${chk('myelinated','Myelinated beyaz cevher (BS / serebellum)')}
+        ${chk('diffuz_beyaz','Diffüz beyaz cevher tutulumu')}
+        ${chk('internal_capsule','Internal capsule / Corticospinal tract')}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-group">
+      <div class="sublabel">🔹 Korteks ve Diğer</div>
+      <div class="option-grid">
+        ${chk('korteks','Korteks / Subkorteks')}
+        ${chk('beyin_sapi','Beyin sapı / Tegmentum')}
+        ${chk('serebellum','Serebellum')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 4) {
+    html = `
+    <h2>Difüzyon (DWI / ADC)</h2>
+    <p class="subtitle">Difüzyon ağırlıklı görüntüleme bulguları</p>
+    <div class="field-group">
+      <label class="field-label">Difüzyon Kısıtlaması <span>*</span></label>
+      <div class="option-grid">
+        ${radio('dwi','yok','Kısıtlama yok (ADC normal)')}
+        ${radio('dwi','olabilir','Şüpheli / olabilir (ADC hafif düşük)')}
+        ${radio('dwi','var','Belirgin kısıtlama (ADC düşük — akut)')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 5) {
+    html = `
+    <h2>Kontrast Tutulumu</h2>
+    <p class="subtitle">Gadolinyum tutulumu (IV kontrast verilmişse)</p>
+    <div class="field-group">
+      <label class="field-label">Kontrast Tutulumu <span>*</span></label>
+      <div class="option-grid">
+        ${radio('kontrast','yok','Tutulum yok')}
+        ${radio('kontrast','minimal','Minimal / hafif tutulum')}
+        ${radio('kontrast','var','Belirgin tutulum')}
+        ${radio('kontrast','yapilmadi','Kontrast yapılmadı')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 6) {
+    html = `
+    <h2>Ek Özellikler</h2>
+    <p class="subtitle">Ek MRI bulgu ve klinik özellikler (çoklu seçim)</p>
+    <div class="field-group">
+      <div class="option-grid">
+        ${chk('bilateral','Bilateral simetrik lezyonlar')}
+        ${chk('odem','Diffüz serebral ödem')}
+        ${chk('stroke_like','Stroke-like lezyonlar (vasküler teritori dışı)')}
+        ${chk('korteks_ribbon','Kortikal "ribbon" işareti')}
+      </div>
+    </div>`;
+  }
+
+  else if (state.step === 7) {
+    const scores = computeScores();
+    const top = scores[0];
+    const rankClass = ['r1','r2','r3','r4','r5','r5'];
+
+    let dxHtml = scores.map((d, i) => `
+      <div class="dx-item">
+        <div class="dx-rank ${rankClass[i]}">${i+1}</div>
+        <div class="dx-name">${d.name}<br><span style="font-size:.72rem;color:var(--text-muted);font-weight:400">${d.category}</span></div>
+        <div class="dx-bar-wrap">
+          <div class="dx-score-label">Uyum</div>
+          <div class="dx-bar"><div class="dx-bar-fill" style="width:${d.pct}%"></div></div>
+          <div class="dx-pct">%${d.pct}</div>
+        </div>
+      </div>`).join('');
+
+    let yorumHtml = scores.slice(0,3).filter(d=>d.pct>10).map((d,i)=>`
+      <div class="yorum-card">
+        <div class="ytag">YORUM ${i+1}</div>
+        <div class="yname">${d.name} <span style="color:var(--text-muted);font-size:.78rem">— %${d.pct} uyum</span></div>
+        <div class="ytext">${d.yorum}</div>
+      </div>`).join('');
+
+    // Findings summary for report
+    const lokList = [
+      state.putamen && 'Putamen',
+      state.basal_gp && 'Globus pallidus',
+      state.thalamus && 'Talamus',
+      state.periventrikular && 'Periventriküler beyaz cevher',
+      state.posterior_beyaz && 'Posterior beyaz cevher (parieto-oksipital)',
+      state.myelinated && 'Myelinated beyaz cevher (BS/serebellum)',
+      state.diffuz_beyaz && 'Diffüz beyaz cevher',
+      state.internal_capsule && 'Internal capsule/corticospinal tract',
+      state.korteks && 'Korteks/subkorteks',
+      state.beyin_sapi && 'Beyin sapı/tegmentum',
+      state.serebellum && 'Serebellum',
+    ].filter(Boolean);
+
+    html = `
+    <div class="result-header">
+      <h2>🔬 Differential Tanı Sonuçları</h2>
+    </div>
+    <div class="dx-list">${dxHtml}</div>
+    ${yorumHtml}
+    <div class="divider"></div>
+    <div class="btn-row" style="justify-content:flex-start;flex-wrap:wrap;gap:8px;margin-top:0">
+      <button class="reset-btn" onclick="resetAll()">↺ Yeni İnceleme</button>
+      <button class="btn btn-primary" onclick="showPrint()">🖨️ Rapor / Yazdır</button>
+      <button class="btn btn-outline" onclick="copyReport()">📋 Kopyala</button>
+    </div>`;
+
+    // Store for print
+    window._printData = { scores, lokList };
+  }
+
+  // nav buttons
+  if (state.step < 7) {
+    const canNext = canProceed();
+    html += `<div class="btn-row">
+      ${state.step > 0 ? '<button class="btn btn-secondary" onclick="prevStep()">← Geri</button>' : ''}
+      <button class="btn btn-primary" onclick="nextStep()" ${canNext?'':'disabled style="opacity:.5;cursor:not-allowed"'}>
+        ${state.step===6?'Sonuçları Gör →':'İleri →'}
+      </button>
+    </div>`;
+  } else {
+    html += `<div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">← Geri</button>
+    </div>`;
+  }
+
+  card.innerHTML = html;
+}
+
+function canProceed() {
+  if (state.step===0) return state.yas && state.klinik;
+  if (state.step===1) return !!state.t1;
+  if (state.step===2) return !!state.t2;
+  if (state.step===4) return !!state.dwi;
+  if (state.step===5) return !!state.kontrast;
+  return true;
+}
+
+function nextStep() {
+  if (!canProceed()) return;
+  state.step = Math.min(state.step+1, 7);
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function prevStep() {
+  state.step = Math.max(state.step-1, 0);
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetAll() {
+  Object.keys(state).forEach(k => {
+    if (k==='step') state[k]=0;
+    else if (typeof state[k]==='boolean') state[k]=false;
+    else state[k]=null;
+  });
+  renderStep();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─────────────────────────────────────────────
+// PRINT / EXPORT
+// ─────────────────────────────────────────────
+function getYasLabel(v) {
+  const m={neonatal:'Neonatal (0–28 gün)',sut_cocugu:'Süt çocuğu (1 ay–2 yıl)',cocuk:'Çocuk (2–12 yıl)',adolesan:'Adölesan (12–18 yıl)',yetiskin:'Yetişkin (>18 yıl)'};
+  return m[v]||v||'—';
+}
+function getKlinikLabel(v) {
+  const m={akut:'Akut (<72 saat)',subakut:'Subakut (3 gün–3 hafta)',kronik:'Kronik/Progresif',epizodik:'Epizodik/Ataklar'};
+  return m[v]||v||'—';
+}
+function getT1Label(v) {
+  const m={izointens:'İzointens',hafif_hipointens:'Hafif hipointens',belirgin_hipointens:'Belirgin hipointens',atrofi:'Atrofi'};
+  return m[v]||v||'—';
+}
+function getT2Label(v) {
+  const m={normal:'Normal',hafif_hiperintens:'Hafif hiperintens',hiperintens:'Belirgin hiperintens',cok_hiperintens:'Çok belirgin hiperintens'};
+  return m[v]||v||'—';
+}
+function getDWILabel(v) {
+  const m={yok:'Kısıtlama yok',olabilir:'Şüpheli',var:'Belirgin kısıtlama (ADC düşük)'};
+  return m[v]||v||'—';
+}
+function getKontrastLabel(v) {
+  const m={yok:'Yok',minimal:'Minimal',var:'Belirgin',yapilmadi:'Yapılmadı'};
+  return m[v]||v||'—';
+}
+
+function buildReportHTML() {
+  const {scores, lokList} = window._printData||{scores:[],lokList:[]};
+  const now = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const extraList = [
+    state.bilateral && 'Bilateral simetrik lezyonlar',
+    state.odem && 'Diffüz serebral ödem',
+    state.stroke_like && 'Stroke-like lezyonlar',
+    state.korteks_ribbon && 'Kortikal ribbon işareti',
+    state.gp_t1_hiper && 'Globus pallidus T1 hiperintensitesi',
+  ].filter(Boolean);
+
+  const dxRows = scores.slice(0,5).map((d,i)=>`
+    <tr>
+      <td><strong>${i+1}.</strong> ${d.name}</td>
+      <td>${d.category}</td>
+      <td style="color:#7c3aed;font-weight:700">%${d.pct}</td>
+    </tr>`).join('');
+
+  const yorumBlocks = scores.slice(0,2).filter(d=>d.pct>10).map(d=>`
+    <div class="yorum-block">
+      <strong>${d.name}</strong><br>${d.yorum}
+    </div>`).join('');
+
+  return `
+    <h1>⚕ Metabolik Beyin MRI — Karar Destek Raporu</h1>
+    <p><strong>Tarih:</strong> ${now} &nbsp;|&nbsp; <strong>Kurum:</strong> Gülhane Eğitim ve Araştırma Hastanesi, Ankara</p>
+
+    <h2>📋 Klinik Bilgi</h2>
+    <table>
+      <tr><th>Parametre</th><th>Değer</th></tr>
+      <tr><td>Yaş grubu</td><td>${getYasLabel(state.yas)}</td></tr>
+      <tr><td>Klinik gidiş</td><td>${getKlinikLabel(state.klinik)}</td></tr>
+    </table>
+
+    <h2>🔬 MRI Bulguları</h2>
+    <table>
+      <tr><th>Sekans</th><th>Bulgu</th></tr>
+      <tr><td>T1</td><td>${getT1Label(state.t1)}${state.gp_t1_hiper?' + Globus pallidus T1 hiperintens':''}</td></tr>
+      <tr><td>T2/FLAIR</td><td>${getT2Label(state.t2)}</td></tr>
+      <tr><td>DWI/ADC</td><td>${getDWILabel(state.dwi)}</td></tr>
+      <tr><td>Kontrast</td><td>${getKontrastLabel(state.kontrast)}</td></tr>
+      <tr><td>Lokalizasyon</td><td>${lokList.length?lokList.join(', '):'Belirtilmemiş'}</td></tr>
+      <tr><td>Ek özellikler</td><td>${extraList.length?extraList.join(', '):'—'}</td></tr>
+    </table>
+
+    <h2>🧬 Differential Tanı (Ağırlıklı Skorlama)</h2>
+    <table>
+      <tr><th>Tanı</th><th>Kategori</th><th>Uyum</th></tr>
+      ${dxRows}
+    </table>
+
+    ${yorumBlocks}
+
+    <p style="margin-top:14px;font-size:11px;color:#374151"><strong>Not:</strong> Bu rapor klinik karar destek amaçlıdır; tanısal kesinlik taşımaz. Klinik, laboratuvar ve diğer görüntüleme verileri ile birlikte değerlendirilmelidir.</p>
+    <div class="footer">Metabolik Beyin MRI Karar Destek Sistemi • Gülhane Eğitim ve Araştırma Hastanesi Radyoloji ABD</div>`;
+}
+
+function showPrint() {
+  document.getElementById('printSheet').innerHTML = buildReportHTML();
+  document.getElementById('printOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePrint() {
+  document.getElementById('printOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function copyReport() {
+  const el = document.getElementById('printSheet');
+  if (!el.innerHTML) el.innerHTML = buildReportHTML();
+
+  try {
+    const range = document.createRange();
+    range.selectNode(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    alert('Rapor panoya kopyalandı. Word\'e yapıştırabilirsiniz.');
+  } catch(e) {
+    alert('Kopyalama başarısız. Lütfen manuel seçim yapın.');
+  }
+}
+
+// Init
+renderStep();
+</script>
+</body>
+</html>
