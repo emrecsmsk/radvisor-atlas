@@ -1,0 +1,2076 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yüz MRG Karar Destek</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#141824;
+    --panel2:#1b2031;
+    --border:#2a3147;
+    --text:#e8eaf2;
+    --muted:#8b92a8;
+    --accent:#f43f5e;       /* rose-500 */
+    --accent2:#fb7185;      /* rose-400 */
+    --accent-dim:#9f1239;   /* rose-800 */
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --bad:#f87171;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
+  a{color:var(--accent2)}
+  .app{max-width:1100px;margin:0 auto;padding:20px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .title{font-size:20px;font-weight:700;letter-spacing:.2px}
+  .title span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .chip{padding:4px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer}
+  .chip.active{background:linear-gradient(135deg,var(--accent-dim),var(--accent));color:#fff;border-color:var(--accent)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+  .panel h3{margin:0 0 10px 0;font-size:16px;color:var(--accent2)}
+  .panel h4{margin:14px 0 8px 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .grid{display:grid;gap:10px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  input[type=text],input[type=number],select,textarea{
+    width:100%;padding:8px 10px;background:var(--panel2);color:var(--text);
+    border:1px solid var(--border);border-radius:8px;font:inherit;outline:none
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:70px;resize:vertical}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{padding:6px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:13px;user-select:none}
+  .opt:hover{border-color:var(--accent2)}
+  .opt.on{background:linear-gradient(135deg,var(--accent-dim),var(--accent));border-color:var(--accent);color:#fff}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .btn{padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font:inherit;font-weight:600}
+  .btn:hover{border-color:var(--accent2)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:var(--accent);color:#fff}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .nav{display:flex;justify-content:space-between;margin-top:14px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
+  .pill.ok{color:var(--ok);border-color:#064e3b}
+  .pill.warn{color:var(--warn);border-color:#78350f}
+  .pill.bad{color:var(--bad);border-color:#7f1d1d}
+  .lesion-card{background:var(--panel2);border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:8px}
+  .lesion-card .t{font-weight:600;color:var(--accent2);font-size:13px}
+  .lesion-card .d{color:var(--muted);font-size:12px;margin-top:2px}
+  .ddx{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;background:var(--panel2)}
+  .ddx .nm{font-weight:700}
+  .ddx .bar-wrap{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin-top:6px}
+  .ddx .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent2));border-radius:6px}
+  .ddx .rs{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
+  .report-box{white-space:pre-wrap;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.55}
+  .small{font-size:12px;color:var(--muted)}
+  .kbd{font-family:ui-monospace,monospace;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;color:var(--muted)}
+  .stepcount{color:var(--muted);font-size:12px}
+  .warn-box{background:#2a1412;border:1px solid #7f1d1d;color:#fecaca;padding:10px;border-radius:8px;font-size:12px}
+  .ok-box{background:#0f2b1f;border:1px solid #065f46;color:#a7f3d0;padding:10px;border-radius:8px;font-size:12px}
+  hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+
+  /* Print overlay */
+  #printOverlay{position:fixed;inset:0;background:#fff;color:#000;z-index:9999;display:none;overflow:auto;padding:30px;font-family:Georgia,serif;font-size:13px;line-height:1.5}
+  #printOverlay pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:13px}
+  @media print{
+    body > *:not(#printOverlay){display:none !important}
+    #printOverlay{display:block !important;position:static;padding:0}
+  }
+</style>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useRef } = React;
+
+/* =========================================================
+   LOCALE SYSTEM
+   ========================================================= */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = {
+  tr: {
+    /* Header */
+    appTitle: 'Yüz MRG',
+    appTitleAccent: 'Karar Destek',
+    appSub: 'Ayırıcı tanı odaklı yapılandırılmış raporlama — multilezyoner',
+    stepLabel: 'Adım',
+    of: '/',
+    /* Nav buttons */
+    back: '◀ Geri',
+    next: 'İleri ▶',
+    done: 'Bitti',
+    saveLesion: 'Lezyonu Kaydet ✔',
+    goToDdx: 'Ayırıcı tanıya geç ▶',
+    /* Step 0 */
+    step0Title: 'Hasta Bilgileri',
+    labelName: 'Ad Soyad',
+    labelProtocol: 'Protokol No',
+    labelDate: 'İnceleme Tarihi',
+    labelAge: 'Yaş',
+    labelGender: 'Cinsiyet',
+    optFemale: 'Kadın',
+    optMale: 'Erkek',
+    /* Step 1 */
+    step1Title: 'Klinik Öykü & Teknik',
+    labelComplaint: 'Başlıca şikayet',
+    labelDuration: 'Süre (hafta/ay)',
+    sectionClinical: 'Klinik bulgular',
+    togPain: 'Ağrı',
+    togSwelling: 'Şişlik',
+    togFever: 'Ateş / akut inflamatuar bulgu',
+    sectionNeuro: 'Nörolojik / predispozan',
+    labelNeuro: 'Nörolojik defisit (varsa)',
+    labelPrimer: 'Primer malignite öyküsü (varsa)',
+    togSmoking: 'Sigara',
+    togSjogren: 'Sjögren/sicca zemini',
+    togHiv: 'HIV pozitif / risk',
+    togNf1: 'NF1 tanısı/kriterleri',
+    togBruksizm: 'Bruksizm',
+    sectionTechnique: 'Teknik',
+    labelTechnique: 'Teknik tanımı',
+    labelContrast: 'Kontrast',
+    /* Step 2 */
+    step2Title: 'Genel Değerlendirme',
+    labelAsymmetry: 'Yüz asimetrisi',
+    labelSurfaceSwelling: 'Yüzeyel şişlik / kitle',
+    labelNote: 'Ek not',
+    optNone: 'Yok',
+    optRightSide: 'Sağda belirgin',
+    optLeftSide: 'Solda belirgin',
+    optBilateral: 'Bilateral',
+    optFocal: 'Fokal',
+    optDiffuse: 'Diffüz',
+    /* Step 3 */
+    step3Title: 'Majör Tükürük Bezleri',
+    sectionParotid: 'Parotis',
+    labelRightParotid: 'Sağ parotis',
+    labelLeftParotid: 'Sol parotis',
+    sectionSubmandibular: 'Submandibular',
+    labelRight: 'Sağ',
+    labelLeft: 'Sol',
+    sectionSublingual: 'Sublingual',
+    /* Step 4 */
+    step4Title: 'Masseter / Masticator Space',
+    labelRightMasseter: 'Sağ masseter',
+    labelLeftMasseter: 'Sol masseter',
+    togHypertrophy: 'Hipertrofi (sağlıklı sinyal)',
+    togBruksizmFind: 'Bruksizm ile uyumlu',
+    /* Step 5 */
+    step5Title: 'TMJ (Temporomandibular Eklem)',
+    labelRightDisk: 'Sağ disk',
+    labelLeftDisk: 'Sol disk',
+    labelRightCondyle: 'Sağ kondil',
+    labelLeftCondyle: 'Sol kondil',
+    togRightEffusion: 'Sağ eklem efüzyonu',
+    togLeftEffusion: 'Sol eklem efüzyonu',
+    togOsteophyte: 'Osteofit (herhangi)',
+    togSubchondralCyst: 'Subkondral kist',
+    /* Step 6 */
+    step6Title: 'Kemik Yapılar',
+    labelMandible: 'Mandibula',
+    labelMaxilla: 'Maksilla',
+    togLysis: 'Lizis/destrüksiyon',
+    togPeriosteal: 'Periostal reaksiyon',
+    labelDental: 'Dişler / odontojenik ilişki',
+    /* Step 7 */
+    step7Title: 'Bukkal & Parafarengeal Alan',
+    labelBuccal: 'Bukkal bölge',
+    labelParapharyngeal: 'Parafarengeal alan',
+    /* Step 8 */
+    step8Title: 'Sinir Yapıları (CN VII, V2, V3)',
+    labelFacialNerve: 'Fasial sinir (VII)',
+    labelV2: 'V2 (maksiller)',
+    labelV3: 'V3 (mandibular)',
+    togPerineural: 'Perinöral yayılım bulgusu',
+    togForamen: 'Foramen genişlemesi',
+    /* Step 9 */
+    step9Title: 'Cilt / Cilt Altı Yumuşak Doku',
+    togSkinThickening: 'Cilt kalınlaşması',
+    togSkinMass: 'Cilt altı kitle',
+    togSccHx: 'Kutanöz SCC/bazalyoma öyküsü',
+    /* Step 10 */
+    step10Title: 'Servikal Lenf Nodları',
+    togReactive: 'Reaktif görünümlü',
+    togPathologic: 'Patolojik (nekrotik/ekstrakapsüler)',
+    /* Step 11 - Lesion */
+    step11Title: 'Lezyon Tanımlama',
+    lesionDesc: 'Lezyon varlığı durumunda her lezyon için ayrıntılı sorgulama yapılır. Her lezyon ayırıcı tanı motoruna ayrı ayrı gönderilir.',
+    labelFocalLesion: 'Fokal lezyon mevcut mu?',
+    optHasLesion: 'Var — lezyon tanımla',
+    optNoLesion: 'Yok — doğrudan rapora geç',
+    enteredLesions: 'Girilmiş lezyonlar',
+    lesionCard: 'Lezyon',
+    btnDelete: 'Sil',
+    btnAddLesion: '+ Yeni lezyon ekle',
+    lesionHint: 'İlerle butonuna basarak lezyon tanımlama ekranına geçebilirsin (her lezyon için 7 alt adım).',
+    lesionSubTitle: 'Alt adım',
+    lesionOf: '/',
+    /* Substep headings */
+    ss0Heading: 'Lokasyon & sayı',
+    labelLocation: 'Lokasyon',
+    labelSide: 'Taraf',
+    labelCount: 'Sayı',
+    togBilateralDist: 'Bilateral dağılım',
+    labelSize: 'Boyut (cm, uzun eksen)',
+    optRight: 'Sağ',
+    optLeft: 'Sol',
+    optSingle: 'Tek',
+    optMultiple: 'Multipl',
+    optMidline: 'Orta hat',
+    ss1Heading: 'Morfoloji & sinyal — T1/T2',
+    labelMargin: 'Sınır/kontur',
+    labelCystic: 'Kistik/solid paterni',
+    labelT1: 'T1 sinyal',
+    labelT2: 'T2 sinyal',
+    togMultilocular: 'Multilokule',
+    togFluidFluid: 'Sıvı-sıvı seviyesi',
+    togFlowVoid: 'Flow-void',
+    togPhlebolith: 'Fleboliti (SWI/GRE)',
+    ss2Heading: 'DWI / ADC / Yağ',
+    labelDwi: 'DWI kısıtlaması',
+    labelFatSat: 'Yağ baskılamada sinyal davranışı',
+    optNoChange: 'Değişiklik yok',
+    optSignalLoss: 'Sinyal kaybı (yağ içerik)',
+    ss3Heading: 'Kontrastlanma paterni',
+    labelEnhancement: 'Kontrastlanma',
+    togSlowFlow: 'Yavaş akım / geç dolum (VM)',
+    togNecrosis: 'Santral nekroz',
+    togExtracapsular: 'Ekstrakapsüler yayılım',
+    ss4Heading: 'Perinöral / Kemik ilişki',
+    togPerineuralSpr: 'Perinöral yayılım',
+    togNerveTract: 'Sinir trasesi boyunca kitle (schwannoma tipik)',
+    togTargetSign: '"Target sign" (schwannoma)',
+    togPlexiform: 'Pleksiform dağılım (NF1)',
+    labelBoneChange: 'Kemik değişikliği',
+    togDentalRel: 'Diş kökü/kronu ile ilişkili',
+    ss5Heading: 'Bez / Duktus / Klinik-özel bulgular',
+    labelGlandPattern: 'Bez tutulumu paterni (lezyon eşliği)',
+    togDuctalDilation: 'Duktal dilatasyon',
+    togCalculus: 'Taş/kalkül',
+    togPeriglandular: 'Periglandüler inflamasyon',
+    togGlandAtrophy: 'Bez atrofisi',
+    togSaltPepper: '"Salt & pepper" (Sjögren)',
+    togCysticDegen: 'Kistik dejenerasyon',
+    togLacrimal: 'Lakrimal bez tutulumu (IgG4 ipucu)',
+    togIgg4: 'IgG4 klinik/serolojik şüphe',
+    labelTmjSpecific: 'TMJ spesifik bulgu (uygunsa)',
+    ss6Heading: 'Ek klinik/özel belirteçler',
+    togAcuteClinical: 'Akut klinik (ağrı/ateş)',
+    togHivRisk: 'HIV pozitif / risk',
+    togSjogrenBg: 'Sjögren zemini',
+    togNf1Criteria: 'NF1 kriterleri',
+    togPrimerMalig: 'Bilinen primer malignite',
+    togSkinLesion: 'Komşu cilt lezyonu',
+    togSccHxL: 'Kutanöz SCC öyküsü',
+    togReactiveLap: 'Reaktif servikal LAP eşliği',
+    togInfant: 'İnfant/bebek',
+    togPediatric: 'Pediatrik hasta',
+    togBruksizmL: 'Bruksizm',
+    togNormalSignal: 'Kaslarda normal sinyal (hipertrofi ipucu)',
+    togOsteophyteL: 'Osteofit (TMJ)',
+    togSubchondralCystL: 'Subkondral kist (TMJ)',
+    togCondyleMorph: 'Kondil morfoloji bozukluğu',
+    togJointSpace: 'TMJ eklem aralığı daralması',
+    togTmjEffusion: 'TMJ efüzyonu',
+    labelLesionNote: 'Lezyon notu',
+    lesionSaveHint: 'İleri butonuna bastığınızda lezyon kaydedilecek ve döngü dışına çıkılacak.',
+    /* Step 12 */
+    step12Title: 'Ayırıcı Tanı — Lezyon Bazlı',
+    noLesionWarn: 'Lezyon girilmemiş. Ayırıcı tanı motoru devreye alınmadı.',
+    scoreLabel: 'Skor:',
+    scoreOf: '/100',
+    step12ReportTitle: 'Rapor',
+    btnCopy: 'Panoya Kopyala',
+    btnDownloadTxt: 'TXT İndir',
+    btnDownloadHtml: 'HTML İndir',
+    btnPrint: 'Yazdır / PDF',
+    toastCopied: 'Rapor panoya kopyalandı',
+    toastCopyFail: 'Kopyalama başarısız',
+    /* Default tech text */
+    defaultTechnique: '3T multiparametrik yüz MRG (T1, T2, STIR/FS, DWI/ADC, pre/post kontrastlı yağ baskılı T1)',
+    defaultContrast: 'Gadobutrol 0.1 mmol/kg IV',
+  },
+  en: {
+    /* Header */
+    appTitle: 'Facial MRI',
+    appTitleAccent: 'Decision Support',
+    appSub: 'DDx-driven structured reporting — multi-lesion',
+    stepLabel: 'Step',
+    of: '/',
+    /* Nav buttons */
+    back: '◀ Back',
+    next: 'Next ▶',
+    done: 'Done',
+    saveLesion: 'Save Lesion ✔',
+    goToDdx: 'Go to DDx ▶',
+    /* Step 0 */
+    step0Title: 'Patient Information',
+    labelName: 'Full Name',
+    labelProtocol: 'Protocol No',
+    labelDate: 'Study Date',
+    labelAge: 'Age',
+    labelGender: 'Sex',
+    optFemale: 'Female',
+    optMale: 'Male',
+    /* Step 1 */
+    step1Title: 'Clinical History & Technique',
+    labelComplaint: 'Chief complaint',
+    labelDuration: 'Duration (weeks/months)',
+    sectionClinical: 'Clinical findings',
+    togPain: 'Pain',
+    togSwelling: 'Swelling',
+    togFever: 'Fever / acute inflammatory signs',
+    sectionNeuro: 'Neurological / predisposing',
+    labelNeuro: 'Neurological deficit (if any)',
+    labelPrimer: 'Prior malignancy history (if any)',
+    togSmoking: 'Smoking',
+    togSjogren: 'Sjögren/sicca background',
+    togHiv: 'HIV positive / risk',
+    togNf1: 'NF1 diagnosis/criteria',
+    togBruksizm: 'Bruxism',
+    sectionTechnique: 'Technique',
+    labelTechnique: 'Technique description',
+    labelContrast: 'Contrast agent',
+    /* Step 2 */
+    step2Title: 'General Assessment',
+    labelAsymmetry: 'Facial asymmetry',
+    labelSurfaceSwelling: 'Surface swelling / mass',
+    labelNote: 'Additional note',
+    optNone: 'None',
+    optRightSide: 'Right-sided',
+    optLeftSide: 'Left-sided',
+    optBilateral: 'Bilateral',
+    optFocal: 'Focal',
+    optDiffuse: 'Diffuse',
+    /* Step 3 */
+    step3Title: 'Major Salivary Glands',
+    sectionParotid: 'Parotid',
+    labelRightParotid: 'Right parotid',
+    labelLeftParotid: 'Left parotid',
+    sectionSubmandibular: 'Submandibular',
+    labelRight: 'Right',
+    labelLeft: 'Left',
+    sectionSublingual: 'Sublingual',
+    /* Step 4 */
+    step4Title: 'Masseter / Masticator Space',
+    labelRightMasseter: 'Right masseter',
+    labelLeftMasseter: 'Left masseter',
+    togHypertrophy: 'Hypertrophy (normal signal)',
+    togBruksizmFind: 'Compatible with bruxism',
+    /* Step 5 */
+    step5Title: 'TMJ (Temporomandibular Joint)',
+    labelRightDisk: 'Right disc',
+    labelLeftDisk: 'Left disc',
+    labelRightCondyle: 'Right condyle',
+    labelLeftCondyle: 'Left condyle',
+    togRightEffusion: 'Right joint effusion',
+    togLeftEffusion: 'Left joint effusion',
+    togOsteophyte: 'Osteophyte (any)',
+    togSubchondralCyst: 'Subchondral cyst',
+    /* Step 6 */
+    step6Title: 'Bony Structures',
+    labelMandible: 'Mandible',
+    labelMaxilla: 'Maxilla',
+    togLysis: 'Lysis/destruction',
+    togPeriosteal: 'Periosteal reaction',
+    labelDental: 'Teeth / odontogenic relationship',
+    /* Step 7 */
+    step7Title: 'Buccal & Parapharyngeal Space',
+    labelBuccal: 'Buccal region',
+    labelParapharyngeal: 'Parapharyngeal space',
+    /* Step 8 */
+    step8Title: 'Neural Structures (CN VII, V2, V3)',
+    labelFacialNerve: 'Facial nerve (VII)',
+    labelV2: 'V2 (maxillary)',
+    labelV3: 'V3 (mandibular)',
+    togPerineural: 'Perineural spread finding',
+    togForamen: 'Foraminal enlargement',
+    /* Step 9 */
+    step9Title: 'Skin / Subcutaneous Soft Tissue',
+    togSkinThickening: 'Skin thickening',
+    togSkinMass: 'Subcutaneous mass',
+    togSccHx: 'Cutaneous SCC/BCC history',
+    /* Step 10 */
+    step10Title: 'Cervical Lymph Nodes',
+    togReactive: 'Reactive appearance',
+    togPathologic: 'Pathological (necrotic/extracapsular)',
+    /* Step 11 - Lesion */
+    step11Title: 'Lesion Characterization',
+    lesionDesc: 'When a lesion is present, detailed interrogation is performed for each lesion. Each lesion is sent to the DDx engine separately.',
+    labelFocalLesion: 'Focal lesion present?',
+    optHasLesion: 'Yes — define lesion',
+    optNoLesion: 'No — proceed to report',
+    enteredLesions: 'Entered lesions',
+    lesionCard: 'Lesion',
+    btnDelete: 'Delete',
+    btnAddLesion: '+ Add new lesion',
+    lesionHint: 'Click Next to proceed to lesion entry (7 substeps per lesion).',
+    lesionSubTitle: 'Substep',
+    lesionOf: '/',
+    /* Substep headings */
+    ss0Heading: 'Location & count',
+    labelLocation: 'Location',
+    labelSide: 'Side',
+    labelCount: 'Count',
+    togBilateralDist: 'Bilateral distribution',
+    labelSize: 'Size (cm, long axis)',
+    optRight: 'Right',
+    optLeft: 'Left',
+    optSingle: 'Single',
+    optMultiple: 'Multiple',
+    optMidline: 'Midline',
+    ss1Heading: 'Morphology & signal — T1/T2',
+    labelMargin: 'Margin/contour',
+    labelCystic: 'Cystic/solid pattern',
+    labelT1: 'T1 signal',
+    labelT2: 'T2 signal',
+    togMultilocular: 'Multilocular',
+    togFluidFluid: 'Fluid-fluid level',
+    togFlowVoid: 'Flow-void',
+    togPhlebolith: 'Phlebolith (SWI/GRE)',
+    ss2Heading: 'DWI / ADC / Fat',
+    labelDwi: 'Restricted diffusion',
+    labelFatSat: 'Fat saturation signal behavior',
+    optNoChange: 'No change',
+    optSignalLoss: 'Signal loss (fat content)',
+    ss3Heading: 'Enhancement pattern',
+    labelEnhancement: 'Enhancement',
+    togSlowFlow: 'Slow flow / delayed filling (VM)',
+    togNecrosis: 'Central necrosis',
+    togExtracapsular: 'Extracapsular spread',
+    ss4Heading: 'Perineural / Bone relationship',
+    togPerineuralSpr: 'Perineural spread',
+    togNerveTract: 'Mass along nerve tract (typical schwannoma)',
+    togTargetSign: '"Target sign" (schwannoma)',
+    togPlexiform: 'Plexiform distribution (NF1)',
+    labelBoneChange: 'Bone involvement',
+    togDentalRel: 'Related to dental root/crown',
+    ss5Heading: 'Gland / Duct / Specific clinical findings',
+    labelGlandPattern: 'Glandular involvement pattern (with lesion)',
+    togDuctalDilation: 'Ductal dilatation',
+    togCalculus: 'Stone/calculus',
+    togPeriglandular: 'Periglandular inflammation',
+    togGlandAtrophy: 'Glandular atrophy',
+    togSaltPepper: '"Salt & pepper" (Sjögren)',
+    togCysticDegen: 'Cystic degeneration',
+    togLacrimal: 'Lacrimal gland involvement (IgG4 clue)',
+    togIgg4: 'IgG4 clinical/serological suspicion',
+    labelTmjSpecific: 'TMJ-specific finding (if applicable)',
+    ss6Heading: 'Additional clinical/special markers',
+    togAcuteClinical: 'Acute clinical presentation (pain/fever)',
+    togHivRisk: 'HIV positive / risk',
+    togSjogrenBg: 'Sjögren background',
+    togNf1Criteria: 'NF1 criteria',
+    togPrimerMalig: 'Known primary malignancy',
+    togSkinLesion: 'Adjacent skin lesion',
+    togSccHxL: 'Cutaneous SCC history',
+    togReactiveLap: 'Reactive cervical LAP',
+    togInfant: 'Infant/baby',
+    togPediatric: 'Pediatric patient',
+    togBruksizmL: 'Bruxism',
+    togNormalSignal: 'Normal muscle signal (hypertrophy clue)',
+    togOsteophyteL: 'Osteophyte (TMJ)',
+    togSubchondralCystL: 'Subchondral cyst (TMJ)',
+    togCondyleMorph: 'Condylar morphology abnormality',
+    togJointSpace: 'TMJ joint space narrowing',
+    togTmjEffusion: 'TMJ effusion',
+    labelLesionNote: 'Lesion note',
+    lesionSaveHint: 'Clicking Next will save the lesion and exit the loop.',
+    /* Step 12 */
+    step12Title: 'Differential Diagnosis — Per-Lesion',
+    noLesionWarn: 'No lesion entered. DDx engine not activated.',
+    scoreLabel: 'Score:',
+    scoreOf: '/100',
+    step12ReportTitle: 'Report',
+    btnCopy: 'Copy to Clipboard',
+    btnDownloadTxt: 'Download TXT',
+    btnDownloadHtml: 'Download HTML',
+    btnPrint: 'Print / PDF',
+    toastCopied: 'Report copied to clipboard',
+    toastCopyFail: 'Copy failed',
+    /* Default tech text */
+    defaultTechnique: '3T multiparametric facial MRI (T1, T2, STIR/FS, DWI/ADC, pre/post-contrast fat-saturated T1)',
+    defaultContrast: 'Gadobutrol 0.1 mmol/kg IV',
+  }
+}[RV_LOCALE];
+
+/* Helper: locale-aware field accessor for data arrays */
+const loc = (obj, key) => (RV_LOCALE === 'en' && obj[key + '_en']) ? obj[key + '_en'] : obj[key];
+
+/* =========================================================
+   PATHOLOGY DATABASE — Face / Yüz MRG
+   Ağırlıklı skorlama için her patolojinin karakteristik
+   MRG özellikleri (+/-) tanımlı.
+   ========================================================= */
+const PATHOLOGIES = [
+  /* --- Tükürük bezi tümörleri --- */
+  {
+    id:'pleomorfik_adenom',
+    name:'Pleomorfik Adenom', name_en:'Pleomorphic Adenoma',
+    group:'Tükürük bezi — benign tümör', group_en:'Salivary gland — benign tumor',
+    note:'En sık tükürük bezi tümörü (%60-70). Genellikle parotis yüzeyel lob. İyi sınırlı, lobüle, T2 belirgin hiperintens, DWI kısıtlama YOK, heterojen-progresif kontrastlanma.',
+    note_en:'Most common salivary gland tumor (60-70%). Usually parotid superficial lobe. Well-defined, lobulated, markedly T2 hyperintense, no restricted diffusion, heterogeneous-progressive enhancement.'
+  },
+  {
+    id:'warthin',
+    name:'Warthin Tümörü (kistadenolenfoma)', name_en:'Warthin Tumor (cystadenolymphoma)',
+    group:'Tükürük bezi — benign tümör', group_en:'Salivary gland — benign tumor',
+    note:'İkinci en sık parotis tümörü. Erkek sigara içicilerinde. %10-15 bilateral/multifokal. Parotis kuyruğu (alt pol) tipik. Kistik komponent + DWI ciddi kısıtlama.',
+    note_en:'Second most common parotid tumor. Male smokers. 10-15% bilateral/multifocal. Parotid tail (inferior pole) typical. Cystic component + marked restricted diffusion.'
+  },
+  {
+    id:'mukoepidermoid',
+    name:'Mukoepidermoid Karsinom', name_en:'Mucoepidermoid Carcinoma',
+    group:'Tükürük bezi — malign tümör', group_en:'Salivary gland — malignant tumor',
+    note:'En sık parotid malignitesi. Low-grade: iyi sınırlı, T2 hiperintens, mikrokistik. High-grade: infiltratif sınır, DWI kısıtlama, perinöral yayılım.',
+    note_en:'Most common parotid malignancy. Low-grade: well-defined, T2 hyperintense, microcystic. High-grade: infiltrative margin, restricted diffusion, perineural spread.'
+  },
+  {
+    id:'adenoid_kistik',
+    name:'Adenoid Kistik Karsinom', name_en:'Adenoid Cystic Carcinoma',
+    group:'Tükürük bezi — malign tümör', group_en:'Salivary gland — malignant tumor',
+    note:'Minör tükürük bezlerinde daha sık. Perinöral yayılım (V3/V2/fasial) karakteristik. İnfiltratif, T2 orta-yüksek sinyal, progresif kontrastlanma. Geç akciğer metastazı.',
+    note_en:'More common in minor salivary glands. Perineural spread (V3/V2/facial) characteristic. Infiltrative, intermediate-to-high T2 signal, progressive enhancement. Late pulmonary metastasis.'
+  },
+  {
+    id:'asiner_hucre',
+    name:'Asiner Hücreli Karsinom', name_en:'Acinic Cell Carcinoma',
+    group:'Tükürük bezi — malign tümör', group_en:'Salivary gland — malignant tumor',
+    note:'Low-grade malignite, sıklıkla parotis. Kadınlarda daha sık. %3 bilateral. İyi sınırlı olabilir — yanlışlıkla benign olarak yorumlanabilir. T2 heterojen.',
+    note_en:'Low-grade malignancy, usually parotid. More common in women. 3% bilateral. May appear well-defined — can be mistaken for benign. T2 heterogeneous.'
+  },
+
+  /* --- İnflamatuar/İmmün bez hastalıkları --- */
+  {
+    id:'akut_sialadenit',
+    name:'Akut Sialadenit', name_en:'Acute Sialadenitis',
+    group:'Tükürük bezi — inflamatuar', group_en:'Salivary gland — inflammatory',
+    note:'Bez büyümesi, T2 hiperintens ödematöz parenkim, diffüz kontrastlanma, periglandüler inflamasyon. Sıklıkla obstrüktif (taş).',
+    note_en:'Glandular enlargement, T2 hyperintense edematous parenchyma, diffuse enhancement, periglandular inflammation. Often obstructive (calculus).'
+  },
+  {
+    id:'kronik_kuttner',
+    name:'Kronik Sklerozan Sialadenit (Küttner)', name_en:'Chronic Sclerosing Sialadenitis (Küttner)',
+    group:'Tükürük bezi — inflamatuar', group_en:'Salivary gland — inflammatory',
+    note:'Submandibular bezde daha sık. Bez atrofisi, fibrozise bağlı T2 hipointens, düşük sinyal "pseudotümör" paterni. IgG4 spektrumunda yer alır.',
+    note_en:'More common in submandibular gland. Glandular atrophy, T2 hypointense due to fibrosis, low-signal "pseudotumor" pattern. Falls within IgG4 spectrum.'
+  },
+  {
+    id:'sjogren',
+    name:'Sjögren Sendromu', name_en:'Sjögren Syndrome',
+    group:'Tükürük bezi — inflamatuar', group_en:'Salivary gland — inflammatory',
+    note:'Bilateral parotid + submandibular bez tutulumu. "Salt and pepper" / honeycomb görünümü. Lenfoma riski artmış (MALT). Geç evrede yağlı dejenerasyon.',
+    note_en:'Bilateral parotid + submandibular gland involvement. "Salt and pepper" / honeycomb appearance. Increased lymphoma risk (MALT). Late-stage fatty degeneration.'
+  },
+  {
+    id:'igg4',
+    name:'IgG4-İlişkili Hastalık (Mikuliç benzeri)', name_en:'IgG4-Related Disease (Mikulicz-like)',
+    group:'Tükürük bezi — inflamatuar', group_en:'Salivary gland — inflammatory',
+    note:'Bilateral persistan ağrısız bez büyümesi. Submandibular + lakrimal tutulum. IgG4 serum yüksekliği. Steroide yanıt. Küttner ile örtüşür.',
+    note_en:'Bilateral persistent painless glandular enlargement. Submandibular + lacrimal involvement. Elevated serum IgG4. Responds to steroids. Overlaps with Küttner.'
+  },
+  {
+    id:'parotid_apse',
+    name:'Parotid / Fasial Yumuşak Doku Apsesi', name_en:'Parotid / Facial Soft Tissue Abscess',
+    group:'Enfeksiyoz', group_en:'Infectious',
+    note:'Rim-enhancing koleksiyon, DWI belirgin kısıtlama, periglandüler selülit, reaktif servikal adenopati. Klinik ateş/ağrı.',
+    note_en:'Rim-enhancing collection, marked restricted diffusion, periglandular cellulitis, reactive cervical adenopathy. Clinical fever/pain.'
+  },
+  {
+    id:'sialolitiazis',
+    name:'Sialolitiazis (Sialolit)', name_en:'Sialolithiasis (Sialolith)',
+    group:'Tükürük bezi — obstrüktif', group_en:'Salivary gland — obstructive',
+    note:'Submandibular bezde (%80) daha sık. Duktus içinde T1/T2 hipointens sinyal kaybı. Distal duktal dilatasyon + sekonder sialadenit.',
+    note_en:'More common in submandibular gland (80%). T1/T2 hypointense signal void within duct. Distal ductal dilatation + secondary sialadenitis.'
+  },
+  {
+    id:'benign_lenfoepitelyal',
+    name:'HIV-ilişkili Lenfoepitelyal Kistler', name_en:'HIV-Associated Lymphoepithelial Cysts',
+    group:'Tükürük bezi — kistik', group_en:'Salivary gland — cystic',
+    note:'Bilateral multipl kistik + solid intraparotid lezyonlar. Servikal reaktif lenfadenopati. HIV öyküsü / risk faktörü.',
+    note_en:'Bilateral multiple cystic + solid intraparotid lesions. Cervical reactive lymphadenopathy. HIV history / risk factor.'
+  },
+
+  /* --- Sinir tümörleri --- */
+  {
+    id:'schwannoma',
+    name:'Schwannoma (fasial sinir / V3)', name_en:'Schwannoma (facial nerve / V3)',
+    group:'Sinir kılıfı tümörü', group_en:'Nerve sheath tumor',
+    note:'Sinir trasesi boyunca fuziform kitle. T2 hiperintens, "target sign", parlak kontrastlanma, adjacent kemik remodellenmesi (foramen ovale/stilomastoid).',
+    note_en:'Fusiform mass along nerve tract. T2 hyperintense, "target sign", avid enhancement, adjacent bone remodeling (foramen ovale/stylomastoid).'
+  },
+  {
+    id:'nf_nf1',
+    name:'Nörofibrom / NF1', name_en:'Neurofibroma / NF1',
+    group:'Sinir kılıfı tümörü', group_en:'Nerve sheath tumor',
+    note:'Pleksiform nörofibrom: yaygın, sinir trasesini takip eden T2 parlak, "bunch of grapes" görünümü. NF1 kriterleri (kafe-au-lait, aksiller çilleme).',
+    note_en:'Plexiform neurofibroma: diffuse, T2 bright following nerve tract, "bunch of grapes" appearance. NF1 criteria (café-au-lait spots, axillary freckling).'
+  },
+
+  /* --- Lenfoproliferatif / neoplastik --- */
+  {
+    id:'lenfoma',
+    name:'Lenfoma (primer veya sekonder)', name_en:'Lymphoma (primary or secondary)',
+    group:'Lenfoproliferatif', group_en:'Lymphoproliferative',
+    note:'Tükürük bezi lenfoması (MALT — özellikle Sjögren zemininde) veya servikal nodal lenfoma. T2 orta sinyal, DWI ileri derecede kısıtlama, homojen kontrastlanma.',
+    note_en:'Salivary gland lymphoma (MALT — especially on Sjögren background) or cervical nodal lymphoma. Intermediate T2 signal, markedly restricted diffusion, homogeneous enhancement.'
+  },
+  {
+    id:'metastaz',
+    name:'Metastaz (intraparotid / servikal nodal)', name_en:'Metastasis (intraparotid / cervical nodal)',
+    group:'Metastatik', group_en:'Metastatic',
+    note:'Cilt skuamöz hücreli karsinom / melanom → intraparotid lenf nodu metastazı en sık. Multipl, heterojen, nekroz, ekstrakapsüler yayılım.',
+    note_en:'Cutaneous squamous cell carcinoma / melanoma → intraparotid lymph node metastasis most common. Multiple, heterogeneous, necrosis, extracapsular spread.'
+  },
+  {
+    id:'scc_perinoral',
+    name:'Kutanöz SCC + Perinöral Yayılım', name_en:'Cutaneous SCC + Perineural Spread',
+    group:'Malign + perinöral', group_en:'Malignant + perineural',
+    note:'Yüz cildi SCC → V2 (infraorbital) veya V3 (aurikulotemporal → fasial sinir) boyunca perinöral yayılım. Foramen genişlemesi, sinirde kontrastlanma/kalınlaşma, fat pad silinmesi.',
+    note_en:'Facial skin SCC → perineural spread along V2 (infraorbital) or V3 (auriculotemporal → facial nerve). Foraminal enlargement, nerve enhancement/thickening, fat pad obliteration.'
+  },
+
+  /* --- Vasküler lezyonlar --- */
+  {
+    id:'hemanjiom_vm',
+    name:'İnfantil Hemanjiom / Venöz Malformasyon', name_en:'Infantile Hemangioma / Venous Malformation',
+    group:'Vasküler', group_en:'Vascular',
+    note:'İnfantil hemanjiom: proliferatif fazda belirgin kontrastlanan lobüle kitle, flow void. VM: T2 parlak, fleboliti (SWI/GRE), yavaş akım, bası ile azalan, geç kontrastlanma.',
+    note_en:'Infantile hemangioma: avidly enhancing lobulated mass in proliferative phase, flow voids. VM: T2 bright, phleboliths (SWI/GRE), slow flow, compressible, delayed enhancement.'
+  },
+  {
+    id:'lm',
+    name:'Lenfatik Malformasyon', name_en:'Lymphatic Malformation',
+    group:'Vasküler', group_en:'Vascular',
+    note:'Multilokule kistik, T2 belirgin hiperintens, sıvı-sıvı seviyeleri (hemoraji), septalar hafif kontrastlanır; kist içi dolum YOK.',
+    note_en:'Multilocular cystic, markedly T2 hyperintense, fluid-fluid levels (hemorrhage), septa mildly enhance; no internal cystic filling.'
+  },
+
+  /* --- TMJ --- */
+  {
+    id:'tmj_disc',
+    name:'TMJ İnternal Derangement (Disk Deplasmanı)', name_en:'TMJ Internal Derangement (Disc Displacement)',
+    group:'TMJ', group_en:'TMJ',
+    note:'Disk anterior deplase ± redüksiyon. Açık/kapalı ağız PD/T2 kesitlerinde disk pozisyonu. İleri evrede kondil küçülmesi, osteofit, eklem efüzyonu.',
+    note_en:'Disc anteriorly displaced ± reduction. PD/T2 open/closed mouth views for disc position. Advanced: condylar resorption, osteophyte, joint effusion.'
+  },
+  {
+    id:'tmj_oa',
+    name:'TMJ Osteoartriti', name_en:'TMJ Osteoarthritis',
+    group:'TMJ', group_en:'TMJ',
+    note:'Kondil düzleşmesi, subkondral skleroz/kist, osteofit, eklem aralığı daralması, disk morfoloji bozukluğu. Yaş + krepitus + ağrı.',
+    note_en:'Condylar flattening, subchondral sclerosis/cyst, osteophyte, joint space narrowing, disc morphology abnormality. Age + crepitus + pain.'
+  },
+
+  /* --- Kas ve odontojenik --- */
+  {
+    id:'masseter_hipertrofi',
+    name:'Masseter Hipertrofi', name_en:'Masseter Hypertrophy',
+    group:'Kas', group_en:'Muscle',
+    note:'Unilateral/bilateral masseter kalınlaşması (sağlıklı normal sinyal), simetrik T1/T2 sinyal, patoloji yok. Bruksizm öyküsü.',
+    note_en:'Unilateral/bilateral masseter thickening (healthy normal signal), symmetric T1/T2 signal, no pathology. Bruxism history.'
+  },
+  {
+    id:'odontojenik_kist',
+    name:'Odontojenik Kist (dentijeröz / radiküler)', name_en:'Odontogenic Cyst (dentigerous / radicular)',
+    group:'Odontojenik', group_en:'Odontogenic',
+    note:'Mandibula/maksilla içinde iyi sınırlı T2 parlak kistik lezyon, diş kökü/kronunla ilişkili. Kortikal ekspansiyon, ince sklerotik rim.',
+    note_en:'Well-defined T2 bright cystic lesion within mandible/maxilla, associated with dental root/crown. Cortical expansion, thin sclerotic rim.'
+  },
+  {
+    id:'ameloblastom',
+    name:'Ameloblastom', name_en:'Ameloblastoma',
+    group:'Odontojenik', group_en:'Odontogenic',
+    note:'Posterior mandibula sık. Multilokule "soap bubble" genişleyici lezyon, belirgin kortikal incelme/perforasyon, solid komponent kontrastlanır, DWI kısıtlama olabilir.',
+    note_en:'Posterior mandible common. Multilocular "soap bubble" expansile lesion, marked cortical thinning/perforation, solid component enhances, may show restricted diffusion.'
+  },
+
+  /* --- Diğer --- */
+  {
+    id:'lipom',
+    name:'Lipom', name_en:'Lipoma',
+    group:'Benign mezenkimal', group_en:'Benign mesenchymal',
+    note:'T1 ve T2 yüksek sinyal (yağ), yağ baskılı sekanslarda tam sinyal kaybı, kontrastlanma yok, iyi sınırlı.',
+    note_en:'T1 and T2 high signal (fat), complete signal loss on fat-saturated sequences, no enhancement, well-defined.'
+  },
+];
+
+/* =========================================================
+   SCORING ENGINE
+   Her patoloji için ağırlıklı özellik puanlaması.
+   Not: if/else if chain → son aşamada Math.min(100, score)
+   ile clamp uygulanır.
+   ========================================================= */
+function scoreDifferential(L){
+  // L = lezyon verisi
+  const s = {};
+  PATHOLOGIES.forEach(p=>s[p.id]=0);
+
+  const loc = L.lokasyon || '';
+  const laterality = L.taraf || '';
+  const multipl = L.sayi === 'multipl';
+  const bilateral = L.bilateral === true;
+  const boyutCm = parseFloat(L.boyutCm||'0')||0;
+  const sinir = L.sinir || '';  // iyi/lobule/infiltratif
+  const t1 = L.t1 || '';
+  const t2 = L.t2 || '';
+  const dwi = L.dwi || '';       // yok/hafif/belirgin
+  const contrast = L.contrast || ''; // yok/hafif/homojen/heterojen/rim/progresif
+  const kistik = L.kistik || '';     // solid/kistik/mikrokistik/koleksiyon
+  const yagsupresyon = L.yagsup === 'sinyal_kaybi';
+  const flowVoid = !!L.flowVoid;
+  const phlebolith = !!L.fleboliti;
+  const sivisivi = !!L.sivisivi;
+  const perinoral = !!L.perinoral;
+  const kemikEks = L.kemik || '';   // yok/remodel/destruksiyon/genisleme
+  const bezTut = L.bezTut || '';    // fokal/diffüz/bilateral
+  const klinikAkut = !!L.klinikAkut;
+  const hiv = !!L.hivRisk;
+  const sjogrenBg = !!L.sjogrenBg;
+  const tmjFind = L.tmjFind || ''; 
+  const dis = !!L.dis;
+
+  /* ---------- PLEOMORFİK ADENOM ---------- */
+  let x = 0;
+  if (loc.includes('parotis') || loc.includes('submandibular') || loc.includes('minor_tukuruk')) x += 18;
+  if (sinir === 'iyi' || sinir === 'lobule') x += 16;
+  if (t2 === 'belirgin_hiperintens') x += 20;
+  if (dwi === 'yok' || dwi === 'hafif') x += 12;
+  if (contrast === 'progresif' || contrast === 'heterojen') x += 10;
+  if (kistik === 'solid' || kistik === 'mikrokistik') x += 6;
+  if (!perinoral) x += 4;
+  if (sinir === 'infiltratif') x -= 25;
+  if (dwi === 'belirgin') x -= 10;
+  s.pleomorfik_adenom = Math.max(0, Math.min(100, x));
+
+  /* ---------- WARTHIN ---------- */
+  x = 0;
+  if (loc.includes('parotis_alt') || loc.includes('parotis_kuyrugu')) x += 22;
+  else if (loc.includes('parotis')) x += 12;
+  if (multipl || bilateral) x += 22;
+  if (kistik === 'kistik' || kistik === 'mikrokistik') x += 16;
+  if (dwi === 'belirgin') x += 14;
+  if (t2 === 'heterojen' || t2 === 'hiperintens') x += 8;
+  if (contrast === 'hafif' || contrast === 'heterojen') x += 6;
+  if (sinir === 'iyi') x += 6;
+  s.warthin = Math.max(0, Math.min(100, x));
+
+  /* ---------- MUKOEPIDERMOID KARSİNOM ---------- */
+  x = 0;
+  if (loc.includes('parotis') || loc.includes('minor_tukuruk') || loc.includes('submandibular')) x += 14;
+  if (sinir === 'infiltratif') x += 20;
+  else if (sinir === 'iyi') x += 6;  // low-grade
+  if (kistik === 'mikrokistik') x += 14;
+  if (dwi === 'belirgin') x += 14;
+  if (contrast === 'heterojen' || contrast === 'progresif') x += 10;
+  if (perinoral) x += 12;
+  if (kemikEks === 'destruksiyon') x += 8;
+  s.mukoepidermoid = Math.max(0, Math.min(100, x));
+
+  /* ---------- ADENOID KİSTİK ---------- */
+  x = 0;
+  if (loc.includes('minor_tukuruk') || loc.includes('damak') || loc.includes('submandibular')) x += 18;
+  else if (loc.includes('parotis')) x += 10;
+  if (perinoral) x += 30;                    // kardinal özellik
+  if (sinir === 'infiltratif') x += 14;
+  if (t2 === 'orta' || t2 === 'heterojen') x += 8;
+  if (contrast === 'progresif') x += 12;
+  if (kemikEks === 'genisleme' || kemikEks === 'destruksiyon') x += 10;
+  if (dwi === 'hafif' || dwi === 'belirgin') x += 6;
+  s.adenoid_kistik = Math.max(0, Math.min(100, x));
+
+  /* ---------- ASİNER ---------- */
+  x = 0;
+  if (loc.includes('parotis')) x += 16;
+  if (multipl && bilateral) x += 12;
+  if (sinir === 'iyi' || sinir === 'lobule') x += 10;
+  if (t2 === 'heterojen') x += 8;
+  if (dwi === 'hafif' || dwi === 'belirgin') x += 10;
+  if (contrast === 'heterojen' || contrast === 'progresif') x += 8;
+  s.asiner_hucre = Math.max(0, Math.min(100, x));
+
+  /* ---------- AKUT SİALADENİT ---------- */
+  x = 0;
+  if (bezTut === 'diffuz' || bezTut === 'fokal') x += 14;
+  if (t2 === 'hiperintens' || t2 === 'belirgin_hiperintens') x += 12;
+  if (contrast === 'homojen' || contrast === 'heterojen') x += 10;
+  if (klinikAkut) x += 22;
+  if (L.periglanduler) x += 14;
+  if (L.duktDilate) x += 10;
+  if (sinir === 'iyi') x += 4;
+  s.akut_sialadenit = Math.max(0, Math.min(100, x));
+
+  /* ---------- KRONİK KÜTTNER ---------- */
+  x = 0;
+  if (loc.includes('submandibular')) x += 20;
+  else if (loc.includes('parotis')) x += 8;
+  if (bezTut === 'diffuz' || bezTut === 'fokal') x += 10;
+  if (t2 === 'hipointens' || t2 === 'orta') x += 18;
+  if (L.bezAtrofi) x += 14;
+  if (contrast === 'homojen' || contrast === 'progresif') x += 8;
+  if (!klinikAkut) x += 6;
+  s.kronik_kuttner = Math.max(0, Math.min(100, x));
+
+  /* ---------- SJÖGREN ---------- */
+  x = 0;
+  if (bilateral) x += 22;
+  if (bezTut === 'bilateral' || bezTut === 'diffuz') x += 14;
+  if (L.saltPepper) x += 22;
+  if (sjogrenBg) x += 16;
+  if (t2 === 'heterojen' || t2 === 'hiperintens') x += 8;
+  if (L.kistikDegisim) x += 10;
+  s.sjogren = Math.max(0, Math.min(100, x));
+
+  /* ---------- IgG4 ---------- */
+  x = 0;
+  if (bilateral) x += 18;
+  if (loc.includes('submandibular') || L.lakrimal) x += 14;
+  if (bezTut === 'bilateral' || bezTut === 'diffuz') x += 10;
+  if (t2 === 'hipointens' || t2 === 'orta') x += 10;
+  if (contrast === 'homojen' || contrast === 'progresif') x += 8;
+  if (L.igg4Klinik) x += 24;
+  s.igg4 = Math.max(0, Math.min(100, x));
+
+  /* ---------- APSE ---------- */
+  x = 0;
+  if (kistik === 'koleksiyon') x += 22;
+  if (contrast === 'rim') x += 22;
+  if (dwi === 'belirgin') x += 20;
+  if (klinikAkut) x += 20;
+  if (L.periglanduler) x += 10;
+  if (t2 === 'belirgin_hiperintens') x += 6;
+  s.parotid_apse = Math.max(0, Math.min(100, x));
+
+  /* ---------- SİALOLİTİAZİS ---------- */
+  x = 0;
+  if (L.taskalkulus) x += 35;
+  if (L.duktDilate) x += 20;
+  if (loc.includes('submandibular')) x += 14;
+  else if (loc.includes('parotis')) x += 6;
+  if (klinikAkut) x += 8;
+  s.sialolitiazis = Math.max(0, Math.min(100, x));
+
+  /* ---------- LENFOEPİTELYAL (HIV) ---------- */
+  x = 0;
+  if (bilateral && multipl) x += 22;
+  if (kistik === 'kistik' || kistik === 'mikrokistik') x += 20;
+  if (loc.includes('parotis')) x += 10;
+  if (hiv) x += 28;
+  if (L.reaktifLap) x += 10;
+  s.benign_lenfoepitelyal = Math.max(0, Math.min(100, x));
+
+  /* ---------- SCHWANNOMA ---------- */
+  x = 0;
+  if (L.sinirTrase) x += 24;
+  if (L.hedefIsareti) x += 16;
+  if (t2 === 'hiperintens' || t2 === 'belirgin_hiperintens') x += 10;
+  if (contrast === 'homojen' || contrast === 'progresif' || contrast === 'heterojen') x += 10;
+  if (kemikEks === 'remodel' || kemikEks === 'genisleme') x += 14;
+  if (sinir === 'iyi' || sinir === 'lobule') x += 8;
+  if (!perinoral) x += 4;
+  s.schwannoma = Math.max(0, Math.min(100, x));
+
+  /* ---------- NF1 ---------- */
+  x = 0;
+  if (L.pleksiform) x += 24;
+  if (L.nf1Klinik) x += 28;
+  if (L.sinirTrase) x += 14;
+  if (t2 === 'belirgin_hiperintens') x += 8;
+  if (multipl) x += 10;
+  s.nf_nf1 = Math.max(0, Math.min(100, x));
+
+  /* ---------- LENFOMA ---------- */
+  x = 0;
+  if (dwi === 'belirgin') x += 22;
+  if (t2 === 'orta' || t2 === 'hiperintens') x += 6;
+  if (contrast === 'homojen') x += 14;
+  if (multipl || L.reaktifLap) x += 14;
+  if (sjogrenBg) x += 14;
+  if (loc.includes('parotis') || loc.includes('submandibular') || loc.includes('lenf_nodu')) x += 12;
+  if (sinir === 'iyi' || sinir === 'lobule' || sinir === 'infiltratif') x += 4;
+  s.lenfoma = Math.max(0, Math.min(100, x));
+
+  /* ---------- METASTAZ ---------- */
+  x = 0;
+  if (multipl) x += 18;
+  if (L.ekstrakapsuler) x += 16;
+  if (L.nekroz) x += 14;
+  if (dwi === 'belirgin') x += 12;
+  if (loc.includes('lenf_nodu') || loc.includes('parotis')) x += 10;
+  if (L.primerMalignite) x += 22;
+  if (sinir === 'infiltratif') x += 6;
+  s.metastaz = Math.max(0, Math.min(100, x));
+
+  /* ---------- SCC + PERİNÖRAL ---------- */
+  x = 0;
+  if (perinoral) x += 30;
+  if (L.ciltLezyon || L.ciltSccOykusu) x += 22;
+  if (sinir === 'infiltratif') x += 12;
+  if (kemikEks === 'destruksiyon' || kemikEks === 'genisleme') x += 10;
+  if (dwi === 'belirgin') x += 8;
+  if (contrast === 'heterojen' || contrast === 'progresif') x += 6;
+  s.scc_perinoral = Math.max(0, Math.min(100, x));
+
+  /* ---------- HEMANJİOM / VM ---------- */
+  x = 0;
+  if (flowVoid) x += 18;
+  if (phlebolith) x += 22;
+  if (t2 === 'belirgin_hiperintens') x += 16;
+  if (contrast === 'progresif' || contrast === 'homojen' || contrast === 'heterojen') x += 10;
+  if (L.yavasAkim) x += 12;
+  if (L.infant) x += 14;
+  s.hemanjiom_vm = Math.max(0, Math.min(100, x));
+
+  /* ---------- LENFATİK MALFORMASYON ---------- */
+  x = 0;
+  if (kistik === 'kistik' || kistik === 'mikrokistik') x += 22;
+  if (sivisivi) x += 22;
+  if (t2 === 'belirgin_hiperintens') x += 16;
+  if (contrast === 'yok' || contrast === 'hafif') x += 16;
+  if (L.multilokule) x += 14;
+  if (L.infant || L.pediatrik) x += 8;
+  s.lm = Math.max(0, Math.min(100, x));
+
+  /* ---------- TMJ İNTERNAL DERANJMAN ---------- */
+  x = 0;
+  if (loc.includes('tmj')) x += 20;
+  if (tmjFind === 'disk_anterior') x += 30;
+  if (tmjFind === 'efuzyon' || L.tmjEfuzyon) x += 14;
+  if (tmjFind === 'kondil_morfoloji' || L.kondilDegisim) x += 10;
+  s.tmj_disc = Math.max(0, Math.min(100, x));
+
+  /* ---------- TMJ OA ---------- */
+  x = 0;
+  if (loc.includes('tmj')) x += 16;
+  if (L.osteofit) x += 22;
+  if (L.subkondralKist) x += 16;
+  if (L.kondilDegisim) x += 18;
+  if (L.eklemAraliki) x += 10;
+  s.tmj_oa = Math.max(0, Math.min(100, x));
+
+  /* ---------- MASSETER HİPERTROFİ ---------- */
+  x = 0;
+  if (loc.includes('masseter')) x += 22;
+  if (L.normalSinyal) x += 24;
+  if (L.bruksizm) x += 14;
+  if (sinir === 'iyi') x += 6;
+  if (contrast === 'yok' || contrast === 'hafif') x += 10;
+  s.masseter_hipertrofi = Math.max(0, Math.min(100, x));
+
+  /* ---------- ODONTOJENİK KİST ---------- */
+  x = 0;
+  if (loc.includes('mandibula') || loc.includes('maksilla')) x += 18;
+  if (dis) x += 22;
+  if (kistik === 'kistik') x += 16;
+  if (t2 === 'belirgin_hiperintens') x += 12;
+  if (contrast === 'yok' || contrast === 'hafif') x += 10;
+  if (sinir === 'iyi') x += 6;
+  if (kemikEks === 'genisleme' || kemikEks === 'remodel') x += 8;
+  s.odontojenik_kist = Math.max(0, Math.min(100, x));
+
+  /* ---------- AMELOBLASTOM ---------- */
+  x = 0;
+  if (loc.includes('mandibula')) x += 18;
+  if (L.multilokule) x += 20;
+  if (kemikEks === 'genisleme' || kemikEks === 'destruksiyon') x += 16;
+  if (contrast === 'heterojen' || contrast === 'progresif') x += 10;
+  if (kistik === 'mikrokistik') x += 10;
+  if (dwi === 'hafif' || dwi === 'belirgin') x += 6;
+  s.ameloblastom = Math.max(0, Math.min(100, x));
+
+  /* ---------- LİPOM ---------- */
+  x = 0;
+  if (t1 === 'hiperintens') x += 22;
+  if (t2 === 'hiperintens') x += 10;
+  if (yagsupresyon) x += 30;
+  if (contrast === 'yok') x += 20;
+  if (sinir === 'iyi') x += 8;
+  s.lipom = Math.max(0, Math.min(100, x));
+
+  return s;
+}
+
+/* =========================================================
+   STATIC DATA — Options for selects/opts
+   ========================================================= */
+const LOC_OPTS = [
+  {v:'parotis_yuz',l:'Parotis — yüzeyel lob', l_en:'Parotid — superficial lobe'},
+  {v:'parotis_derin',l:'Parotis — derin lob', l_en:'Parotid — deep lobe'},
+  {v:'parotis_kuyrugu',l:'Parotis — alt pol/kuyruk', l_en:'Parotid — inferior pole/tail'},
+  {v:'parotis_alt',l:'Parotis — alt kısım', l_en:'Parotid — inferior portion'},
+  {v:'parotis',l:'Parotis — genel', l_en:'Parotid — general'},
+  {v:'submandibular',l:'Submandibular bez', l_en:'Submandibular gland'},
+  {v:'sublingual',l:'Sublingual bez', l_en:'Sublingual gland'},
+  {v:'minor_tukuruk_damak',l:'Minör tükürük (damak)', l_en:'Minor salivary gland (palate)'},
+  {v:'minor_tukuruk',l:'Minör tükürük bezi', l_en:'Minor salivary gland'},
+  {v:'masseter',l:'Masseter / masticator space', l_en:'Masseter / masticator space'},
+  {v:'bukkal',l:'Bukkal bölge', l_en:'Buccal region'},
+  {v:'parafarengeal',l:'Parafarengeal alan', l_en:'Parapharyngeal space'},
+  {v:'tmj_sag',l:'TMJ — sağ', l_en:'TMJ — right'},
+  {v:'tmj_sol',l:'TMJ — sol', l_en:'TMJ — left'},
+  {v:'mandibula',l:'Mandibula (kemik)', l_en:'Mandible (bone)'},
+  {v:'maksilla',l:'Maksilla (kemik)', l_en:'Maxilla (bone)'},
+  {v:'cilt_ciltalti',l:'Cilt / cilt altı', l_en:'Skin / subcutaneous'},
+  {v:'lenf_nodu_servikal',l:'Servikal lenf nodu', l_en:'Cervical lymph node'},
+  {v:'lenf_nodu',l:'İntraparotid / periparotid lenf nodu', l_en:'Intraparotid / periparotid lymph node'},
+  {v:'fasial_sinir',l:'Fasial sinir trasesi', l_en:'Facial nerve tract'},
+  {v:'v3',l:'V3 (mandibular sinir)', l_en:'V3 (mandibular nerve)'},
+  {v:'v2',l:'V2 (maksiller sinir)', l_en:'V2 (maxillary nerve)'},
+];
+const SINIR_OPTS = [
+  {v:'iyi',l:'İyi sınırlı', l_en:'Well-defined'},
+  {v:'lobule',l:'Lobüle', l_en:'Lobulated'},
+  {v:'infiltratif',l:'İnfiltratif / düzensiz', l_en:'Infiltrative / irregular'}
+];
+const T1_OPTS = [
+  {v:'hipointens',l:'Hipointens', l_en:'Hypointense'},
+  {v:'izointens',l:'İzointens', l_en:'Isointense'},
+  {v:'hiperintens',l:'Hiperintens', l_en:'Hyperintense'},
+  {v:'heterojen',l:'Heterojen', l_en:'Heterogeneous'}
+];
+const T2_OPTS = [
+  {v:'hipointens',l:'Hipointens', l_en:'Hypointense'},
+  {v:'orta',l:'Orta sinyal', l_en:'Intermediate signal'},
+  {v:'hiperintens',l:'Hiperintens', l_en:'Hyperintense'},
+  {v:'belirgin_hiperintens',l:'Belirgin hiperintens', l_en:'Markedly hyperintense'},
+  {v:'heterojen',l:'Heterojen', l_en:'Heterogeneous'}
+];
+const DWI_OPTS = [
+  {v:'yok',l:'Kısıtlama yok', l_en:'No restriction'},
+  {v:'hafif',l:'Hafif kısıtlama', l_en:'Mild restriction'},
+  {v:'belirgin',l:'Belirgin kısıtlama', l_en:'Marked restriction'}
+];
+const CONTRAST_OPTS = [
+  {v:'yok',l:'Yok', l_en:'None'},
+  {v:'hafif',l:'Hafif', l_en:'Mild'},
+  {v:'homojen',l:'Homojen', l_en:'Homogeneous'},
+  {v:'heterojen',l:'Heterojen', l_en:'Heterogeneous'},
+  {v:'rim',l:'Rim/periferik', l_en:'Rim/peripheral'},
+  {v:'progresif',l:'Progresif (geç-yoğun)', l_en:'Progressive (delayed-intense)'}
+];
+const KISTIK_OPTS = [
+  {v:'solid',l:'Solid', l_en:'Solid'},
+  {v:'mikrokistik',l:'Mikrokistik / solid-kistik', l_en:'Microcystic / solid-cystic'},
+  {v:'kistik',l:'Kistik baskın', l_en:'Predominantly cystic'},
+  {v:'koleksiyon',l:'Apse benzeri koleksiyon', l_en:'Abscess-like collection'}
+];
+const KEMIK_OPTS = [
+  {v:'yok',l:'Kemik değişikliği yok', l_en:'No bone change'},
+  {v:'remodel',l:'Remodellenme (basınç erozyonu)', l_en:'Remodeling (pressure erosion)'},
+  {v:'genisleme',l:'Genişleme / ekspansiyon', l_en:'Enlargement / expansion'},
+  {v:'destruksiyon',l:'Destrüksiyon / invaziv', l_en:'Destruction / invasive'}
+];
+const BEZ_OPTS = [
+  {v:'fokal',l:'Fokal bez tutulumu', l_en:'Focal glandular involvement'},
+  {v:'diffuz',l:'Diffüz unilateral', l_en:'Diffuse unilateral'},
+  {v:'bilateral',l:'Bilateral tutulum', l_en:'Bilateral involvement'}
+];
+const TMJ_OPTS = [
+  {v:'normal',l:'Normal disk/kondil', l_en:'Normal disc/condyle'},
+  {v:'disk_anterior',l:'Disk anterior deplasmanı', l_en:'Anterior disc displacement'},
+  {v:'efuzyon',l:'Eklem efüzyonu', l_en:'Joint effusion'},
+  {v:'kondil_morfoloji',l:'Kondil morfoloji bozukluğu', l_en:'Condylar morphology abnormality'}
+];
+
+/* =========================================================
+   UTIL COMPONENTS
+   ========================================================= */
+function Chip({active,onClick,children}){
+  return <div className={'chip'+(active?' active':'')} onClick={onClick}>{children}</div>;
+}
+function Opt({on,onClick,children}){
+  return <div className={'opt'+(on?' on':'')} onClick={onClick}>{children}</div>;
+}
+function Field({label,children}){
+  return <div><label>{label}</label>{children}</div>;
+}
+function OptGroup({value,setValue,opts}){
+  return <div className="opts">
+    {opts.map(o=><Opt key={o.v} on={value===o.v} onClick={()=>setValue(o.v)}>{o.l}</Opt>)}
+  </div>;
+}
+function Toggle({on,onClick,children}){
+  return <Opt on={on} onClick={onClick}>{children}</Opt>;
+}
+
+/* =========================================================
+   MAIN APP
+   ========================================================= */
+const STEP_TITLES = RV_LOCALE === 'en' ? [
+  'Patient Information',
+  'Clinical & Technique',
+  'General Assessment',
+  'Major Salivary Glands',
+  'Masseter / Masticator Space',
+  'TMJ',
+  'Bony Structures (Mandible/Maxilla)',
+  'Buccal & Parapharyngeal Space',
+  'Neural Structures (VII / V2 / V3)',
+  'Skin / Subcutaneous',
+  'Cervical Lymph Nodes',
+  'Lesion Entry (Loop)',
+  'DDx & Report'
+] : [
+  'Hasta Bilgileri',
+  'Klinik & Teknik',
+  'Genel Değerlendirme',
+  'Majör Tükürük Bezleri',
+  'Masseter / Masticator Space',
+  'TMJ',
+  'Kemik Yapılar (Mandibula/Maksilla)',
+  'Bukkal & Parafarengeal Alan',
+  'Sinir Yapıları (VII / V2 / V3)',
+  'Cilt / Cilt Altı',
+  'Servikal Lenf Nodları',
+  'Lezyon Tanımlama (Döngü)',
+  'Ayırıcı Tanı & Rapor'
+];
+const LESION_STEP_IDX = 11;   // sıfırdan sayılırsa 12. adım (lezyon döngüsü)
+const DDX_STEP_IDX   = 12;   // son adım
+
+function App(){
+  const [step,setStep] = useState(0);
+  const [currentIdx,setCurrentIdx] = useState(-1);  // -1 = döngü dışı
+  const [subStep,setSubStep] = useState(0);         // lezyon içi alt adım (0..6)
+
+  /* --- Meta/hasta --- */
+  const [hasta,setHasta] = useState({ad:'',protokol:'',yas:'',cins:'',tarih:new Date().toISOString().slice(0,10)});
+
+  /* --- Klinik --- */
+  const [klinik,setKlinik] = useState({
+    sikayet:'',
+    sure:'',
+    agri:false,
+    sislik:false,
+    ates:false,
+    noroloji:'',
+    siggEMG:'',
+    bilinenMaligniteHic:false,
+    primerMalignite:'',
+    sigara:false,
+    sjogrenBg:false,
+    hivRisk:false,
+    nf1Klinik:false,
+    bruksizm:false,
+    teknik:T.defaultTechnique,
+    kontrast:T.defaultContrast
+  });
+
+  /* --- Anatomik değerlendirme (non-lezyoner) --- */
+  const [genel,setGenel] = useState({
+    asimetri:'',
+    yuzeyelSislik:'',
+    not:''
+  });
+  const [bez,setBez] = useState({
+    parotis_sag:'normal',parotis_sol:'normal',
+    sm_sag:'normal',sm_sol:'normal',
+    sl_sag:'normal',sl_sol:'normal',
+    not:''
+  });
+  const [masseter,setMasseter] = useState({
+    sag:'normal',sol:'normal',
+    hipertrofi:false, bruksizmFind:false,
+    not:''
+  });
+  const [tmj,setTmj] = useState({
+    disk_sag:'normal',disk_sol:'normal',
+    efuzyon_sag:false,efuzyon_sol:false,
+    kondil_sag:'normal',kondil_sol:'normal',
+    osteofit:false,subkondralKist:false,
+    not:''
+  });
+  const [kemik,setKemik] = useState({
+    mandibula:'normal',maksilla:'normal',
+    lizisDestruksiyon:false,periostalReaksiyon:false,
+    dis:'normal',
+    not:''
+  });
+  const [bukkal,setBukkal] = useState({
+    bukkal:'normal',parafarengeal:'normal',
+    not:''
+  });
+  const [sinir,setSinir] = useState({
+    fasial:'normal',v2:'normal',v3:'normal',
+    perinoralYayilim:false,
+    foramenGenisleme:false,
+    not:''
+  });
+  const [cilt,setCilt] = useState({
+    kalinlasma:false,kitle:false,sccOyku:false,
+    not:''
+  });
+  const [lap,setLap] = useState({
+    reaktif:false,patolojik:false,
+    lokasyonlar:[],
+    not:''
+  });
+
+  /* --- Lezyonlar --- */
+  const [lesionQ,setLesionQ] = useState(''); // 'var'|'yok'|''
+  const [lesions,setLesions] = useState([]);
+  const [current,setCurrent] = useState(defaultLesion());
+
+  function defaultLesion(){
+    return {
+      lokasyon:'',taraf:'',sayi:'tek',bilateral:false,
+      boyutCm:'',sinir:'',
+      t1:'',t2:'',dwi:'',contrast:'',
+      kistik:'',yagsup:'',
+      flowVoid:false,fleboliti:false,sivisivi:false,multilokule:false,
+      perinoral:false,kemik:'',
+      bezTut:'',
+      klinikAkut:false,
+      duktDilate:false,taskalkulus:false,periglanduler:false,bezAtrofi:false,
+      saltPepper:false,kistikDegisim:false,lakrimal:false,igg4Klinik:false,
+      sinirTrase:false,hedefIsareti:false,pleksiform:false,
+      nekroz:false,ekstrakapsuler:false,reaktifLap:false,
+      ciltLezyon:false,ciltSccOykusu:false,
+      yavasAkim:false,infant:false,pediatrik:false,
+      osteofit:false,subkondralKist:false,kondilDegisim:false,eklemAraliki:false,tmjEfuzyon:false,
+      normalSinyal:false,bruksizm:false,
+      dis:false,
+      hivRisk:false,sjogrenBg:false,nf1Klinik:false,primerMalignite:false,
+      tmjFind:'',
+      not:''
+    };
+  }
+
+  /* ---------- NAV ---------- */
+  function goNext(){
+    // Lezyon döngüsü adımında özel davranış
+    if (step === LESION_STEP_IDX){
+      // Eğer döngü dışıysa ve "yok" seçilmişse sonraki adıma
+      if (currentIdx === -1){
+        if (lesionQ === 'yok' || lesions.length>0){
+          setStep(step+1);
+          return;
+        }
+        // "var" seçildiyse ama henüz lezyon eklenmediyse → lezyon girmeye başla
+        if (lesionQ === 'var'){
+          setCurrentIdx(0);
+          setCurrent(defaultLesion());
+          setSubStep(0);
+          return;
+        }
+      } else {
+        // Lezyon alt adımları içindeyiz
+        if (subStep < 6){
+          setSubStep(subStep+1);
+          return;
+        } else {
+          // Alt adımlar bitti → lezyonu finalize et
+          finalizeLesion();
+          return;
+        }
+      }
+    }
+    if (step < STEP_TITLES.length-1) setStep(step+1);
+  }
+  function goPrev(){
+    if (step === LESION_STEP_IDX){
+      if (currentIdx !== -1){
+        if (subStep > 0) setSubStep(subStep-1);
+        else {
+          // Lezyon girişini iptal edip döngü seçim ekranına dön
+          setCurrentIdx(-1);
+          setSubStep(0);
+        }
+        return;
+      }
+    }
+    // Eğer son adımdan (DDX) geri gelersek ve lezyon döngüsü aktif değilse,
+    // doğrudan lezyon döngüsü seçim ekranına dön.
+    if (step === DDX_STEP_IDX){
+      setStep(LESION_STEP_IDX);
+      setCurrentIdx(-1);
+      setSubStep(0);
+      return;
+    }
+    if (step > 0) setStep(step-1);
+  }
+
+  function finalizeLesion(){
+    setLesions(prev => [...prev, {...current}]);
+    setCurrent(defaultLesion());
+    setCurrentIdx(-1);    // ⬅ kritik: döngü dışına çık
+    setSubStep(0);
+  }
+
+  function startNewLesion(){
+    setCurrentIdx(lesions.length);
+    setCurrent(defaultLesion());
+    setSubStep(0);
+  }
+  function deleteLesion(i){
+    setLesions(prev => prev.filter((_,idx)=>idx!==i));
+  }
+
+  /* ---------- Rapor ---------- */
+  const report = useMemo(()=>buildReport({hasta,klinik,genel,bez,masseter,tmj,kemik,bukkal,sinir,cilt,lap,lesions}),
+    [hasta,klinik,genel,bez,masseter,tmj,kemik,bukkal,sinir,cilt,lap,lesions]);
+
+  const ddxPerLesion = useMemo(()=>lesions.map(L=>{
+    const raw = scoreDifferential({...L, sjogrenBg:L.sjogrenBg||klinik.sjogrenBg, hivRisk:L.hivRisk||klinik.hivRisk, nf1Klinik:L.nf1Klinik||klinik.nf1Klinik, primerMalignite:L.primerMalignite||!!klinik.primerMalignite, bruksizm:L.bruksizm||klinik.bruksizm});
+    const arr = Object.entries(raw).map(([id,sc])=>{
+      const p = PATHOLOGIES.find(x=>x.id===id);
+      return {id, name:p.name, name_en:p.name_en, group:p.group, group_en:p.group_en, note:p.note, note_en:p.note_en, score:sc};
+    }).sort((a,b)=>b.score-a.score);
+    return arr;
+  }),[lesions,klinik]);
+
+  /* ---------- EXPORT ---------- */
+  function copyReport(){
+    navigator.clipboard.writeText(report).then(
+      ()=>toast(T.toastCopied),
+      ()=>toast(T.toastCopyFail,true)
+    );
+  }
+  function downloadReport(){
+    const blob = new Blob([report], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (hasta.protokol? hasta.protokol+'_' : '') + 'Yuz_MRG_Rapor.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 400);
+  }
+  function downloadHtml(){
+    const html = `<!doctype html><meta charset="utf-8"><title>Yüz MRG Rapor</title>
+<style>body{font-family:Georgia,serif;max-width:860px;margin:30px auto;padding:0 20px;color:#111;line-height:1.55}pre{white-space:pre-wrap;font-family:Georgia,serif}</style>
+<pre>${escapeHtml(report)}</pre>`;
+    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (hasta.protokol? hasta.protokol+'_' : '') + 'Yuz_MRG_Rapor.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 400);
+  }
+  function printReport(){
+    const overlay = document.getElementById('printOverlay');
+    overlay.innerHTML = '<pre>'+escapeHtml(report)+'</pre>';
+    overlay.style.display = 'block';
+    window.print();
+    setTimeout(()=>overlay.style.display='none', 200);
+  }
+  function escapeHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  /* ---------- TOAST ---------- */
+  const [toastMsg,setToastMsg] = useState('');
+  function toast(m,err){
+    setToastMsg(m);
+    setTimeout(()=>setToastMsg(''),2000);
+  }
+
+  /* ---------- RENDER ---------- */
+  return <div className="app">
+    <div className="hdr">
+      <div>
+        <div className="title">{T.appTitle} <span>{T.appTitleAccent}</span></div>
+        <div className="sub">{T.appSub}</div>
+      </div>
+      <div className="row">
+        <span className="stepcount">{T.stepLabel} {step+1} {T.of} {STEP_TITLES.length}</span>
+      </div>
+    </div>
+
+    <div className="bar">
+      {STEP_TITLES.map((t,i)=>(
+        <Chip key={i} active={i===step} onClick={()=>{if(currentIdx===-1)setStep(i);}}>{i+1}. {t}</Chip>
+      ))}
+    </div>
+
+    {/* ---------- STEP 0: HASTA ---------- */}
+    {step===0 && <div className="panel">
+      <h3>{T.step0Title}</h3>
+      <div className="grid g3">
+        <Field label={T.labelName}><input type="text" value={hasta.ad} onChange={e=>setHasta({...hasta,ad:e.target.value})}/></Field>
+        <Field label={T.labelProtocol}><input type="text" value={hasta.protokol} onChange={e=>setHasta({...hasta,protokol:e.target.value})}/></Field>
+        <Field label={T.labelDate}><input type="text" value={hasta.tarih} onChange={e=>setHasta({...hasta,tarih:e.target.value})}/></Field>
+        <Field label={T.labelAge}><input type="number" value={hasta.yas} onChange={e=>setHasta({...hasta,yas:e.target.value})}/></Field>
+        <Field label={T.labelGender}>
+          <OptGroup value={hasta.cins} setValue={v=>setHasta({...hasta,cins:v})} opts={[{v:'K',l:T.optFemale},{v:'E',l:T.optMale}]} />
+        </Field>
+      </div>
+    </div>}
+
+    {/* ---------- STEP 1: KLİNİK ---------- */}
+    {step===1 && <div className="panel">
+      <h3>{T.step1Title}</h3>
+      <div className="grid g2">
+        <Field label={T.labelComplaint}><input type="text" value={klinik.sikayet} onChange={e=>setKlinik({...klinik,sikayet:e.target.value})}/></Field>
+        <Field label={T.labelDuration}><input type="text" value={klinik.sure} onChange={e=>setKlinik({...klinik,sure:e.target.value})}/></Field>
+      </div>
+      <h4>{T.sectionClinical}</h4>
+      <div className="opts">
+        <Toggle on={klinik.agri} onClick={()=>setKlinik({...klinik,agri:!klinik.agri})}>{T.togPain}</Toggle>
+        <Toggle on={klinik.sislik} onClick={()=>setKlinik({...klinik,sislik:!klinik.sislik})}>{T.togSwelling}</Toggle>
+        <Toggle on={klinik.ates} onClick={()=>setKlinik({...klinik,ates:!klinik.ates})}>{T.togFever}</Toggle>
+      </div>
+      <h4>{T.sectionNeuro}</h4>
+      <div className="grid g2">
+        <Field label={T.labelNeuro}><input type="text" value={klinik.noroloji} onChange={e=>setKlinik({...klinik,noroloji:e.target.value})}/></Field>
+        <Field label={T.labelPrimer}><input type="text" value={klinik.primerMalignite} onChange={e=>setKlinik({...klinik,primerMalignite:e.target.value})}/></Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={klinik.sigara} onClick={()=>setKlinik({...klinik,sigara:!klinik.sigara})}>{T.togSmoking}</Toggle>
+        <Toggle on={klinik.sjogrenBg} onClick={()=>setKlinik({...klinik,sjogrenBg:!klinik.sjogrenBg})}>{T.togSjogren}</Toggle>
+        <Toggle on={klinik.hivRisk} onClick={()=>setKlinik({...klinik,hivRisk:!klinik.hivRisk})}>{T.togHiv}</Toggle>
+        <Toggle on={klinik.nf1Klinik} onClick={()=>setKlinik({...klinik,nf1Klinik:!klinik.nf1Klinik})}>{T.togNf1}</Toggle>
+        <Toggle on={klinik.bruksizm} onClick={()=>setKlinik({...klinik,bruksizm:!klinik.bruksizm})}>{T.togBruksizm}</Toggle>
+      </div>
+      <h4>{T.sectionTechnique}</h4>
+      <Field label={T.labelTechnique}><textarea value={klinik.teknik} onChange={e=>setKlinik({...klinik,teknik:e.target.value})}/></Field>
+      <Field label={T.labelContrast}><input type="text" value={klinik.kontrast} onChange={e=>setKlinik({...klinik,kontrast:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 2: GENEL ---------- */}
+    {step===2 && <div className="panel">
+      <h3>{T.step2Title}</h3>
+      <Field label={T.labelAsymmetry}>
+        <OptGroup value={genel.asimetri} setValue={v=>setGenel({...genel,asimetri:v})}
+          opts={[{v:'yok',l:T.optNone},{v:'sag',l:T.optRightSide},{v:'sol',l:T.optLeftSide},{v:'bilateral',l:T.optBilateral}]} />
+      </Field>
+      <Field label={T.labelSurfaceSwelling}>
+        <OptGroup value={genel.yuzeyelSislik} setValue={v=>setGenel({...genel,yuzeyelSislik:v})}
+          opts={[{v:'yok',l:T.optNone},{v:'fokal',l:T.optFocal},{v:'diffuz',l:T.optDiffuse}]} />
+      </Field>
+      <Field label={T.labelNote}><textarea value={genel.not} onChange={e=>setGenel({...genel,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 3: TÜKÜRÜK BEZLERİ ---------- */}
+    {step===3 && <div className="panel">
+      <h3>{T.step3Title}</h3>
+      <h4>{T.sectionParotid}</h4>
+      <div className="grid g2">
+        <Field label={T.labelRightParotid}>
+          <OptGroup value={bez.parotis_sag} setValue={v=>setBez({...bez,parotis_sag:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'diffuz_buyume',l:RV_LOCALE==='en'?'Diffuse enlargement':'Diffüz büyüme'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'yagli',l:RV_LOCALE==='en'?'Fatty infiltration':'Yağlı infiltrasyon'},{v:'heterojen',l:RV_LOCALE==='en'?'Heterogeneous parenchyma':'Heterojen parenkim'}]} />
+        </Field>
+        <Field label={T.labelLeftParotid}>
+          <OptGroup value={bez.parotis_sol} setValue={v=>setBez({...bez,parotis_sol:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'diffuz_buyume',l:RV_LOCALE==='en'?'Diffuse enlargement':'Diffüz büyüme'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'yagli',l:RV_LOCALE==='en'?'Fatty infiltration':'Yağlı infiltrasyon'},{v:'heterojen',l:RV_LOCALE==='en'?'Heterogeneous parenchyma':'Heterojen parenkim'}]} />
+        </Field>
+      </div>
+      <h4>{T.sectionSubmandibular}</h4>
+      <div className="grid g2">
+        <Field label={T.labelRight}>
+          <OptGroup value={bez.sm_sag} setValue={v=>setBez({...bez,sm_sag:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'buyume',l:RV_LOCALE==='en'?'Enlargement':'Büyüme'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'sklerotik',l:RV_LOCALE==='en'?'Sclerosing/hypointense':'Sklerozan/hipointens'}]} />
+        </Field>
+        <Field label={T.labelLeft}>
+          <OptGroup value={bez.sm_sol} setValue={v=>setBez({...bez,sm_sol:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'buyume',l:RV_LOCALE==='en'?'Enlargement':'Büyüme'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'sklerotik',l:RV_LOCALE==='en'?'Sclerosing/hypointense':'Sklerozan/hipointens'}]} />
+        </Field>
+      </div>
+      <h4>{T.sectionSublingual}</h4>
+      <div className="grid g2">
+        <Field label={T.labelRight}>
+          <OptGroup value={bez.sl_sag} setValue={v=>setBez({...bez,sl_sag:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'buyume',l:RV_LOCALE==='en'?'Enlargement':'Büyüme'},{v:'ranula',l:RV_LOCALE==='en'?'Ranula-like cyst':'Ranula benzeri kist'}]} />
+        </Field>
+        <Field label={T.labelLeft}>
+          <OptGroup value={bez.sl_sol} setValue={v=>setBez({...bez,sl_sol:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'buyume',l:RV_LOCALE==='en'?'Enlargement':'Büyüme'},{v:'ranula',l:RV_LOCALE==='en'?'Ranula-like cyst':'Ranula benzeri kist'}]} />
+        </Field>
+      </div>
+      <Field label={T.labelNote}><textarea value={bez.not} onChange={e=>setBez({...bez,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 4: MASSETER ---------- */}
+    {step===4 && <div className="panel">
+      <h3>{T.step4Title}</h3>
+      <div className="grid g2">
+        <Field label={T.labelRightMasseter}>
+          <OptGroup value={masseter.sag} setValue={v=>setMasseter({...masseter,sag:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'kalinlasma',l:RV_LOCALE==='en'?'Thickening':'Kalınlaşma'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'odem',l:RV_LOCALE==='en'?'Edema (STIR high)':'Ödem (STIR yüksek)'}]} />
+        </Field>
+        <Field label={T.labelLeftMasseter}>
+          <OptGroup value={masseter.sol} setValue={v=>setMasseter({...masseter,sol:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'kalinlasma',l:RV_LOCALE==='en'?'Thickening':'Kalınlaşma'},{v:'atrofi',l:RV_LOCALE==='en'?'Atrophy':'Atrofi'},{v:'odem',l:RV_LOCALE==='en'?'Edema (STIR high)':'Ödem (STIR yüksek)'}]} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={masseter.hipertrofi} onClick={()=>setMasseter({...masseter,hipertrofi:!masseter.hipertrofi})}>{T.togHypertrophy}</Toggle>
+        <Toggle on={masseter.bruksizmFind} onClick={()=>setMasseter({...masseter,bruksizmFind:!masseter.bruksizmFind})}>{T.togBruksizmFind}</Toggle>
+      </div>
+      <Field label={T.labelNote}><textarea value={masseter.not} onChange={e=>setMasseter({...masseter,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 5: TMJ ---------- */}
+    {step===5 && <div className="panel">
+      <h3>{T.step5Title}</h3>
+      <div className="grid g2">
+        <Field label={T.labelRightDisk}>
+          <OptGroup value={tmj.disk_sag} setValue={v=>setTmj({...tmj,disk_sag:v})}
+            opts={[{v:'normal',l:RV_LOCALE==='en'?'Normal position':'Normal lokasyon'},{v:'anterior_red',l:RV_LOCALE==='en'?'Anterior disp. + reduction':'Anterior dep. + redüksiyon'},{v:'anterior_nored',l:RV_LOCALE==='en'?'Anterior disp. no reduction':'Anterior dep. redüksiyonsuz'},{v:'medial_lateral',l:RV_LOCALE==='en'?'Medial/lateral displacement':'Medial/lateral deplasman'},{v:'deforme',l:RV_LOCALE==='en'?'Disc deformation':'Disk deformasyonu'}]} />
+        </Field>
+        <Field label={T.labelLeftDisk}>
+          <OptGroup value={tmj.disk_sol} setValue={v=>setTmj({...tmj,disk_sol:v})}
+            opts={[{v:'normal',l:RV_LOCALE==='en'?'Normal position':'Normal lokasyon'},{v:'anterior_red',l:RV_LOCALE==='en'?'Anterior disp. + reduction':'Anterior dep. + redüksiyon'},{v:'anterior_nored',l:RV_LOCALE==='en'?'Anterior disp. no reduction':'Anterior dep. redüksiyonsuz'},{v:'medial_lateral',l:RV_LOCALE==='en'?'Medial/lateral displacement':'Medial/lateral deplasman'},{v:'deforme',l:RV_LOCALE==='en'?'Disc deformation':'Disk deformasyonu'}]} />
+        </Field>
+      </div>
+      <div className="grid g2">
+        <Field label={T.labelRightCondyle}>
+          <OptGroup value={tmj.kondil_sag} setValue={v=>setTmj({...tmj,kondil_sag:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'duzlesme',l:RV_LOCALE==='en'?'Flattening':'Düzleşme'},{v:'osteofit',l:'Osteophyte'},{v:'subkist',l:RV_LOCALE==='en'?'Subchondral cyst':'Subkondral kist'},{v:'rezorpsiyon',l:RV_LOCALE==='en'?'Resorption':'Rezorpsiyon'}]} />
+        </Field>
+        <Field label={T.labelLeftCondyle}>
+          <OptGroup value={tmj.kondil_sol} setValue={v=>setTmj({...tmj,kondil_sol:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'duzlesme',l:RV_LOCALE==='en'?'Flattening':'Düzleşme'},{v:'osteofit',l:'Osteophyte'},{v:'subkist',l:RV_LOCALE==='en'?'Subchondral cyst':'Subkondral kist'},{v:'rezorpsiyon',l:RV_LOCALE==='en'?'Resorption':'Rezorpsiyon'}]} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={tmj.efuzyon_sag} onClick={()=>setTmj({...tmj,efuzyon_sag:!tmj.efuzyon_sag})}>{T.togRightEffusion}</Toggle>
+        <Toggle on={tmj.efuzyon_sol} onClick={()=>setTmj({...tmj,efuzyon_sol:!tmj.efuzyon_sol})}>{T.togLeftEffusion}</Toggle>
+        <Toggle on={tmj.osteofit} onClick={()=>setTmj({...tmj,osteofit:!tmj.osteofit})}>{T.togOsteophyte}</Toggle>
+        <Toggle on={tmj.subkondralKist} onClick={()=>setTmj({...tmj,subkondralKist:!tmj.subkondralKist})}>{T.togSubchondralCyst}</Toggle>
+      </div>
+      <Field label={T.labelNote}><textarea value={tmj.not} onChange={e=>setTmj({...tmj,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 6: KEMİK ---------- */}
+    {step===6 && <div className="panel">
+      <h3>{T.step6Title}</h3>
+      <div className="grid g2">
+        <Field label={T.labelMandible}>
+          <OptGroup value={kemik.mandibula} setValue={v=>setKemik({...kemik,mandibula:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'lizis',l:RV_LOCALE==='en'?'Lysis':'Lizis'},{v:'genisleme',l:RV_LOCALE==='en'?'Expansion':'Ekspansiyon'},{v:'skleroz',l:RV_LOCALE==='en'?'Sclerosis':'Skleroz'},{v:'kist',l:RV_LOCALE==='en'?'Cystic lesion':'Kistik lezyon'}]} />
+        </Field>
+        <Field label={T.labelMaxilla}>
+          <OptGroup value={kemik.maksilla} setValue={v=>setKemik({...kemik,maksilla:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'lizis',l:RV_LOCALE==='en'?'Lysis':'Lizis'},{v:'genisleme',l:RV_LOCALE==='en'?'Expansion':'Ekspansiyon'},{v:'skleroz',l:RV_LOCALE==='en'?'Sclerosis':'Skleroz'},{v:'kist',l:RV_LOCALE==='en'?'Cystic lesion':'Kistik lezyon'}]} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={kemik.lizisDestruksiyon} onClick={()=>setKemik({...kemik,lizisDestruksiyon:!kemik.lizisDestruksiyon})}>{T.togLysis}</Toggle>
+        <Toggle on={kemik.periostalReaksiyon} onClick={()=>setKemik({...kemik,periostalReaksiyon:!kemik.periostalReaksiyon})}>{T.togPeriosteal}</Toggle>
+      </div>
+      <Field label={T.labelDental}>
+        <OptGroup value={kemik.dis} setValue={v=>setKemik({...kemik,dis:v})}
+          opts={[{v:'normal',l:'Normal'},{v:'gomuk',l:RV_LOCALE==='en'?'Impacted tooth related':'Gömük diş ilişkili'},{v:'kok_apikal',l:RV_LOCALE==='en'?'Root apex (periapical)':'Kök apikali (radiküler)'},{v:'dentijeroz',l:RV_LOCALE==='en'?'Dentigerous appearance':'Dentijeröz görünümde'}]} />
+      </Field>
+      <Field label={T.labelNote}><textarea value={kemik.not} onChange={e=>setKemik({...kemik,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 7: BUKKAL / PARAFARENGEAL ---------- */}
+    {step===7 && <div className="panel">
+      <h3>{T.step7Title}</h3>
+      <div className="grid g2">
+        <Field label={T.labelBuccal}>
+          <OptGroup value={bukkal.bukkal} setValue={v=>setBukkal({...bukkal,bukkal:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'odem',l:RV_LOCALE==='en'?'Edema/inflammation':'Ödem/inflamasyon'},{v:'kitle',l:RV_LOCALE==='en'?'Mass/lesion':'Kitle/lezyon'}]} />
+        </Field>
+        <Field label={T.labelParapharyngeal}>
+          <OptGroup value={bukkal.parafarengeal} setValue={v=>setBukkal({...bukkal,parafarengeal:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'yer_degistiren',l:RV_LOCALE==='en'?'Fat plane displaced':'Yağ planı itilmiş'},{v:'kitle',l:RV_LOCALE==='en'?'Mass/lesion':'Kitle/lezyon'}]} />
+        </Field>
+      </div>
+      <Field label={T.labelNote}><textarea value={bukkal.not} onChange={e=>setBukkal({...bukkal,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 8: SİNİRLER ---------- */}
+    {step===8 && <div className="panel">
+      <h3>{T.step8Title}</h3>
+      <div className="grid g3">
+        <Field label={T.labelFacialNerve}>
+          <OptGroup value={sinir.fasial} setValue={v=>setSinir({...sinir,fasial:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'kalinlasma',l:RV_LOCALE==='en'?'Thickening':'Kalınlaşma'},{v:'kontrastlanma',l:RV_LOCALE==='en'?'Pathological enhancement':'Patolojik kontrastlanma'},{v:'kitle',l:RV_LOCALE==='en'?'Mass along nerve tract':'Sinir trasesinde kitle'}]} />
+        </Field>
+        <Field label={T.labelV2}>
+          <OptGroup value={sinir.v2} setValue={v=>setSinir({...sinir,v2:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'kalinlasma',l:RV_LOCALE==='en'?'Thickening':'Kalınlaşma'},{v:'kontrastlanma',l:RV_LOCALE==='en'?'Enhancement':'Kontrastlanma'},{v:'foramen',l:RV_LOCALE==='en'?'Foramen rotundum enlargement':'Foramen rotundum genişlemesi'}]} />
+        </Field>
+        <Field label={T.labelV3}>
+          <OptGroup value={sinir.v3} setValue={v=>setSinir({...sinir,v3:v})}
+            opts={[{v:'normal',l:'Normal'},{v:'kalinlasma',l:RV_LOCALE==='en'?'Thickening':'Kalınlaşma'},{v:'kontrastlanma',l:RV_LOCALE==='en'?'Enhancement':'Kontrastlanma'},{v:'foramen',l:RV_LOCALE==='en'?'Foramen ovale enlargement':'Foramen ovale genişlemesi'}]} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={sinir.perinoralYayilim} onClick={()=>setSinir({...sinir,perinoralYayilim:!sinir.perinoralYayilim})}>{T.togPerineural}</Toggle>
+        <Toggle on={sinir.foramenGenisleme} onClick={()=>setSinir({...sinir,foramenGenisleme:!sinir.foramenGenisleme})}>{T.togForamen}</Toggle>
+      </div>
+      <Field label={T.labelNote}><textarea value={sinir.not} onChange={e=>setSinir({...sinir,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 9: CİLT ---------- */}
+    {step===9 && <div className="panel">
+      <h3>{T.step9Title}</h3>
+      <div className="opts">
+        <Toggle on={cilt.kalinlasma} onClick={()=>setCilt({...cilt,kalinlasma:!cilt.kalinlasma})}>{T.togSkinThickening}</Toggle>
+        <Toggle on={cilt.kitle} onClick={()=>setCilt({...cilt,kitle:!cilt.kitle})}>{T.togSkinMass}</Toggle>
+        <Toggle on={cilt.sccOyku} onClick={()=>setCilt({...cilt,sccOyku:!cilt.sccOyku})}>{T.togSccHx}</Toggle>
+      </div>
+      <Field label={T.labelNote}><textarea value={cilt.not} onChange={e=>setCilt({...cilt,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 10: LAP ---------- */}
+    {step===10 && <div className="panel">
+      <h3>{T.step10Title}</h3>
+      <div className="opts">
+        <Toggle on={lap.reaktif} onClick={()=>setLap({...lap,reaktif:!lap.reaktif})}>{T.togReactive}</Toggle>
+        <Toggle on={lap.patolojik} onClick={()=>setLap({...lap,patolojik:!lap.patolojik})}>{T.togPathologic}</Toggle>
+      </div>
+      <div style={{marginTop:8}} className="opts">
+        {['IA','IB','II','III','IV','V','VI','Parotid intra','Parotid peri','Retrofaringeal'].map(s=>(
+          <Toggle key={s}
+            on={lap.lokasyonlar.includes(s)}
+            onClick={()=>{
+              const has = lap.lokasyonlar.includes(s);
+              setLap({...lap, lokasyonlar: has? lap.lokasyonlar.filter(x=>x!==s) : [...lap.lokasyonlar, s]});
+            }}>Level {s}</Toggle>
+        ))}
+      </div>
+      <Field label={T.labelNote}><textarea value={lap.not} onChange={e=>setLap({...lap,not:e.target.value})}/></Field>
+    </div>}
+
+    {/* ---------- STEP 11: LEZYON DÖNGÜSÜ ---------- */}
+    {step===LESION_STEP_IDX && currentIdx===-1 && <div className="panel">
+      <h3>{T.step11Title}</h3>
+      <p className="small">{T.lesionDesc}</p>
+      <Field label={T.labelFocalLesion}>
+        <OptGroup value={lesionQ} setValue={setLesionQ} opts={[{v:'var',l:T.optHasLesion},{v:'yok',l:T.optNoLesion}]} />
+      </Field>
+
+      {lesions.length>0 && <div>
+        <h4>{T.enteredLesions} ({lesions.length})</h4>
+        {lesions.map((L,i)=>(
+          <div key={i} className="lesion-card">
+            <div className="t">{T.lesionCard} {i+1}</div>
+            <div className="d">{loc(LOC_OPTS.find(o=>o.v===L.lokasyon)||{},'l') || '—'} · {L.taraf||'—'} · {L.boyutCm||'?'} cm · T2 {L.t2||'—'} · DWI {L.dwi||'—'} · {L.sinir||'—'}</div>
+            {L.not && <div className="d">Note: {L.not}</div>}
+            <div style={{marginTop:6}}>
+              <button className="btn ghost" onClick={()=>deleteLesion(i)}>{T.btnDelete}</button>
+            </div>
+          </div>
+        ))}
+        <div className="row" style={{marginTop:6}}>
+          <button className="btn" onClick={startNewLesion}>{T.btnAddLesion}</button>
+        </div>
+      </div>}
+
+      {lesionQ==='var' && lesions.length===0 && <div className="ok-box">
+        {T.lesionHint}
+      </div>}
+    </div>}
+
+    {/* ---------- LEZYON ALT ADIMLARI ---------- */}
+    {step===LESION_STEP_IDX && currentIdx!==-1 && <LesionSubstep
+      subStep={subStep} setSubStep={setSubStep}
+      current={current} setCurrent={setCurrent}
+      index={currentIdx}
+    />}
+
+    {/* ---------- STEP 12: DDX & RAPOR ---------- */}
+    {step===DDX_STEP_IDX && <div>
+      <div className="panel">
+        <h3>{T.step12Title}</h3>
+        {lesions.length===0 && <div className="warn-box">{T.noLesionWarn}</div>}
+        {lesions.map((L,i)=>(
+          <div key={i} style={{marginBottom:14}}>
+            <h4>{T.lesionCard} {i+1}: {loc(LOC_OPTS.find(o=>o.v===L.lokasyon)||{},'l') || '—'} ({L.taraf||'—'}) · {L.boyutCm||'?'} cm</h4>
+            {ddxPerLesion[i].slice(0,6).map((d,j)=>(
+              <div key={j} className="ddx">
+                <div className="row" style={{justifyContent:'space-between'}}>
+                  <div className="nm">{j+1}. {loc(d,'name')} <span className="pill">{loc(d,'group')}</span></div>
+                  <div className="small">{T.scoreLabel} <b>{d.score}</b>{T.scoreOf}</div>
+                </div>
+                <div className="bar-wrap"><div className="bar-fill" style={{width:d.score+'%'}}/></div>
+                <div className="rs">{loc(d,'note')}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="panel">
+        <h3>{T.step12ReportTitle}</h3>
+        <div className="row" style={{marginBottom:10}}>
+          <button className="btn primary" onClick={copyReport}>{T.btnCopy}</button>
+          <button className="btn" onClick={downloadReport}>{T.btnDownloadTxt}</button>
+          <button className="btn" onClick={downloadHtml}>{T.btnDownloadHtml}</button>
+          <button className="btn" onClick={printReport}>{T.btnPrint}</button>
+        </div>
+        <div className="report-box">{report}</div>
+      </div>
+    </div>}
+
+    <div className="nav">
+      <button className="btn" onClick={goPrev} disabled={step===0 && currentIdx===-1}>{T.back}</button>
+      <div className="row">
+        {step===LESION_STEP_IDX && currentIdx===-1 && lesionQ==='var' && lesions.length>0 &&
+          <button className="btn ghost" onClick={()=>{setStep(DDX_STEP_IDX);}}>{T.goToDdx}</button>}
+        <button className="btn primary" onClick={goNext}
+          disabled={step===DDX_STEP_IDX}>
+          {step===LESION_STEP_IDX && currentIdx!==-1 && subStep===6 ? T.saveLesion :
+           step===DDX_STEP_IDX ? T.done : T.next}
+        </button>
+      </div>
+    </div>
+
+    {toastMsg && <div style={{position:'fixed',bottom:20,right:20,background:'var(--accent)',color:'#fff',padding:'10px 16px',borderRadius:10,boxShadow:'0 6px 20px rgba(244,63,94,.4)'}}>{toastMsg}</div>}
+  </div>;
+}
+
+/* =========================================================
+   LESION SUBSTEPS COMPONENT
+   ========================================================= */
+function LesionSubstep({subStep,setSubStep,current,setCurrent,index}){
+  const L = current;
+  const set = (k,v)=>setCurrent({...L,[k]:v});
+  const tog = (k)=>setCurrent({...L,[k]:!L[k]});
+
+  return <div className="panel">
+    <h3>{T.lesionCard} {index+1} — {T.lesionSubTitle} {subStep+1}{T.lesionOf}7</h3>
+
+    {subStep===0 && <div>
+      <h4>{T.ss0Heading}</h4>
+      <Field label={T.labelLocation}>
+        <OptGroup value={L.lokasyon} setValue={v=>set('lokasyon',v)} opts={LOC_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+      <div className="grid g2">
+        <Field label={T.labelSide}>
+          <OptGroup value={L.taraf} setValue={v=>set('taraf',v)} opts={[{v:'sag',l:T.optRight},{v:'sol',l:T.optLeft},{v:'bilateral',l:T.optBilateral},{v:'orta',l:T.optMidline}]} />
+        </Field>
+        <Field label={T.labelCount}>
+          <OptGroup value={L.sayi} setValue={v=>set('sayi',v)} opts={[{v:'tek',l:T.optSingle},{v:'multipl',l:T.optMultiple}]} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={L.bilateral} onClick={()=>tog('bilateral')}>{T.togBilateralDist}</Toggle>
+      </div>
+      <Field label={T.labelSize}><input type="number" step="0.1" value={L.boyutCm} onChange={e=>set('boyutCm',e.target.value)}/></Field>
+    </div>}
+
+    {subStep===1 && <div>
+      <h4>{T.ss1Heading}</h4>
+      <div className="grid g2">
+        <Field label={T.labelMargin}>
+          <OptGroup value={L.sinir} setValue={v=>set('sinir',v)} opts={SINIR_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+        </Field>
+        <Field label={T.labelCystic}>
+          <OptGroup value={L.kistik} setValue={v=>set('kistik',v)} opts={KISTIK_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+        </Field>
+      </div>
+      <div className="grid g2">
+        <Field label={T.labelT1}>
+          <OptGroup value={L.t1} setValue={v=>set('t1',v)} opts={T1_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+        </Field>
+        <Field label={T.labelT2}>
+          <OptGroup value={L.t2} setValue={v=>set('t2',v)} opts={T2_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+        </Field>
+      </div>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={L.multilokule} onClick={()=>tog('multilokule')}>{T.togMultilocular}</Toggle>
+        <Toggle on={L.sivisivi} onClick={()=>tog('sivisivi')}>{T.togFluidFluid}</Toggle>
+        <Toggle on={L.flowVoid} onClick={()=>tog('flowVoid')}>{T.togFlowVoid}</Toggle>
+        <Toggle on={L.fleboliti} onClick={()=>tog('fleboliti')}>{T.togPhlebolith}</Toggle>
+      </div>
+    </div>}
+
+    {subStep===2 && <div>
+      <h4>{T.ss2Heading}</h4>
+      <Field label={T.labelDwi}>
+        <OptGroup value={L.dwi} setValue={v=>set('dwi',v)} opts={DWI_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+      <Field label={T.labelFatSat}>
+        <OptGroup value={L.yagsup} setValue={v=>set('yagsup',v)} opts={[{v:'degisiklik_yok',l:T.optNoChange},{v:'sinyal_kaybi',l:T.optSignalLoss}]} />
+      </Field>
+    </div>}
+
+    {subStep===3 && <div>
+      <h4>{T.ss3Heading}</h4>
+      <Field label={T.labelEnhancement}>
+        <OptGroup value={L.contrast} setValue={v=>set('contrast',v)} opts={CONTRAST_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={L.yavasAkim} onClick={()=>tog('yavasAkim')}>{T.togSlowFlow}</Toggle>
+        <Toggle on={L.nekroz} onClick={()=>tog('nekroz')}>{T.togNecrosis}</Toggle>
+        <Toggle on={L.ekstrakapsuler} onClick={()=>tog('ekstrakapsuler')}>{T.togExtracapsular}</Toggle>
+      </div>
+    </div>}
+
+    {subStep===4 && <div>
+      <h4>{T.ss4Heading}</h4>
+      <div className="opts">
+        <Toggle on={L.perinoral} onClick={()=>tog('perinoral')}>{T.togPerineuralSpr}</Toggle>
+        <Toggle on={L.sinirTrase} onClick={()=>tog('sinirTrase')}>{T.togNerveTract}</Toggle>
+        <Toggle on={L.hedefIsareti} onClick={()=>tog('hedefIsareti')}>{T.togTargetSign}</Toggle>
+        <Toggle on={L.pleksiform} onClick={()=>tog('pleksiform')}>{T.togPlexiform}</Toggle>
+      </div>
+      <Field label={T.labelBoneChange}>
+        <OptGroup value={L.kemik} setValue={v=>set('kemik',v)} opts={KEMIK_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={L.dis} onClick={()=>tog('dis')}>{T.togDentalRel}</Toggle>
+      </div>
+    </div>}
+
+    {subStep===5 && <div>
+      <h4>{T.ss5Heading}</h4>
+      <Field label={T.labelGlandPattern}>
+        <OptGroup value={L.bezTut} setValue={v=>set('bezTut',v)} opts={BEZ_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+      <div className="opts" style={{marginTop:8}}>
+        <Toggle on={L.duktDilate} onClick={()=>tog('duktDilate')}>{T.togDuctalDilation}</Toggle>
+        <Toggle on={L.taskalkulus} onClick={()=>tog('taskalkulus')}>{T.togCalculus}</Toggle>
+        <Toggle on={L.periglanduler} onClick={()=>tog('periglanduler')}>{T.togPeriglandular}</Toggle>
+        <Toggle on={L.bezAtrofi} onClick={()=>tog('bezAtrofi')}>{T.togGlandAtrophy}</Toggle>
+        <Toggle on={L.saltPepper} onClick={()=>tog('saltPepper')}>{T.togSaltPepper}</Toggle>
+        <Toggle on={L.kistikDegisim} onClick={()=>tog('kistikDegisim')}>{T.togCysticDegen}</Toggle>
+        <Toggle on={L.lakrimal} onClick={()=>tog('lakrimal')}>{T.togLacrimal}</Toggle>
+        <Toggle on={L.igg4Klinik} onClick={()=>tog('igg4Klinik')}>{T.togIgg4}</Toggle>
+      </div>
+      <Field label={T.labelTmjSpecific}>
+        <OptGroup value={L.tmjFind} setValue={v=>set('tmjFind',v)} opts={TMJ_OPTS.map(o=>({...o,l:loc(o,'l')}))} />
+      </Field>
+    </div>}
+
+    {subStep===6 && <div>
+      <h4>{T.ss6Heading}</h4>
+      <div className="opts">
+        <Toggle on={L.klinikAkut} onClick={()=>tog('klinikAkut')}>{T.togAcuteClinical}</Toggle>
+        <Toggle on={L.hivRisk} onClick={()=>tog('hivRisk')}>{T.togHivRisk}</Toggle>
+        <Toggle on={L.sjogrenBg} onClick={()=>tog('sjogrenBg')}>{T.togSjogrenBg}</Toggle>
+        <Toggle on={L.nf1Klinik} onClick={()=>tog('nf1Klinik')}>{T.togNf1Criteria}</Toggle>
+        <Toggle on={L.primerMalignite} onClick={()=>tog('primerMalignite')}>{T.togPrimerMalig}</Toggle>
+        <Toggle on={L.ciltLezyon} onClick={()=>tog('ciltLezyon')}>{T.togSkinLesion}</Toggle>
+        <Toggle on={L.ciltSccOykusu} onClick={()=>tog('ciltSccOykusu')}>{T.togSccHxL}</Toggle>
+        <Toggle on={L.reaktifLap} onClick={()=>tog('reaktifLap')}>{T.togReactiveLap}</Toggle>
+        <Toggle on={L.infant} onClick={()=>tog('infant')}>{T.togInfant}</Toggle>
+        <Toggle on={L.pediatrik} onClick={()=>tog('pediatrik')}>{T.togPediatric}</Toggle>
+        <Toggle on={L.bruksizm} onClick={()=>tog('bruksizm')}>{T.togBruksizmL}</Toggle>
+        <Toggle on={L.normalSinyal} onClick={()=>tog('normalSinyal')}>{T.togNormalSignal}</Toggle>
+        <Toggle on={L.osteofit} onClick={()=>tog('osteofit')}>{T.togOsteophyteL}</Toggle>
+        <Toggle on={L.subkondralKist} onClick={()=>tog('subkondralKist')}>{T.togSubchondralCystL}</Toggle>
+        <Toggle on={L.kondilDegisim} onClick={()=>tog('kondilDegisim')}>{T.togCondyleMorph}</Toggle>
+        <Toggle on={L.eklemAraliki} onClick={()=>tog('eklemAraliki')}>{T.togJointSpace}</Toggle>
+        <Toggle on={L.tmjEfuzyon} onClick={()=>tog('tmjEfuzyon')}>{T.togTmjEffusion}</Toggle>
+      </div>
+      <Field label={T.labelLesionNote}><textarea value={L.not} onChange={e=>set('not',e.target.value)}/></Field>
+      <div className="ok-box" style={{marginTop:10}}>{T.lesionSaveHint}</div>
+    </div>}
+  </div>;
+}
+
+/* =========================================================
+   REPORT BUILDER
+   ========================================================= */
+function buildReport(d){
+  const {hasta,klinik,genel,bez,masseter,tmj,kemik,bukkal,sinir,cilt,lap,lesions} = d;
+
+  const lines = [];
+  lines.push('YÜZ MRG — MULTİPARAMETRİK İNCELEME');
+  lines.push('='.repeat(60));
+  lines.push('');
+  if (hasta.ad) lines.push('Hasta: '+hasta.ad+(hasta.yas?(' / '+hasta.yas+' '):' ')+(hasta.cins||''));
+  if (hasta.protokol) lines.push('Protokol: '+hasta.protokol);
+  if (hasta.tarih) lines.push('Tarih: '+hasta.tarih);
+  lines.push('');
+  lines.push('KLİNİK:');
+  if (klinik.sikayet) lines.push('  • Şikayet: '+klinik.sikayet+(klinik.sure?(' ('+klinik.sure+')'):''));
+  const klnkBul = [];
+  if (klinik.agri) klnkBul.push('ağrı');
+  if (klinik.sislik) klnkBul.push('şişlik');
+  if (klinik.ates) klnkBul.push('akut inflamatuar bulgu');
+  if (klnkBul.length) lines.push('  • Bulgular: '+klnkBul.join(', '));
+  if (klinik.noroloji) lines.push('  • Nörolojik: '+klinik.noroloji);
+  if (klinik.primerMalignite) lines.push('  • Primer malignite öyküsü: '+klinik.primerMalignite);
+  const bg=[];
+  if (klinik.sigara) bg.push('sigara');
+  if (klinik.sjogrenBg) bg.push('Sjögren zemini');
+  if (klinik.hivRisk) bg.push('HIV risk');
+  if (klinik.nf1Klinik) bg.push('NF1');
+  if (klinik.bruksizm) bg.push('bruksizm');
+  if (bg.length) lines.push('  • Özgeçmiş: '+bg.join(', '));
+  lines.push('');
+  lines.push('TEKNİK:');
+  lines.push('  '+klinik.teknik);
+  if (klinik.kontrast) lines.push('  Kontrast: '+klinik.kontrast);
+  lines.push('');
+  lines.push('-'.repeat(60));
+  lines.push('BULGULAR');
+  lines.push('-'.repeat(60));
+
+  // Genel
+  const genelL = [];
+  if (genel.asimetri && genel.asimetri!=='yok') genelL.push('yüz asimetrisi ('+genel.asimetri+')');
+  if (genel.yuzeyelSislik && genel.yuzeyelSislik!=='yok') genelL.push('yüzeyel şişlik ('+genel.yuzeyelSislik+')');
+  lines.push('• Genel: '+(genelL.length?genelL.join(', '):'belirgin asimetri veya yüzeyel şişlik saptanmadı'));
+  if (genel.not) lines.push('   — '+genel.not);
+
+  // Majör tükürük bezleri
+  lines.push('• Majör tükürük bezleri:');
+  lines.push('   - Parotis: sağ '+bez.parotis_sag+' / sol '+bez.parotis_sol);
+  lines.push('   - Submandibular: sağ '+bez.sm_sag+' / sol '+bez.sm_sol);
+  lines.push('   - Sublingual: sağ '+bez.sl_sag+' / sol '+bez.sl_sol);
+  if (bez.not) lines.push('   — '+bez.not);
+
+  // Masseter
+  lines.push('• Masseter/masticator: sağ '+masseter.sag+' / sol '+masseter.sol+(masseter.hipertrofi?' — hipertrofi':'')+(masseter.bruksizmFind?' — bruksizm ile uyumlu':''));
+  if (masseter.not) lines.push('   — '+masseter.not);
+
+  // TMJ
+  lines.push('• TMJ:');
+  lines.push('   - Disk: sağ '+tmj.disk_sag+' / sol '+tmj.disk_sol);
+  lines.push('   - Kondil: sağ '+tmj.kondil_sag+' / sol '+tmj.kondil_sol);
+  const tmjEx=[];
+  if (tmj.efuzyon_sag) tmjEx.push('sağ efüzyon');
+  if (tmj.efuzyon_sol) tmjEx.push('sol efüzyon');
+  if (tmj.osteofit) tmjEx.push('osteofit');
+  if (tmj.subkondralKist) tmjEx.push('subkondral kist');
+  if (tmjEx.length) lines.push('   - '+tmjEx.join(', '));
+  if (tmj.not) lines.push('   — '+tmj.not);
+
+  // Kemik
+  lines.push('• Kemik yapılar: mandibula '+kemik.mandibula+' / maksilla '+kemik.maksilla);
+  const kemikEx=[];
+  if (kemik.lizisDestruksiyon) kemikEx.push('lizis/destrüksiyon');
+  if (kemik.periostalReaksiyon) kemikEx.push('periostal reaksiyon');
+  if (kemik.dis && kemik.dis!=='normal') kemikEx.push('diş ilişkili: '+kemik.dis);
+  if (kemikEx.length) lines.push('   - '+kemikEx.join(', '));
+  if (kemik.not) lines.push('   — '+kemik.not);
+
+  // Bukkal / parafarengeal
+  lines.push('• Bukkal / parafarengeal alan: bukkal '+bukkal.bukkal+' / parafarengeal '+bukkal.parafarengeal);
+  if (bukkal.not) lines.push('   — '+bukkal.not);
+
+  // Sinir
+  lines.push('• Sinir yapıları: VII '+sinir.fasial+' · V2 '+sinir.v2+' · V3 '+sinir.v3+
+    (sinir.perinoralYayilim?' — perinöral yayılım (+)':'')+
+    (sinir.foramenGenisleme?' — foramen genişlemesi (+)':''));
+  if (sinir.not) lines.push('   — '+sinir.not);
+
+  // Cilt
+  const ciltEx=[];
+  if (cilt.kalinlasma) ciltEx.push('cilt kalınlaşması');
+  if (cilt.kitle) ciltEx.push('cilt altı kitle');
+  if (cilt.sccOyku) ciltEx.push('kutanöz SCC/BCC öyküsü');
+  lines.push('• Cilt/cilt altı: '+(ciltEx.length?ciltEx.join(', '):'belirgin özellik yok'));
+  if (cilt.not) lines.push('   — '+cilt.not);
+
+  // LAP
+  const lapEx=[];
+  if (lap.reaktif) lapEx.push('reaktif görünümlü');
+  if (lap.patolojik) lapEx.push('patolojik (nekrotik/ekstrakapsüler)');
+  if (lap.lokasyonlar && lap.lokasyonlar.length) lapEx.push('Level '+lap.lokasyonlar.join(', '));
+  lines.push('• Servikal lenf nodları: '+(lapEx.length?lapEx.join('; '):'patolojik lenfadenopati saptanmadı'));
+  if (lap.not) lines.push('   — '+lap.not);
+
+  // Lezyonlar
+  if (lesions && lesions.length){
+    lines.push('');
+    lines.push('• Lezyon(lar):');
+    lesions.forEach((L,i)=>{
+      lines.push('  '+(i+1)+') '+formatLesionLine(L));
+      if (L.not) lines.push('     — '+L.not);
+    });
+  } else {
+    lines.push('');
+    lines.push('• Fokal lezyon: Saptanmadı.');
+  }
+
+  // Yorum
+  lines.push('');
+  lines.push('-'.repeat(60));
+  lines.push('YORUM');
+  lines.push('-'.repeat(60));
+
+  if (!lesions || lesions.length===0){
+    lines.push('Yüz MRG incelemesinde majör tükürük bezleri, TMJ, masticator space, kemik yapılar, sinir trajesi ve servikal lenf nodlarında patolojik odak saptanmadı. Mevcut klinik veriler ışığında takip/korelasyon önerilir.');
+  } else {
+    lesions.forEach((L,i)=>{
+      const ranked = Object.entries(scoreDifferential({
+        ...L,
+        sjogrenBg:L.sjogrenBg||klinik.sjogrenBg,
+        hivRisk:L.hivRisk||klinik.hivRisk,
+        nf1Klinik:L.nf1Klinik||klinik.nf1Klinik,
+        primerMalignite:L.primerMalignite||!!klinik.primerMalignite,
+        bruksizm:L.bruksizm||klinik.bruksizm
+      }))
+        .map(([id,sc])=>({id,sc,p:PATHOLOGIES.find(x=>x.id===id)}))
+        .sort((a,b)=>b.sc-a.sc)
+        .slice(0,3);
+      lines.push('Lezyon '+(i+1)+' ayırıcı tanı:');
+      ranked.forEach((r,j)=>{
+        lines.push('  '+(j+1)+'. '+r.p.name+' (skor '+r.sc+'/100) — '+r.p.group);
+      });
+      const top = ranked[0];
+      if (top && top.sc>=40){
+        lines.push('  → Bulgular '+top.p.name+' ile en uyumlu değerlendirilmiştir.');
+      } else {
+        lines.push('  → Dominant bir tanı çıkmamakla birlikte yukarıdaki olasılıklar değerlendirmeye alınmalıdır.');
+      }
+      if (L.perinoral || L.sinirTrase){
+        lines.push('  Not: Perinöral yayılım / sinir trasesi tutulumu varlığında adenoid kistik karsinom ve cilt SCC perinöral yayılımı ekarte edilmelidir.');
+      }
+      if (L.kistik==='koleksiyon' && L.dwi==='belirgin'){
+        lines.push('  Not: DWI kısıtlaması gösteren rim-enhancing koleksiyon apse ile uyumludur; klinik akut inflamatuar bulgular ile korelasyon önerilir.');
+      }
+      lines.push('');
+    });
+
+    // Öneriler
+    const oneri = [];
+    if (lesions.some(L=>L.perinoral)) oneri.push('Perinöral yayılım şüphesi — kontrastlı ince kesit baz kafatası/sinir dalları odaklı inceleme.');
+    if (lesions.some(L=>L.kistik==='koleksiyon')) oneri.push('Klinik-laboratuvar korelasyon ve drenaj/USG eşliğinde aspirasyon değerlendirilsin.');
+    if (lesions.some(L=>L.sinir==='infiltratif' || (L.dwi==='belirgin' && L.sinir==='infiltratif'))) oneri.push('Malign kitle şüphesi — doku tanısı (İİAB/core biyopsi) önerilir.');
+    if (klinik.sjogrenBg && lesions.some(L=>L.dwi==='belirgin')) oneri.push('Sjögren zemininde MALT lenfoma açısından yakın takip / biyopsi.');
+    if (oneri.length){
+      lines.push('ÖNERİLER:');
+      oneri.forEach(o=>lines.push('  • '+o));
+    }
+  }
+
+  lines.push('');
+  lines.push('='.repeat(60));
+  return lines.join('\n');
+}
+
+function formatLesionLine(L){
+  const loc = (LOC_OPTS.find(o=>o.v===L.lokasyon)||{}).l || '—';
+  const tf = L.taraf || '—';
+  const bits = [];
+  bits.push(loc+' ('+tf+')');
+  if (L.boyutCm) bits.push(L.boyutCm+' cm');
+  if (L.sinir) bits.push(L.sinir+' sınırlı');
+  if (L.t1) bits.push('T1 '+L.t1);
+  if (L.t2) bits.push('T2 '+L.t2);
+  if (L.dwi) bits.push('DWI '+L.dwi);
+  if (L.contrast) bits.push('kontrast '+L.contrast);
+  if (L.kistik) bits.push(L.kistik);
+  if (L.perinoral) bits.push('perinöral (+)');
+  if (L.sinirTrase) bits.push('sinir trasesi');
+  if (L.kemik && L.kemik!=='yok') bits.push('kemik: '+L.kemik);
+  return bits.join(', ');
+}
+
+/* ---------- PRINT OVERLAY ---------- */
+function PrintOverlay(){
+  return <div id="printOverlay"></div>;
+}
+
+/* ---------- BOOT ---------- */
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <>
+    <App />
+    <PrintOverlay />
+  </>
+);
+</script>
+</body>
+</html>

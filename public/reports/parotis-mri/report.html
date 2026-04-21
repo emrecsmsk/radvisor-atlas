@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Parotis MRI – Karar Destek</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root{
+  --bg:#0b0f1a;--surface:#131825;--surface2:#1b2236;--surface3:#222c42;
+  --border:#2a3550;--border2:#354060;
+  --accent:#10b981;--accent2:#059669;--accent3:#34d399;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --danger:#ef4444;--warn:#f59e0b;--info:#60a5fa;--purple:#a78bfa;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px;}
+#root{min-height:100vh;}
+
+/* ── LAYOUT ── */
+.shell{display:flex;flex-direction:column;min-height:100vh;max-width:860px;margin:0 auto;padding:16px;}
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.hdr-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.hdr-title{font-size:16px;font-weight:700;color:var(--text);}
+.hdr-sub{font-size:11px;color:var(--text3);}
+.progress-bar{height:3px;background:var(--surface3);border-radius:2px;margin-bottom:18px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent3));border-radius:2px;transition:width .4s ease;}
+.step-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.step-num{font-size:11px;color:var(--text3);}
+.step-title{font-size:17px;font-weight:700;color:var(--text);}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+
+/* ── FORM ELEMENTS ── */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.field input[type=text],.field input[type=number],.field textarea,.field select{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);}
+.field textarea{min-height:70px;resize:vertical;}
+
+/* ── CHIP GROUPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);
+  color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;user-select:none;}
+.chip:hover{border-color:var(--accent);color:var(--text);}
+.chip.sel{background:var(--accent2);border-color:var(--accent);color:#fff;font-weight:600;}
+.chip.sel-multi{background:var(--surface3);border-color:var(--accent3);color:var(--accent3);}
+
+/* ── GRID ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── LEZYON BADGE ── */
+.lez-badge{display:inline-flex;align-items:center;gap:5px;background:var(--surface3);
+  border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:11px;margin:3px;}
+.lez-badge .lez-n{font-weight:700;color:var(--accent);}
+
+/* ── DIFFERENTIAL TABLE ── */
+.diff-table{width:100%;border-collapse:collapse;margin-top:6px;}
+.diff-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--text3);padding:5px 8px;border-bottom:1px solid var(--border);}
+.diff-table td{padding:7px 8px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.diff-table tr:last-child td{border-bottom:none;}
+.diff-bar-wrap{width:120px;background:var(--surface3);border-radius:3px;height:6px;overflow:hidden;}
+.diff-bar{height:100%;border-radius:3px;transition:width .3s;}
+.cat-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;}
+.cat-benign{background:#065f46;color:#6ee7b7;}
+.cat-malign{background:#7f1d1d;color:#fca5a5;}
+.cat-enflamatuar{background:#1e3a5f;color:#93c5fd;}
+.cat-kistik{background:#3b2f00;color:#fcd34d;}
+.cat-vaskuler{background:#2d1f5e;color:#c4b5fd;}
+
+/* ── NAVIGATION BUTTONS ── */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.btn{padding:9px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--accent2);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text);}
+.btn-danger{background:#7f1d1d;border:1px solid #ef4444;color:#fca5a5;}
+.btn-danger:hover{background:#991b1b;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+.btn-outline:hover{background:var(--accent2);color:#fff;}
+
+/* ── ALERT BOXES ── */
+.alert{border-radius:7px;padding:10px 14px;margin-bottom:10px;font-size:12px;display:flex;gap:8px;align-items:flex-start;}
+.alert-info{background:#172554;border:1px solid #1e40af;color:#93c5fd;}
+.alert-warn{background:#451a03;border:1px solid #92400e;color:#fcd34d;}
+.alert-success{background:#064e3b;border:1px solid #065f46;color:#6ee7b7;}
+
+/* ── REPORT OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto;}
+.report-wrap{background:#fff;color:#111;width:100%;max-width:760px;border-radius:10px;overflow:hidden;}
+.report-toolbar{background:#1e293b;padding:10px 16px;display:flex;gap:8px;justify-content:flex-end;}
+.report-body{padding:28px 32px;font-family:'Segoe UI',sans-serif;font-size:13px;line-height:1.7;}
+.report-body h1{font-size:16px;font-weight:800;text-align:center;margin-bottom:4px;border-bottom:2px solid #111;padding-bottom:6px;}
+.report-body h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:16px;margin-bottom:4px;border-bottom:1px solid #aaa;padding-bottom:2px;}
+.report-body h3{font-size:12px;font-weight:700;margin-top:10px;margin-bottom:2px;color:#1a4c2e;}
+.report-body p{margin-bottom:4px;}
+.report-body .yorum-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:6px;padding:10px 14px;margin-top:14px;}
+.report-body .yorum-box h2{border-color:#16a34a;color:#15803d;}
+.report-body table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px;}
+.report-body table th{background:#f1f5f9;font-weight:700;padding:5px 8px;text-align:left;border:1px solid #ddd;}
+.report-body table td{padding:4px 8px;border:1px solid #ddd;}
+.report-body .rank1{font-weight:700;color:#15803d;}
+.report-body .rank2{color:#166534;}
+.report-body .rank3{color:#374151;}
+
+@media print{.report-toolbar{display:none;}.overlay{background:none;padding:0;}.report-wrap{border-radius:0;width:100%;max-width:none;}}
+</style>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useCallback}=React;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// LOCALE
+// ──────────────────────────────────────────────────────────────────────────────
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // App header
+    appTitle: 'Parotis Bezi MRG – Karar Destek',
+    appSub: 'Çok-lezyonlu · 18 Patoloji · Yüzde Ayırıcı Tanı',
+    // Step titles
+    stepTitles: [
+      'Teknik Bilgi','Sağ Parotis – Genel','Sol Parotis – Genel',
+      'Lezyon Tespiti',
+      'Lezyon – Lokalizasyon','Lezyon – Boyut','Lezyon – Sınır / Şekil',
+      'Lezyon – T1/T2 Sinyal','Lezyon – DWI / ADC',
+      'Lezyon – Kontrastlanma','Lezyon – Ek Özellikler',
+      'Lezyon Özeti','Fasiyal Sinir',
+      'Lenf Nodları','Komşu Yapılar','Klinik Bilgi','Rapor'
+    ],
+    // Nav
+    back: '← Geri',
+    backLezyon: '← Lezyon Tespitine Dön',
+    next: 'İleri →',
+    lezTamamla: 'Lezyon Tamamla →',
+    devam: 'Devam →',
+    rapoGit: 'Rapora Git →',
+    geri: '← Geri',
+    // Step counter
+    stepOf: 'Adım',
+    // Report buttons
+    copyBtn: '📋 Kopyala',
+    printBtn: '🖨️ Yazdır',
+    downloadBtn: '💾 HTML İndir',
+    closeBtn: '✕ Kapat',
+    copiedMsg: 'Rapor panoya kopyalandı.',
+    // Report generate button
+    generateBtn: '📄 Yapılandırılmış Rapor Oluştur',
+    viewReportBtn: '📄 Raporu Görüntüle',
+    // Step 0 – Teknik
+    s0CardTitle: '◈ Sekans Kalitesi',
+    s0Quality: 'Genel Kalite',
+    s0QualityOpts: ['İyi – artefakt yok','Kabul edilebilir – hafif artefakt','Yetersiz – hareket artefaktı'],
+    s0Contrast: 'Kontrast Madde',
+    s0ContrastOpts: ['Uygulandı (Gd-DTPA)','Uygulanmadı','Geç faz görüntüleme mevcut'],
+    s0Plane: 'Kesit Düzlemi',
+    s0PlaneOpts: ['Aksiyel + Koronal','Aksiyel + Sagital + Koronal','Aksiyel'],
+    // Step 1 – Sağ Parotis
+    s1CardTitle: '◈ Sağ Parotis Bezi',
+    s1Size: 'Boyut (uzun aks, mm)',
+    s1SizePh: 'ör. 38',
+    s1Signal: 'Sinyal Homojenitesi',
+    s1SignalOpts: ['Normal / Homojen','Hafif heterojen','Belirgin heterojen','Küçük kistik odaklar (bal peteği)'],
+    s1Fat: 'Yağ İçeriği / İnfiltrasyonu',
+    s1FatOpts: [['normal','Normal'],['hafif','Hafif artmış'],['yaygin','Yaygın yağlı infiltrasyon'],['azalmis','Azalmış (fibrozis?)']],
+    s1Duct: 'Stensen (Parotis) Kanalı',
+    s1DuctOpts: ['Normal kaliber','Dilate (>3 mm)','Taş şüphesi','Değerlendirilemiyor'],
+    // Step 2 – Sol Parotis
+    s2CardTitle: '◈ Sol Parotis Bezi',
+    s2Size: 'Boyut (uzun aks, mm)',
+    s2SizePh: 'ör. 36',
+    s2Signal: 'Sinyal Homojenitesi',
+    s2SignalOpts: ['Normal / Homojen','Hafif heterojen','Belirgin heterojen','Küçük kistik odaklar (bal peteği)'],
+    s2Fat: 'Yağ İçeriği / İnfiltrasyonu',
+    s2FatOpts: [['normal','Normal'],['hafif','Hafif artmış'],['yaygin','Yaygın yağlı infiltrasyon'],['azalmis','Azalmış (fibrozis?)']],
+    s2Duct: 'Stensen Kanalı',
+    s2DuctOpts: ['Normal kaliber','Dilate (>3 mm)','Taş şüphesi','Değerlendirilemiyor'],
+    // Step 3 – Lezyon Tespiti
+    s3CardTitle: '◈ Fokal Lezyon',
+    s3Question: 'Parotis bezinde odaklı lezyon saptandı mı?',
+    s3Yes: 'Evet',
+    s3No: 'Hayır – Diffüz / Normal',
+    s3AddedLabel: 'Eklenen lezyonlar:',
+    s3Right: 'Sağ',
+    s3Left: 'Sol',
+    s3Defining: 'Tanımlanıyor',
+    s3AddBtn: '+ Yeni Lezyon Ekle (L',
+    // Loop step 4 – Lokalizasyon
+    s4Alert: 'Lezyon',
+    s4AlertStep: 'Adım 1 – Lokalizasyon',
+    s4WhichGland: '◈ Hangi Bez?',
+    s4GlandOpts: [['sag','Sağ Parotis'],['sol','Sol Parotis'],['bilateral','Her iki parotis'],['intraparotidLN','İntraparotid LN']],
+    s4LobTitle: '◈ Lob Lokalizasyonu',
+    s4LobOpts: [['superfisyal','Superfisyal lob'],['derin','Derin lob'],['kuyruk','Parotis kuyruğu'],['para','Parafasiyal'],['ekstra','Ekstraparotid']],
+    // Loop step 5 – Boyut
+    s5Alert: 'Adım 2 – Boyut',
+    s5CardTitle: '◈ Boyut',
+    s5LongAxis: 'Uzun aks (mm)',
+    s5LongAxisPh: 'mm',
+    s5Dir: 'Yön (isteğe bağlı)',
+    s5DirPh: 'ör. 22×18×15 mm',
+    s5FocusLabel: 'Odak Sayısı',
+    s5Single: 'Tekil lezyon',
+    s5Multi: 'Çoklu / uydu odaklar',
+    // Loop step 6 – Sınır/Şekil
+    s6Alert: 'Adım 3 – Sınır / Şekil',
+    s6MarginTitle: '◈ Sınır',
+    s6MarginOpts: [['duzgun','Düzgün / Lobüle'],['duzensiz','Düzensiz / Spektat'],['infiltratif','İnfiltratif / Spiküle']],
+    s6ShapeTitle: '◈ Şekil',
+    s6ShapeOpts: ['Yuvarlak / Oval','Lobüle','Düzensiz'],
+    // Loop step 7 – T1/T2
+    s7Alert: 'Adım 4 – T1 / T2 Sinyal',
+    s7T1Title: '◈ T1 Sinyal',
+    s7T1Opts: [['hipointens','Hipointens'],['izoizointens','İzointens'],['hiperintens','Hiperintens (protein/yağ/kanamalı)']],
+    s7T2Title: '◈ T2 Sinyal',
+    s7T2Opts: [['cok_yuksek','Çok yüksek (>BOS/su)'],['yuksek','Yüksek'],['orta','Orta / İzointens'],['dusuk','Düşük / Hipointens'],['karma','Karma']],
+    // Loop step 8 – DWI/ADC
+    s8Alert: 'Adım 5 – DWI / ADC',
+    s8DwiTitle: '◈ DWI Kısıtlaması',
+    s8DwiOpts: [['yok','Kısıtlama yok'],['var_hafif','Hafif kısıtlama'],['var','Belirgin kısıtlama (malignite şüphesi)']],
+    s8DwiWarn: 'Belirgin DWI kısıtlaması → Malign tümör / Lenfoma olasılığı yüksek',
+    s8AdcTitle: '◈ ADC Değeri (isteğe bağlı)',
+    s8AdcOpts: [['normal','>1.3 ×10⁻³ mm²/s'],['hafif_dusuk','1.0–1.3 ×10⁻³ mm²/s'],['dusuk','<1.0 ×10⁻³ mm²/s']],
+    // Loop step 9 – Kontrastlanma
+    s9Alert: 'Adım 6 – Kontrastlanma',
+    s9CeTitle: '◈ Kontrastlanma Paterni',
+    s9CeOpts: [['yok','Kontrastlanma yok'],['homojen','Homojen artış'],['heterojen','Heterojen artış'],['ince_rim','İnce rim artışı (ince duvarlı kist)'],['kali_rim','Kalın/düzensiz rim (enflamasyon/malign)'],['noduler','Nodüler artış']],
+    // Loop step 10 – Ek Özellikler
+    s10Alert: 'Adım 7 – Ek Özellikler',
+    s10FatTitle: '◈ Yağ İçeriği',
+    s10FatNo: 'Yok',
+    s10FatYes: 'Var (yağ baskılamada sinyal kaybı)',
+    s10CystTitle: '◈ Kistik Komponent',
+    s10CystOpts: [['yok','Yok / Solid'],['fokal','Fokal kistik alan'],['dominant','Dominant kistik']],
+    s10ExtraTitle: '◈ Diğer Ek Bulgular',
+    s10CalcifLabel: 'Kalsifikasyon',
+    s10CalcifNo: 'Yok',
+    s10CalcifYes: 'Var (flebolitler?)',
+    s10HemLabel: 'Hemoraji',
+    s10HemNo: 'Yok',
+    s10HemYes: 'Var (T1 hiperintensite)',
+    s10NerveTitle: '◈ Fasiyal Sinir İlişkisi',
+    s10NerveNo: 'İnvazyon yok',
+    s10NerveYes: 'İnvazyon / Perineural yayılım',
+    s10NerveWarn: '⚠ Perineural yayılım → Adenoid kistik karsinom ilk sıraya alındı',
+    s10DiffTitle: '◈ Anlık Ayırıcı Tanı Önizlemesi',
+    s10DiffCols: ['#','Tanı','Kategori','Skor'],
+    // Step 11 – Lezyon Özeti
+    s11CardTitle: '◈ Lezyon Özeti',
+    s11NoLezyon: 'Lezyon eklenmedi. Değerlendirmeye devam ediliyor.',
+    s11DiffCols: ['#','Öncelikli Tanı','Kategori','Skor'],
+    s11AddBtn: '+ Başka Lezyon Ekle (L',
+    // Step 12 – Fasiyal Sinir
+    s12CardTitle: '◈ N. Facialis Değerlendirmesi',
+    s12Opts: [['intakt','İntakt – Normal seyir'],['deplase','Deplase / İtilmiş'],['invazyon','İnvazyon bulguları mevcut']],
+    s12DetailLabel: 'Detay',
+    s12DetailPh: 'Sinir seyri, deplasмan yönü, vb.',
+    s12InvWarn: 'Adenoid kistik karsinom olasılığını dışlamak için perineural yayılım detaylı değerlendirilmelidir.',
+    // Step 13 – Lenf Nodları
+    s13CardTitle: '◈ Periparotid / Boyun Lenf Nodları',
+    s13Opts: ['Patolojik LN yok','İntraparotid LN – reaktif','Level IB/IIA patolojik LN','Multilevel LN tutulumu','Bilateral LN tutulumu'],
+    s13DetailLabel: 'Detay',
+    s13DetailPh: 'Boyut, sayı, kapsül ekstrazyonu vb.',
+    // Step 14 – Komşu Yapılar
+    s14CardTitle: '◈ Komşu Yapı Tutulumu',
+    s14Opts: ['Masseter kası','Pterygoid kas','Mandibula kemiği','Deri/Cilt altı doku','Karotis kılıf','Parafaringeal alan','Masseter boşluğu','Stiloid süreç','Temporal kemik','Yayılım yok'],
+    // Step 15 – Klinik Bilgi
+    s15CardTitle: '◈ Klinik Bilgi',
+    s15AgeLabel: 'Yaş Grubu',
+    s15AgeOpts: [['yas40','< 40 yaş'],['yas4060','40–60 yaş'],['yas60','> 60 yaş']],
+    s15SexLabel: 'Cinsiyet',
+    s15Male: 'Erkek',
+    s15Female: 'Kadın',
+    s15SymptomLabel: 'Başvuru Semptomu',
+    s15SymptomOpts: [['kitle','Palpasyonla kitle'],['agri','Ağrı'],['fasiyalParezi','Fasiyal parezi/güçsüzlük'],['sislik','İntermitan şişlik (yemekle ilişkili)'],['asemptomatik','Asemptomatik – insidental']],
+    s15DurationLabel: 'Şikayet Süresi',
+    s15DurationOpts: ['< 1 ay','1–6 ay','> 6 ay','Yıllardır mevcut'],
+    s15ExtraLabel: 'Ek Bilgi (isteğe bağlı)',
+    s15ExtraPh: 'Geçirilmiş operasyon, immünosüpresyon, ışınlama öyküsü vb.',
+    // Step 16 – Özet/Rapor
+    s16SummaryTitle: '◈ Değerlendirme Özeti',
+    s16LezLabel: 'Lezyon',
+    s16MalignLabel: 'Malign Şüpheli',
+    s16NervLabel: 'N. Facialis',
+    s16DiffCols: ['Sıra','Tanı','Kategori','Skor'],
+    // Differential table category badge labels (used only at render-output, not scoring)
+    katLabels: {
+      'Benign Tümör':'Benign Tümör','Malign Tümör':'Malign Tümör',
+      'İnflamatuar':'İnflamatuar','Kistik Lezyon':'Kistik Lezyon','Vasküler':'Vasküler'
+    },
+    // Pathology display names (scoring uses PATOLOJILER[].kat/name; these are display-only)
+    patolojiNames: {
+      'pleomorfik':'Pleomorfik Adenom','warthin':'Warthin Tümörü','bazalHucreli':'Bazal Hücreli Adenom',
+      'onkositom':'Onkositom','lipom':'Lipom','hemanjiom':'Hemanjiom / Vasküler Malformasyon',
+      'mukoepidermoid':'Mukoepidermoid Karsinom','adenoidKistik':'Adenoid Kistik Karsinom',
+      'asinikHucreli':'Asinik Hücreli Karsinom','adenokarsinom':'Adenokarsinom NOS',
+      'skuamoz':'Skuamöz Hücreli Karsinom (Mets.)','lenfoma':'Lenfoma (NHL)',
+      'firstBranchial':'1. Brankial Yarık Kisti','lenfepitelyal':'Lenfepitelyal Kist (HIV)',
+      'akutSiyadanit':'Akut Siyaladinit / Parotit','kronikSiyadanit':'Kronik Siyaladinit',
+      'sjogren':'Sjögren Sendromu','sialolitiazis':'Sialolitiazis'
+    },
+    // Report output strings (generateReport)
+    rTitle: 'PAROTİS BEZLERİ MRG RAPORU',
+    rTech: 'TEKNİK',
+    rSeqQuality: 'Sekans kalitesi',
+    rContrast: 'Kontrast',
+    rPlane: 'Kesit yönü',
+    rRightParotid: 'SAĞ PAROTİS BEZİ',
+    rLeftParotid: 'SOL PAROTİS BEZİ',
+    rSize: 'Boyut',
+    rSignalHomo: 'Sinyal homojenitesi',
+    rFatContent: 'Yağ içeriği/infiltrasyon',
+    rStensen: 'Stensen kanalı',
+    rRightDefault: 'Sağ parotis bezi boyut ve sinyal özellikleri açısından değerlendirildi.',
+    rLeftDefault: 'Sol parotis bezi boyut ve sinyal özellikleri açısından değerlendirildi.',
+    rFocalLesion: 'FOKAL LEZYON',
+    rNoFocal: 'Parotis bezlerinde fokal kitle lezyonu saptanmamıştır.',
+    rLesion: 'LEZYON',
+    rMorphTitle: 'Morfolojik Özellikler',
+    rSizeLabel: 'Boyut',
+    rFocusCount: 'Odak sayısı',
+    rFocusSingle: 'Tekil',
+    rFocusMulti: 'Çoklu/uydu odaklar mevcut',
+    rMarginLabel: 'Sınır',
+    rShapeLabel: 'Şekil',
+    rSignalTitle: 'Sinyal Özellikleri',
+    rT1Label: 'T1',
+    rT2Label: 'T2',
+    rDwiLabel: 'DWI',
+    rCeLabel: 'Kontrastlanma',
+    rExtraTitle: 'Ek Özellikler',
+    rFatPresent: 'Yağ içeriği: Mevcut (yağ baskılamasında sinyal kaybı)',
+    rCystFokal: 'Kistik komponent: Fokal',
+    rCystDominant: 'Kistik komponent: Dominant kistik',
+    rCalcif: 'Kalsifikasyon: Saptandı',
+    rHem: 'Hemoraji: T1 hiperintensite odakları mevcuttur',
+    rNerveInv: '⚠ Fasiyal sinir invazyonu / perineural yayılım izlenmektedir',
+    rDiffTitle: 'Ayırıcı Tanı',
+    rDiffCols: ['#','Tanı','Kategori','Skor'],
+    rFacialis: 'FALSİYAL SİNİR (N. FACIALIS)',
+    rFacialisIntact: 'İntakt seyrediyor.',
+    rFacialisDeplase: 'Deplase/itilmiş görünüm.',
+    rFacialisInv: 'İnvazyon bulguları izlenmektedir.',
+    rFacialisNone: 'Değerlendirme yapılmadı.',
+    rLymphNodes: 'PERİPAROTİD / BOYUN LENF NODLARI',
+    rLymphFinding: 'Bulgu',
+    rLymphDefault: 'Patolojik büyüklükte lenf nodu saptanmamıştır.',
+    rAdjacent: 'KOMŞU YAPILAR',
+    rAdjacentDefault: 'Komşu yapılarda yayılım bulgusu saptanmadı.',
+    rClinical: 'KLİNİK BİLGİ',
+    rAgeGroup: 'Yaş grubu',
+    rAgeOpts: {yas40:'<40 yaş',yas4060:'40–60 yaş',yas60:'>60 yaş'},
+    rSex: 'Cinsiyet',
+    rSymptom: 'Semptom',
+    rSymptomOpts: {kitle:'Palpasyonla kitle',agri:'Ağrı',fasiyalParezi:'Fasiyal parezi',sislik:'İntermitan şişlik',asemptomatik:'Asemptomatik'},
+    rDuration: 'Süre',
+    rExtra: 'Ek bulgular',
+    rCommentTitle: 'YORUM',
+    rCommentNoLesion: 'Parotis bezlerinde fokal kitle lezyonu izlenmemiştir.',
+    rCommentLesion: 'Sağ/sol parotis bezinde toplam <b>{{n}}</b> adet lezyon saptanmıştır. Lezyon(lar) için ileri değerlendirmede klinik korelasyon ve gerekli durumlarda biyopsi önerilir.',
+    rMalignAlert: 'Ön planda malign özellikler taşıyan lezyon(lar) izlenmektedir. ENT/KBB ve onkoloji konsültasyonu önerilir.',
+    rNerveAlert: 'Fasiyal sinir tutulumu saptanması malign proses lehinedir; cerrahi planlama açısından klinikle korelasyon gereklidir.',
+    // Label helpers used in report
+    bezLabels: {sag:'Sağ',sol:'Sol',bilateral:'Bilateral'},
+    lobLabels: {superfisyal:'Superfisyal lob',derin:'Derin lob',kuyruk:'Parotis kuyruğu',para:'Parafasiyal',ekstra:'Ekstraparotid'},
+    t2Labels: {cok_yuksek:'Belirgin yüksek (>BOS)',yuksek:'Yüksek',orta:'Orta/izointens',dusuk:'Düşük',karma:'Karma'},
+    t1Labels: {hipointens:'Hipointens',izoizointens:'İzointens',hiperintens:'Hiperintens'},
+    dwiLabels: {yok:'Kısıtlama yok',var_hafif:'Hafif kısıtlama',var:'Belirgin kısıtlama'},
+    ceLabels: {yok:'Kontrastlanma yok',homojen:'Homojen artış',heterojen:'Heterojen artış',ince_rim:'İnce rim artışı',kali_rim:'Kalın/düzensiz rim',noduler:'Nodüler artış'},
+    kenarLabels: {duzgun:'Düzgün/lobüle',duzensiz:'Düzensiz',infiltratif:'İnfiltratif/spiküle'},
+    // Short-key label maps for generateReport
+    yagLabels: {normal:'Normal',hafif:'Hafif artmış',yaygin:'Yaygın yağlı infiltrasyon',azalmis:'Azalmış (fibrozis?)'},
+    cinsiyetLabels: {erkek:'Erkek',kadin:'Kadın'},
+    rParotidWord: 'parotis',
+    // UI: lob display from raw state key
+    lobDisplayLabels: {superfisyal:'Superfisyal lob',derin:'Derin lob',kuyruk:'Parotis kuyruğu',para:'Parafasiyal',ekstra:'Ekstraparotid'},
+    // Download
+    downloadTitle: 'Parotis MRI Raporu',
+    downloadFile: 'parotis_mri_raporu.html',
+    downloadLangAttr: 'tr',
+  },
+  en: {
+    // App header
+    appTitle: 'Parotid Gland MRI – Decision Support',
+    appSub: 'Multi-lesion · 18 Pathologies · Percentage Differential Diagnosis',
+    // Step titles
+    stepTitles: [
+      'Technical Info','Right Parotid – General','Left Parotid – General',
+      'Lesion Detection',
+      'Lesion – Location','Lesion – Size','Lesion – Margin / Shape',
+      'Lesion – T1/T2 Signal','Lesion – DWI / ADC',
+      'Lesion – Enhancement','Lesion – Additional Features',
+      'Lesion Summary','Facial Nerve',
+      'Lymph Nodes','Adjacent Structures','Clinical Info','Report'
+    ],
+    // Nav
+    back: '← Back',
+    backLezyon: '← Back to Lesion Detection',
+    next: 'Next →',
+    lezTamamla: 'Finalize Lesion →',
+    devam: 'Continue →',
+    rapoGit: 'Go to Report →',
+    geri: '← Back',
+    // Step counter
+    stepOf: 'Step',
+    // Report buttons
+    copyBtn: '📋 Copy',
+    printBtn: '🖨️ Print',
+    downloadBtn: '💾 Download HTML',
+    closeBtn: '✕ Close',
+    copiedMsg: 'Report copied to clipboard.',
+    // Report generate button
+    generateBtn: '📄 Generate Structured Report',
+    viewReportBtn: '📄 View Report',
+    // Step 0 – Technical
+    s0CardTitle: '◈ Sequence Quality',
+    s0Quality: 'Overall Quality',
+    s0QualityOpts: ['Good – no artifact','Acceptable – mild artifact','Inadequate – motion artifact'],
+    s0Contrast: 'Contrast Agent',
+    s0ContrastOpts: ['Administered (Gd-DTPA)','Not administered','Late-phase imaging available'],
+    s0Plane: 'Section Plane',
+    s0PlaneOpts: ['Axial + Coronal','Axial + Sagittal + Coronal','Axial'],
+    // Step 1 – Right Parotid
+    s1CardTitle: '◈ Right Parotid Gland',
+    s1Size: 'Size (long axis, mm)',
+    s1SizePh: 'e.g. 38',
+    s1Signal: 'Signal Homogeneity',
+    s1SignalOpts: ['Normal / Homogeneous','Mildly heterogeneous','Markedly heterogeneous','Small cystic foci (honeycomb)'],
+    s1Fat: 'Fat Content / Infiltration',
+    s1FatOpts: [['normal','Normal'],['hafif','Mildly increased'],['yaygin','Diffuse fatty infiltration'],['azalmis','Decreased (fibrosis?)']],
+    s1Duct: 'Stensen (Parotid) Duct',
+    s1DuctOpts: ['Normal caliber','Dilated (>3 mm)','Stone suspected','Cannot be assessed'],
+    // Step 2 – Left Parotid
+    s2CardTitle: '◈ Left Parotid Gland',
+    s2Size: 'Size (long axis, mm)',
+    s2SizePh: 'e.g. 36',
+    s2Signal: 'Signal Homogeneity',
+    s2SignalOpts: ['Normal / Homogeneous','Mildly heterogeneous','Markedly heterogeneous','Small cystic foci (honeycomb)'],
+    s2Fat: 'Fat Content / Infiltration',
+    s2FatOpts: [['normal','Normal'],['hafif','Mildly increased'],['yaygin','Diffuse fatty infiltration'],['azalmis','Decreased (fibrosis?)']],
+    s2Duct: 'Stensen Duct',
+    s2DuctOpts: ['Normal caliber','Dilated (>3 mm)','Stone suspected','Cannot be assessed'],
+    // Step 3 – Lesion Detection
+    s3CardTitle: '◈ Focal Lesion',
+    s3Question: 'Was a focal lesion detected in the parotid gland?',
+    s3Yes: 'Yes',
+    s3No: 'No – Diffuse / Normal',
+    s3AddedLabel: 'Added lesions:',
+    s3Right: 'Right',
+    s3Left: 'Left',
+    s3Defining: 'Being defined',
+    s3AddBtn: '+ Add New Lesion (L',
+    // Loop step 4 – Location
+    s4Alert: 'Lesion',
+    s4AlertStep: 'Step 1 – Location',
+    s4WhichGland: '◈ Which Gland?',
+    s4GlandOpts: [['sag','Right Parotid'],['sol','Left Parotid'],['bilateral','Bilateral parotid'],['intraparotidLN','Intraparotid LN']],
+    s4LobTitle: '◈ Lobe Location',
+    s4LobOpts: [['superfisyal','Superficial lobe'],['derin','Deep lobe'],['kuyruk','Parotid tail'],['para','Parapharyngeal'],['ekstra','Extraparotid']],
+    // Loop step 5 – Size
+    s5Alert: 'Step 2 – Size',
+    s5CardTitle: '◈ Size',
+    s5LongAxis: 'Long axis (mm)',
+    s5LongAxisPh: 'mm',
+    s5Dir: 'Direction (optional)',
+    s5DirPh: 'e.g. 22×18×15 mm',
+    s5FocusLabel: 'Focus Count',
+    s5Single: 'Single lesion',
+    s5Multi: 'Multiple / satellite foci',
+    // Loop step 6 – Margin/Shape
+    s6Alert: 'Step 3 – Margin / Shape',
+    s6MarginTitle: '◈ Margin',
+    s6MarginOpts: [['duzgun','Well-defined / Lobulated'],['duzensiz','Irregular / Spiculated'],['infiltratif','Infiltrative / Spiculated']],
+    s6ShapeTitle: '◈ Shape',
+    s6ShapeOpts: ['Round / Oval','Lobulated','Irregular'],
+    // Loop step 7 – T1/T2
+    s7Alert: 'Step 4 – T1 / T2 Signal',
+    s7T1Title: '◈ T1 Signal',
+    s7T1Opts: [['hipointens','Hypointense'],['izoizointens','Isointense'],['hiperintens','Hyperintense (protein/fat/hemorrhagic)']],
+    s7T2Title: '◈ T2 Signal',
+    s7T2Opts: [['cok_yuksek','Very high (>CSF/water)'],['yuksek','High'],['orta','Intermediate / Isointense'],['dusuk','Low / Hypointense'],['karma','Mixed']],
+    // Loop step 8 – DWI/ADC
+    s8Alert: 'Step 5 – DWI / ADC',
+    s8DwiTitle: '◈ DWI Restricted Diffusion',
+    s8DwiOpts: [['yok','No restricted diffusion'],['var_hafif','Mild restriction'],['var','Marked restriction (malignancy suspected)']],
+    s8DwiWarn: 'Marked DWI restriction → High probability of malignant tumor / Lymphoma',
+    s8AdcTitle: '◈ ADC Value (optional)',
+    s8AdcOpts: [['normal','>1.3 ×10⁻³ mm²/s'],['hafif_dusuk','1.0–1.3 ×10⁻³ mm²/s'],['dusuk','<1.0 ×10⁻³ mm²/s']],
+    // Loop step 9 – Enhancement
+    s9Alert: 'Step 6 – Enhancement',
+    s9CeTitle: '◈ Enhancement Pattern',
+    s9CeOpts: [['yok','No enhancement'],['homojen','Homogeneous enhancement'],['heterojen','Heterogeneous enhancement'],['ince_rim','Thin rim enhancement (thin-walled cyst)'],['kali_rim','Thick/irregular rim (inflammation/malignant)'],['noduler','Nodular enhancement']],
+    // Loop step 10 – Additional Features
+    s10Alert: 'Step 7 – Additional Features',
+    s10FatTitle: '◈ Fat Content',
+    s10FatNo: 'None',
+    s10FatYes: 'Present (signal loss on fat saturation)',
+    s10CystTitle: '◈ Cystic Component',
+    s10CystOpts: [['yok','None / Solid'],['fokal','Focal cystic area'],['dominant','Dominant cystic']],
+    s10ExtraTitle: '◈ Other Additional Findings',
+    s10CalcifLabel: 'Calcification',
+    s10CalcifNo: 'None',
+    s10CalcifYes: 'Present (phleboliths?)',
+    s10HemLabel: 'Hemorrhage',
+    s10HemNo: 'None',
+    s10HemYes: 'Present (T1 hyperintensity)',
+    s10NerveTitle: '◈ Facial Nerve Relationship',
+    s10NerveNo: 'No invasion',
+    s10NerveYes: 'Invasion / Perineural spread',
+    s10NerveWarn: '⚠ Perineural spread → Adenoid cystic carcinoma moved to top',
+    s10DiffTitle: '◈ Instant Differential Diagnosis Preview',
+    s10DiffCols: ['#','Diagnosis','Category','Score'],
+    // Step 11 – Lesion Summary
+    s11CardTitle: '◈ Lesion Summary',
+    s11NoLezyon: 'No lesion added. Continuing evaluation.',
+    s11DiffCols: ['#','Priority Diagnosis','Category','Score'],
+    s11AddBtn: '+ Add Another Lesion (L',
+    // Step 12 – Facial Nerve
+    s12CardTitle: '◈ N. Facialis Evaluation',
+    s12Opts: [['intakt','Intact – Normal course'],['deplase','Displaced / Deviated'],['invazyon','Invasion findings present']],
+    s12DetailLabel: 'Detail',
+    s12DetailPh: 'Nerve course, direction of displacement, etc.',
+    s12InvWarn: 'Perineural spread should be evaluated in detail to rule out adenoid cystic carcinoma.',
+    // Step 13 – Lymph Nodes
+    s13CardTitle: '◈ Periparotid / Cervical Lymph Nodes',
+    s13Opts: ['No pathological LN','Intraparotid LN – reactive','Level IB/IIA pathological LN','Multilevel LN involvement','Bilateral LN involvement'],
+    s13DetailLabel: 'Detail',
+    s13DetailPh: 'Size, count, capsule extrasion, etc.',
+    // Step 14 – Adjacent Structures
+    s14CardTitle: '◈ Adjacent Structure Involvement',
+    s14Opts: ['Masseter muscle','Pterygoid muscle','Mandibular bone','Skin/subcutaneous tissue','Carotid sheath','Parapharyngeal space','Masseteric space','Styloid process','Temporal bone','No spread'],
+    // Step 15 – Clinical Info
+    s15CardTitle: '◈ Clinical Information',
+    s15AgeLabel: 'Age Group',
+    s15AgeOpts: [['yas40','< 40 years'],['yas4060','40–60 years'],['yas60','> 60 years']],
+    s15SexLabel: 'Sex',
+    s15Male: 'Male',
+    s15Female: 'Female',
+    s15SymptomLabel: 'Presenting Symptom',
+    s15SymptomOpts: [['kitle','Palpable mass'],['agri','Pain'],['fasiyalParezi','Facial paresis/weakness'],['sislik','Intermittent swelling (meal-related)'],['asemptomatik','Asymptomatic – incidental']],
+    s15DurationLabel: 'Duration of Complaint',
+    s15DurationOpts: ['< 1 month','1–6 months','> 6 months','Long-standing'],
+    s15ExtraLabel: 'Additional Info (optional)',
+    s15ExtraPh: 'Previous surgery, immunosuppression, radiation history, etc.',
+    // Step 16 – Summary/Report
+    s16SummaryTitle: '◈ Evaluation Summary',
+    s16LezLabel: 'Lesion',
+    s16MalignLabel: 'Malignancy Suspected',
+    s16NervLabel: 'N. Facialis',
+    s16DiffCols: ['Rank','Diagnosis','Category','Score'],
+    // Differential table category badge labels
+    katLabels: {
+      'Benign Tümör':'Benign Tumor','Malign Tümör':'Malignant Tumor',
+      'İnflamatuar':'Inflammatory','Kistik Lezyon':'Cystic Lesion','Vasküler':'Vascular'
+    },
+    // Pathology display names
+    patolojiNames: {
+      'pleomorfik':'Pleomorphic Adenoma','warthin':'Warthin Tumor','bazalHucreli':'Basal Cell Adenoma',
+      'onkositom':'Oncocytoma','lipom':'Lipoma','hemanjiom':'Hemangioma / Vascular Malformation',
+      'mukoepidermoid':'Mucoepidermoid Carcinoma','adenoidKistik':'Adenoid Cystic Carcinoma',
+      'asinikHucreli':'Acinic Cell Carcinoma','adenokarsinom':'Adenocarcinoma NOS',
+      'skuamoz':'Squamous Cell Carcinoma (Mets.)','lenfoma':'Lymphoma (NHL)',
+      'firstBranchial':'1st Branchial Cleft Cyst','lenfepitelyal':'Lymphoepithelial Cyst (HIV)',
+      'akutSiyadanit':'Acute Sialadenitis / Parotitis','kronikSiyadanit':'Chronic Sialadenitis',
+      'sjogren':'Sjogren Syndrome','sialolitiazis':'Sialolithiasis'
+    },
+    // Report output strings
+    rTitle: 'PAROTID GLANDS MRI REPORT',
+    rTech: 'TECHNIQUE',
+    rSeqQuality: 'Sequence quality',
+    rContrast: 'Contrast',
+    rPlane: 'Section plane',
+    rRightParotid: 'RIGHT PAROTID GLAND',
+    rLeftParotid: 'LEFT PAROTID GLAND',
+    rSize: 'Size',
+    rSignalHomo: 'Signal homogeneity',
+    rFatContent: 'Fat content/infiltration',
+    rStensen: 'Stensen duct',
+    rRightDefault: 'Right parotid gland was evaluated for size and signal characteristics.',
+    rLeftDefault: 'Left parotid gland was evaluated for size and signal characteristics.',
+    rFocalLesion: 'FOCAL LESION',
+    rNoFocal: 'No focal mass lesion identified in the parotid glands.',
+    rLesion: 'LESION',
+    rMorphTitle: 'Morphological Features',
+    rSizeLabel: 'Size',
+    rFocusCount: 'Focus count',
+    rFocusSingle: 'Single',
+    rFocusMulti: 'Multiple/satellite foci present',
+    rMarginLabel: 'Margin',
+    rShapeLabel: 'Shape',
+    rSignalTitle: 'Signal Characteristics',
+    rT1Label: 'T1',
+    rT2Label: 'T2',
+    rDwiLabel: 'DWI',
+    rCeLabel: 'Enhancement',
+    rExtraTitle: 'Additional Features',
+    rFatPresent: 'Fat content: Present (signal loss on fat saturation)',
+    rCystFokal: 'Cystic component: Focal',
+    rCystDominant: 'Cystic component: Dominant cystic',
+    rCalcif: 'Calcification: Detected',
+    rHem: 'Hemorrhage: T1 hyperintensity foci present',
+    rNerveInv: '⚠ Facial nerve invasion / perineural spread identified',
+    rDiffTitle: 'Differential Diagnosis',
+    rDiffCols: ['#','Diagnosis','Category','Score'],
+    rFacialis: 'FACIAL NERVE (N. FACIALIS)',
+    rFacialisIntact: 'Intact course.',
+    rFacialisDeplase: 'Displaced/deviated appearance.',
+    rFacialisInv: 'Invasion findings identified.',
+    rFacialisNone: 'Not evaluated.',
+    rLymphNodes: 'PERIPAROTID / CERVICAL LYMPH NODES',
+    rLymphFinding: 'Finding',
+    rLymphDefault: 'No pathologically enlarged lymph node detected.',
+    rAdjacent: 'ADJACENT STRUCTURES',
+    rAdjacentDefault: 'No spread to adjacent structures identified.',
+    rClinical: 'CLINICAL INFORMATION',
+    rAgeGroup: 'Age group',
+    rAgeOpts: {yas40:'<40 years',yas4060:'40–60 years',yas60:'>60 years'},
+    rSex: 'Sex',
+    rSymptom: 'Symptom',
+    rSymptomOpts: {kitle:'Palpable mass',agri:'Pain',fasiyalParezi:'Facial paresis',sislik:'Intermittent swelling',asemptomatik:'Asymptomatic'},
+    rDuration: 'Duration',
+    rExtra: 'Additional findings',
+    rCommentTitle: 'IMPRESSION',
+    rCommentNoLesion: 'No focal mass lesion identified in the parotid glands.',
+    rCommentLesion: 'A total of <b>{{n}}</b> lesion(s) detected in the right/left parotid gland. Clinical correlation and biopsy when appropriate are recommended for further evaluation.',
+    rMalignAlert: 'Lesion(s) with predominantly malignant features identified. ENT and oncology consultation recommended.',
+    rNerveAlert: 'Detection of facial nerve involvement favors a malignant process; clinical correlation is required for surgical planning.',
+    // Label helpers used in report
+    bezLabels: {sag:'Right',sol:'Left',bilateral:'Bilateral'},
+    lobLabels: {superfisyal:'Superficial lobe',derin:'Deep lobe',kuyruk:'Parotid tail',para:'Parapharyngeal',ekstra:'Extraparotid'},
+    t2Labels: {cok_yuksek:'Markedly high (>CSF)',yuksek:'High',orta:'Intermediate/isointense',dusuk:'Low',karma:'Mixed'},
+    t1Labels: {hipointens:'Hypointense',izoizointens:'Isointense',hiperintens:'Hyperintense'},
+    dwiLabels: {yok:'No restricted diffusion',var_hafif:'Mild restriction',var:'Marked restricted diffusion'},
+    ceLabels: {yok:'No enhancement',homojen:'Homogeneous enhancement',heterojen:'Heterogeneous enhancement',ince_rim:'Thin rim enhancement',kali_rim:'Thick/irregular rim',noduler:'Nodular enhancement'},
+    kenarLabels: {duzgun:'Well-defined/lobulated',duzensiz:'Irregular',infiltratif:'Infiltrative/spiculated'},
+    // Short-key label maps for generateReport
+    yagLabels: {normal:'Normal',hafif:'Mildly increased',yaygin:'Diffuse fatty infiltration',azalmis:'Decreased (fibrosis?)'},
+    cinsiyetLabels: {erkek:'Male',kadin:'Female'},
+    rParotidWord: 'parotid',
+    // UI: lob display from raw state key
+    lobDisplayLabels: {superfisyal:'Superficial lobe',derin:'Deep lobe',kuyruk:'Parotid tail',para:'Parapharyngeal',ekstra:'Extraparotid'},
+    // Download
+    downloadTitle: 'Parotid MRI Report',
+    downloadFile: 'parotid_mri_report.html',
+    downloadLangAttr: 'en',
+  }
+})[RV_LOCALE];
+
+// Turkish state-key arrays (chip state values always stored in Turkish)
+const _TR = {
+  s0QualityOpts: ['İyi – artefakt yok','Kabul edilebilir – hafif artefakt','Yetersiz – hareket artefaktı'],
+  s0ContrastOpts: ['Uygulandı (Gd-DTPA)','Uygulanmadı','Geç faz görüntüleme mevcut'],
+  s0PlaneOpts: ['Aksiyel + Koronal','Aksiyel + Sagital + Koronal','Aksiyel'],
+  s1SignalOpts: ['Normal / Homojen','Hafif heterojen','Belirgin heterojen','Küçük kistik odaklar (bal peteği)'],
+  s1DuctOpts: ['Normal kaliber','Dilate (>3 mm)','Taş şüphesi','Değerlendirilemiyor'],
+  s2SignalOpts: ['Normal / Homojen','Hafif heterojen','Belirgin heterojen','Küçük kistik odaklar (bal peteği)'],
+  s2DuctOpts: ['Normal kaliber','Dilate (>3 mm)','Taş şüphesi','Değerlendirilemiyor'],
+  s6ShapeOpts: ['Yuvarlak / Oval','Lobüle','Düzensiz'],
+  s13Opts: ['Patolojik LN yok','İntraparotid LN – reaktif','Level IB/IIA patolojik LN','Multilevel LN tutulumu','Bilateral LN tutulumu'],
+  s14Opts: ['Masseter kası','Pterygoid kas','Mandibula kemiği','Deri/Cilt altı doku','Karotis kılıf','Parafaringeal alan','Masseter boşluğu','Stiloid süreç','Temporal kemik','Yayılım yok'],
+  s15DurationOpts: ['< 1 ay','1–6 ay','> 6 ay','Yıllardır mevcut'],
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ──────────────────────────────────────────────────────────────────────────────
+const LOOP_START=4, LOOP_END=10, LEZYON_OZET=11, POST_LOOP=12, TOTAL_STEPS=17;
+
+const STEP_TITLES=T.stepTitles;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// PATHOLOGY DB
+// ──────────────────────────────────────────────────────────────────────────────
+const PATOLOJILER=[
+  {id:'pleomorfik',   name:'Pleomorfik Adenom',              kat:'Benign Tümör'},
+  {id:'warthin',      name:'Warthin Tümörü',                 kat:'Benign Tümör'},
+  {id:'bazalHucreli', name:'Bazal Hücreli Adenom',           kat:'Benign Tümör'},
+  {id:'onkositom',    name:'Onkositom',                      kat:'Benign Tümör'},
+  {id:'lipom',        name:'Lipom',                          kat:'Benign Tümör'},
+  {id:'hemanjiom',    name:'Hemanjiom / Vasküler Malformasyon', kat:'Vasküler'},
+  {id:'mukoepidermoid',name:'Mukoepidermoid Karsinom',       kat:'Malign Tümör'},
+  {id:'adenoidKistik',name:'Adenoid Kistik Karsinom',        kat:'Malign Tümör'},
+  {id:'asinikHucreli',name:'Asinik Hücreli Karsinom',        kat:'Malign Tümör'},
+  {id:'adenokarsinom',name:'Adenokarsinom NOS',              kat:'Malign Tümör'},
+  {id:'skuamoz',      name:'Skuamöz Hücreli Karsinom (Mets.)',kat:'Malign Tümör'},
+  {id:'lenfoma',      name:'Lenfoma (NHL)',                  kat:'Malign Tümör'},
+  {id:'firstBranchial',name:'1. Brankial Yarık Kisti',       kat:'Kistik Lezyon'},
+  {id:'lenfepitelyal',name:'Lenfepitelyal Kist (HIV)',        kat:'Kistik Lezyon'},
+  {id:'akutSiyadanit',name:'Akut Siyaladinit / Parotit',     kat:'İnflamatuar'},
+  {id:'kronikSiyadanit',name:'Kronik Siyaladinit',           kat:'İnflamatuar'},
+  {id:'sjogren',      name:'Sjögren Sendromu',               kat:'İnflamatuar'},
+  {id:'sialolitiazis',name:'Sialolitiazis',                  kat:'İnflamatuar'},
+];
+const PATOLOJI_MAP=Object.fromEntries(PATOLOJILER.map(p=>[p.id,p]));
+
+function katBadge(kat){
+  const cls={
+    'Benign Tümör':'cat-benign','Malign Tümör':'cat-malign',
+    'İnflamatuar':'cat-enflamatuar','Kistik Lezyon':'cat-kistik','Vasküler':'cat-vaskuler'
+  }[kat]||'';
+  return <span className={`cat-badge ${cls}`}>{T.katLabels[kat]||kat}</span>;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SCORING ENGINE
+// ──────────────────────────────────────────────────────────────────────────────
+function hesaplaSkорlar(lez, g, tumLezyonlar){
+  const sc={};
+  PATOLOJILER.forEach(p=>sc[p.id]=0);
+  const add=(id,pts)=>{if(pts>0) sc[id]=Math.min(100,(sc[id]||0)+pts);};
+
+  const bilateral=tumLezyonlar.some(l=>l.lokBez==='sag')&&tumLezyonlar.some(l=>l.lokBez==='sol');
+  const cokluLezyon=tumLezyonlar.length>1;
+
+  const {lokBez,lokLob,boyutMm,cokluOdak,kenar,t1,t2,dwi,ce,yag,kist,kalsif,sinirInvazyon}=lez;
+  const {yas,cinsiyet,semptom,sagYag,solYag}=g;
+  const diffuz=sagYag==='yaygin'||solYag==='yaygin';
+
+  // ── Pleomorfik Adenom ──────────────────────────────────────
+  add('pleomorfik',8);
+  if(t2==='yuksek')add('pleomorfik',28);
+  if(t2==='orta')add('pleomorfik',10);
+  if(kenar==='duzgun')add('pleomorfik',20);
+  if(dwi==='yok')add('pleomorfik',18);
+  if(ce==='heterojen')add('pleomorfik',10);
+  if(kist==='fokal')add('pleomorfik',8);
+  if(lokLob==='superfisyal')add('pleomorfik',8);
+  if(sinirInvazyon==='hayir')add('pleomorfik',10);
+  if(cokluOdak==='tek')add('pleomorfik',5);
+  if(!bilateral)add('pleomorfik',5);
+
+  // ── Warthin Tümörü ─────────────────────────────────────────
+  add('warthin',8);
+  if(cinsiyet==='erkek')add('warthin',12);
+  if(yas==='yas60')add('warthin',18);
+  if(yas==='yas4060')add('warthin',8);
+  if(t1==='hiperintens')add('warthin',18);
+  if(t2==='orta')add('warthin',15);
+  if(dwi==='var_hafif')add('warthin',14);
+  if(kist==='fokal'||kist==='dominant')add('warthin',12);
+  if(bilateral)add('warthin',22);
+  if(kenar==='duzgun')add('warthin',8);
+  if(lokLob==='kuyruk')add('warthin',10);
+
+  // ── Bazal Hücreli Adenom ────────────────────────────────────
+  add('bazalHucreli',4);
+  if(t2==='yuksek')add('bazalHucreli',18);
+  if(kenar==='duzgun')add('bazalHucreli',18);
+  if(ce==='homojen')add('bazalHucreli',22);
+  if(dwi==='yok')add('bazalHucreli',12);
+  if(cokluOdak==='tek')add('bazalHucreli',8);
+
+  // ── Onkositom ───────────────────────────────────────────────
+  add('onkositom',3);
+  if(yas==='yas60')add('onkositom',12);
+  if(t2==='orta')add('onkositom',12);
+  if(dwi==='var_hafif')add('onkositom',12);
+  if(ce==='homojen')add('onkositom',12);
+  if(kenar==='duzgun')add('onkositom',10);
+
+  // ── Lipom ───────────────────────────────────────────────────
+  add('lipom',2);
+  if(yag==='var')add('lipom',65);
+  if(t1==='hiperintens')add('lipom',20);
+  if(t2==='yuksek')add('lipom',10);
+  if(kenar==='duzgun')add('lipom',10);
+  if(ce==='yok')add('lipom',8);
+
+  // ── Hemanjiom / VM ──────────────────────────────────────────
+  add('hemanjiom',2);
+  if(t2==='cok_yuksek')add('hemanjiom',35);
+  if(kalsif==='var')add('hemanjiom',22);
+  if(ce==='heterojen')add('hemanjiom',12);
+  if(kenar==='duzgun')add('hemanjiom',8);
+  if(dwi==='yok')add('hemanjiom',8);
+
+  // ── Mukoepidermoid Karsinom ─────────────────────────────────
+  add('mukoepidermoid',5);
+  if(kenar==='duzensiz')add('mukoepidermoid',20);
+  if(kenar==='infiltratif')add('mukoepidermoid',32);
+  if(t2==='orta')add('mukoepidermoid',10);
+  if(dwi==='var')add('mukoepidermoid',22);
+  if(ce==='heterojen')add('mukoepidermoid',10);
+  if(sinirInvazyon==='evet')add('mukoepidermoid',15);
+  if(kist==='fokal')add('mukoepidermoid',10);
+  if(semptom==='agri')add('mukoepidermoid',8);
+
+  // ── Adenoid Kistik Karsinom ─────────────────────────────────
+  add('adenoidKistik',4);
+  if(sinirInvazyon==='evet')add('adenoidKistik',45);
+  if(kenar==='infiltratif')add('adenoidKistik',28);
+  if(kenar==='duzensiz')add('adenoidKistik',15);
+  if(t2==='dusuk')add('adenoidKistik',22);
+  if(t2==='orta')add('adenoidKistik',10);
+  if(dwi==='var')add('adenoidKistik',18);
+  if(semptom==='agri')add('adenoidKistik',12);
+
+  // ── Asinik Hücreli Karsinom ─────────────────────────────────
+  add('asinikHucreli',3);
+  if(kenar==='duzensiz')add('asinikHucreli',18);
+  if(t2==='orta')add('asinikHucreli',12);
+  if(dwi==='var')add('asinikHucreli',18);
+  if(kist==='fokal')add('asinikHucreli',12);
+  if(lokLob==='superfisyal')add('asinikHucreli',5);
+
+  // ── Adenokarsinom NOS ───────────────────────────────────────
+  add('adenokarsinom',3);
+  if(kenar==='infiltratif')add('adenokarsinom',22);
+  if(kenar==='duzensiz')add('adenokarsinom',12);
+  if(dwi==='var')add('adenokarsinom',22);
+  if(t2==='dusuk')add('adenokarsinom',12);
+  if(sinirInvazyon==='evet')add('adenokarsinom',18);
+
+  // ── Skuamöz HK (Mets.) ─────────────────────────────────────
+  add('skuamoz',3);
+  if(kenar==='infiltratif')add('skuamoz',22);
+  if(dwi==='var')add('skuamoz',18);
+  if(lokBez==='intraparotidLN')add('skuamoz',28);
+  if(semptom==='agri')add('skuamoz',10);
+  if(yas==='yas60')add('skuamoz',10);
+  if(cokluLezyon)add('skuamoz',8);
+
+  // ── Lenfoma ─────────────────────────────────────────────────
+  add('lenfoma',3);
+  if(cokluOdak==='coklu')add('lenfoma',22);
+  if(cokluLezyon)add('lenfoma',15);
+  if(bilateral)add('lenfoma',20);
+  if(t2==='orta')add('lenfoma',12);
+  if(dwi==='var')add('lenfoma',18);
+  if(ce==='homojen')add('lenfoma',10);
+  if(kenar==='duzgun')add('lenfoma',8);
+
+  // ── 1. Brankial Yarık Kisti ─────────────────────────────────
+  add('firstBranchial',3);
+  if(kist==='dominant')add('firstBranchial',45);
+  if(t2==='cok_yuksek')add('firstBranchial',25);
+  if(t1==='hipointens')add('firstBranchial',12);
+  if(kenar==='duzgun')add('firstBranchial',10);
+  if(ce==='yok'||ce==='ince_rim')add('firstBranchial',12);
+
+  // ── Lenfepitelyal Kist (HIV) ────────────────────────────────
+  add('lenfepitelyal',3);
+  if(bilateral)add('lenfepitelyal',35);
+  if(kist==='dominant')add('lenfepitelyal',22);
+  if(t2==='cok_yuksek')add('lenfepitelyal',18);
+  if(cokluOdak==='coklu'||cokluLezyon)add('lenfepitelyal',18);
+
+  // ── Akut Siyaladinit / Parotit ──────────────────────────────
+  add('akutSiyadanit',5);
+  if(diffuz)add('akutSiyadanit',32);
+  if(t2==='yuksek')add('akutSiyadanit',18);
+  if(t2==='cok_yuksek')add('akutSiyadanit',12);
+  if(semptom==='agri')add('akutSiyadanit',18);
+  if(kenar==='duzensiz')add('akutSiyadanit',12);
+
+  // ── Kronik Siyaladinit ──────────────────────────────────────
+  add('kronikSiyadanit',3);
+  if(diffuz)add('kronikSiyadanit',22);
+  if(t2==='dusuk')add('kronikSiyadanit',18);
+  if(kalsif==='var')add('kronikSiyadanit',12);
+  if(semptom==='sislik')add('kronikSiyadanit',10);
+
+  // ── Sjögren Sendromu ────────────────────────────────────────
+  add('sjogren',3);
+  if(bilateral)add('sjogren',28);
+  if(diffuz)add('sjogren',22);
+  if(kist==='dominant')add('sjogren',18);
+  if(cokluOdak==='coklu'||cokluLezyon)add('sjogren',15);
+  if(t2==='yuksek')add('sjogren',12);
+
+  // ── Sialolitiazis ───────────────────────────────────────────
+  add('sialolitiazis',3);
+  if(kalsif==='var')add('sialolitiazis',40);
+  if(diffuz)add('sialolitiazis',12);
+  if(semptom==='sislik')add('sialolitiazis',18);
+
+  return sc;
+}
+
+function topDiff(sc,n=5){
+  return Object.entries(sc)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,n)
+    .map(([id,s])=>({...PATOLOJI_MAP[id],skor:s}));
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────────────────────────────────────
+const CHIP=({val,active,onClick,children})=>(
+  <span className={`chip${active?' sel':''}`} onClick={onClick}>{children||val}</span>
+);
+const MCHIP=({val,active,onClick,children})=>(
+  <span className={`chip${active?' sel-multi':''}`} onClick={onClick}>{children||val}</span>
+);
+
+const initGlobal=()=>({
+  sekansKalite:'',enjeksiyon:'',kesit:'',
+  sagBoyut:'',sagSinyal:'',sagYag:'',sagDuktus:'',
+  solBoyut:'',solSinyal:'',solYag:'',solDuktus:'',
+  lezyonVar:'',
+  fasiyal:'',fasiyalDetay:'',
+  lenf:'',lenfDetay:'',
+  komsYayilim:[],
+  yas:'',cinsiyet:'',semptom:'',suresi:'',
+  ekBulgular:''
+});
+
+const initLezyon=()=>({
+  lokBez:'',lokLob:'',
+  boyutMm:'',boyutDir:'',cokluOdak:'',
+  kenar:'',sekil:'',
+  t1:'',t2:'',
+  dwi:'',adc:'',
+  ce:'',
+  yag:'',kist:'',kalsif:'',hemoraji:'',
+  sinirInvazyon:''
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// REPORT GENERATOR
+// ──────────────────────────────────────────────────────────────────────────────
+function generateReport(global,lezyonlar){
+  const topL=(label,val)=>val?`<p><b>${label}:</b> ${val}</p>`:'';
+
+  // Translate full-string state values stored in Turkish to current locale
+  const optLbl=(key,val)=>{
+    const tr=_TR[key],loc=T[key];
+    if(!tr||!loc||!val)return val||'';
+    const i=tr.indexOf(val);
+    return i>=0?loc[i]:val;
+  };
+
+  const bezLabel=(kisa)=>T.bezLabels[kisa]||'';
+  const lobLabel=(l)=>T.lobLabels[l]||l;
+  const t2Lbl=(v)=>T.t2Labels[v]||v;
+  const t1Lbl=(v)=>T.t1Labels[v]||v;
+  const dwiLbl=(v)=>T.dwiLabels[v]||v;
+  const ceLbl=(v)=>T.ceLabels[v]||v;
+  const kenarLbl=(v)=>T.kenarLabels[v]||v;
+  const pName=(id)=>T.patolojiNames[id]||id;
+  const katLabel=(kat)=>T.katLabels[kat]||kat;
+
+  let lezyonHtml='';
+  lezyonlar.forEach((l,i)=>{
+    const sc=hesaplaSkорlar(l,global,lezyonlar);
+    const top=topDiff(sc,5);
+    const lokStr=`${bezLabel(l.lokBez)} ${T.rParotidWord} – ${lobLabel(l.lokLob)}`;
+    lezyonHtml+=`
+    <h2>${T.rLesion} ${i+1} – ${lokStr.toUpperCase()}</h2>
+    <h3>${T.rMorphTitle}</h3>
+    ${l.boyutMm?`<p><b>${T.rSizeLabel}:</b> ${l.boyutMm} mm${l.boyutDir?' ('+l.boyutDir+')':''}</p>`:''}
+    ${l.cokluOdak?`<p><b>${T.rFocusCount}:</b> ${l.cokluOdak==='tek'?T.rFocusSingle:T.rFocusMulti}</p>`:''}
+    ${l.kenar?`<p><b>${T.rMarginLabel}:</b> ${kenarLbl(l.kenar)}</p>`:''}
+    ${l.sekil?`<p><b>${T.rShapeLabel}:</b> ${optLbl('s6ShapeOpts',l.sekil)}</p>`:''}
+    <h3>${T.rSignalTitle}</h3>
+    ${l.t1?`<p><b>${T.rT1Label}:</b> ${t1Lbl(l.t1)}</p>`:''}
+    ${l.t2?`<p><b>${T.rT2Label}:</b> ${t2Lbl(l.t2)}</p>`:''}
+    ${l.dwi?`<p><b>${T.rDwiLabel}:</b> ${dwiLbl(l.dwi)}${l.adc?' – ADC: '+l.adc:''}</p>`:''}
+    ${l.ce?`<p><b>${T.rCeLabel}:</b> ${ceLbl(l.ce)}</p>`:''}
+    <h3>${T.rExtraTitle}</h3>
+    ${l.yag==='var'?`<p>${T.rFatPresent}</p>`:''}
+    ${l.kist&&l.kist!=='yok'?`<p>${l.kist==='fokal'?T.rCystFokal:T.rCystDominant}</p>`:''}
+    ${l.kalsif==='var'?`<p>${T.rCalcif}</p>`:''}
+    ${l.hemoraji==='var'?`<p>${T.rHem}</p>`:''}
+    ${l.sinirInvazyon==='evet'?`<p style="color:#dc2626;font-weight:700">${T.rNerveInv}</p>`:''}
+    <h3>${T.rDiffTitle}</h3>
+    <table>
+      <tr><th>${T.rDiffCols[0]}</th><th>${T.rDiffCols[1]}</th><th>${T.rDiffCols[2]}</th><th>${T.rDiffCols[3]}</th></tr>
+      ${top.map((p,idx)=>`<tr class="${idx===0?'rank1':idx===1?'rank2':'rank3'}">
+        <td>${idx+1}</td><td>${pName(p.id)}</td><td>${katLabel(p.kat)}</td><td>${p.skor}/100</td>
+      </tr>`).join('')}
+    </table>`;
+  });
+
+  const fasiyalStr=global.fasiyal==='intakt'?T.rFacialisIntact
+    :global.fasiyal==='deplase'?`${T.rFacialisDeplase} ${global.fasiyalDetay||''}`
+    :global.fasiyal==='invazyon'?`<b style="color:#dc2626">${T.rFacialisInv}</b> ${global.fasiyalDetay||''}`
+    :T.rFacialisNone;
+
+  const komsList=(global.komsYayilim||[]).map(v=>optLbl('s14Opts',v)).join(', ')||T.rAdjacentDefault;
+
+  const yorumBulgu=lezyonlar.length>0?
+    T.rCommentLesion.replace('{{n}}',lezyonlar.length):
+    T.rCommentNoLesion;
+
+  const malignFlag=lezyonlar.some(l=>{
+    const sc=hesaplaSkорlar(l,global,lezyonlar);
+    const top=topDiff(sc,1);
+    return top[0]&&top[0].kat==='Malign Tümör'&&top[0].skor>=50;
+  });
+
+  return `
+  <h1>${T.rTitle}</h1>
+
+  <h2>${T.rTech}</h2>
+  ${topL(T.rSeqQuality,optLbl('s0QualityOpts',global.sekansKalite))}
+  ${topL(T.rContrast,optLbl('s0ContrastOpts',global.enjeksiyon))}
+  ${topL(T.rPlane,optLbl('s0PlaneOpts',global.kesit))}
+
+  <h2>${T.rRightParotid}</h2>
+  ${topL(T.rSize,global.sagBoyut?global.sagBoyut+' mm':'')}
+  ${topL(T.rSignalHomo,optLbl('s1SignalOpts',global.sagSinyal))}
+  ${topL(T.rFatContent,T.yagLabels[global.sagYag]||global.sagYag||'')}
+  ${topL(T.rStensen,optLbl('s1DuctOpts',global.sagDuktus))}
+  ${!global.sagBoyut&&!global.sagSinyal?`<p>${T.rRightDefault}</p>`:''}
+
+  <h2>${T.rLeftParotid}</h2>
+  ${topL(T.rSize,global.solBoyut?global.solBoyut+' mm':'')}
+  ${topL(T.rSignalHomo,optLbl('s2SignalOpts',global.solSinyal))}
+  ${topL(T.rFatContent,T.yagLabels[global.solYag]||global.solYag||'')}
+  ${topL(T.rStensen,optLbl('s2DuctOpts',global.solDuktus))}
+  ${!global.solBoyut&&!global.solSinyal?`<p>${T.rLeftDefault}</p>`:''}
+
+  ${lezyonlar.length>0?lezyonHtml:`<h2>${T.rFocalLesion}</h2><p>${T.rNoFocal}</p>`}
+
+  <h2>${T.rFacialis}</h2>
+  <p>${fasiyalStr}</p>
+
+  <h2>${T.rLymphNodes}</h2>
+  ${topL(T.rLymphFinding,global.lenfDetay||optLbl('s13Opts',global.lenf))}
+  ${!global.lenf?`<p>${T.rLymphDefault}</p>`:''}
+
+  <h2>${T.rAdjacent}</h2>
+  <p>${komsList}</p>
+
+  <h2>${T.rClinical}</h2>
+  ${topL(T.rAgeGroup,T.rAgeOpts[global.yas]||'')}
+  ${topL(T.rSex,T.cinsiyetLabels[global.cinsiyet]||global.cinsiyet||'')}
+  ${topL(T.rSymptom,T.rSymptomOpts[global.semptom]||'')}
+  ${topL(T.rDuration,optLbl('s15DurationOpts',global.suresi))}
+  ${topL(T.rExtra,global.ekBulgular)}
+
+  <div class="yorum-box">
+    <h2>${T.rCommentTitle}</h2>
+    <p>${yorumBulgu}</p>
+    ${malignFlag?`<p><b>${T.rMalignAlert}</b></p>`:''}
+    ${global.fasiyal==='invazyon'?`<p><b>${T.rNerveAlert}</b></p>`:''}
+  </div>`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MAIN APP
+// ──────────────────────────────────────────────────────────────────────────────
+function App(){
+  const [step,setStep]=useState(0);
+  const [global,setGlobal]=useState(initGlobal());
+  const [lezyonlar,setLezyonlar]=useState([]);
+  const [currentIdx,setCurrentIdx]=useState(-1);
+  const [showReport,setShowReport]=useState(false);
+  const reportRef=useRef(null);
+
+  const setG=(k,v)=>setGlobal(g=>({...g,[k]:v}));
+  const setL=(k,v)=>{
+    if(currentIdx<0)return;
+    setLezyonlar(arr=>arr.map((l,i)=>i===currentIdx?{...l,[k]:v}:l));
+  };
+  const toggleG=(k,v)=>setGlobal(g=>({...g,[k]:g[k]===v?'':v}));
+  const toggleL=(k,v)=>{
+    if(currentIdx<0)return;
+    setLezyonlar(arr=>arr.map((l,i)=>{
+      if(i!==currentIdx)return l;
+      return {...l,[k]:l[k]===v?'':v};
+    }));
+  };
+  const toggleGArr=(k,v)=>setGlobal(g=>{
+    const arr=g[k]||[];
+    return {...g,[k]:arr.includes(v)?arr.filter(x=>x!==v):[...arr,v]};
+  });
+
+  const lez=currentIdx>=0?lezyonlar[currentIdx]:null;
+
+  const addLezyon=()=>{
+    const idx=lezyonlar.length;
+    setLezyonlar(arr=>[...arr,initLezyon()]);
+    setCurrentIdx(idx);
+    setStep(LOOP_START);
+  };
+
+  const finalizeLezyon=()=>{
+    setCurrentIdx(-1); // 3-PART FIX PART 1
+    setStep(LEZYON_OZET);
+  };
+
+  const handleNext=()=>{
+    if(step===3){
+      if(global.lezyonVar==='evet'){addLezyon();return;}
+      if(global.lezyonVar==='hayir'){setStep(LEZYON_OZET);return;}
+      return;
+    }
+    if(step===LOOP_END){finalizeLezyon();return;}
+    if(step===LEZYON_OZET){setStep(POST_LOOP);return;}
+    if(step===TOTAL_STEPS-2){setShowReport(true);return;}
+    setStep(s=>Math.min(s+1,TOTAL_STEPS-1));
+  };
+
+  const handlePrev=()=>{
+    if(step===POST_LOOP){ // 3-PART FIX PART 3
+      setStep(LEZYON_OZET);return;
+    }
+    if(step===LEZYON_OZET){setStep(3);return;}
+    if(step===LOOP_START){setStep(3);return;}
+    setStep(s=>Math.max(s-1,0));
+  };
+
+  const progress=(step/(TOTAL_STEPS-1))*100;
+  const isInLoop=step>=LOOP_START&&step<=LOOP_END;
+
+  // ── REPORT OVERLAY ──────────────────────────────────────────────────────────
+  if(showReport){
+    const html=generateReport(global,lezyonlar);
+    const copyReport=()=>{
+      const el=reportRef.current;
+      if(!el)return;
+      const range=document.createRange();
+      range.selectNodeContents(el);
+      const sel=window.getSelection();
+      sel.removeAllRanges();sel.addRange(range);
+      try{document.execCommand('copy');}catch(e){}
+      sel.removeAllRanges();
+      alert(T.copiedMsg);
+    };
+    const downloadReport=()=>{
+      const fullHtml=`<!DOCTYPE html><html lang="${T.downloadLangAttr}"><head><meta charset="UTF-8"><title>${T.downloadTitle}</title><style>body{font-family:'Segoe UI',sans-serif;font-size:13px;line-height:1.7;max-width:760px;margin:24px auto;color:#111;}h1{font-size:16px;font-weight:800;text-align:center;border-bottom:2px solid #111;padding-bottom:6px;}h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:16px;border-bottom:1px solid #aaa;padding-bottom:2px;}h3{font-size:12px;font-weight:700;margin-top:10px;color:#1a4c2e;}p{margin-bottom:4px;}table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px;}th{background:#f1f5f9;font-weight:700;padding:5px 8px;text-align:left;border:1px solid #ddd;}td{padding:4px 8px;border:1px solid #ddd;}.yorum-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:6px;padding:10px 14px;margin-top:14px;}.yorum-box h2{border-color:#16a34a;color:#15803d;}</style></head><body>${html}</body></html>`;
+      const blob=new Blob([fullHtml],{type:'text/html;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=T.downloadFile;a.click();
+      URL.revokeObjectURL(url);
+    };
+    return(
+      <div className="overlay">
+        <div className="report-wrap">
+          <div className="report-toolbar">
+            <button className="btn btn-secondary btn-sm" onClick={copyReport}>{T.copyBtn}</button>
+            <button className="btn btn-secondary btn-sm" onClick={()=>window.print()}>{T.printBtn}</button>
+            <button className="btn btn-secondary btn-sm" onClick={downloadReport}>{T.downloadBtn}</button>
+            <button className="btn btn-primary btn-sm" onClick={()=>setShowReport(false)}>{T.closeBtn}</button>
+          </div>
+          <div className="report-body" ref={reportRef} dangerouslySetInnerHTML={{__html:html}}/>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP RENDERER ────────────────────────────────────────────────────────────
+  const renderStep=()=>{
+    switch(step){
+
+      // ── STEP 0: Teknik ──────────────────────────────────────────────────────
+      case 0:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s0CardTitle}</div>
+            <div className="field"><label>{T.s0Quality}</label>
+              <div className="chips">
+                {T.s0QualityOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.sekansKalite===_TR.s0QualityOpts[i]} onClick={()=>toggleG('sekansKalite',_TR.s0QualityOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s0Contrast}</label>
+              <div className="chips">
+                {T.s0ContrastOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.enjeksiyon===_TR.s0ContrastOpts[i]} onClick={()=>toggleG('enjeksiyon',_TR.s0ContrastOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s0Plane}</label>
+              <div className="chips">
+                {T.s0PlaneOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.kesit===_TR.s0PlaneOpts[i]} onClick={()=>toggleG('kesit',_TR.s0PlaneOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── STEP 1: Sağ Parotis ─────────────────────────────────────────────────
+      case 1:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s1CardTitle}</div>
+            <div className="field"><label>{T.s1Size}</label>
+              <input type="number" className="field" placeholder={T.s1SizePh}
+                value={global.sagBoyut} onChange={e=>setG('sagBoyut',e.target.value)}
+                style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 10px',color:'var(--text)',fontSize:13}}/>
+            </div>
+            <div className="field"><label>{T.s1Signal}</label>
+              <div className="chips">
+                {T.s1SignalOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.sagSinyal===_TR.s1SignalOpts[i]} onClick={()=>toggleG('sagSinyal',_TR.s1SignalOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s1Fat}</label>
+              <div className="chips">
+                {T.s1FatOpts.map(([v,l],i)=>(
+                  <CHIP key={v} active={global.sagYag===v} onClick={()=>toggleG('sagYag',v)}>{l}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s1Duct}</label>
+              <div className="chips">
+                {T.s1DuctOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.sagDuktus===_TR.s1DuctOpts[i]} onClick={()=>toggleG('sagDuktus',_TR.s1DuctOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── STEP 2: Sol Parotis ─────────────────────────────────────────────────
+      case 2:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s2CardTitle}</div>
+            <div className="field"><label>{T.s2Size}</label>
+              <input type="number" placeholder={T.s2SizePh}
+                value={global.solBoyut} onChange={e=>setG('solBoyut',e.target.value)}
+                style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 10px',color:'var(--text)',fontSize:13}}/>
+            </div>
+            <div className="field"><label>{T.s2Signal}</label>
+              <div className="chips">
+                {T.s2SignalOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.solSinyal===_TR.s2SignalOpts[i]} onClick={()=>toggleG('solSinyal',_TR.s2SignalOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s2Fat}</label>
+              <div className="chips">
+                {T.s2FatOpts.map(([v,l],i)=>(
+                  <CHIP key={v} active={global.solYag===v} onClick={()=>toggleG('solYag',v)}>{l}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s2Duct}</label>
+              <div className="chips">
+                {T.s2DuctOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.solDuktus===_TR.s2DuctOpts[i]} onClick={()=>toggleG('solDuktus',_TR.s2DuctOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── STEP 3: Lezyon Tespiti ──────────────────────────────────────────────
+      case 3:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s3CardTitle}</div>
+            <div className="field"><label>{T.s3Question}</label>
+              <div className="chips">
+                <CHIP active={global.lezyonVar==='evet'} onClick={()=>toggleG('lezyonVar','evet')}>{T.s3Yes}</CHIP>
+                <CHIP active={global.lezyonVar==='hayir'} onClick={()=>toggleG('lezyonVar','hayir')}>{T.s3No}</CHIP>
+              </div>
+            </div>
+            {lezyonlar.length>0&&(
+              <div>
+                <div style={{fontSize:12,color:'var(--text2)',marginBottom:8}}>{T.s3AddedLabel}</div>
+                {lezyonlar.map((l,i)=>(
+                  <span key={i} className="lez-badge">
+                    <span className="lez-n">L{i+1}</span>
+                    {l.lokBez?` – ${l.lokBez==='sag'?T.s3Right:T.s3Left} ${T.lobDisplayLabels[l.lokLob]||l.lokLob||''}`:` – ${T.s3Defining}`}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          {global.lezyonVar==='evet'&&(
+            <button className="btn btn-primary" style={{width:'100%'}} onClick={addLezyon}>
+              {T.s3AddBtn}{lezyonlar.length+1})
+            </button>
+          )}
+        </div>
+      );
+
+      // ── LOOP STEP 4: Lokalizasyon ───────────────────────────────────────────
+      case 4:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s4AlertStep}</div>
+          <div className="card">
+            <div className="card-title">{T.s4WhichGland}</div>
+            <div className="chips">
+              {T.s4GlandOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.lokBez===v} onClick={()=>toggleL('lokBez',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s4LobTitle}</div>
+            <div className="chips">
+              {T.s4LobOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.lokLob===v} onClick={()=>toggleL('lokLob',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 5: Boyut ──────────────────────────────────────────────────
+      case 5:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s5Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s5CardTitle}</div>
+            <div className="grid2">
+              <div className="field"><label>{T.s5LongAxis}</label>
+                <input type="number" placeholder={T.s5LongAxisPh}
+                  value={lez.boyutMm} onChange={e=>setL('boyutMm',e.target.value)}
+                  style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 10px',color:'var(--text)',fontSize:13}}/>
+              </div>
+              <div className="field"><label>{T.s5Dir}</label>
+                <input type="text" placeholder={T.s5DirPh}
+                  value={lez.boyutDir} onChange={e=>setL('boyutDir',e.target.value)}
+                  style={{width:'100%',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 10px',color:'var(--text)',fontSize:13}}/>
+              </div>
+            </div>
+            <div className="field"><label>{T.s5FocusLabel}</label>
+              <div className="chips">
+                <CHIP active={lez.cokluOdak==='tek'} onClick={()=>toggleL('cokluOdak','tek')}>{T.s5Single}</CHIP>
+                <CHIP active={lez.cokluOdak==='coklu'} onClick={()=>toggleL('cokluOdak','coklu')}>{T.s5Multi}</CHIP>
+              </div>
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 6: Sınır/Şekil ───────────────────────────────────────────
+      case 6:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s6Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s6MarginTitle}</div>
+            <div className="chips">
+              {T.s6MarginOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.kenar===v} onClick={()=>toggleL('kenar',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s6ShapeTitle}</div>
+            <div className="chips">
+              {T.s6ShapeOpts.map((v,i)=>(
+                <CHIP key={i} active={lez.sekil===_TR.s6ShapeOpts[i]} onClick={()=>toggleL('sekil',_TR.s6ShapeOpts[i])}>{v}</CHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 7: T1/T2 ─────────────────────────────────────────────────
+      case 7:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s7Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s7T1Title}</div>
+            <div className="chips">
+              {T.s7T1Opts.map(([v,l])=>(
+                <CHIP key={v} active={lez.t1===v} onClick={()=>toggleL('t1',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s7T2Title}</div>
+            <div className="chips">
+              {T.s7T2Opts.map(([v,l])=>(
+                <CHIP key={v} active={lez.t2===v} onClick={()=>toggleL('t2',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 8: DWI/ADC ───────────────────────────────────────────────
+      case 8:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s8Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s8DwiTitle}</div>
+            <div className="chips">
+              {T.s8DwiOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.dwi===v} onClick={()=>toggleL('dwi',v)}>{l}</CHIP>
+              ))}
+            </div>
+            {lez.dwi==='var'&&(
+              <div className="alert alert-warn" style={{marginTop:10}}>{T.s8DwiWarn}</div>
+            )}
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s8AdcTitle}</div>
+            <div className="chips">
+              {T.s8AdcOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.adc===v} onClick={()=>toggleL('adc',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 9: Kontrastlanma ─────────────────────────────────────────
+      case 9:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s9Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s9CeTitle}</div>
+            <div className="chips">
+              {T.s9CeOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.ce===v} onClick={()=>toggleL('ce',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):null;
+
+      // ── LOOP STEP 10: Ek Özellikler ────────────────────────────────────────
+      case 10:return lez?(
+        <div>
+          <div className="alert alert-info">{T.s4Alert} {currentIdx+1} / {T.s10Alert}</div>
+          <div className="card">
+            <div className="card-title">{T.s10FatTitle}</div>
+            <div className="chips">
+              <CHIP active={lez.yag==='yok'} onClick={()=>toggleL('yag','yok')}>{T.s10FatNo}</CHIP>
+              <CHIP active={lez.yag==='var'} onClick={()=>toggleL('yag','var')}>{T.s10FatYes}</CHIP>
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s10CystTitle}</div>
+            <div className="chips">
+              {T.s10CystOpts.map(([v,l])=>(
+                <CHIP key={v} active={lez.kist===v} onClick={()=>toggleL('kist',v)}>{l}</CHIP>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s10ExtraTitle}</div>
+            <div className="grid2">
+              <div>
+                <div style={{fontSize:12,color:'var(--text2)',marginBottom:6}}>{T.s10CalcifLabel}</div>
+                <div className="chips">
+                  <CHIP active={lez.kalsif==='yok'} onClick={()=>toggleL('kalsif','yok')}>{T.s10CalcifNo}</CHIP>
+                  <CHIP active={lez.kalsif==='var'} onClick={()=>toggleL('kalsif','var')}>{T.s10CalcifYes}</CHIP>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:12,color:'var(--text2)',marginBottom:6}}>{T.s10HemLabel}</div>
+                <div className="chips">
+                  <CHIP active={lez.hemoraji==='yok'} onClick={()=>toggleL('hemoraji','yok')}>{T.s10HemNo}</CHIP>
+                  <CHIP active={lez.hemoraji==='var'} onClick={()=>toggleL('hemoraji','var')}>{T.s10HemYes}</CHIP>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">{T.s10NerveTitle}</div>
+            <div className="chips">
+              <CHIP active={lez.sinirInvazyon==='hayir'} onClick={()=>toggleL('sinirInvazyon','hayir')}>{T.s10NerveNo}</CHIP>
+              <CHIP active={lez.sinirInvazyon==='evet'} onClick={()=>toggleL('sinirInvazyon','evet')}>{T.s10NerveYes}</CHIP>
+            </div>
+            {lez.sinirInvazyon==='evet'&&(
+              <div className="alert alert-warn" style={{marginTop:10}}>{T.s10NerveWarn}</div>
+            )}
+          </div>
+          {/* Instant Diff Preview */}
+          <div className="card">
+            <div className="card-title">{T.s10DiffTitle}</div>
+            {(()=>{
+              const sc=hesaplaSkорlar(lez,global,lezyonlar);
+              const top=topDiff(sc,5);
+              return(
+                <table className="diff-table">
+                  <thead><tr><th>{T.s10DiffCols[0]}</th><th>{T.s10DiffCols[1]}</th><th>{T.s10DiffCols[2]}</th><th>{T.s10DiffCols[3]}</th></tr></thead>
+                  <tbody>
+                    {top.map((p,i)=>(
+                      <tr key={p.id}>
+                        <td style={{fontWeight:700,color:'var(--accent)'}}>{i+1}</td>
+                        <td style={{fontWeight:i===0?700:400}}>{T.patolojiNames[p.id]||p.name}</td>
+                        <td>{katBadge(p.kat)}</td>
+                        <td>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <div className="diff-bar-wrap">
+                              <div className="diff-bar" style={{width:`${p.skor}%`,background:p.kat==='Malign Tümör'?'#ef4444':p.kat==='Benign Tümör'?'#10b981':'#60a5fa'}}/>
+                            </div>
+                            <span style={{fontSize:11,color:'var(--text2)'}}>{p.skor}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              );
+            })()}
+          </div>
+        </div>
+      ):null;
+
+      // ── STEP 11: Lezyon Özeti ───────────────────────────────────────────────
+      case 11:return(
+        <div>
+          {lezyonlar.length===0?(
+            <div className="card">
+              <div className="card-title">{T.s11CardTitle}</div>
+              <div className="alert alert-info">{T.s11NoLezyon}</div>
+            </div>
+          ):(
+            lezyonlar.map((l,i)=>{
+              const sc=hesaplaSkорlar(l,global,lezyonlar);
+              const top=topDiff(sc,3);
+              return(
+                <div key={i} className="card">
+                  <div className="card-title">◈ {T.s4Alert} {i+1} – {l.lokBez==='sag'?T.s3Right:l.lokBez==='sol'?T.s3Left:'?'} {T.lobDisplayLabels[l.lokLob]||l.lokLob||''}</div>
+                  <table className="diff-table">
+                    <thead><tr><th>{T.s11DiffCols[0]}</th><th>{T.s11DiffCols[1]}</th><th>{T.s11DiffCols[2]}</th><th>{T.s11DiffCols[3]}</th></tr></thead>
+                    <tbody>
+                      {top.map((p,idx)=>(
+                        <tr key={p.id}>
+                          <td style={{fontWeight:700,color:'var(--accent)'}}>{idx+1}</td>
+                          <td style={{fontWeight:idx===0?700:400}}>{T.patolojiNames[p.id]||p.name}</td>
+                          <td>{katBadge(p.kat)}</td>
+                          <td>
+                            <div className="diff-bar-wrap">
+                              <div className="diff-bar" style={{width:`${p.skor}%`,background:p.kat==='Malign Tümör'?'#ef4444':'#10b981'}}/>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })
+          )}
+          <button className="btn btn-outline" style={{width:'100%',marginBottom:8}} onClick={addLezyon}>
+            {T.s11AddBtn}{lezyonlar.length+1})
+          </button>
+        </div>
+      );
+
+      // ── STEP 12: Fasiyal Sinir ──────────────────────────────────────────────
+      case 12:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s12CardTitle}</div>
+            <div className="chips">
+              {T.s12Opts.map(([v,l])=>(
+                <CHIP key={v} active={global.fasiyal===v} onClick={()=>toggleG('fasiyal',v)}>{l}</CHIP>
+              ))}
+            </div>
+            {global.fasiyal&&global.fasiyal!=='intakt'&&(
+              <div className="field" style={{marginTop:12}}>
+                <label>{T.s12DetailLabel}</label>
+                <textarea value={global.fasiyalDetay} onChange={e=>setG('fasiyalDetay',e.target.value)} placeholder={T.s12DetailPh}/>
+              </div>
+            )}
+            {global.fasiyal==='invazyon'&&(
+              <div className="alert alert-warn" style={{marginTop:8}}>{T.s12InvWarn}</div>
+            )}
+          </div>
+        </div>
+      );
+
+      // ── STEP 13: Lenf Nodları ───────────────────────────────────────────────
+      case 13:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s13CardTitle}</div>
+            <div className="chips">
+              {T.s13Opts.map((v,i)=>(
+                <CHIP key={i} active={global.lenf===_TR.s13Opts[i]} onClick={()=>toggleG('lenf',_TR.s13Opts[i])}>{v}</CHIP>
+              ))}
+            </div>
+            {global.lenf&&global.lenf!==_TR.s13Opts[0]&&(
+              <div className="field" style={{marginTop:12}}>
+                <label>{T.s13DetailLabel}</label>
+                <textarea value={global.lenfDetay} onChange={e=>setG('lenfDetay',e.target.value)} placeholder={T.s13DetailPh}/>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+      // ── STEP 14: Komşu Yapılar ──────────────────────────────────────────────
+      case 14:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s14CardTitle}</div>
+            <div className="chips" style={{flexWrap:'wrap'}}>
+              {T.s14Opts.map((v,i)=>(
+                <MCHIP key={i} active={(global.komsYayilim||[]).includes(_TR.s14Opts[i])} onClick={()=>toggleGArr('komsYayilim',_TR.s14Opts[i])}>{v}</MCHIP>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── STEP 15: Klinik Bilgi ───────────────────────────────────────────────
+      case 15:return(
+        <div>
+          <div className="card">
+            <div className="card-title">{T.s15CardTitle}</div>
+            <div className="field"><label>{T.s15AgeLabel}</label>
+              <div className="chips">
+                {T.s15AgeOpts.map(([v,l])=>(
+                  <CHIP key={v} active={global.yas===v} onClick={()=>toggleG('yas',v)}>{l}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s15SexLabel}</label>
+              <div className="chips">
+                <CHIP active={global.cinsiyet==='erkek'} onClick={()=>toggleG('cinsiyet','erkek')}>{T.s15Male}</CHIP>
+                <CHIP active={global.cinsiyet==='kadin'} onClick={()=>toggleG('cinsiyet','kadin')}>{T.s15Female}</CHIP>
+              </div>
+            </div>
+            <div className="field"><label>{T.s15SymptomLabel}</label>
+              <div className="chips">
+                {T.s15SymptomOpts.map(([v,l])=>(
+                  <CHIP key={v} active={global.semptom===v} onClick={()=>toggleG('semptom',v)}>{l}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s15DurationLabel}</label>
+              <div className="chips">
+                {T.s15DurationOpts.map((v,i)=>(
+                  <CHIP key={i} active={global.suresi===_TR.s15DurationOpts[i]} onClick={()=>toggleG('suresi',_TR.s15DurationOpts[i])}>{v}</CHIP>
+                ))}
+              </div>
+            </div>
+            <div className="field"><label>{T.s15ExtraLabel}</label>
+              <textarea value={global.ekBulgular} onChange={e=>setG('ekBulgular',e.target.value)} placeholder={T.s15ExtraPh}/>
+            </div>
+          </div>
+        </div>
+      );
+
+      // ── STEP 16: Rapor ──────────────────────────────────────────────────────
+      case 16:
+        const totalLez=lezyonlar.length;
+        const malignCount=lezyonlar.filter(l=>{
+          const sc=hesaplaSkорlar(l,global,lezyonlar);
+          const top=topDiff(sc,1);
+          return top[0]&&top[0].kat==='Malign Tümör'&&top[0].skor>=50;
+        }).length;
+        return(
+          <div>
+            <div className="card">
+              <div className="card-title">{T.s16SummaryTitle}</div>
+              <div className="grid3" style={{marginBottom:14}}>
+                <div style={{background:'var(--surface2)',borderRadius:8,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:22,fontWeight:800,color:'var(--accent)'}}>{totalLez}</div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{T.s16LezLabel}</div>
+                </div>
+                <div style={{background:'var(--surface2)',borderRadius:8,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:22,fontWeight:800,color:malignCount>0?'var(--danger)':'var(--accent)'}}>{malignCount}</div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{T.s16MalignLabel}</div>
+                </div>
+                <div style={{background:'var(--surface2)',borderRadius:8,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:22,fontWeight:800,color:global.fasiyal==='invazyon'?'var(--danger)':'var(--text2)'}}>
+                    {global.fasiyal==='intakt'?'✓':global.fasiyal==='invazyon'?'!':'–'}
+                  </div>
+                  <div style={{fontSize:11,color:'var(--text3)'}}>{T.s16NervLabel}</div>
+                </div>
+              </div>
+              {lezyonlar.map((l,i)=>{
+                const sc=hesaplaSkорlar(l,global,lezyonlar);
+                const top=topDiff(sc,3);
+                return(
+                  <div key={i} style={{marginBottom:14}}>
+                    <div style={{fontSize:13,fontWeight:700,color:'var(--accent)',marginBottom:6}}>
+                      {T.s4Alert} {i+1} – {l.lokBez==='sag'?T.s3Right:l.lokBez==='sol'?T.s3Left:l.lokBez||'?'} {T.lobDisplayLabels[l.lokLob]||l.lokLob||''} {l.boyutMm?`(${l.boyutMm} mm)`:''}
+                    </div>
+                    <table className="diff-table">
+                      <thead><tr><th>{T.s16DiffCols[0]}</th><th>{T.s16DiffCols[1]}</th><th>{T.s16DiffCols[2]}</th><th style={{width:160}}>{T.s16DiffCols[3]}</th></tr></thead>
+                      <tbody>
+                        {top.map((p,idx)=>(
+                          <tr key={p.id}>
+                            <td style={{fontWeight:700,color:'var(--accent)',width:40}}>{idx+1}</td>
+                            <td style={{fontWeight:idx===0?700:400}}>{T.patolojiNames[p.id]||p.name}</td>
+                            <td>{katBadge(p.kat)}</td>
+                            <td>
+                              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <div className="diff-bar-wrap">
+                                  <div className="diff-bar" style={{width:`${p.skor}%`,background:p.kat==='Malign Tümör'?'#ef4444':p.kat==='Benign Tümör'?'#10b981':'#60a5fa'}}/>
+                                </div>
+                                <span style={{fontSize:11,color:'var(--text2)',minWidth:24}}>{p.skor}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+            <button className="btn btn-primary" style={{width:'100%',padding:12,fontSize:14}}
+              onClick={()=>setShowReport(true)}>
+              {T.generateBtn}
+            </button>
+          </div>
+        );
+
+      default:return null;
+    }
+  };
+
+  // ── NAVIGATION BUTTON LOGIC ─────────────────────────────────────────────────
+  const showNext=!(step===3&&global.lezyonVar==='evet')||lezyonlar.length>0;
+  const nextLabel=
+    step===LOOP_END?T.lezTamamla:
+    step===LEZYON_OZET?T.devam:
+    step===TOTAL_STEPS-2?T.rapoGit:
+    step===TOTAL_STEPS-1?'':
+    T.next;
+  const prevLabel=step===0?'':
+    step===POST_LOOP||step===LEZYON_OZET?T.backLezyon:
+    T.back;
+
+  return(
+    <div className="shell">
+      {/* HEADER */}
+      <div className="hdr">
+        <div className="hdr-icon">🫁</div>
+        <div>
+          <div className="hdr-title">{T.appTitle}</div>
+          <div className="hdr-sub">{T.appSub}</div>
+        </div>
+        <div style={{marginLeft:'auto',fontSize:11,color:'var(--text3)'}}>
+          {isInLoop&&`L${currentIdx+1} / ${T.stepOf} ${step-LOOP_START+1}`}
+        </div>
+      </div>
+
+      {/* PROGRESS */}
+      <div className="progress-bar">
+        <div className="progress-fill" style={{width:`${progress}%`}}/>
+      </div>
+
+      {/* STEP INFO */}
+      <div className="step-info">
+        <span className="step-num">{T.stepOf} {step+1} / {TOTAL_STEPS}</span>
+        <span className="step-title">{STEP_TITLES[step]}</span>
+      </div>
+
+      {/* STEP CONTENT */}
+      <div style={{flex:1}}>
+        {renderStep()}
+      </div>
+
+      {/* NAVIGATION */}
+      {step<TOTAL_STEPS-1&&(
+        <div className="nav">
+          <button className="btn btn-secondary" onClick={handlePrev} disabled={step===0}
+            style={{visibility:step===0?'hidden':'visible'}}>
+            {prevLabel}
+          </button>
+          {nextLabel&&(
+            <button className="btn btn-primary" onClick={handleNext}>
+              {nextLabel}
+            </button>
+          )}
+        </div>
+      )}
+      {step===TOTAL_STEPS-1&&(
+        <div className="nav">
+          <button className="btn btn-secondary" onClick={handlePrev}>{T.geri}</button>
+          <button className="btn btn-primary" onClick={()=>setShowReport(true)}>{T.viewReportBtn}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

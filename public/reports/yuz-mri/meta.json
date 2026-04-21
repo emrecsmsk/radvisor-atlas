@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "Yüz MR",
+    "en": "Facial MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "yuz_mri.html"
+}

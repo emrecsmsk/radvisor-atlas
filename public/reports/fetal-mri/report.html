@@ -1,0 +1,3130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fetal MRI Değerlendirme Modülü</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root {
+    --bg-0: #0b0a0f;
+    --bg-1: #141218;
+    --bg-2: #1c1922;
+    --bg-3: #262230;
+    --border: #332d3d;
+    --border-strong: #45394f;
+    --text: #f4eef7;
+    --text-dim: #b8aec2;
+    --text-muted: #796d85;
+    --accent: #e11d63;          /* rose/pink-red primary */
+    --accent-2: #fb7185;         /* rose-400 */
+    --accent-soft: #4a1330;
+    --accent-glow: rgba(225, 29, 99, 0.25);
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --info: #38bdf8;
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(1200px 800px at 10% -10%, #1c0f18 0%, var(--bg-0) 55%) fixed;
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { min-height: 100vh; }
+
+  /* Layout */
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .brand .mark {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 8px 20px var(--accent-glow);
+    display: grid; place-items: center;
+    font-weight: 800; color: white; font-size: 18px; letter-spacing: 0.5px;
+  }
+  .brand h1 {
+    margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.2px;
+  }
+  .brand small {
+    display: block; color: var(--text-muted); font-size: 12px; margin-top: 2px;
+  }
+  .topbar-actions { display: flex; gap: 8px; }
+
+  /* Stepper */
+  .stepper {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+  .step-chip {
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--bg-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: default;
+  }
+  .step-chip.active {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color: white;
+    border-color: transparent;
+    font-weight: 600;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  .step-chip.done {
+    background: var(--accent-soft);
+    color: #f9c4d6;
+    border-color: var(--accent);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 22px;
+    box-shadow: var(--shadow-lg);
+  }
+  .card + .card { margin-top: 14px; }
+  .card h2 {
+    margin: 0 0 6px 0; font-size: 17px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card .subtitle {
+    color: var(--text-muted); font-size: 13px; margin-bottom: 18px;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--accent-2);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin: 18px 0 10px;
+  }
+
+  /* Forms */
+  label.fld { display: block; margin-bottom: 12px; }
+  label.fld > .lbl {
+    display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; font-weight: 500;
+  }
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border .15s, box-shadow .15s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 760px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  .chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .chip {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--border-strong); color: var(--text); }
+  .chip.on {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white; border-color: transparent;
+    box-shadow: 0 4px 12px var(--accent-glow);
+    font-weight: 600;
+  }
+  .chip.small { padding: 6px 10px; font-size: 12px; }
+
+  .radios {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .radio-card {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    transition: all .15s;
+    min-width: 110px;
+    text-align: center;
+  }
+  .radio-card:hover { border-color: var(--border-strong); color: var(--text); }
+  .radio-card.on {
+    background: var(--accent-soft);
+    color: var(--text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Buttons */
+  .btn {
+    appearance: none; -webkit-appearance: none;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-2);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--bg-3); border-color: var(--accent); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.ghost { background: transparent; }
+  .btn.danger { border-color: var(--danger); color: #fca5a5; }
+  .btn.danger:hover { background: rgba(239,68,68,0.1); }
+  .btn.sm { padding: 6px 10px; font-size: 12.5px; }
+
+  .nav {
+    display: flex; justify-content: space-between; gap: 10px;
+    margin-top: 22px;
+  }
+
+  /* Lesion list items */
+  .lesion-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .lesion-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .lesion-row .idx {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-2);
+    display: grid; place-items: center; font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .lesion-row .meta { flex: 1; }
+  .lesion-row .meta .name { font-weight: 600; font-size: 14px; }
+  .lesion-row .meta .sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Differential table */
+  .ddx-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13.5px;
+    background: var(--bg-2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ddx-table th, .ddx-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .ddx-table th {
+    background: var(--bg-3); font-weight: 700; color: var(--accent-2);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .ddx-table tr:last-child td { border-bottom: none; }
+  .bar-cell { width: 200px; }
+  .bar {
+    height: 8px; width: 100%; background: var(--bg-3); border-radius: 4px; overflow: hidden;
+  }
+  .bar > span {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 4px;
+  }
+  .pct { font-weight: 700; color: var(--accent-2); width: 60px; }
+
+  /* Report */
+  pre.report {
+    white-space: pre-wrap;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    line-height: 1.65;
+    color: var(--text);
+    max-height: 600px; overflow: auto;
+  }
+
+  /* Print overlay */
+  #print-overlay {
+    position: fixed; inset: 0;
+    background: white; color: black;
+    padding: 30px; overflow: auto;
+    display: none; z-index: 9999;
+  }
+  #print-overlay pre {
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 12pt;
+    color: black;
+  }
+  @media print {
+    body > #root { display: none !important; }
+    #print-overlay { display: block !important; padding: 0; }
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    background: var(--accent-soft); color: var(--accent-2); font-weight: 600;
+    margin-left: 6px;
+  }
+  .tag.ok { background: rgba(34,197,94,0.15); color: #6ee7b7; }
+  .tag.warn { background: rgba(245,158,11,0.15); color: #fcd34d; }
+
+  .hint {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--bg-2);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-1); }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="print-overlay"><pre id="print-content"></pre></div>
+
+<script type="text/babel" data-presets="env,react">
+/* =========================================================================
+   FETAL MRI — Multi-sistem, multilezyon değerlendirme ve ayırıcı tanı modülü
+   Mimari: Standalone React 18 + Babel CDN, dark theme, TR, wizard, lesion-loop
+   ========================================================================= */
+
+const { useState, useMemo, useRef, useEffect } = React;
+
+/* --------------------------------------------------------------------------
+   LOCALE SETUP
+   -------------------------------------------------------------------------- */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Fetal MRI Değerlendirme Modülü',
+    appSubtitle: 'Multi-sistem · Multilezyon · Ayırıcı tanı skorlama',
+    reset: 'Sıfırla',
+    resetConfirm: 'Tüm veriler sıfırlansın mı?',
+    back: '← Geri',
+    next: 'İleri →',
+    toReport: 'Rapor →',
+    steps: ['Klinik','Biyometri','AF / Plasenta','Sistem Tarama','Lezyon Var?','Lez: Organ','Lez: Boyut','Lez: Sinyal','Lez: İçerik','Lez: Eşlik','Lez: Özet','Genel Özet','Rapor'],
+    loopPrefix: 'Lez: ',
+    /* Step 0 */
+    s0Title: 'Klinik Bilgi',
+    s0Sub: 'Hastanın ve tetkikin temel klinik verileri',
+    s0PatientName: 'Hasta Adı (ops.)',
+    s0PatientNamePh: '-',
+    s0ProtocolNo: 'Protokol No (ops.)',
+    s0ProtocolNoPh: '-',
+    s0MaternalAge: 'Maternal Yaş',
+    s0MaternalAgePh: 'yıl',
+    s0GA: 'Gestasyonel Hafta *',
+    s0GAPh: 'örn. 24+2',
+    s0GravPar: 'Gravida/Parite',
+    s0GravParPh: 'G3 P1',
+    s0PrevCS: 'Önceki Sezeryan',
+    s0PrevCSYes: 'Var',
+    s0Indication: 'İstek Endikasyonu *',
+    s0IndicationPh: 'US bulgusu, karın duvarı defekti, ventrikulomegali vb.',
+    s0USFindings: 'Ön US Bulguları',
+    s0USFindingsPh: "Yapılan USG'lerdeki bulguların özeti",
+    s0Hint: '* işaretli alanların doldurulması önerilir. Bilgiler raporun başlığına eklenecektir.',
+    /* Step 1 */
+    s1Title: 'Fetal Biyometri ve Durum',
+    s1Sub: 'Biyometri ölçümleri ve gebeliğin tipi',
+    s1Pregnancy: 'Gebelik',
+    s1FetusCount: 'Fetüs Sayısı',
+    s1Singleton: 'Tekil',
+    s1Twin: 'İkiz',
+    s1Multiple: 'Çoğul',
+    s1Presentation: 'Prezentasyon',
+    s1Vertex: 'Vertex',
+    s1Breech: 'Makat',
+    s1Transverse: 'Transvers',
+    s1Oblique: 'Oblik',
+    s1Biometry: 'Biyometri Ölçümleri (mm / g)',
+    s1BPD: 'BPD (mm)',
+    s1BPDPh: 'örn. 62',
+    s1HC: 'HC (mm)',
+    s1HCPh: 'örn. 230',
+    s1AC: 'AC (mm)',
+    s1ACPh: 'örn. 210',
+    s1FL: 'FL (mm)',
+    s1FLPh: 'örn. 46',
+    s1EFW: 'Tahmini Fetal Ağırlık (EFW) (g)',
+    s1EFWPh: 'örn. 850',
+    s1Percentile: 'Persentil Notu',
+    s1PercentilePh: 'örn. 35. persentil, GA ile uyumlu',
+    /* Step 2 */
+    s2Title: 'Amniyotik Mayi ve Plasenta',
+    s2Sub: 'Gebeliğin adneks yapılarının değerlendirmesi',
+    s2AFSection: 'Amniyotik Mayi',
+    s2AFAmount: 'AF Miktarı',
+    s2Oligo: 'Oligohidramnios',
+    s2SlightlyDecreased: 'Hafif azalmış',
+    s2Normal: 'Normal',
+    s2SlightlyIncreased: 'Hafif artmış',
+    s2Poly: 'Polihidramnios',
+    s2Anhydramnios: 'Anhidramnios',
+    s2AFIMVP: 'AFI / MVP',
+    s2AFIMVPPh: 'AFI: 14 cm / MVP: 5.2 cm',
+    s2Placenta: 'Plasenta',
+    s2Location: 'Lokalizasyon',
+    s2Anterior: 'Anterior',
+    s2Posterior: 'Posterior',
+    s2Fundal: 'Fundal',
+    s2Lateral: 'Lateral',
+    s2Grade: 'Grade',
+    s2PreviaLabel: 'Plasenta Previa',
+    s2PreviaYes: 'Var',
+    s2UmbilicalCord: 'Umbilikal Kord',
+    s2ThreeVessel: '3 damar',
+    s2TwoVesselSUA: '2 damar (SUA)',
+    s2Velamentous: 'Velamentöz insersiyon',
+    s2Marginal: 'Marjinal insersiyon',
+    s2Hint: 'Plasenta akreta spektrumu şüphesi varsa özellikle anterior-previa olgularda miyometrial incelme, T2 koyu bantlar ve uterin bulging bulguları lezyon eklenerek sorgulanabilir.',
+    /* Step 3 */
+    s3Title: 'Sistem Bazlı Hızlı Anatomik Tarama',
+    s3Sub: 'Her sistem için genel değerlendirmenizi işaretleyin. Anormallik varsa sonraki adımda lezyon olarak detaylandırılacaktır.',
+    s3StatusNormal: 'Normal',
+    s3StatusAbnormal: 'Anormal',
+    s3StatusNE: 'Değerlendirilemedi',
+    s3NotePh: 'Kısa not (ops.)',
+    /* Step 4 */
+    s4Title: 'Lezyon/Anomali Detaylandırması',
+    s4Sub: 'Fetusta veya plasentada detaylı karakterize edilecek bir lezyon var mı?',
+    s4Yes: 'Evet, lezyon ekleyeceğim',
+    s4No: 'Hayır, belirgin lezyon yok',
+    s4AddedLesions: 'Eklenen Lezyonlar',
+    s4NoLesionYet: 'Henüz lezyon eklenmedi. Yukarıdan "Evet" seçildiğinde otomatik yeni lezyon başlatılır.',
+    s4OrganNotSelected: '(organ seçilmedi)',
+    s4Edit: 'Düzenle',
+    s4Delete: 'Sil',
+    s4AddNew: '+ Yeni Lezyon Ekle',
+    s4NoLesionHint: 'Lezyon atlanacak. Sonraki adımda genel özet ve rapor oluşturulacaktır.',
+    /* Step 5 */
+    s5Title: 'Lezyon #{n} — Organ & Lokalizasyon',
+    s5Sub: 'Hangi organ/sistem etkileniyor ve lezyon nerede yerleşimli?',
+    s5OrganSystem: 'Organ / Sistem',
+    s5SubLocation: 'Alt-Lokalizasyon',
+    s5NoSubLoc: 'Bu organ için alt lokalizasyon tanımlı değil.',
+    s5NoLesion: 'Aktif lezyon bulunamadı.',
+    /* Step 6 */
+    s6Title: 'Lezyon #{n} — Boyut ve Morfoloji',
+    s6Sub: 'Lezyonun üç boyutu (mm) ve genel şekli',
+    s6Dimensions: 'Boyutlar (mm)',
+    s6Dim1: 'Boyut 1',
+    s6Dim2: 'Boyut 2',
+    s6Dim3: 'Boyut 3',
+    s6DimPh: 'mm',
+    s6Shape: 'Şekil',
+    s6Round: 'Yuvarlak',
+    s6Oval: 'Oval',
+    s6Lobulated: 'Lobüle',
+    s6Irregular: 'Düzensiz',
+    s6Tubular: 'Tübüler / uzamış',
+    /* Step 7 */
+    s7Title: 'Lezyon #{n} — Sinyal Özellikleri',
+    s7Sub: 'Baskın T2 ve T1 sinyal özellikleri',
+    s7T2: 'T2 Ağırlıklı Sinyal',
+    s7T1: 'T1 Ağırlıklı Sinyal',
+    s7Hint: "T2 hiperintens + T1 hipointens → basit sıvı/kist. T1 hiperintens → kanama veya mekonyum. T2 heterojen + T1 heterojen → teratom vb. karışık içerikli kitleyi düşündürür.",
+    /* Step 8 */
+    s8Title: 'Lezyon #{n} — İçerik, Sınır, Difüzyon',
+    s8Sub: 'Lezyonun kısıtlanma durumu ve morfolojik detayları',
+    s8Content: 'İçerik',
+    s8Border: 'Sınır Özellikleri',
+    s8DWI: 'Difüzyon (DWI)',
+    /* Step 9 */
+    s9Title: 'Lezyon #{n} — Eşlik Eden Bulgular',
+    s9Sub: 'Bu lezyon veya patolojiyle birlikte gözlenen ek bulguları işaretleyin',
+    s9FreeNote: 'Serbest Not (bu lezyona özgü)',
+    s9FreeNotePh: 'Örn. Hava yolu 3. düzey bronşlara kadar açık; mediasten sifti 2 cm...',
+    /* Step 10 */
+    s10Title: 'Lezyon #{n} — Özet & Ayırıcı Tanı',
+    s10Sub: 'Bu lezyon için hesaplanan ön sıradaki ayırıcı tanılar',
+    s10LesionSummary: 'Lezyon Özeti',
+    s10Organ: 'Organ',
+    s10Location: 'Lokalizasyon',
+    s10Size: 'Boyut',
+    s10Shape: 'Şekil',
+    s10Signals: 'T2 / T1',
+    s10Content: 'İçerik',
+    s10Border: 'Sınır',
+    s10DWI: 'DWI',
+    s10Associated: 'Eşlik eden',
+    s10AssociatedCount: '{n} bulgu',
+    s10DDXTop5: 'Ayırıcı Tanı (Top 5)',
+    s10DDXNoResult: 'Skorlanabilir patoloji yok. Organ/lokalizasyon ve parametreleri kontrol edin.',
+    s10DDXColPathology: 'Patoloji',
+    s10DDXColProbability: 'Olasılık',
+    s10Delete: 'Bu lezyonu sil',
+    s10AddAnother: '+ Başka Lezyon Ekle',
+    s10Finish: 'Bitir / Özete Geç →',
+    /* Step 11 */
+    s11Title: 'Genel Özet — Tüm Lezyonlar',
+    s11Sub: '{n} lezyon değerlendirildi. Aşağıdan düzenleme yapabilir veya rapora geçebilirsiniz.',
+    s11NoLesion: 'Hiç lezyon eklenmedi. Rapor, lezyon bölümü olmadan oluşturulacaktır.',
+    s11DDXCol: 'Ayırıcı Tanı',
+    s11Probability: 'Olasılık',
+    s11NoDDX: 'Bu lezyon için skorlanan patoloji yok.',
+    s11Edit: 'Düzenle',
+    s11Delete: 'Sil',
+    s11AddNew: '+ Yeni Lezyon Ekle',
+    /* Step 12 */
+    s12Title: 'Rapor',
+    s12Sub: 'Önizleme — kopyalayabilir, HTML olarak indirebilir veya yazdırabilirsiniz',
+    s12Copy: 'Panoya Kopyala',
+    s12Copied: '✓ Kopyalandı',
+    s12DownloadHTML: 'HTML İndir',
+    s12Print: 'Yazdır / PDF',
+    s12BackToSummary: '← Özete Dön',
+    s12FileName: 'fetal_mri_raporu.html',
+    /* Report text */
+    rTitle: 'FETAL MRI RAPORU',
+    rClinical: 'KLİNİK BİLGİ',
+    rPatient: 'Hasta',
+    rProtocol: 'Protokol No',
+    rMaternalAge: 'Maternal Yaş',
+    rGA: 'Gestasyonel Hafta',
+    rGravPar: 'Gravida/Parite',
+    rPrevCS: 'Önceki Sezeryan',
+    rPrevCSYes: 'Var',
+    rIndication: 'Endikasyon',
+    rUSFindings: 'Ön US Bulguları',
+    rExamination: 'İNCELEME',
+    rExamText: "Fetüs değerlendirmesine yönelik multiplanar T2 ağırlıklı HASTE/SSFSE, T1 ağırlıklı GE, EPI-DWI ve (uygulanabildiğinde) T2* duyarlılık sekansları elde olundu.",
+    rBiometry: 'FETAL DURUM VE BİYOMETRİ',
+    rSingleton: 'Tekil gebelik',
+    rTwin: 'İkiz gebelik',
+    rMultiple: 'Çoğul gebelik',
+    rPresentation: '{type} prezentasyon',
+    rBiometryLine: 'Biyometri',
+    rAFPlacenta: 'AMNİYOTİK MAYİ VE PLASENTA',
+    rAFMap: {
+      'oligo': 'Oligohidramnios',
+      'hafif-azalmis': 'Hafif azalmış amniyotik mayi',
+      'normal': 'Amniyotik mayi miktarı normal',
+      'hafif-artmis': 'Hafif artmış amniyotik mayi',
+      'poly': 'Polihidramnios',
+      'anhidramnios': 'Anhidramnios'
+    },
+    rAFDefault: 'Amniyotik mayi değerlendirildi',
+    rPlacentaLine: 'Plasenta',
+    rPlacentaLocation: '{loc} yerleşimli',
+    rPlacentaPrevia: 'Plasenta previa mevcut.',
+    rUDMap: {
+      '3-damar': 'Umbilikal kordda 3 damar izlendi',
+      '2-damar-sua': 'Tek umbilikal arter (SUA) saptandı',
+      'velamentoz': 'Velamentöz kord insersiyonu',
+      'marginal': 'Marjinal kord insersiyonu'
+    },
+    rSystems: 'SİSTEMİK DEĞERLENDİRME',
+    rSysNormal: 'Değerlendirilebilen kısımlar yaşı ile uyumlu, belirgin patoloji saptanmamıştır.',
+    rSysAbnormal: 'ANORMAL bulgular mevcut.',
+    rSysAbnormalDetail: ' Ayrıntılı değerlendirme aşağıda lezyon başlığında yapılmıştır.',
+    rSysNE: 'Yeterli değerlendirme yapılamamıştır.',
+    rLesionSection: 'AYRINTILI LEZYON DEĞERLENDİRMESİ',
+    rLesionHeader: 'Lezyon #{n}',
+    rLesionInText: 'lezyon izlenmektedir.',
+    rLesionSizeNA: 'boyutu ölçülemeyen',
+    rLesionSizeSuffix: ' mm boyutunda',
+    rLesionSignal: 'Sinyal',
+    rLesionContent: 'İçerik',
+    rLesionDWI: 'DWI',
+    rLesionAssoc: 'Eşlik eden bulgular',
+    rLesionNote: 'Not',
+    rT2prefix: "T2A'da",
+    rT1prefix: "T1A'da",
+    rShapeSuffix: 'şekilli',
+    rBorderSuffix: 'sınırlı',
+    rComment: 'YORUM',
+    rCommentSummary: '{gw}tekil gebelikte fetal MRI incelemesi; biyometri, amniyotik mayi ve plasenta değerlendirmesi yukarıda belirtildiği şekilde raporlanmıştır.',
+    rCommentGW: '{ga} gestasyonel haftalık ',
+    rDDXHeader: 'Lezyon #{n} ({organ}) için ayırıcı tanılar:',
+    rDDXNone: '  Skorlanan patoloji bulunamamıştır; klinik ve ileri değerlendirme önerilir.',
+    rDDXMatch: '% uyum',
+    rDDXTopNote: 'En olası tanı ({name}) notu',
+    rNoLesionFound: 'Fetusta detaylı karakterize edilen bir lezyon/anomali saptanmamıştır.',
+    rClosing: 'Bulguların klinik ve obstetrik USG korelasyonu önerilir. İleri değerlendirme (genetik danışma, detaylı kardiyak ekokardiyografi, multidisipliner konsültasyon) endikasyona göre planlanmalıdır.',
+    rFooter: 'Bu rapor fetal MRI değerlendirme yardımcı aracı tarafından oluşturulmuştur.',
+    /* Organ labels */
+    orgSSM: 'SSM (Beyin)',
+    orgSpinal: 'Spinal / Omurga',
+    orgNeck: 'Boyun',
+    orgThorax: 'Toraks',
+    orgAbdWall: 'Karın Duvarı',
+    orgAbdGI: 'Abdomen (GİS/Periton)',
+    orgGU: 'Genitoüriner',
+    orgPlacenta: 'Plasenta',
+    /* Location labels */
+    locLateralVentricle: 'Lateral ventrikül',
+    locBrainMidline: 'Beyin orta hat',
+    locBrainParenchyma: 'Beyin parankimi',
+    locBrainCortex: 'Beyin korteksi',
+    locPosteriorFossa: 'Posterior fossa',
+    locExtraaxial: 'Ekstraaksiyel',
+    locSellar: 'Sellar bölge',
+    locMiddleFossa: 'Orta kraniyal fossa',
+    locSupratentorial: 'Supratentoryal',
+    locThoracalSpinal: 'Torakal spinal',
+    locLumbarSpinal: 'Lomber spinal',
+    locSacralSpinal: 'Sakral spinal',
+    locSacrum: 'Sakrum / koksiks',
+    locPerineum: 'Perine',
+    locNeckAnterior: 'Boyun anterior',
+    locNeckPosterior: 'Boyun posterior',
+    locNeckLateral: 'Boyun lateral',
+    locSubmandibular: 'Submandibular',
+    locLeftLung: 'Sol akciğer',
+    locRightLung: 'Sağ akciğer',
+    locLung: 'Akciğer (spesifiye değil)',
+    locMediastinum: 'Mediasten',
+    locPleura: 'Plevra',
+    locSubdiaphragmatic: 'Subdiyafragmatik',
+    locUmbilicus: 'Göbek / umbilikal bölge',
+    locMidline: 'Orta hat',
+    locRightParaUmbilical: 'Sağ paraumbilikal',
+    locAbdomen: 'Batın içi',
+    locPeritoneum: 'Periton',
+    locLowerAbdomen: 'Alt batın',
+    locPelvis: 'Pelvis',
+    locKidney: 'Böbrek',
+    locBilateralKidney: 'Bilateral böbrek',
+    locRenalPelvis: 'Renal pelvis',
+    locUreter: 'Üreter',
+    locBladder: 'Mesane',
+    locPlacenta: 'Plasenta',
+    /* Signal options */
+    t2Hyperintense: 'Hiperintens',
+    t2Isointense: 'İzointens',
+    t2Hypointense: 'Hipointens',
+    t2Heterogeneous: 'Heterojen',
+    t2Homogeneous: 'Homojen',
+    t1Hyperintense: 'Hiperintens',
+    t1Isointense: 'İzointens',
+    t1Hypointense: 'Hipointens',
+    t1Heterogeneous: 'Heterojen',
+    t1Variable: 'Değişken',
+    t1MeconiumUp: 'Mekonyum sinyali ↑',
+    /* Content options */
+    contentCystic: 'Kistik',
+    contentSolid: 'Solid',
+    contentMixed: 'Kistik-solid karışık',
+    contentNE: 'Değerlendirilemez',
+    /* Border options */
+    borderSharp: 'Keskin',
+    borderRegular: 'Düzenli',
+    borderIrregular: 'Düzensiz',
+    borderLobulated: 'Lobüle',
+    borderIndistinct: 'Belirsiz',
+    /* DWI options */
+    dwiRestricted: 'Kısıtlanmış',
+    dwiUnrestricted: 'Kısıtlanmamış',
+    dwiHeterogeneous: 'Heterojen',
+    dwiNE: 'Değerlendirilemedi',
+    /* Associated findings */
+    assocVentricularEnlargement: 'Ventrikül genişlemesi',
+    assocAtrialWidth: 'Atrial genişlik >10 mm',
+    assocTriventricularHydrocephalus: 'Triventriküler hidrosefali',
+    assocColpocephaly: 'Kolposefali',
+    assocThirdVentricle: '3. ventrikül yükselmiş',
+    assocRadialGyrus: 'Radyal girus paterni',
+    assocFourthVentricleWide: '4. ventrikül geniş',
+    assocFourthVentricleNormal: '4. ventrikül normal',
+    assocVermisAgenesis: 'Vermis agenezi/hipoplazi',
+    assocPosteriorFossaEnlarged: 'Posterior fossa genişlemesi',
+    assocTorcula: 'Torkula/tentoryum yükselmesi',
+    assocFusedThalami: 'Füzyone talami',
+    assocMonoventricle: 'Monoventrikül',
+    assocFalxAbsent: 'Falx yokluğu',
+    assocAbnormalGyrus: 'Anormal giral patern',
+    assocCorticalThickening: 'Kortikal kalınlaşma',
+    assocParenchymalCleft: 'Parankimal yarık defekti',
+    assocPeriventricular: 'Periventriküler sinyal değişimi',
+    assocTonsillarHerniation: 'Tonsiller herniasyon',
+    assocSmallPosteriorFossa: 'Küçük posterior fossa',
+    assocBananaSign: 'Banana sign (serebellum)',
+    assocLemonSign: 'Lemon sign (frontal)',
+    assocMacrocephaly: 'Makrokrani',
+    assocFatSignal: 'Yağ sinyali komponenti',
+    assocCalcification: 'Kalsifikasyon',
+    assocMassEffect: 'Kitle etkisi',
+    assocMediastinalShift: 'Mediasten şifti',
+    assocLungHypoplasia: 'Akciğer hipoplazisi',
+    assocStomachIntrathoracic: 'Mide intratorasik',
+    assocLiverIntrathoracic: 'Karaciğer intratorasik',
+    assocSystemicFeeder: 'Sistemik arter besleyici',
+    assocLowerLobe: 'Alt lob lokalizasyonu',
+    assocCordMidline: 'Kord: orta hat insersiyon',
+    assocCordLateral: 'Kord: lateral insersiyon',
+    assocPeritonealMembrane: 'Periton/amnion zarı mevcut',
+    assocNoMembrane: 'Koruyucu membran yok',
+    assocLiverExternal: 'Karaciğer defekt dışında',
+    assocFreeBowel: 'Serbest bağırsak ansları',
+    assocBowelDilation: 'Bağırsak dilatasyonu',
+    assocAscites: 'Asit',
+    assocMeconiumAbnormal: 'Mekonyum sinyali anormal',
+    assocPelvisDilation: 'Pelvis dilatasyonu',
+    assocCalyxDilation: 'Kaliks dilatasyonu',
+    assocUreterDilation: 'Üreter dilatasyonu',
+    assocMultipleCysts: 'Multipl kist',
+    assocNoParenchyma: 'Parankim yok/silik',
+    assocDisconnectedCysts: 'Bağlantısız kistler',
+    assocLargeKidney: 'Büyük böbrek',
+    assocCorticomedullary: 'Kortikomedüller ayrım silik',
+    assocBilateralInvolvement: 'Bilateral tutulum',
+    assocMegacystis: 'Megasistis',
+    assocBilateralHydro: 'Bilateral hidroüreteronefroz',
+    assocKeyholeSign: 'Keyhole sign',
+    assocSeptation: 'Septasyon',
+    assocMultilocular: 'Multilokuler',
+    assocAirwayCompression: 'Hava yolu basısı',
+    assocBoneDefect: 'Vertebral kemik defekti',
+    assocSpinalCordTethered: 'Spinal kord çekilmiş/tethered',
+    assocChiariII: 'Chiari II bulguları (eşlik)',
+    assocKyphoticPosture: 'Kifotik postür',
+    assocExophytic: 'Ekzofitik komponent',
+    assocPresacral: 'Presakral komponent',
+    assocT2DarkBands: 'T2 koyu intraplasental bantlar',
+    assocMyometrialThinning: 'Miyometrial incelme',
+    assocUterineBulging: 'Uterin dış kontur bulging',
+    assocHeterogeneousPlacenta: 'Heterojen plasenta',
+    assocAbnormalVascularity: 'Anormal vaskülarite',
+    assocBladderInvasion: 'Mesane invazyonu',
+    assocHydrops: 'Hidrops fetalis',
+    assocPolyhydramnios: 'Polihidramnios',
+    assocOligohydramnios: 'Oligohidramnios',
+    assocFacialAnomaly: 'Yüz orta hat anomalisi',
+    assocChromosomalRisk: 'Kromozomal risk artmış',
+    assocGeneralizedEdema: 'Jeneralize subkutan ödem',
+    /* Associated groups */
+    groupSSM: 'SSM',
+    groupGeneral: 'Genel',
+    groupThorax: 'Toraks',
+    groupAbdomen: 'Abdomen',
+    groupGUS: 'GÜS',
+    groupNeck: 'Boyun',
+    groupSpinal: 'Spinal',
+    groupPlacenta: 'Plasenta',
+    /* System labels */
+    sysSSM: 'SSM (Beyin)',
+    sysSpinal: 'Spinal / Omurga',
+    sysFaceNeck: 'Yüz ve Boyun',
+    sysThorax: 'Toraks (Kalp / Akciğer)',
+    sysAbdomen: 'Abdomen (Karın Duvarı / GİS / KC)',
+    sysGU: 'Genitoüriner Sistem',
+    sysSkeleton: 'İskelet / Ekstremiteler',
+    /* Pathology names & notes */
+    pVentriculomegaly_name: 'Ventrikülomegali (izole)',
+    pVentriculomegaly_notes: 'İzole ventrikülomegali (atrial çap ≥10 mm). Hafif: 10–12 mm, orta: 12–15 mm, ileri: >15 mm (hidrosefali). Eşlik eden yapısal/kromozomal anomaliler açısından detaylı inceleme gereklidir.',
+    pCorpusCallosum_name: 'Korpus Kallozum Agenezisi/Disgenezisi',
+    pCorpusCallosum_notes: 'Kolposefali (oksipital hornların orantısız dilatasyonu), 3. ventrikül yükselmesi, radyal/paralel giral patern, falx persistansı. Kromozomal ve sendromik (Aicardi vb.) ilişki sorgulanmalıdır.',
+    pChiariII_name: 'Chiari II Malformasyonu',
+    pChiariII_notes: 'Açık spinal disrafizm ile birlikte küçük posterior fossa, tonsiller/vermiyan herniasyon, serebellum "banana sign", frontal kemik "lemon sign", supratentoryal ventrikülomegali.',
+    pDandyWalker_name: 'Dandy-Walker Malformasyonu',
+    pDandyWalker_notes: 'Serebellar vermis agenezi/hipoplazisi, 4. ventrikül ile devamlılık gösteren posterior fossa kistik dilatasyonu, tentoryum/torkula yükselmesi. DW varyantı ve mega sisterna magna ayırıcı tanıya alınmalıdır.',
+    pArachnoidCyst_name: 'Araknoid Kist',
+    pArachnoidCyst_notes: 'BOS sinyal özelliklerinde, ekstraaksiyel yerleşimli, keskin sınırlı kistik lezyon. Kütle etkisine göre prognoz değişir. En sık orta fossa, posterior fossa ve suprasellar yerleşim.',
+    pAqueductalStenosis_name: 'Akuaduktus Stenozu (Konjenital)',
+    pAqueductalStenosis_notes: 'Lateral ve 3. ventriküller genişlemiş, 4. ventrikül normal kalibrede (triventriküler hidrosefali). Korpus kallozum incelme, makrokrani gelişebilir. X-linked (L1CAM) form erkek fetuslarda sorgulanmalıdır.',
+    pHoloprosencephaly_name: 'Holoprozensefali',
+    pHoloprosencephaly_notes: 'Alobar: tek ventrikül, füzyone talami, falx/interhemisferik fissür yokluğu. Semilobar/lobar tiplerde bulgular daha hafif. Yüz orta hat anomalileri (siklopia, proboscis vs.) sıklıkla eşlikçidir. Trizomi 13 ilişkisi güçlüdür.',
+    pICH_name: 'Fetal İntrakranial Hemoraji',
+    pICH_notes: 'T2*/SWI (mümkünse) duyarlılık önemli. Germinal matriks, intraventriküler veya parankimal hemoraji. IUGR, alloimmün trombositopenik ilişki, TTTS sorgulanmalıdır. Hemoraji evresine göre sinyal değişkendir.',
+    pCorticalMalform_name: 'Kortikal Gelişim Malformasyonu',
+    pCorticalMalform_notes: 'Lissensefali (giri yokluğu/azalması), polimikrogiri (çok sayıda küçük giri), şizensefali (pia-ependim arası yarık) spektrumu. GA uyumlu kortikal gelişim eğrisi ile karşılaştırılmalıdır. CMV enfeksiyonu taraması önerilir.',
+    pICTeratoma_name: 'İntrakranial Teratom',
+    pICTeratoma_notes: 'Heterojen solid-kistik, yağ ve/veya kalsifikasyon komponenti barındıran kitle. Hızlı büyüme, makrokrani ve distosi riski. Prognoz genellikle kötüdür.',
+    pCPAM_name: 'Konjenital Pulmoner Havayolu Malformasyonu (CPAM/CCAM)',
+    pCPAM_notes: 'Stocker sınıflaması: Tip 1 (büyük kistler, >2 cm), Tip 2 (küçük kistler), Tip 3 (mikrokistik/solid görünüm). CVR (CPAM Volume Ratio) prognostik öneme sahiptir (>1.6 hidrops riski artar).',
+    pCDH_name: 'Konjenital Diyafragma Hernisi (CDH)',
+    pCDH_notes: 'Sol taraflı %85. Mide/bağırsak/karaciğer torasik kavitede izlenebilir. O/E LHR (observed/expected lung-to-head ratio), total fetal akciğer volümü (TFLV) ve karaciğer herniasyonu prognostik göstergelerdir.',
+    pBPS_name: 'Pulmoner Sekestrasyon (BPS)',
+    pBPS_notes: 'Sistemik (sıklıkla torasik ya da abdominal aortadan) beslenir. Homojen hiperintens üçgen/yuvarlak kitle; sıklıkla sol alt lob ya da subdiyafragmatik. Ekstralober/intralober ayırımı önemlidir. Hybrid lezyon (CPAM+BPS) ayırıcı tanıda akılda tutulmalıdır.',
+    pHydrothorax_name: 'Fetal Hidrotoraks / Plevral Efüzyon',
+    pHydrothorax_notes: 'İzole (primer şilotoraks) veya sendromik/hidropik. Akciğer hipoplazisi ve hidrops riski. Torakoamniyotik şant endikasyonu tartışılabilir.',
+    pBronchogenicCyst_name: 'Bronkogenik Kist',
+    pBronchogenicCyst_notes: 'Genellikle tek, unilokuler, keskin sınırlı kist. Paratrakeal/subkarinal mediasten yerleşimi tipik. Hava yolu basısı yapabilir.',
+    pOmphalocele_name: 'Omfalosel',
+    pOmphalocele_notes: 'Orta hat karın duvarı defekti; umbilikal kord insersiyonu defekt üzerinde. Perito/amnion membranla örtülü. Karaciğeri içeren büyük omfaloseller kromozomal/sendromik ilişkili. Beckwith-Wiedemann, trizomi 13/18 taraması.',
+    pGastroschisis_name: 'Gastroşizis',
+    pGastroschisis_notes: 'Umbilikusun sağında, tam kat karın duvarı defekti. Koruyucu membran yok, bağırsak ansları serbest olarak amniyon içinde. Genellikle izole anomali; kromozomal ilişki zayıf.',
+    pMeconiumCyst_name: 'Mekonyum Psödokisti / Peritonit',
+    pMeconiumCyst_notes: 'Intrauterin bağırsak perforasyonu sonucu, periton/psödokist duvarında kalsifikasyon, asit, dilate bağırsak ansları. Kistik fibrozis ilişkisi sorgulanmalıdır.',
+    pBowelObstruction_name: 'Fetal Barsak Obstrüksiyonu',
+    pBowelObstruction_notes: 'Proksimal obstrüksiyon (duodenal atrezi): "double-bubble" + polihidramnios. Distal obstrüksiyon: mekonyum sinyal değişimi (T1 artar, kolon kalibresi azalır). Duodenal/jejunal/ileal atrezi, Hirschsprung, mekonyum ileusu ayırıcı tanıları.',
+    pHydronephrosis_name: 'İleri Hidronefroz / Pelvikaliektazi',
+    pHydronephrosis_notes: 'APD (anteroposterior pelvik çap) ≥10 mm 3. trimesterde anlamlı. UPJ obstrüksiyonu, vezikoüreteral reflü, megaüreter, duplike toplayıcı sistem (ektopik üreterosel) ayırıcı tanıya alınır.',
+    pMCDK_name: 'Multikistik Displastik Böbrek (MCDK)',
+    pMCDK_notes: 'Birbirine bağlanmayan, değişken boyutlu multipl kist; aralarda normal parankim yok veya displastik. Nonfonksiyone böbrek. Kontralateral böbrek anomalisi (agenezi, VUR) sorgulanmalıdır.',
+    pARPKD_name: 'Otozomal Resesif Polikistik Böbrek Hastalığı (ARPKD)',
+    pARPKD_notes: 'Bilateral simetrik büyük, T2 hiperintens böbrekler; kortikomedüller ayrım silikleşmiş. Belirgin oligohidramnios/anhidramnios ve buna sekonder akciğer hipoplazisi (Potter sekansı) eşlik eder.',
+    pLUTO_name: 'Alt Üriner Sistem Obstrüksiyonu (LUTO / PUV)',
+    pLUTO_notes: 'Tipik olarak erkek fetusta, masif distandü mesane, "keyhole" bulgusu (dilate posterior üretra). Bilateral hidroüreteronefroz ve oligohidramnios/anhidramnios. Posterior üretral valv en sık etyoloji. Vezikoamniyotik şant endikasyonu değerlendirilir.',
+    pOvarianCyst_name: 'Fetal Over Kisti',
+    pOvarianCyst_notes: 'Kız fetusta, alt batın/pelviste tek, unilokuler kist. Komplike (hemoraji/torsiyon) olursa debris seviyelenmesi ve mikst sinyal. Genellikle basit kistler spontan regrese olur.',
+    pCysticHygroma_name: 'Kistik Higroma / Lenfatik Malformasyon',
+    pCysticHygroma_notes: 'Multiseptalı, multilokuler kistik lezyon; özellikle boyun posterior yerleşim tipiktir. Turner sendromu, trizomi 21/18/13, kalp anomalileri ve hidrops ile birlikteliği güçlüdür.',
+    pCervicalTeratoma_name: 'Servikal Teratom',
+    pCervicalTeratoma_notes: 'Heterojen solid-kistik yapıda, yağ ve kalsifikasyon komponenti içeren büyük boyun kitlesi. Hava yolu basısı nedeniyle doğumda EXIT (ex utero intrapartum treatment) prosedürü planlaması gerekebilir.',
+    pSCT_name: 'Sakrokoksigeal Teratom (SCT)',
+    pSCT_notes: 'Altman sınıflaması (Tip I–IV) eksternal/intrapelvik komponent oranına göre. Heterojen solid-kistik yapı. Yüksek-volümlü/vaskülarize lezyonlarda yüksek-output kalp yetmezliği ve hidrops riski mevcuttur.',
+    pMyelomeningocele_name: 'Meningomiyelosel / Spina Bifida',
+    pMyelomeningocele_notes: 'Açık spinal disrafizm; arka vertebral kemer defekti, meningosel/miyelomeningosel kesesi. Chiari II malformasyonu ve ventrikülomegali neredeyse tüm olgularda eşlik eder. Açılı kifotik postür görülebilir.',
+    pPAS_name: 'Plasenta Akreata Spektrumu (PAS)',
+    pPAS_notes: 'Başlıca MR bulguları: intraplasental T2 koyu bantlar, miyometrial incelme (<1 mm), uterin dış kontur bulging, heterojen plasenta sinyali, anormal vaskülarite, komşu organ invazyonu (mesane vb.). Önceki sezeryan öyküsü ve plasenta previa güçlü risk faktörleridir.',
+  },
+  en: {
+    appTitle: 'Fetal MRI Evaluation Module',
+    appSubtitle: 'Multi-system · Multi-lesion · Differential diagnosis scoring',
+    reset: 'Reset',
+    resetConfirm: 'Reset all data?',
+    back: '← Back',
+    next: 'Next →',
+    toReport: 'Report →',
+    steps: ['Clinical','Biometry','AF / Placenta','System Survey','Lesion?','Lesion: Organ','Lesion: Size','Lesion: Signal','Lesion: Content','Lesion: Associated','Lesion: Summary','Overall Summary','Report'],
+    loopPrefix: 'Lesion: ',
+    /* Step 0 */
+    s0Title: 'Clinical Information',
+    s0Sub: 'Basic clinical data of the patient and the examination',
+    s0PatientName: 'Patient Name (opt.)',
+    s0PatientNamePh: '-',
+    s0ProtocolNo: 'Protocol No (opt.)',
+    s0ProtocolNoPh: '-',
+    s0MaternalAge: 'Maternal Age',
+    s0MaternalAgePh: 'years',
+    s0GA: 'Gestational Age (GA) *',
+    s0GAPh: 'e.g. 24+2',
+    s0GravPar: 'Gravida/Parity',
+    s0GravParPh: 'G3 P1',
+    s0PrevCS: 'Previous C-Section',
+    s0PrevCSYes: 'Yes',
+    s0Indication: 'Request Indication *',
+    s0IndicationPh: 'US finding, abdominal wall defect, ventriculomegaly, etc.',
+    s0USFindings: 'Prior US Findings',
+    s0USFindingsPh: 'Summary of previous ultrasound findings',
+    s0Hint: '* Filling marked fields is recommended. Data will be included in the report header.',
+    /* Step 1 */
+    s1Title: 'Fetal Biometry and Status',
+    s1Sub: 'Biometry measurements and pregnancy type',
+    s1Pregnancy: 'Pregnancy',
+    s1FetusCount: 'Number of Fetuses',
+    s1Singleton: 'Singleton',
+    s1Twin: 'Twin',
+    s1Multiple: 'Multiple',
+    s1Presentation: 'Presentation',
+    s1Vertex: 'Vertex',
+    s1Breech: 'Breech',
+    s1Transverse: 'Transverse',
+    s1Oblique: 'Oblique',
+    s1Biometry: 'Biometry Measurements (mm / g)',
+    s1BPD: 'BPD (mm)',
+    s1BPDPh: 'e.g. 62',
+    s1HC: 'HC (mm)',
+    s1HCPh: 'e.g. 230',
+    s1AC: 'AC (mm)',
+    s1ACPh: 'e.g. 210',
+    s1FL: 'FL (mm)',
+    s1FLPh: 'e.g. 46',
+    s1EFW: 'Estimated Fetal Weight (EFW) (g)',
+    s1EFWPh: 'e.g. 850',
+    s1Percentile: 'Percentile Note',
+    s1PercentilePh: 'e.g. 35th percentile, consistent with GA',
+    /* Step 2 */
+    s2Title: 'Amniotic Fluid and Placenta',
+    s2Sub: 'Evaluation of adnexal structures of the pregnancy',
+    s2AFSection: 'Amniotic Fluid',
+    s2AFAmount: 'AF Volume',
+    s2Oligo: 'Oligohydramnios',
+    s2SlightlyDecreased: 'Mildly decreased',
+    s2Normal: 'Normal',
+    s2SlightlyIncreased: 'Mildly increased',
+    s2Poly: 'Polyhydramnios',
+    s2Anhydramnios: 'Anhydramnios',
+    s2AFIMVP: 'AFI / MVP',
+    s2AFIMVPPh: 'AFI: 14 cm / MVP: 5.2 cm',
+    s2Placenta: 'Placenta',
+    s2Location: 'Location',
+    s2Anterior: 'Anterior',
+    s2Posterior: 'Posterior',
+    s2Fundal: 'Fundal',
+    s2Lateral: 'Lateral',
+    s2Grade: 'Grade',
+    s2PreviaLabel: 'Placenta Previa',
+    s2PreviaYes: 'Yes',
+    s2UmbilicalCord: 'Umbilical Cord',
+    s2ThreeVessel: '3 vessels',
+    s2TwoVesselSUA: '2 vessels (SUA)',
+    s2Velamentous: 'Velamentous insertion',
+    s2Marginal: 'Marginal insertion',
+    s2Hint: 'If placenta accreta spectrum is suspected — especially anterior-previa cases — myometrial thinning, T2 dark bands, and uterine bulging may be evaluated by adding a lesion.',
+    /* Step 3 */
+    s3Title: 'System-Based Quick Anatomic Survey',
+    s3Sub: 'Mark your overall assessment for each system. Abnormalities will be detailed as lesions in the next step.',
+    s3StatusNormal: 'Normal',
+    s3StatusAbnormal: 'Abnormal',
+    s3StatusNE: 'Not evaluable',
+    s3NotePh: 'Brief note (opt.)',
+    /* Step 4 */
+    s4Title: 'Lesion / Anomaly Characterization',
+    s4Sub: 'Is there a lesion in the fetus or placenta that requires detailed characterization?',
+    s4Yes: 'Yes, I will add a lesion',
+    s4No: 'No significant lesion',
+    s4AddedLesions: 'Added Lesions',
+    s4NoLesionYet: 'No lesion added yet. Selecting "Yes" above automatically starts a new lesion.',
+    s4OrganNotSelected: '(organ not selected)',
+    s4Edit: 'Edit',
+    s4Delete: 'Delete',
+    s4AddNew: '+ Add New Lesion',
+    s4NoLesionHint: 'Lesion will be skipped. Overall summary and report will be generated in the next step.',
+    /* Step 5 */
+    s5Title: 'Lesion #{n} — Organ & Location',
+    s5Sub: 'Which organ/system is affected and where is the lesion located?',
+    s5OrganSystem: 'Organ / System',
+    s5SubLocation: 'Sub-Location',
+    s5NoSubLoc: 'No sub-location defined for this organ.',
+    s5NoLesion: 'No active lesion found.',
+    /* Step 6 */
+    s6Title: 'Lesion #{n} — Size and Morphology',
+    s6Sub: 'Three dimensions (mm) and overall shape of the lesion',
+    s6Dimensions: 'Dimensions (mm)',
+    s6Dim1: 'Dimension 1',
+    s6Dim2: 'Dimension 2',
+    s6Dim3: 'Dimension 3',
+    s6DimPh: 'mm',
+    s6Shape: 'Shape',
+    s6Round: 'Round',
+    s6Oval: 'Oval',
+    s6Lobulated: 'Lobulated',
+    s6Irregular: 'Irregular',
+    s6Tubular: 'Tubular / elongated',
+    /* Step 7 */
+    s7Title: 'Lesion #{n} — Signal Characteristics',
+    s7Sub: 'Dominant T2 and T1 signal characteristics',
+    s7T2: 'T2-Weighted Signal',
+    s7T1: 'T1-Weighted Signal',
+    s7Hint: 'T2 hyperintense + T1 hypointense → simple fluid/cyst. T1 hyperintense → hemorrhage or meconium. T2 heterogeneous + T1 heterogeneous → suggests mixed-content mass such as teratoma.',
+    /* Step 8 */
+    s8Title: 'Lesion #{n} — Content, Border, Diffusion',
+    s8Sub: 'Diffusion restriction status and morphological details of the lesion',
+    s8Content: 'Content',
+    s8Border: 'Border Characteristics',
+    s8DWI: 'Diffusion (DWI)',
+    /* Step 9 */
+    s9Title: 'Lesion #{n} — Associated Findings',
+    s9Sub: 'Mark additional findings observed with this lesion or pathology',
+    s9FreeNote: 'Free Note (specific to this lesion)',
+    s9FreeNotePh: 'e.g. Airway patent to 3rd-order bronchi; mediastinal shift 2 cm...',
+    /* Step 10 */
+    s10Title: 'Lesion #{n} — Summary & Differential Diagnosis',
+    s10Sub: 'Top-ranked differential diagnoses calculated for this lesion',
+    s10LesionSummary: 'Lesion Summary',
+    s10Organ: 'Organ',
+    s10Location: 'Location',
+    s10Size: 'Size',
+    s10Shape: 'Shape',
+    s10Signals: 'T2 / T1',
+    s10Content: 'Content',
+    s10Border: 'Border',
+    s10DWI: 'DWI',
+    s10Associated: 'Associated',
+    s10AssociatedCount: '{n} finding(s)',
+    s10DDXTop5: 'Differential Diagnosis (Top 5)',
+    s10DDXNoResult: 'No scorable pathology. Check organ/location and parameters.',
+    s10DDXColPathology: 'Pathology',
+    s10DDXColProbability: 'Probability',
+    s10Delete: 'Delete this lesion',
+    s10AddAnother: '+ Add Another Lesion',
+    s10Finish: 'Finish / Go to Summary →',
+    /* Step 11 */
+    s11Title: 'Overall Summary — All Lesions',
+    s11Sub: '{n} lesion(s) evaluated. You may edit below or proceed to the report.',
+    s11NoLesion: 'No lesions added. Report will be generated without a lesion section.',
+    s11DDXCol: 'Differential Diagnosis',
+    s11Probability: 'Probability',
+    s11NoDDX: 'No scored pathology for this lesion.',
+    s11Edit: 'Edit',
+    s11Delete: 'Delete',
+    s11AddNew: '+ Add New Lesion',
+    /* Step 12 */
+    s12Title: 'Report',
+    s12Sub: 'Preview — you can copy, download as HTML, or print',
+    s12Copy: 'Copy to Clipboard',
+    s12Copied: '✓ Copied',
+    s12DownloadHTML: 'Download HTML',
+    s12Print: 'Print / PDF',
+    s12BackToSummary: '← Back to Summary',
+    s12FileName: 'fetal_mri_report.html',
+    /* Report text */
+    rTitle: 'FETAL MRI REPORT',
+    rClinical: 'CLINICAL INFORMATION',
+    rPatient: 'Patient',
+    rProtocol: 'Protocol No',
+    rMaternalAge: 'Maternal Age',
+    rGA: 'Gestational Age (GA)',
+    rGravPar: 'Gravida/Parity',
+    rPrevCS: 'Previous C-Section',
+    rPrevCSYes: 'Yes',
+    rIndication: 'Indication',
+    rUSFindings: 'Prior US Findings',
+    rExamination: 'EXAMINATION',
+    rExamText: 'Multiplanar T2-weighted HASTE/SSFSE, T1-weighted GE, EPI-DWI and (when applicable) T2* susceptibility sequences were obtained for fetal evaluation.',
+    rBiometry: 'FETAL STATUS AND BIOMETRY',
+    rSingleton: 'Singleton pregnancy',
+    rTwin: 'Twin pregnancy',
+    rMultiple: 'Multiple pregnancy',
+    rPresentation: '{type} presentation',
+    rBiometryLine: 'Biometry',
+    rAFPlacenta: 'AMNIOTIC FLUID AND PLACENTA',
+    rAFMap: {
+      'oligo': 'Oligohydramnios',
+      'hafif-azalmis': 'Mildly decreased amniotic fluid',
+      'normal': 'Amniotic fluid volume normal',
+      'hafif-artmis': 'Mildly increased amniotic fluid',
+      'poly': 'Polyhydramnios',
+      'anhidramnios': 'Anhydramnios'
+    },
+    rAFDefault: 'Amniotic fluid evaluated',
+    rPlacentaLine: 'Placenta',
+    rPlacentaLocation: '{loc} location',
+    rPlacentaPrevia: 'Placenta previa present.',
+    rUDMap: {
+      '3-damar': 'Three vessels identified in the umbilical cord',
+      '2-damar-sua': 'Single umbilical artery (SUA) noted',
+      'velamentoz': 'Velamentous cord insertion',
+      'marginal': 'Marginal cord insertion'
+    },
+    rSystems: 'SYSTEMIC EVALUATION',
+    rSysNormal: 'Evaluable portions are age-appropriate; no significant pathology identified.',
+    rSysAbnormal: 'ABNORMAL findings present.',
+    rSysAbnormalDetail: ' Detailed evaluation is provided below under the lesion heading.',
+    rSysNE: 'Adequate evaluation could not be performed.',
+    rLesionSection: 'DETAILED LESION EVALUATION',
+    rLesionHeader: 'Lesion #{n}',
+    rLesionInText: 'lesion is identified.',
+    rLesionSizeNA: 'size unmeasurable',
+    rLesionSizeSuffix: ' mm in size',
+    rLesionSignal: 'Signal',
+    rLesionContent: 'Content',
+    rLesionDWI: 'DWI',
+    rLesionAssoc: 'Associated findings',
+    rLesionNote: 'Note',
+    rT2prefix: 'on T2W',
+    rT1prefix: 'on T1W',
+    rShapeSuffix: 'shaped',
+    rBorderSuffix: 'margin',
+    rComment: 'IMPRESSION',
+    rCommentSummary: 'Fetal MRI examination{gw}; biometry, amniotic fluid, and placenta assessment are reported as stated above.',
+    rCommentGW: ' at {ga} gestational age',
+    rDDXHeader: 'Differential diagnoses for Lesion #{n} ({organ}):',
+    rDDXNone: '  No scorable pathology found; clinical and further evaluation recommended.',
+    rDDXMatch: '% match',
+    rDDXTopNote: 'Note on most likely diagnosis ({name})',
+    rNoLesionFound: 'No lesion/anomaly requiring detailed characterization was identified in the fetus.',
+    rClosing: 'Correlation with clinical and obstetric ultrasound findings is recommended. Further evaluation (genetic counseling, detailed cardiac echocardiography, multidisciplinary consultation) should be planned based on indication.',
+    rFooter: 'This report was generated by the fetal MRI evaluation assistant tool.',
+    /* Organ labels */
+    orgSSM: 'CNS (Brain)',
+    orgSpinal: 'Spinal / Spine',
+    orgNeck: 'Neck',
+    orgThorax: 'Thorax',
+    orgAbdWall: 'Abdominal Wall',
+    orgAbdGI: 'Abdomen (GI/Peritoneum)',
+    orgGU: 'Genitourinary',
+    orgPlacenta: 'Placenta',
+    /* Location labels */
+    locLateralVentricle: 'Lateral ventricle',
+    locBrainMidline: 'Brain midline',
+    locBrainParenchyma: 'Brain parenchyma',
+    locBrainCortex: 'Brain cortex',
+    locPosteriorFossa: 'Posterior fossa',
+    locExtraaxial: 'Extra-axial',
+    locSellar: 'Sellar region',
+    locMiddleFossa: 'Middle cranial fossa',
+    locSupratentorial: 'Supratentorial',
+    locThoracalSpinal: 'Thoracic spinal',
+    locLumbarSpinal: 'Lumbar spinal',
+    locSacralSpinal: 'Sacral spinal',
+    locSacrum: 'Sacrum / coccyx',
+    locPerineum: 'Perineum',
+    locNeckAnterior: 'Anterior neck',
+    locNeckPosterior: 'Posterior neck',
+    locNeckLateral: 'Lateral neck',
+    locSubmandibular: 'Submandibular',
+    locLeftLung: 'Left lung',
+    locRightLung: 'Right lung',
+    locLung: 'Lung (unspecified)',
+    locMediastinum: 'Mediastinum',
+    locPleura: 'Pleura',
+    locSubdiaphragmatic: 'Subdiaphragmatic',
+    locUmbilicus: 'Umbilicus / umbilical region',
+    locMidline: 'Midline',
+    locRightParaUmbilical: 'Right para-umbilical',
+    locAbdomen: 'Abdominal cavity',
+    locPeritoneum: 'Peritoneum',
+    locLowerAbdomen: 'Lower abdomen',
+    locPelvis: 'Pelvis',
+    locKidney: 'Kidney',
+    locBilateralKidney: 'Bilateral kidneys',
+    locRenalPelvis: 'Renal pelvis',
+    locUreter: 'Ureter',
+    locBladder: 'Bladder',
+    locPlacenta: 'Placenta',
+    /* Signal options */
+    t2Hyperintense: 'Hyperintense',
+    t2Isointense: 'Isointense',
+    t2Hypointense: 'Hypointense',
+    t2Heterogeneous: 'Heterogeneous',
+    t2Homogeneous: 'Homogeneous',
+    t1Hyperintense: 'Hyperintense',
+    t1Isointense: 'Isointense',
+    t1Hypointense: 'Hypointense',
+    t1Heterogeneous: 'Heterogeneous',
+    t1Variable: 'Variable',
+    t1MeconiumUp: 'Meconium signal ↑',
+    /* Content options */
+    contentCystic: 'Cystic',
+    contentSolid: 'Solid',
+    contentMixed: 'Cystic-solid mixed',
+    contentNE: 'Not evaluable',
+    /* Border options */
+    borderSharp: 'Sharp',
+    borderRegular: 'Regular',
+    borderIrregular: 'Irregular',
+    borderLobulated: 'Lobulated',
+    borderIndistinct: 'Indistinct',
+    /* DWI options */
+    dwiRestricted: 'Restricted diffusion',
+    dwiUnrestricted: 'Unrestricted',
+    dwiHeterogeneous: 'Heterogeneous',
+    dwiNE: 'Not evaluable',
+    /* Associated findings */
+    assocVentricularEnlargement: 'Ventricular enlargement',
+    assocAtrialWidth: 'Atrial width >10 mm',
+    assocTriventricularHydrocephalus: 'Triventricular hydrocephalus',
+    assocColpocephaly: 'Colpocephaly',
+    assocThirdVentricle: '3rd ventricle elevated',
+    assocRadialGyrus: 'Radial gyral pattern',
+    assocFourthVentricleWide: '4th ventricle wide',
+    assocFourthVentricleNormal: '4th ventricle normal',
+    assocVermisAgenesis: 'Vermis agenesis/hypoplasia',
+    assocPosteriorFossaEnlarged: 'Posterior fossa enlargement',
+    assocTorcula: 'Torcula/tentorium elevation',
+    assocFusedThalami: 'Fused thalami',
+    assocMonoventricle: 'Monoventricle',
+    assocFalxAbsent: 'Falx absent',
+    assocAbnormalGyrus: 'Abnormal gyral pattern',
+    assocCorticalThickening: 'Cortical thickening',
+    assocParenchymalCleft: 'Parenchymal cleft defect',
+    assocPeriventricular: 'Periventricular signal change',
+    assocTonsillarHerniation: 'Tonsillar herniation',
+    assocSmallPosteriorFossa: 'Small posterior fossa',
+    assocBananaSign: 'Banana sign (cerebellum)',
+    assocLemonSign: 'Lemon sign (frontal)',
+    assocMacrocephaly: 'Macrocephaly',
+    assocFatSignal: 'Fat signal component',
+    assocCalcification: 'Calcification',
+    assocMassEffect: 'Mass effect',
+    assocMediastinalShift: 'Mediastinal shift',
+    assocLungHypoplasia: 'Lung hypoplasia',
+    assocStomachIntrathoracic: 'Stomach intrathoracic',
+    assocLiverIntrathoracic: 'Liver intrathoracic',
+    assocSystemicFeeder: 'Systemic arterial feeder',
+    assocLowerLobe: 'Lower lobe location',
+    assocCordMidline: 'Cord: midline insertion',
+    assocCordLateral: 'Cord: lateral insertion',
+    assocPeritonealMembrane: 'Peritoneal/amnion membrane present',
+    assocNoMembrane: 'No protective membrane',
+    assocLiverExternal: 'Liver outside defect',
+    assocFreeBowel: 'Free bowel loops',
+    assocBowelDilation: 'Bowel dilation',
+    assocAscites: 'Ascites',
+    assocMeconiumAbnormal: 'Abnormal meconium signal',
+    assocPelvisDilation: 'Pelvis dilation',
+    assocCalyxDilation: 'Calyceal dilation',
+    assocUreterDilation: 'Ureteral dilation',
+    assocMultipleCysts: 'Multiple cysts',
+    assocNoParenchyma: 'No/absent parenchyma',
+    assocDisconnectedCysts: 'Non-communicating cysts',
+    assocLargeKidney: 'Large kidney',
+    assocCorticomedullary: 'Corticomedullary differentiation loss',
+    assocBilateralInvolvement: 'Bilateral involvement',
+    assocMegacystis: 'Megacystis',
+    assocBilateralHydro: 'Bilateral hydroureteronephrosis',
+    assocKeyholeSign: 'Keyhole sign',
+    assocSeptation: 'Septation',
+    assocMultilocular: 'Multilocular',
+    assocAirwayCompression: 'Airway compression',
+    assocBoneDefect: 'Vertebral bone defect',
+    assocSpinalCordTethered: 'Spinal cord tethered',
+    assocChiariII: 'Chiari II findings (associated)',
+    assocKyphoticPosture: 'Kyphotic posture',
+    assocExophytic: 'Exophytic component',
+    assocPresacral: 'Presacral component',
+    assocT2DarkBands: 'T2 dark intraplacental bands',
+    assocMyometrialThinning: 'Myometrial thinning',
+    assocUterineBulging: 'Uterine outer contour bulging',
+    assocHeterogeneousPlacenta: 'Heterogeneous placenta',
+    assocAbnormalVascularity: 'Abnormal vascularity',
+    assocBladderInvasion: 'Bladder invasion',
+    assocHydrops: 'Hydrops fetalis',
+    assocPolyhydramnios: 'Polyhydramnios',
+    assocOligohydramnios: 'Oligohydramnios',
+    assocFacialAnomaly: 'Facial midline anomaly',
+    assocChromosomalRisk: 'Chromosomal risk increased',
+    assocGeneralizedEdema: 'Generalized subcutaneous edema',
+    /* Associated groups */
+    groupSSM: 'CNS',
+    groupGeneral: 'General',
+    groupThorax: 'Thorax',
+    groupAbdomen: 'Abdomen',
+    groupGUS: 'GU System',
+    groupNeck: 'Neck',
+    groupSpinal: 'Spinal',
+    groupPlacenta: 'Placenta',
+    /* System labels */
+    sysSSM: 'CNS (Brain)',
+    sysSpinal: 'Spinal / Spine',
+    sysFaceNeck: 'Face and Neck',
+    sysThorax: 'Thorax (Heart / Lung)',
+    sysAbdomen: 'Abdomen (Abdominal Wall / GI / Liver)',
+    sysGU: 'Genitourinary System',
+    sysSkeleton: 'Skeleton / Extremities',
+    /* Pathology names & notes */
+    pVentriculomegaly_name: 'Ventriculomegaly (isolated)',
+    pVentriculomegaly_notes: 'Isolated ventriculomegaly (atrial diameter ≥10 mm). Mild: 10–12 mm, moderate: 12–15 mm, severe: >15 mm (hydrocephalus). Detailed evaluation for associated structural/chromosomal anomalies is required.',
+    pCorpusCallosum_name: 'Corpus Callosum Agenesis/Dysgenesis',
+    pCorpusCallosum_notes: 'Colpocephaly (disproportionate dilatation of occipital horns), 3rd ventricle elevation, radial/parallel gyral pattern, falx persistence. Chromosomal and syndromic associations (Aicardi, etc.) should be investigated.',
+    pChiariII_name: 'Chiari II Malformation',
+    pChiariII_notes: 'Open spinal dysraphism with small posterior fossa, tonsillar/vermian herniation, cerebellar "banana sign", frontal bone "lemon sign", supratentorial ventriculomegaly.',
+    pDandyWalker_name: 'Dandy-Walker Malformation',
+    pDandyWalker_notes: 'Cerebellar vermis agenesis/hypoplasia, cystic dilation of posterior fossa in continuity with the 4th ventricle, tentorium/torcula elevation. Dandy-Walker variant and mega cisterna magna should be included in the differential.',
+    pArachnoidCyst_name: 'Arachnoid Cyst',
+    pArachnoidCyst_notes: 'Extra-axial, sharply marginated cystic lesion with CSF signal characteristics. Prognosis varies with mass effect. Most common locations: middle fossa, posterior fossa, suprasellar.',
+    pAqueductalStenosis_name: 'Aqueductal Stenosis (Congenital)',
+    pAqueductalStenosis_notes: 'Lateral and 3rd ventricles enlarged, 4th ventricle normal caliber (triventricular hydrocephalus). Corpus callosum thinning, macrocephaly may develop. X-linked form (L1CAM) should be considered in male fetuses.',
+    pHoloprosencephaly_name: 'Holoprosencephaly',
+    pHoloprosencephaly_notes: 'Alobar: single ventricle, fused thalami, absence of falx/interhemispheric fissure. Semilobar/lobar types show milder findings. Facial midline anomalies (cyclopia, proboscis, etc.) frequently accompany. Strong association with trisomy 13.',
+    pICH_name: 'Fetal Intracranial Hemorrhage',
+    pICH_notes: 'T2*/SWI sensitivity is important (when available). Germinal matrix, intraventricular or parenchymal hemorrhage. IUGR, alloimmune thrombocytopenia, TTTS should be investigated. Signal varies with stage of hemorrhage.',
+    pCorticalMalform_name: 'Cortical Development Malformation',
+    pCorticalMalform_notes: 'Spectrum of lissencephaly (absent/reduced gyri), polymicrogyria (multiple small gyri), schizencephaly (pia-ependymal cleft). Comparison with GA-appropriate cortical development curve is required. CMV infection screening is recommended.',
+    pICTeratoma_name: 'Intracranial Teratoma',
+    pICTeratoma_notes: 'Heterogeneous solid-cystic mass containing fat and/or calcification components. Risk of rapid growth, macrocephaly, and dystocia. Prognosis is generally poor.',
+    pCPAM_name: 'Congenital Pulmonary Airway Malformation (CPAM/CCAM)',
+    pCPAM_notes: 'Stocker classification: Type 1 (large cysts, >2 cm), Type 2 (small cysts), Type 3 (microcystic/solid appearance). CVR (CPAM Volume Ratio) is prognostically important (>1.6 increases hydrops risk).',
+    pCDH_name: 'Congenital Diaphragmatic Hernia (CDH)',
+    pCDH_notes: 'Left-sided in 85%. Stomach/bowel/liver may be visible in the thoracic cavity. O/E LHR (observed/expected lung-to-head ratio), total fetal lung volume (TFLV), and liver herniation are prognostic indicators.',
+    pBPS_name: 'Pulmonary Sequestration (BPS)',
+    pBPS_notes: 'Supplied by systemic (usually thoracic or abdominal aortic) arteries. Homogeneously hyperintense triangular/rounded mass; most often left lower lobe or subdiaphragmatic. Extralobar/intralobar distinction is important. Hybrid lesion (CPAM+BPS) should be kept in mind.',
+    pHydrothorax_name: 'Fetal Hydrothorax / Pleural Effusion',
+    pHydrothorax_notes: 'Isolated (primary chylothorax) or syndromic/hydropic. Risk of lung hypoplasia and hydrops. Thoracoamniotic shunting may be considered.',
+    pBronchogenicCyst_name: 'Bronchogenic Cyst',
+    pBronchogenicCyst_notes: 'Usually solitary, unilocular, sharply marginated cyst. Paratracheal/subcarinal mediastinal location is typical. May cause airway compression.',
+    pOmphalocele_name: 'Omphalocele',
+    pOmphalocele_notes: 'Midline abdominal wall defect; umbilical cord insertion is at the defect. Covered by peritoneal/amniotic membrane. Large omphaloceles containing liver are associated with chromosomal/syndromic conditions. Beckwith-Wiedemann, trisomy 13/18 screening.',
+    pGastroschisis_name: 'Gastroschisis',
+    pGastroschisis_notes: 'Full-thickness abdominal wall defect to the right of the umbilicus. No protective membrane; bowel loops float freely in amniotic fluid. Usually an isolated anomaly; chromosomal association is weak.',
+    pMeconiumCyst_name: 'Meconium Pseudocyst / Peritonitis',
+    pMeconiumCyst_notes: 'Result of intrauterine bowel perforation; calcification in peritoneum/pseudocyst wall, ascites, dilated bowel loops. Cystic fibrosis association should be investigated.',
+    pBowelObstruction_name: 'Fetal Bowel Obstruction',
+    pBowelObstruction_notes: 'Proximal obstruction (duodenal atresia): "double-bubble" + polyhydramnios. Distal obstruction: meconium signal change (T1 increases, colon caliber decreases). Differentials: duodenal/jejunal/ileal atresia, Hirschsprung, meconium ileus.',
+    pHydronephrosis_name: 'Severe Hydronephrosis / Pelvicaliectasis',
+    pHydronephrosis_notes: 'APD (anteroposterior pelvic diameter) ≥10 mm is significant in the 3rd trimester. UPJ obstruction, vesicoureteral reflux, megaureter, duplicated collecting system (ectopic ureterocele) are included in the differential.',
+    pMCDK_name: 'Multicystic Dysplastic Kidney (MCDK)',
+    pMCDK_notes: 'Multiple non-communicating cysts of variable size; no normal parenchyma in between, or dysplastic. Non-functional kidney. Contralateral kidney anomaly (agenesis, VUR) should be investigated.',
+    pARPKD_name: 'Autosomal Recessive Polycystic Kidney Disease (ARPKD)',
+    pARPKD_notes: 'Bilaterally symmetrically enlarged, T2 hyperintense kidneys; corticomedullary differentiation is lost. Marked oligohydramnios/anhydramnios and secondary lung hypoplasia (Potter sequence) accompany.',
+    pLUTO_name: 'Lower Urinary Tract Obstruction (LUTO / PUV)',
+    pLUTO_notes: 'Typically in male fetus; massively distended bladder, "keyhole" sign (dilated posterior urethra). Bilateral hydroureteronephrosis and oligohydramnios/anhydramnios. Posterior urethral valve is the most common etiology. Vesicoamniotic shunting may be considered.',
+    pOvarianCyst_name: 'Fetal Ovarian Cyst',
+    pOvarianCyst_notes: 'Solitary unilocular cyst in the lower abdomen/pelvis of a female fetus. Complicated (hemorrhage/torsion) lesions show debris layering and mixed signal. Simple cysts usually regress spontaneously.',
+    pCysticHygroma_name: 'Cystic Hygroma / Lymphatic Malformation',
+    pCysticHygroma_notes: 'Multiseptated, multilocular cystic lesion; posterior neck location is typical. Strong associations with Turner syndrome, trisomy 21/18/13, cardiac anomalies, and hydrops.',
+    pCervicalTeratoma_name: 'Cervical Teratoma',
+    pCervicalTeratoma_notes: 'Large neck mass of heterogeneous solid-cystic structure with fat and calcification components. Airway compression may necessitate EXIT (ex utero intrapartum treatment) procedure planning at delivery.',
+    pSCT_name: 'Sacrococcygeal Teratoma (SCT)',
+    pSCT_notes: 'Altman classification (Type I–IV) based on external/intrapelvic component ratio. Heterogeneous solid-cystic structure. High-volume/vascularized lesions carry risk of high-output cardiac failure and hydrops.',
+    pMyelomeningocele_name: 'Myelomeningocele / Spina Bifida',
+    pMyelomeningocele_notes: 'Open spinal dysraphism; posterior vertebral arch defect, meningocele/myelomeningocele sac. Chiari II malformation and ventriculomegaly accompany in nearly all cases. Angular kyphotic posture may be seen.',
+    pPAS_name: 'Placenta Accreta Spectrum (PAS)',
+    pPAS_notes: 'Key MRI findings: intraplacental T2 dark bands, myometrial thinning (<1 mm), uterine outer contour bulging, heterogeneous placental signal, abnormal vascularity, adjacent organ invasion (bladder, etc.). Prior cesarean and placenta previa are strong risk factors.',
+  }
+})[RV_LOCALE];
+
+/* --------------------------------------------------------------------------
+   PATOLOJİ VERİTABANI (LESION_DB) — 29 patoloji
+   Her patolojide:
+     organs:     [array] — ana organ/sistem eşleşmesi (en yüksek puan)
+     locations:  [array] — alt-lokalizasyon
+     t2, t1:     [array] — sinyal özellikleri
+     contents:   [array] — içerik (kistik/solid/karışık)
+     borders:    [array] — sınır
+     dwi:        [array] — difüzyon
+     associated: [array] — eşlik eden bulgular
+     notes:      String  — ayırıcı tanı notu (YORUM bloğunda kullanılır)
+   -------------------------------------------------------------------------- */
+
+const LESION_DB = [
+  // =============== SSM (CNS) ===============
+  {
+    id: 'ventrikulomegali',
+    name: T.pVentriculomegaly_name,
+    organs: ['ssm'],
+    locations: ['lateral-ventrikul', 'beyin-middline'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['duzenli'],
+    associated: ['ventrikul-genislemesi', 'atrial-genislik-artmis'],
+    notes: T.pVentriculomegaly_notes
+  },
+  {
+    id: 'korpus-kallozum-agenezi',
+    name: T.pCorpusCallosum_name,
+    organs: ['ssm'],
+    locations: ['beyin-middline', 'lateral-ventrikul'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['degerlendirilemez'],
+    associated: ['kolposefali', 'ucuncu-ventrikul-yukselmis', 'radial-giri', 'ventrikul-genislemesi'],
+    notes: T.pCorpusCallosum_notes
+  },
+  {
+    id: 'chiari-ii',
+    name: T.pChiariII_name,
+    organs: ['ssm', 'spinal'],
+    locations: ['posterior-fossa', 'lomber-spinal', 'sakral-spinal'],
+    contents: ['solid'],
+    associated: ['tonsiller-herniasyon', 'kucuk-posterior-fossa', 'ventrikul-genislemesi', 'kemik-defekti', 'banana-sign', 'lemon-sign'],
+    notes: T.pChiariII_notes
+  },
+  {
+    id: 'dandy-walker',
+    name: T.pDandyWalker_name,
+    organs: ['ssm'],
+    locations: ['posterior-fossa'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['duzenli'],
+    associated: ['vermis-agenezi', 'posterior-fossa-genislemesi', 'torkula-yukselmis', '4-ventrikul-genis'],
+    notes: T.pDandyWalker_notes
+  },
+  {
+    id: 'araknoid-kist',
+    name: T.pArachnoidCyst_name,
+    organs: ['ssm'],
+    locations: ['ekstraaksiyel', 'posterior-fossa', 'sellar', 'middle-fossa'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['keskin', 'duzenli'],
+    dwi: ['kisitlanmamis'],
+    associated: ['kitle-etkisi'],
+    notes: T.pArachnoidCyst_notes
+  },
+  {
+    id: 'akuaduktus-stenozu',
+    name: T.pAqueductalStenosis_name,
+    organs: ['ssm'],
+    locations: ['beyin-middline', 'lateral-ventrikul'],
+    contents: ['kistik'],
+    associated: ['triventrikuler-hidrosefali', 'ventrikul-genislemesi', '4-ventrikul-normal', 'makrokrani'],
+    notes: T.pAqueductalStenosis_notes
+  },
+  {
+    id: 'holoprozensefali',
+    name: T.pHoloprosencephaly_name,
+    organs: ['ssm'],
+    locations: ['beyin-middline'],
+    contents: ['karisik'],
+    associated: ['fuze-talamus', 'monoventrikul', 'falx-yoklugu', 'yuz-anomalisi'],
+    notes: T.pHoloprosencephaly_notes
+  },
+  {
+    id: 'intrakranial-hemoraji',
+    name: T.pICH_name,
+    organs: ['ssm'],
+    locations: ['lateral-ventrikul', 'beyin-parankim', 'ekstraaksiyel'],
+    t2: ['hipointens', 'heterojen'],
+    t1: ['hiperintens', 'heterojen'],
+    contents: ['solid', 'karisik'],
+    dwi: ['heterojen'],
+    associated: ['periventrikuler-sinyal-artisi', 'ventrikul-genislemesi'],
+    notes: T.pICH_notes
+  },
+  {
+    id: 'kortikal-malformasyon',
+    name: T.pCorticalMalform_name,
+    organs: ['ssm'],
+    locations: ['beyin-parankim', 'beyin-korteks'],
+    contents: ['solid'],
+    associated: ['anormal-giri', 'kortikal-kalinlasma', 'yaris-defekti'],
+    notes: T.pCorticalMalform_notes
+  },
+  {
+    id: 'intrakranial-teratom',
+    name: T.pICTeratoma_name,
+    organs: ['ssm'],
+    locations: ['beyin-parankim', 'supratentorial'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    borders: ['duzenli', 'belirsiz'],
+    associated: ['yag-sinyali', 'kalsifikasyon', 'makrokrani', 'kitle-etkisi'],
+    notes: T.pICTeratoma_notes
+  },
+
+  // =============== TORAKS ===============
+  {
+    id: 'cpam',
+    name: T.pCPAM_name,
+    organs: ['toraks'],
+    locations: ['akciger', 'sol-akciger', 'sag-akciger'],
+    t2: ['hiperintens', 'heterojen'],
+    t1: ['hipointens'],
+    contents: ['kistik', 'karisik'],
+    borders: ['duzenli'],
+    associated: ['mediasten-sifti', 'kitle-etkisi', 'hidrops', 'polihidramnios'],
+    notes: T.pCPAM_notes
+  },
+  {
+    id: 'cdh',
+    name: T.pCDH_name,
+    organs: ['toraks'],
+    locations: ['akciger', 'sol-akciger', 'sag-akciger'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    associated: ['mediasten-sifti', 'mide-intratorasik', 'karaciger-intratorasik', 'akciger-hipoplazisi', 'polihidramnios'],
+    notes: T.pCDH_notes
+  },
+  {
+    id: 'pulmoner-sekestrasyon',
+    name: T.pBPS_name,
+    organs: ['toraks'],
+    locations: ['akciger', 'sol-akciger', 'subdiyafragmatik'],
+    t2: ['hiperintens', 'homojen'],
+    t1: ['hipointens'],
+    contents: ['solid'],
+    borders: ['duzenli'],
+    associated: ['sistemik-besleyici-damar', 'alt-lob'],
+    notes: T.pBPS_notes
+  },
+  {
+    id: 'fetal-hidrotoraks',
+    name: T.pHydrothorax_name,
+    organs: ['toraks'],
+    locations: ['plevra', 'sol-akciger', 'sag-akciger'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['duzenli'],
+    associated: ['akciger-hipoplazisi', 'mediasten-sifti', 'hidrops', 'polihidramnios'],
+    notes: T.pHydrothorax_notes
+  },
+  {
+    id: 'bronkogenik-kist',
+    name: T.pBronchogenicCyst_name,
+    organs: ['toraks'],
+    locations: ['mediasten', 'akciger'],
+    t2: ['hiperintens'],
+    t1: ['degisken'],
+    contents: ['kistik'],
+    borders: ['keskin', 'duzenli'],
+    associated: ['kitle-etkisi'],
+    notes: T.pBronchogenicCyst_notes
+  },
+
+  // =============== ABDOMEN/GI ===============
+  {
+    id: 'omfalosel',
+    name: T.pOmphalocele_name,
+    organs: ['abdomen-duvari'],
+    locations: ['gobek', 'orta-hat'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    borders: ['duzenli'],
+    associated: ['umbilikal-kord-orta-hat', 'periton-zari', 'karaciger-dis', 'kromozomal-risk'],
+    notes: T.pOmphalocele_notes
+  },
+  {
+    id: 'gastroszisiz',
+    name: T.pGastroschisis_name,
+    organs: ['abdomen-duvari'],
+    locations: ['sag-paraumbilikal'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    borders: ['duzensiz'],
+    associated: ['serbest-barsak', 'membran-yok', 'umbilikal-kord-lateral'],
+    notes: T.pGastroschisis_notes
+  },
+  {
+    id: 'mekonyum-psodokisti',
+    name: T.pMeconiumCyst_name,
+    organs: ['abdomen-gi'],
+    locations: ['periton', 'batin-ici'],
+    t2: ['hiperintens', 'heterojen'],
+    t1: ['degisken'],
+    contents: ['karisik'],
+    borders: ['duzensiz'],
+    associated: ['kalsifikasyon', 'asit', 'barsak-dilatasyonu'],
+    notes: T.pMeconiumCyst_notes
+  },
+  {
+    id: 'barsak-obstruksiyonu',
+    name: T.pBowelObstruction_name,
+    organs: ['abdomen-gi'],
+    locations: ['batin-ici'],
+    t2: ['hiperintens'],
+    t1: ['degisken'],
+    contents: ['kistik', 'karisik'],
+    associated: ['barsak-dilatasyonu', 'polihidramnios', 'mekonyum-sinyali-anormal'],
+    notes: T.pBowelObstruction_notes
+  },
+
+  // =============== GENİTOÜRİNER ===============
+  {
+    id: 'hidronefroz',
+    name: T.pHydronephrosis_name,
+    organs: ['genitouriner'],
+    locations: ['bobrek', 'renal-pelvis'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['duzenli'],
+    associated: ['pelvis-dilatasyonu', 'kaliks-dilatasyonu', 'ureter-dilatasyonu'],
+    notes: T.pHydronephrosis_notes
+  },
+  {
+    id: 'mcdk',
+    name: T.pMCDK_name,
+    organs: ['genitouriner'],
+    locations: ['bobrek'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['duzenli'],
+    associated: ['multipl-kist', 'parankim-yoklugu', 'birbirine-baglanmayan-kistler'],
+    notes: T.pMCDK_notes
+  },
+  {
+    id: 'arpkd',
+    name: T.pARPKD_name,
+    organs: ['genitouriner'],
+    locations: ['bobrek', 'bilateral-bobrek'],
+    t2: ['hiperintens', 'heterojen'],
+    t1: ['hipointens'],
+    contents: ['karisik'],
+    associated: ['buyuk-bobrek', 'oligohidramnios', 'bilateral-tutulum', 'kortikomeduler-ayrim-silik'],
+    notes: T.pARPKD_notes
+  },
+  {
+    id: 'luto',
+    name: T.pLUTO_name,
+    organs: ['genitouriner'],
+    locations: ['mesane', 'bobrek', 'ureter'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    associated: ['megasistis', 'bilateral-hidroureteronefroz', 'keyhole-sign', 'oligohidramnios', 'akciger-hipoplazisi'],
+    notes: T.pLUTO_notes
+  },
+  {
+    id: 'over-kisti',
+    name: T.pOvarianCyst_name,
+    organs: ['genitouriner', 'abdomen-gi'],
+    locations: ['alt-batin', 'pelvis'],
+    t2: ['hiperintens'],
+    t1: ['degisken'],
+    contents: ['kistik', 'karisik'],
+    borders: ['duzenli'],
+    associated: [],
+    notes: T.pOvarianCyst_notes
+  },
+
+  // =============== BOYUN ===============
+  {
+    id: 'kistik-higroma',
+    name: T.pCysticHygroma_name,
+    organs: ['boyun'],
+    locations: ['boyun-posterior', 'boyun-lateral', 'submandibuler'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik'],
+    borders: ['lobule', 'duzensiz'],
+    associated: ['septasyon', 'multilokuler', 'jeneralize-odem'],
+    notes: T.pCysticHygroma_notes
+  },
+  {
+    id: 'servikal-teratom',
+    name: T.pCervicalTeratoma_name,
+    organs: ['boyun'],
+    locations: ['boyun-anterior', 'boyun-lateral'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    borders: ['duzenli'],
+    associated: ['yag-sinyali', 'kalsifikasyon', 'hava-yolu-basisi', 'polihidramnios', 'kitle-etkisi'],
+    notes: T.pCervicalTeratoma_notes
+  },
+
+  // =============== SAKROKOKSİGEAL / SPİNAL ===============
+  {
+    id: 'sct',
+    name: T.pSCT_name,
+    organs: ['spinal', 'abdomen-gi'],
+    locations: ['sakrum', 'perine', 'alt-batin'],
+    t2: ['heterojen'],
+    t1: ['heterojen'],
+    contents: ['karisik'],
+    borders: ['duzenli', 'belirsiz'],
+    associated: ['yag-sinyali', 'kalsifikasyon', 'ekzofitik', 'presakral-komponent', 'hidrops', 'polihidramnios'],
+    notes: T.pSCT_notes
+  },
+  {
+    id: 'meningomiyelosel',
+    name: T.pMyelomeningocele_name,
+    organs: ['spinal'],
+    locations: ['lomber-spinal', 'sakral-spinal', 'torakal-spinal'],
+    t2: ['hiperintens'],
+    t1: ['hipointens'],
+    contents: ['kistik', 'karisik'],
+    borders: ['duzensiz'],
+    associated: ['kemik-defekti', 'spinal-kord-cekilmis', 'chiari-ii-bulgulari', 'ventrikul-genislemesi', 'kifotik-postur'],
+    notes: T.pMyelomeningocele_notes
+  },
+
+  // =============== PLASENTA ===============
+  {
+    id: 'plasenta-akreta',
+    name: T.pPAS_name,
+    organs: ['plasenta'],
+    locations: ['plasenta'],
+    t2: ['heterojen'],
+    t1: ['degisken'],
+    contents: ['karisik'],
+    borders: ['duzensiz'],
+    associated: ['t2-koyu-bantlar', 'miyometrial-incelme', 'uterin-bulging', 'heterojen-plasenta', 'anormal-vaskularite', 'mesane-invazyonu'],
+    notes: T.pPAS_notes
+  }
+];
+
+/* --------------------------------------------------------------------------
+   ENUM LABELS — UI chip etiketlerinden rapor metnine çeviri
+   -------------------------------------------------------------------------- */
+
+const ORGAN_OPTIONS = [
+  { id: 'ssm', label: T.orgSSM },
+  { id: 'spinal', label: T.orgSpinal },
+  { id: 'boyun', label: T.orgNeck },
+  { id: 'toraks', label: T.orgThorax },
+  { id: 'abdomen-duvari', label: T.orgAbdWall },
+  { id: 'abdomen-gi', label: T.orgAbdGI },
+  { id: 'genitouriner', label: T.orgGU },
+  { id: 'plasenta', label: T.orgPlacenta }
+];
+
+const LOCATION_OPTIONS = {
+  'ssm': [
+    { id: 'lateral-ventrikul', label: T.locLateralVentricle },
+    { id: 'beyin-middline', label: T.locBrainMidline },
+    { id: 'beyin-parankim', label: T.locBrainParenchyma },
+    { id: 'beyin-korteks', label: T.locBrainCortex },
+    { id: 'posterior-fossa', label: T.locPosteriorFossa },
+    { id: 'ekstraaksiyel', label: T.locExtraaxial },
+    { id: 'sellar', label: T.locSellar },
+    { id: 'middle-fossa', label: T.locMiddleFossa },
+    { id: 'supratentorial', label: T.locSupratentorial }
+  ],
+  'spinal': [
+    { id: 'torakal-spinal', label: T.locThoracalSpinal },
+    { id: 'lomber-spinal', label: T.locLumbarSpinal },
+    { id: 'sakral-spinal', label: T.locSacralSpinal },
+    { id: 'sakrum', label: T.locSacrum },
+    { id: 'perine', label: T.locPerineum }
+  ],
+  'boyun': [
+    { id: 'boyun-anterior', label: T.locNeckAnterior },
+    { id: 'boyun-posterior', label: T.locNeckPosterior },
+    { id: 'boyun-lateral', label: T.locNeckLateral },
+    { id: 'submandibuler', label: T.locSubmandibular }
+  ],
+  'toraks': [
+    { id: 'sol-akciger', label: T.locLeftLung },
+    { id: 'sag-akciger', label: T.locRightLung },
+    { id: 'akciger', label: T.locLung },
+    { id: 'mediasten', label: T.locMediastinum },
+    { id: 'plevra', label: T.locPleura },
+    { id: 'subdiyafragmatik', label: T.locSubdiaphragmatic }
+  ],
+  'abdomen-duvari': [
+    { id: 'gobek', label: T.locUmbilicus },
+    { id: 'orta-hat', label: T.locMidline },
+    { id: 'sag-paraumbilikal', label: T.locRightParaUmbilical }
+  ],
+  'abdomen-gi': [
+    { id: 'batin-ici', label: T.locAbdomen },
+    { id: 'periton', label: T.locPeritoneum },
+    { id: 'alt-batin', label: T.locLowerAbdomen },
+    { id: 'pelvis', label: T.locPelvis }
+  ],
+  'genitouriner': [
+    { id: 'bobrek', label: T.locKidney },
+    { id: 'bilateral-bobrek', label: T.locBilateralKidney },
+    { id: 'renal-pelvis', label: T.locRenalPelvis },
+    { id: 'ureter', label: T.locUreter },
+    { id: 'mesane', label: T.locBladder }
+  ],
+  'plasenta': [
+    { id: 'plasenta', label: T.locPlacenta }
+  ]
+};
+
+const T2_OPTIONS = [
+  { id: 'hiperintens', label: T.t2Hyperintense },
+  { id: 'izointens', label: T.t2Isointense },
+  { id: 'hipointens', label: T.t2Hypointense },
+  { id: 'heterojen', label: T.t2Heterogeneous },
+  { id: 'homojen', label: T.t2Homogeneous }
+];
+
+const T1_OPTIONS = [
+  { id: 'hiperintens', label: T.t1Hyperintense },
+  { id: 'izointens', label: T.t1Isointense },
+  { id: 'hipointens', label: T.t1Hypointense },
+  { id: 'heterojen', label: T.t1Heterogeneous },
+  { id: 'degisken', label: T.t1Variable },
+  { id: 'mekonyum-sinyali-artmis', label: T.t1MeconiumUp }
+];
+
+const CONTENT_OPTIONS = [
+  { id: 'kistik', label: T.contentCystic },
+  { id: 'solid', label: T.contentSolid },
+  { id: 'karisik', label: T.contentMixed },
+  { id: 'degerlendirilemez', label: T.contentNE }
+];
+
+const BORDER_OPTIONS = [
+  { id: 'keskin', label: T.borderSharp },
+  { id: 'duzenli', label: T.borderRegular },
+  { id: 'duzensiz', label: T.borderIrregular },
+  { id: 'lobule', label: T.borderLobulated },
+  { id: 'belirsiz', label: T.borderIndistinct }
+];
+
+const DWI_OPTIONS = [
+  { id: 'kisitli', label: T.dwiRestricted },
+  { id: 'kisitlanmamis', label: T.dwiUnrestricted },
+  { id: 'heterojen', label: T.dwiHeterogeneous },
+  { id: 'degerlendirilemedi', label: T.dwiNE }
+];
+
+const ASSOCIATED_OPTIONS = [
+  // Ventrikül / SSM
+  { id: 'ventrikul-genislemesi', label: T.assocVentricularEnlargement, group: T.groupSSM },
+  { id: 'atrial-genislik-artmis', label: T.assocAtrialWidth, group: T.groupSSM },
+  { id: 'triventrikuler-hidrosefali', label: T.assocTriventricularHydrocephalus, group: T.groupSSM },
+  { id: 'kolposefali', label: T.assocColpocephaly, group: T.groupSSM },
+  { id: 'ucuncu-ventrikul-yukselmis', label: T.assocThirdVentricle, group: T.groupSSM },
+  { id: 'radial-giri', label: T.assocRadialGyrus, group: T.groupSSM },
+  { id: '4-ventrikul-genis', label: T.assocFourthVentricleWide, group: T.groupSSM },
+  { id: '4-ventrikul-normal', label: T.assocFourthVentricleNormal, group: T.groupSSM },
+  { id: 'vermis-agenezi', label: T.assocVermisAgenesis, group: T.groupSSM },
+  { id: 'posterior-fossa-genislemesi', label: T.assocPosteriorFossaEnlarged, group: T.groupSSM },
+  { id: 'torkula-yukselmis', label: T.assocTorcula, group: T.groupSSM },
+  { id: 'fuze-talamus', label: T.assocFusedThalami, group: T.groupSSM },
+  { id: 'monoventrikul', label: T.assocMonoventricle, group: T.groupSSM },
+  { id: 'falx-yoklugu', label: T.assocFalxAbsent, group: T.groupSSM },
+  { id: 'anormal-giri', label: T.assocAbnormalGyrus, group: T.groupSSM },
+  { id: 'kortikal-kalinlasma', label: T.assocCorticalThickening, group: T.groupSSM },
+  { id: 'yaris-defekti', label: T.assocParenchymalCleft, group: T.groupSSM },
+  { id: 'periventrikuler-sinyal-artisi', label: T.assocPeriventricular, group: T.groupSSM },
+  { id: 'tonsiller-herniasyon', label: T.assocTonsillarHerniation, group: T.groupSSM },
+  { id: 'kucuk-posterior-fossa', label: T.assocSmallPosteriorFossa, group: T.groupSSM },
+  { id: 'banana-sign', label: T.assocBananaSign, group: T.groupSSM },
+  { id: 'lemon-sign', label: T.assocLemonSign, group: T.groupSSM },
+  { id: 'makrokrani', label: T.assocMacrocephaly, group: T.groupSSM },
+  { id: 'yag-sinyali', label: T.assocFatSignal, group: T.groupGeneral },
+  { id: 'kalsifikasyon', label: T.assocCalcification, group: T.groupGeneral },
+  { id: 'kitle-etkisi', label: T.assocMassEffect, group: T.groupGeneral },
+
+  // Toraks
+  { id: 'mediasten-sifti', label: T.assocMediastinalShift, group: T.groupThorax },
+  { id: 'akciger-hipoplazisi', label: T.assocLungHypoplasia, group: T.groupThorax },
+  { id: 'mide-intratorasik', label: T.assocStomachIntrathoracic, group: T.groupThorax },
+  { id: 'karaciger-intratorasik', label: T.assocLiverIntrathoracic, group: T.groupThorax },
+  { id: 'sistemik-besleyici-damar', label: T.assocSystemicFeeder, group: T.groupThorax },
+  { id: 'alt-lob', label: T.assocLowerLobe, group: T.groupThorax },
+
+  // Abdomen
+  { id: 'umbilikal-kord-orta-hat', label: T.assocCordMidline, group: T.groupAbdomen },
+  { id: 'umbilikal-kord-lateral', label: T.assocCordLateral, group: T.groupAbdomen },
+  { id: 'periton-zari', label: T.assocPeritonealMembrane, group: T.groupAbdomen },
+  { id: 'membran-yok', label: T.assocNoMembrane, group: T.groupAbdomen },
+  { id: 'karaciger-dis', label: T.assocLiverExternal, group: T.groupAbdomen },
+  { id: 'serbest-barsak', label: T.assocFreeBowel, group: T.groupAbdomen },
+  { id: 'barsak-dilatasyonu', label: T.assocBowelDilation, group: T.groupAbdomen },
+  { id: 'asit', label: T.assocAscites, group: T.groupAbdomen },
+  { id: 'mekonyum-sinyali-anormal', label: T.assocMeconiumAbnormal, group: T.groupAbdomen },
+
+  // GÜS
+  { id: 'pelvis-dilatasyonu', label: T.assocPelvisDilation, group: T.groupGUS },
+  { id: 'kaliks-dilatasyonu', label: T.assocCalyxDilation, group: T.groupGUS },
+  { id: 'ureter-dilatasyonu', label: T.assocUreterDilation, group: T.groupGUS },
+  { id: 'multipl-kist', label: T.assocMultipleCysts, group: T.groupGUS },
+  { id: 'parankim-yoklugu', label: T.assocNoParenchyma, group: T.groupGUS },
+  { id: 'birbirine-baglanmayan-kistler', label: T.assocDisconnectedCysts, group: T.groupGUS },
+  { id: 'buyuk-bobrek', label: T.assocLargeKidney, group: T.groupGUS },
+  { id: 'kortikomeduler-ayrim-silik', label: T.assocCorticomedullary, group: T.groupGUS },
+  { id: 'bilateral-tutulum', label: T.assocBilateralInvolvement, group: T.groupGUS },
+  { id: 'megasistis', label: T.assocMegacystis, group: T.groupGUS },
+  { id: 'bilateral-hidroureteronefroz', label: T.assocBilateralHydro, group: T.groupGUS },
+  { id: 'keyhole-sign', label: T.assocKeyholeSign, group: T.groupGUS },
+
+  // Boyun
+  { id: 'septasyon', label: T.assocSeptation, group: T.groupNeck },
+  { id: 'multilokuler', label: T.assocMultilocular, group: T.groupNeck },
+  { id: 'hava-yolu-basisi', label: T.assocAirwayCompression, group: T.groupNeck },
+
+  // Spinal
+  { id: 'kemik-defekti', label: T.assocBoneDefect, group: T.groupSpinal },
+  { id: 'spinal-kord-cekilmis', label: T.assocSpinalCordTethered, group: T.groupSpinal },
+  { id: 'chiari-ii-bulgulari', label: T.assocChiariII, group: T.groupSpinal },
+  { id: 'kifotik-postur', label: T.assocKyphoticPosture, group: T.groupSpinal },
+
+  // Sakrokoksigeal
+  { id: 'ekzofitik', label: T.assocExophytic, group: T.groupSpinal },
+  { id: 'presakral-komponent', label: T.assocPresacral, group: T.groupSpinal },
+
+  // Plasenta
+  { id: 't2-koyu-bantlar', label: T.assocT2DarkBands, group: T.groupPlacenta },
+  { id: 'miyometrial-incelme', label: T.assocMyometrialThinning, group: T.groupPlacenta },
+  { id: 'uterin-bulging', label: T.assocUterineBulging, group: T.groupPlacenta },
+  { id: 'heterojen-plasenta', label: T.assocHeterogeneousPlacenta, group: T.groupPlacenta },
+  { id: 'anormal-vaskularite', label: T.assocAbnormalVascularity, group: T.groupPlacenta },
+  { id: 'mesane-invazyonu', label: T.assocBladderInvasion, group: T.groupPlacenta },
+
+  // Genel
+  { id: 'hidrops', label: T.assocHydrops, group: T.groupGeneral },
+  { id: 'polihidramnios', label: T.assocPolyhydramnios, group: T.groupGeneral },
+  { id: 'oligohidramnios', label: T.assocOligohydramnios, group: T.groupGeneral },
+  { id: 'yuz-anomalisi', label: T.assocFacialAnomaly, group: T.groupGeneral },
+  { id: 'kromozomal-risk', label: T.assocChromosomalRisk, group: T.groupGeneral },
+  { id: 'jeneralize-odem', label: T.assocGeneralizedEdema, group: T.groupGeneral }
+];
+
+// Yardımcı: id → label dönüştürücü
+const labelOf = (arr, id) => {
+  const f = arr.find(x => x.id === id);
+  return f ? f.label : id;
+};
+
+/* --------------------------------------------------------------------------
+   SCORING ENGINE — Her lezyon için her patolojiye puan verir, yüzde döndürür
+   -------------------------------------------------------------------------- */
+function scoreLesion(path, lesion) {
+  let score = 0;
+
+  // Organ eşleşmesi — birincil (50 pt)
+  if (path.organs && path.organs.includes(lesion.organ)) {
+    score += 50;
+  } else {
+    // Organ eşleşmezse patoloji büyük oranda elenmiş sayılır
+    return 0;
+  }
+
+  // Alt-lokalizasyon (her eşleşme 10 pt, max 20)
+  if (path.locations && lesion.locations) {
+    let locMatches = 0;
+    lesion.locations.forEach(l => { if (path.locations.includes(l)) locMatches++; });
+    score += Math.min(20, locMatches * 10);
+  }
+
+  // T2 sinyal (10 pt)
+  if (path.t2 && lesion.t2 && path.t2.includes(lesion.t2)) score += 10;
+
+  // T1 sinyal (8 pt)
+  if (path.t1 && lesion.t1 && path.t1.includes(lesion.t1)) score += 8;
+
+  // İçerik (15 pt)
+  if (path.contents && lesion.content && path.contents.includes(lesion.content)) score += 15;
+
+  // Sınır (8 pt)
+  if (path.borders && lesion.border && path.borders.includes(lesion.border)) score += 8;
+
+  // DWI (8 pt)
+  if (path.dwi && lesion.dwi && path.dwi.includes(lesion.dwi)) score += 8;
+
+  // Eşlik eden bulgular (her eşleşme 6 pt, max 30)
+  if (path.associated && lesion.associated) {
+    let assocMatches = 0;
+    lesion.associated.forEach(a => { if (path.associated.includes(a)) assocMatches++; });
+    score += Math.min(30, assocMatches * 6);
+  }
+
+  return score;
+}
+
+function differentialsFor(lesion) {
+  const MAX = 149; // 50+20+10+8+15+8+8+30
+  const scored = LESION_DB.map(p => ({
+    id: p.id,
+    name: p.name,
+    notes: p.notes,
+    raw: scoreLesion(p, lesion)
+  })).filter(x => x.raw > 0);
+
+  // Normalizasyon: organ eşleşmesi baseline (50 pt), geri kalan 99 ek puan
+  // En yüksek ham puan 100% olmayabilir; göreli max ile normalize edelim:
+  const maxRaw = Math.max(...scored.map(s => s.raw), 1);
+  const normalized = scored.map(s => ({
+    ...s,
+    pct: Math.min(100, Math.round((s.raw / maxRaw) * 100))
+  })).sort((a, b) => b.pct - a.pct);
+
+  return normalized;
+}
+
+/* --------------------------------------------------------------------------
+   WIZARD ADIMLARI
+   0: Klinik bilgi
+   1: Fetal biyometri & durum
+   2: Amniyotik mayi & Plasenta
+   3: Anatomik sistem taraması (özet)
+   4: Lezyon var mı?  (pre-loop)
+   5–10: LEZYON DÖNGÜSÜ (6 adım)
+       5: Organ / lokalizasyon
+       6: Boyut & morfoloji
+       7: Sinyal özellikleri (T1, T2)
+       8: İçerik / sınır / DWI
+       9: Eşlik eden bulgular
+       10: Lezyon ön tanı özeti (devam / yeni lezyon / bitir)
+   11: Global özet ve ayırıcı tanılar
+   12: Rapor
+   -------------------------------------------------------------------------- */
+const STEPS = T.steps.map((label, id) => ({ id, label }));
+
+const LOOP_START = 5;
+const LOOP_END   = 10;
+const POST_LOOP  = 11;
+const PRE_LOOP   = 4;
+
+
+/* --------------------------------------------------------------------------
+   UI yardımcı component'ler
+   -------------------------------------------------------------------------- */
+function Chip({ active, children, onClick, small }) {
+  return (
+    <button
+      type="button"
+      className={'chip' + (active ? ' on' : '') + (small ? ' small' : '')}
+      onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+function Radios({ value, onChange, options }) {
+  return (
+    <div className="radios">
+      {options.map(o => (
+        <div key={o.id}
+             className={'radio-card' + (value === o.id ? ' on' : '')}
+             onClick={() => onChange(o.id)}>
+          {o.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChipMulti({ values = [], onToggle, options }) {
+  return (
+    <div className="chips">
+      {options.map(o => (
+        <Chip key={o.id}
+              active={values.includes(o.id)}
+              onClick={() => onToggle(o.id)}>
+          {o.label}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+function ChipSingle({ value, onChange, options }) {
+  return (
+    <div className="chips">
+      {options.map(o => (
+        <Chip key={o.id}
+              active={value === o.id}
+              onClick={() => onChange(o.id)}>
+          {o.label}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   LEZYON (boş şablon)
+   -------------------------------------------------------------------------- */
+const emptyLesion = () => ({
+  organ: '',
+  locations: [],     // [id,...]
+  sizeX: '', sizeY: '', sizeZ: '',
+  shape: '',
+  t1: '', t2: '',
+  content: '',
+  border: '',
+  dwi: '',
+  associated: [],
+  note: ''
+});
+
+/* --------------------------------------------------------------------------
+   MAIN APP
+   -------------------------------------------------------------------------- */
+function App() {
+  const [step, setStep] = useState(0);
+
+  // Step 0: Klinik bilgi
+  const [clinical, setClinical] = useState({
+    hastaAdi: '',
+    protokolNo: '',
+    maternalYas: '',
+    gestasyonelHafta: '',
+    gravidaParite: '',
+    endikasyon: '',
+    usBulgular: '',
+    oncekiCesaryen: false
+  });
+
+  // Step 1: Biyometri & fetal durum
+  const [biometry, setBiometry] = useState({
+    fetusSayisi: '1',
+    prezentasyon: '',
+    bpd: '', hc: '', ac: '', fl: '',
+    efw: '',
+    persentilNotu: ''
+  });
+
+  // Step 2: AF & Plasenta
+  const [afPlasenta, setAfPlasenta] = useState({
+    afVolume: 'normal',     // oligo / normal / poly
+    afiMvp: '',
+    plasentaLokalizasyon: '',
+    plasentaGrade: '',
+    plasentaPreviaVarMi: false,
+    umbilikalDamar: ''       // 3 damar / 2 damar / diğer
+  });
+
+  // Step 3: Anatomik sistem tarama (normal/anormal)
+  // Her sistem: status (normal/anormal/degerlendirilemedi) + not
+  const SISTEMLER = [
+    { id: 'ssm', label: T.sysSSM },
+    { id: 'spinal', label: T.sysSpinal },
+    { id: 'yuz-boyun', label: T.sysFaceNeck },
+    { id: 'toraks', label: T.sysThorax },
+    { id: 'abdomen', label: T.sysAbdomen },
+    { id: 'genitouriner', label: T.sysGU },
+    { id: 'iskelet', label: T.sysSkeleton }
+  ];
+  const initialSistemler = () => {
+    const o = {};
+    SISTEMLER.forEach(s => o[s.id] = { status: 'normal', note: '' });
+    return o;
+  };
+  const [sistemler, setSistemler] = useState(initialSistemler);
+
+  // Lezyon yönetimi
+  const [hasLesion, setHasLesion] = useState(null); // null | true | false
+  const [lesions, setLesions] = useState([]);
+  const [currentIdx, setCurrentIdx] = useState(-1);
+
+  // Mevcut lezyon (düzenlenen)
+  const currentLesion = currentIdx >= 0 ? lesions[currentIdx] : null;
+
+  // Bir lezyon alanı güncelle
+  const updateLesion = (patch) => {
+    if (currentIdx < 0) return;
+    const copy = [...lesions];
+    copy[currentIdx] = { ...copy[currentIdx], ...patch };
+    setLesions(copy);
+  };
+
+  const toggleArray = (arrField, id) => {
+    if (!currentLesion) return;
+    const arr = currentLesion[arrField] || [];
+    const next = arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
+    updateLesion({ [arrField]: next });
+  };
+
+  // Yeni lezyon ekle
+  const addNewLesion = () => {
+    const next = [...lesions, emptyLesion()];
+    setLesions(next);
+    setCurrentIdx(next.length - 1);
+    setStep(LOOP_START);
+  };
+
+  // Mevcut lezyonun düzenlemesini bitir
+  const finishLesion = (deleteCurrent) => {
+    if (deleteCurrent && currentIdx >= 0) {
+      const copy = lesions.filter((_, i) => i !== currentIdx);
+      setLesions(copy);
+    }
+    setCurrentIdx(-1);
+    setStep(POST_LOOP);
+  };
+
+  // Lezyon listesinden bir lezyonu düzenlemeye aç
+  const editLesion = (idx) => {
+    setCurrentIdx(idx);
+    setStep(LOOP_START);
+  };
+
+  const deleteLesion = (idx) => {
+    const copy = lesions.filter((_, i) => i !== idx);
+    setLesions(copy);
+  };
+
+  /* ---------- NAVIGATION (3-parça bug-fix pattern) ---------- */
+  const goNext = () => {
+    // Lezyon yoksa ve loop'a geldiyse atla
+    if (step === PRE_LOOP && hasLesion === false) {
+      setStep(POST_LOOP);
+      return;
+    }
+    // Post-loop'a doğru ilerlerken currentIdx=-1 ise loop'u atla
+    if (step >= LOOP_START && step < LOOP_END && currentIdx === -1) {
+      setStep(POST_LOOP);
+      return;
+    }
+    // Lezyon döngüsü sonunda (step 10) — özel: kullanıcı Bitir/Yeni kararını versin diye
+    // bu step içindeki butonlar navigate eder; burada sadece son step korumasi:
+    if (step < STEPS.length - 1) setStep(step + 1);
+  };
+
+  const goPrev = () => {
+    // Post-loop'tan geri giderken lezyon yoksa loop'u atla
+    if (step === POST_LOOP) {
+      if (lesions.length === 0) {
+        setStep(PRE_LOOP);
+      } else {
+        // Son lezyonu düzenlemeye aç
+        setCurrentIdx(lesions.length - 1);
+        setStep(LOOP_END);
+      }
+      return;
+    }
+    if (step > 0) setStep(step - 1);
+  };
+
+  /* ---------- ADIM DOĞRULAMA ---------- */
+  const canGoNext = () => {
+    if (step === 0) {
+      return clinical.gestasyonelHafta && clinical.endikasyon;
+    }
+    if (step === PRE_LOOP) return hasLesion !== null;
+    if (step === LOOP_START) return currentLesion && currentLesion.organ;
+    return true;
+  };
+
+  /* ---------- DIFFERENTIALS (tüm lezyonlar) ---------- */
+  const allDdx = useMemo(() => {
+    return lesions.map(l => ({
+      lesion: l,
+      ddx: differentialsFor(l).slice(0, 5) // top 5
+    }));
+  }, [lesions]);
+
+  /* ---------- STEPPER CHIP RENDERER ---------- */
+  const stepLabel = (s) => {
+    // Loop içindeki adımda lezyon index'i göster
+    if (s.id >= LOOP_START && s.id <= LOOP_END && currentIdx >= 0) {
+      return `L${currentIdx + 1} · ${s.label.replace(T.loopPrefix, '')}`;
+    }
+    return s.label;
+  };
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div className="brand">
+          <div className="mark">F</div>
+          <div>
+            <h1>{T.appTitle}</h1>
+            <small>{T.appSubtitle}</small>
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn sm ghost" onClick={() => {
+            if (confirm(T.resetConfirm)) location.reload();
+          }}>{T.reset}</button>
+        </div>
+      </header>
+
+      {/* Stepper */}
+      <div className="stepper">
+        {STEPS.map(s => (
+          <div key={s.id}
+               className={'step-chip' + (s.id === step ? ' active' : (s.id < step ? ' done' : ''))}>
+            {s.id + 1}. {stepLabel(s)}
+          </div>
+        ))}
+      </div>
+
+      {/* Step içeriği */}
+      {step === 0   && <Step0_Clinical   v={clinical} set={setClinical} />}
+      {step === 1   && <Step1_Biometry   v={biometry} set={setBiometry} />}
+      {step === 2   && <Step2_AFPlasenta v={afPlasenta} set={setAfPlasenta} />}
+      {step === 3   && <Step3_Sistemler  v={sistemler} set={setSistemler} systems={SISTEMLER} />}
+      {step === 4   && <Step4_LesionGate
+                         hasLesion={hasLesion}
+                         setHasLesion={setHasLesion}
+                         lesions={lesions}
+                         onAddNew={addNewLesion}
+                         onEdit={editLesion}
+                         onDelete={deleteLesion}
+                       />}
+      {step === 5   && <Step5_Organ      lesion={currentLesion} update={updateLesion} idx={currentIdx} />}
+      {step === 6   && <Step6_Morfoloji  lesion={currentLesion} update={updateLesion} idx={currentIdx} />}
+      {step === 7   && <Step7_Sinyal     lesion={currentLesion} update={updateLesion} idx={currentIdx} />}
+      {step === 8   && <Step8_Icerik     lesion={currentLesion} update={updateLesion} idx={currentIdx} />}
+      {step === 9   && <Step9_Eslik      lesion={currentLesion} update={updateLesion} idx={currentIdx} toggleArray={toggleArray} />}
+      {step === 10  && <Step10_LezOzet
+                         lesion={currentLesion}
+                         idx={currentIdx}
+                         ddx={currentLesion ? differentialsFor(currentLesion).slice(0, 5) : []}
+                         onAddAnother={addNewLesion}
+                         onFinish={() => finishLesion(false)}
+                         onDelete={() => finishLesion(true)}
+                       />}
+      {step === 11  && <Step11_GenelOzet
+                         lesions={lesions}
+                         allDdx={allDdx}
+                         onEdit={editLesion}
+                         onDelete={deleteLesion}
+                         onAddNew={addNewLesion}
+                       />}
+      {step === 12  && <Step12_Rapor
+                         clinical={clinical}
+                         biometry={biometry}
+                         afPlasenta={afPlasenta}
+                         sistemler={sistemler}
+                         systems={SISTEMLER}
+                         lesions={lesions}
+                         allDdx={allDdx}
+                         onBack={goPrev}
+                       />}
+
+      {/* Navigasyon */}
+      {step !== 10 && step !== 12 && (
+        <div className="nav">
+          <button className="btn" onClick={goPrev} disabled={step === 0}>{T.back}</button>
+          <button className="btn primary" onClick={goNext} disabled={!canGoNext()}>
+            {step === STEPS.length - 2 ? T.toReport : T.next}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 0 — Klinik bilgi
+   ========================================================================== */
+function Step0_Clinical({ v, set }) {
+  const up = (k) => (e) => set({ ...v, [k]: e.target.value });
+  return (
+    <div className="card">
+      <h2>{T.s0Title}</h2>
+      <div className="subtitle">{T.s0Sub}</div>
+
+      <div className="grid-3">
+        <label className="fld"><span className="lbl">{T.s0PatientName}</span>
+          <input type="text" value={v.hastaAdi} onChange={up('hastaAdi')} placeholder={T.s0PatientNamePh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s0ProtocolNo}</span>
+          <input type="text" value={v.protokolNo} onChange={up('protokolNo')} placeholder={T.s0ProtocolNoPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s0MaternalAge}</span>
+          <input type="number" value={v.maternalYas} onChange={up('maternalYas')} placeholder={T.s0MaternalAgePh} />
+        </label>
+      </div>
+
+      <div className="grid-3">
+        <label className="fld"><span className="lbl">{T.s0GA}</span>
+          <input type="text" value={v.gestasyonelHafta} onChange={up('gestasyonelHafta')} placeholder={T.s0GAPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s0GravPar}</span>
+          <input type="text" value={v.gravidaParite} onChange={up('gravidaParite')} placeholder={T.s0GravParPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s0PrevCS}</span>
+          <div style={{paddingTop:'6px'}}>
+            <label><input type="checkbox" checked={v.oncekiCesaryen} onChange={(e) => set({ ...v, oncekiCesaryen: e.target.checked })} /> {T.s0PrevCSYes}</label>
+          </div>
+        </label>
+      </div>
+
+      <label className="fld"><span className="lbl">{T.s0Indication}</span>
+        <textarea value={v.endikasyon} onChange={up('endikasyon')}
+          placeholder={T.s0IndicationPh}/>
+      </label>
+
+      <label className="fld"><span className="lbl">{T.s0USFindings}</span>
+        <textarea value={v.usBulgular} onChange={up('usBulgular')}
+          placeholder={T.s0USFindingsPh}/>
+      </label>
+
+      <div className="hint">
+        {T.s0Hint}
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 1 — Fetal biyometri
+   ========================================================================== */
+function Step1_Biometry({ v, set }) {
+  const up = (k) => (e) => set({ ...v, [k]: e.target.value });
+  return (
+    <div className="card">
+      <h2>{T.s1Title}</h2>
+      <div className="subtitle">{T.s1Sub}</div>
+
+      <div className="section-title">{T.s1Pregnancy}</div>
+      <div className="grid-2">
+        <label className="fld"><span className="lbl">{T.s1FetusCount}</span>
+          <ChipSingle value={v.fetusSayisi} onChange={(x) => set({ ...v, fetusSayisi: x })}
+            options={[
+              { id: '1', label: T.s1Singleton },
+              { id: '2', label: T.s1Twin },
+              { id: '3+', label: T.s1Multiple }
+            ]} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s1Presentation}</span>
+          <ChipSingle value={v.prezentasyon} onChange={(x) => set({ ...v, prezentasyon: x })}
+            options={[
+              { id: 'vertex', label: T.s1Vertex },
+              { id: 'makat', label: T.s1Breech },
+              { id: 'transvers', label: T.s1Transverse },
+              { id: 'oblik', label: T.s1Oblique }
+            ]} />
+        </label>
+      </div>
+
+      <div className="section-title">{T.s1Biometry}</div>
+      <div className="grid-4">
+        <label className="fld"><span className="lbl">{T.s1BPD}</span>
+          <input type="number" value={v.bpd} onChange={up('bpd')} placeholder={T.s1BPDPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s1HC}</span>
+          <input type="number" value={v.hc} onChange={up('hc')} placeholder={T.s1HCPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s1AC}</span>
+          <input type="number" value={v.ac} onChange={up('ac')} placeholder={T.s1ACPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s1FL}</span>
+          <input type="number" value={v.fl} onChange={up('fl')} placeholder={T.s1FLPh} />
+        </label>
+      </div>
+      <div className="grid-2">
+        <label className="fld"><span className="lbl">{T.s1EFW}</span>
+          <input type="number" value={v.efw} onChange={up('efw')} placeholder={T.s1EFWPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s1Percentile}</span>
+          <input type="text" value={v.persentilNotu} onChange={up('persentilNotu')}
+            placeholder={T.s1PercentilePh} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 2 — AF & Plasenta
+   ========================================================================== */
+function Step2_AFPlasenta({ v, set }) {
+  const up = (k) => (e) => set({ ...v, [k]: e.target.value });
+  return (
+    <div className="card">
+      <h2>{T.s2Title}</h2>
+      <div className="subtitle">{T.s2Sub}</div>
+
+      <div className="section-title">{T.s2AFSection}</div>
+      <div className="grid-2">
+        <label className="fld"><span className="lbl">{T.s2AFAmount}</span>
+          <ChipSingle value={v.afVolume} onChange={(x) => set({ ...v, afVolume: x })}
+            options={[
+              { id: 'oligo', label: T.s2Oligo },
+              { id: 'hafif-azalmis', label: T.s2SlightlyDecreased },
+              { id: 'normal', label: T.s2Normal },
+              { id: 'hafif-artmis', label: T.s2SlightlyIncreased },
+              { id: 'poly', label: T.s2Poly },
+              { id: 'anhidramnios', label: T.s2Anhydramnios }
+            ]} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s2AFIMVP}</span>
+          <input type="text" value={v.afiMvp} onChange={up('afiMvp')} placeholder={T.s2AFIMVPPh} />
+        </label>
+      </div>
+
+      <div className="section-title">{T.s2Placenta}</div>
+      <div className="grid-2">
+        <label className="fld"><span className="lbl">{T.s2Location}</span>
+          <ChipSingle value={v.plasentaLokalizasyon} onChange={(x) => set({ ...v, plasentaLokalizasyon: x })}
+            options={[
+              { id: 'anterior', label: T.s2Anterior },
+              { id: 'posterior', label: T.s2Posterior },
+              { id: 'fundal', label: T.s2Fundal },
+              { id: 'lateral', label: T.s2Lateral }
+            ]} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s2Grade}</span>
+          <ChipSingle value={v.plasentaGrade} onChange={(x) => set({ ...v, plasentaGrade: x })}
+            options={[
+              { id: '0', label: 'Grade 0' },
+              { id: '1', label: 'Grade I' },
+              { id: '2', label: 'Grade II' },
+              { id: '3', label: 'Grade III' }
+            ]} />
+        </label>
+      </div>
+
+      <div className="grid-2">
+        <label className="fld"><span className="lbl">{T.s2PreviaLabel}</span>
+          <div style={{paddingTop:'6px'}}>
+            <label><input type="checkbox" checked={v.plasentaPreviaVarMi}
+              onChange={(e) => set({ ...v, plasentaPreviaVarMi: e.target.checked })} /> {T.s2PreviaYes}</label>
+          </div>
+        </label>
+        <label className="fld"><span className="lbl">{T.s2UmbilicalCord}</span>
+          <ChipSingle value={v.umbilikalDamar} onChange={(x) => set({ ...v, umbilikalDamar: x })}
+            options={[
+              { id: '3-damar', label: T.s2ThreeVessel },
+              { id: '2-damar-sua', label: T.s2TwoVesselSUA },
+              { id: 'velamentoz', label: T.s2Velamentous },
+              { id: 'marginal', label: T.s2Marginal }
+            ]} />
+        </label>
+      </div>
+
+      <div className="hint">
+        {T.s2Hint}
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 3 — Anatomik sistem tarama
+   ========================================================================== */
+function Step3_Sistemler({ v, set, systems }) {
+  const updateStatus = (sid, status) => {
+    set({ ...v, [sid]: { ...v[sid], status } });
+  };
+  const updateNote = (sid, note) => {
+    set({ ...v, [sid]: { ...v[sid], note } });
+  };
+  return (
+    <div className="card">
+      <h2>{T.s3Title}</h2>
+      <div className="subtitle">{T.s3Sub}</div>
+
+      {systems.map(s => (
+        <div key={s.id} style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+            <div style={{ fontWeight: 600, fontSize: '14px' }}>{s.label}</div>
+            <ChipSingle value={v[s.id].status}
+              onChange={(x) => updateStatus(s.id, x)}
+              options={[
+                { id: 'normal', label: T.s3StatusNormal },
+                { id: 'anormal', label: T.s3StatusAbnormal },
+                { id: 'degerlendirilemedi', label: T.s3StatusNE }
+              ]} />
+          </div>
+          {v[s.id].status !== 'normal' && (
+            <input type="text" value={v[s.id].note}
+              onChange={(e) => updateNote(s.id, e.target.value)}
+              placeholder={T.s3NotePh} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 4 — Lezyon gate (varlık / liste)
+   ========================================================================== */
+function Step4_LesionGate({ hasLesion, setHasLesion, lesions, onAddNew, onEdit, onDelete }) {
+  return (
+    <div className="card">
+      <h2>{T.s4Title}</h2>
+      <div className="subtitle">{T.s4Sub}</div>
+
+      <div className="radios" style={{ marginBottom: '18px' }}>
+        <div className={'radio-card' + (hasLesion === true ? ' on' : '')}
+             onClick={() => { setHasLesion(true); if (lesions.length === 0) onAddNew(); }}>
+          {T.s4Yes}
+        </div>
+        <div className={'radio-card' + (hasLesion === false ? ' on' : '')}
+             onClick={() => setHasLesion(false)}>
+          {T.s4No}
+        </div>
+      </div>
+
+      {hasLesion === true && (
+        <>
+          <div className="section-title">{T.s4AddedLesions}</div>
+          {lesions.length === 0 ? (
+            <div className="hint">{T.s4NoLesionYet}</div>
+          ) : (
+            <div className="lesion-list">
+              {lesions.map((l, i) => (
+                <div key={i} className="lesion-row">
+                  <div className="idx">{i + 1}</div>
+                  <div className="meta">
+                    <div className="name">{l.organ ? labelOf(ORGAN_OPTIONS, l.organ) : T.s4OrganNotSelected}</div>
+                    <div className="sub">
+                      {l.locations && l.locations.length > 0 ?
+                        l.locations.map(loc => labelOf(LOCATION_OPTIONS[l.organ] || [], loc)).join(', ') : '—'}
+                    </div>
+                  </div>
+                  <button className="btn sm" onClick={() => onEdit(i)}>{T.s4Edit}</button>
+                  <button className="btn sm danger" onClick={() => onDelete(i)}>{T.s4Delete}</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: '14px' }}>
+            <button className="btn primary" onClick={onAddNew}>{T.s4AddNew}</button>
+          </div>
+        </>
+      )}
+
+      {hasLesion === false && (
+        <div className="hint">
+          {T.s4NoLesionHint}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 5 — Lezyon: Organ / Lokalizasyon
+   ========================================================================== */
+function Step5_Organ({ lesion, update, idx }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+  const locOpts = LOCATION_OPTIONS[lesion.organ] || [];
+  const toggleLoc = (id) => {
+    const arr = lesion.locations || [];
+    update({ locations: arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id] });
+  };
+  return (
+    <div className="card">
+      <h2>{T.s5Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s5Sub}</div>
+
+      <div className="section-title">{T.s5OrganSystem}</div>
+      <ChipSingle value={lesion.organ}
+        onChange={(x) => update({ organ: x, locations: [] })}
+        options={ORGAN_OPTIONS} />
+
+      {lesion.organ && (
+        <>
+          <div className="section-title">{T.s5SubLocation}</div>
+          {locOpts.length > 0 ? (
+            <ChipMulti values={lesion.locations} onToggle={toggleLoc} options={locOpts} />
+          ) : (
+            <div className="hint">{T.s5NoSubLoc}</div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 6 — Lezyon: Boyut & morfoloji
+   ========================================================================== */
+function Step6_Morfoloji({ lesion, update, idx }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+  return (
+    <div className="card">
+      <h2>{T.s6Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s6Sub}</div>
+
+      <div className="section-title">{T.s6Dimensions}</div>
+      <div className="grid-3">
+        <label className="fld"><span className="lbl">{T.s6Dim1}</span>
+          <input type="number" value={lesion.sizeX} onChange={(e) => update({ sizeX: e.target.value })} placeholder={T.s6DimPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s6Dim2}</span>
+          <input type="number" value={lesion.sizeY} onChange={(e) => update({ sizeY: e.target.value })} placeholder={T.s6DimPh} />
+        </label>
+        <label className="fld"><span className="lbl">{T.s6Dim3}</span>
+          <input type="number" value={lesion.sizeZ} onChange={(e) => update({ sizeZ: e.target.value })} placeholder={T.s6DimPh} />
+        </label>
+      </div>
+
+      <div className="section-title">{T.s6Shape}</div>
+      <ChipSingle value={lesion.shape}
+        onChange={(x) => update({ shape: x })}
+        options={[
+          { id: 'yuvarlak', label: T.s6Round },
+          { id: 'oval', label: T.s6Oval },
+          { id: 'lobule', label: T.s6Lobulated },
+          { id: 'duzensiz', label: T.s6Irregular },
+          { id: 'tubuler', label: T.s6Tubular }
+        ]} />
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 7 — Lezyon: Sinyal (T1, T2)
+   ========================================================================== */
+function Step7_Sinyal({ lesion, update, idx }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+  return (
+    <div className="card">
+      <h2>{T.s7Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s7Sub}</div>
+
+      <div className="section-title">{T.s7T2}</div>
+      <ChipSingle value={lesion.t2} onChange={(x) => update({ t2: x })} options={T2_OPTIONS} />
+
+      <div className="section-title">{T.s7T1}</div>
+      <ChipSingle value={lesion.t1} onChange={(x) => update({ t1: x })} options={T1_OPTIONS} />
+
+      <div className="hint">
+        {T.s7Hint}
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 8 — Lezyon: İçerik / Sınır / DWI
+   ========================================================================== */
+function Step8_Icerik({ lesion, update, idx }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+  return (
+    <div className="card">
+      <h2>{T.s8Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s8Sub}</div>
+
+      <div className="section-title">{T.s8Content}</div>
+      <ChipSingle value={lesion.content} onChange={(x) => update({ content: x })} options={CONTENT_OPTIONS} />
+
+      <div className="section-title">{T.s8Border}</div>
+      <ChipSingle value={lesion.border} onChange={(x) => update({ border: x })} options={BORDER_OPTIONS} />
+
+      <div className="section-title">{T.s8DWI}</div>
+      <ChipSingle value={lesion.dwi} onChange={(x) => update({ dwi: x })} options={DWI_OPTIONS} />
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 9 — Lezyon: Eşlik eden bulgular
+   ========================================================================== */
+function Step9_Eslik({ lesion, update, idx, toggleArray }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+
+  // Grupla
+  const groups = {};
+  ASSOCIATED_OPTIONS.forEach(o => {
+    if (!groups[o.group]) groups[o.group] = [];
+    groups[o.group].push(o);
+  });
+
+  return (
+    <div className="card">
+      <h2>{T.s9Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s9Sub}</div>
+
+      {Object.keys(groups).map(g => (
+        <div key={g} style={{ marginBottom: '14px' }}>
+          <div className="section-title">{g}</div>
+          <ChipMulti
+            values={lesion.associated || []}
+            onToggle={(id) => toggleArray('associated', id)}
+            options={groups[g]}
+          />
+        </div>
+      ))}
+
+      <div className="section-title">{T.s9FreeNote}</div>
+      <textarea value={lesion.note || ''}
+        onChange={(e) => update({ note: e.target.value })}
+        placeholder={T.s9FreeNotePh}/>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 10 — Lezyon sonu: Özet ve döngü kontrolü
+   (Bu adımın kendi butonlarıyla loop devam/bitir kontrolü sağlanır)
+   ========================================================================== */
+function Step10_LezOzet({ lesion, idx, ddx, onAddAnother, onFinish, onDelete }) {
+  if (!lesion) return <div className="card"><div className="hint">{T.s5NoLesion}</div></div>;
+  const sizes = [lesion.sizeX, lesion.sizeY, lesion.sizeZ].filter(Boolean).join(' × ');
+  return (
+    <div className="card">
+      <h2>{T.s10Title.replace('#{n}', idx + 1)}</h2>
+      <div className="subtitle">{T.s10Sub}</div>
+
+      <div className="grid-2">
+        <div>
+          <div className="section-title">{T.s10LesionSummary}</div>
+          <div style={{ fontSize: '13.5px', lineHeight: 1.7, color: 'var(--text-dim)' }}>
+            <div><b>{T.s10Organ}:</b> {lesion.organ ? labelOf(ORGAN_OPTIONS, lesion.organ) : '—'}</div>
+            <div><b>{T.s10Location}:</b> {(lesion.locations || []).map(l => labelOf(LOCATION_OPTIONS[lesion.organ] || [], l)).join(', ') || '—'}</div>
+            <div><b>{T.s10Size}:</b> {sizes ? sizes + ' mm' : '—'}</div>
+            <div><b>{T.s10Shape}:</b> {lesion.shape || '—'}</div>
+            <div><b>{T.s10Signals}:</b> {(lesion.t2 || '—')} / {(lesion.t1 || '—')}</div>
+            <div><b>{T.s10Content}:</b> {lesion.content ? labelOf(CONTENT_OPTIONS, lesion.content) : '—'}</div>
+            <div><b>{T.s10Border}:</b> {lesion.border ? labelOf(BORDER_OPTIONS, lesion.border) : '—'}</div>
+            <div><b>{T.s10DWI}:</b> {lesion.dwi ? labelOf(DWI_OPTIONS, lesion.dwi) : '—'}</div>
+            <div><b>{T.s10Associated}:</b> {T.s10AssociatedCount.replace('{n}', (lesion.associated || []).length)}</div>
+          </div>
+        </div>
+        <div>
+          <div className="section-title">{T.s10DDXTop5}</div>
+          {ddx.length === 0 ? (
+            <div className="hint">{T.s10DDXNoResult}</div>
+          ) : (
+            <table className="ddx-table">
+              <thead>
+                <tr><th>{T.s10DDXColPathology}</th><th>{T.s10DDXColProbability}</th></tr>
+              </thead>
+              <tbody>
+                {ddx.map((d, i) => (
+                  <tr key={d.id}>
+                    <td>{i+1}. {d.name}</td>
+                    <td>
+                      <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                        <div className="bar" style={{flex:1}}><span style={{ width: d.pct + '%' }}></span></div>
+                        <span className="pct">{d.pct}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      <div className="nav">
+        <button className="btn danger" onClick={onDelete}>{T.s10Delete}</button>
+        <div style={{display:'flex', gap:'8px'}}>
+          <button className="btn" onClick={onAddAnother}>{T.s10AddAnother}</button>
+          <button className="btn primary" onClick={onFinish}>{T.s10Finish}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   STEP 11 — Genel özet (tüm lezyonlar + ayırıcı tanı tabloları)
+   ========================================================================== */
+function Step11_GenelOzet({ lesions, allDdx, onEdit, onDelete, onAddNew }) {
+  return (
+    <div className="card">
+      <h2>{T.s11Title}</h2>
+      <div className="subtitle">{T.s11Sub.replace('{n}', lesions.length)}</div>
+
+      {lesions.length === 0 ? (
+        <div className="hint">{T.s11NoLesion}</div>
+      ) : (
+        <div className="lesion-list">
+          {allDdx.map((entry, i) => {
+            const l = entry.lesion;
+            const sizes = [l.sizeX, l.sizeY, l.sizeZ].filter(Boolean).join('×');
+            const top = entry.ddx[0];
+            return (
+              <div key={i} style={{
+                background:'var(--bg-2)',
+                border:'1px solid var(--border)',
+                borderRadius:'12px',
+                padding:'14px'
+              }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+                  <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                    <div className="idx" style={{
+                      width:'28px', height:'28px', borderRadius:'50%',
+                      background:'var(--accent-soft)', color:'var(--accent-2)',
+                      display:'grid', placeItems:'center', fontWeight:700, fontSize:'13px'
+                    }}>{i+1}</div>
+                    <div>
+                      <div style={{fontWeight:600}}>
+                        {labelOf(ORGAN_OPTIONS, l.organ)}
+                        {sizes && <span style={{color:'var(--text-muted)', fontWeight:'normal', marginLeft:'8px'}}>· {sizes} mm</span>}
+                      </div>
+                      <div style={{fontSize:'12.5px', color:'var(--text-muted)', marginTop:'2px'}}>
+                        {(l.locations || []).map(loc => labelOf(LOCATION_OPTIONS[l.organ] || [], loc)).join(', ') || '—'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex', gap:'6px'}}>
+                    <button className="btn sm" onClick={() => onEdit(i)}>{T.s11Edit}</button>
+                    <button className="btn sm danger" onClick={() => onDelete(i)}>{T.s11Delete}</button>
+                  </div>
+                </div>
+
+                {entry.ddx.length > 0 ? (
+                  <table className="ddx-table">
+                    <thead>
+                      <tr><th>{T.s11DDXCol}</th><th>{T.s11Probability}</th></tr>
+                    </thead>
+                    <tbody>
+                      {entry.ddx.map((d, di) => (
+                        <tr key={d.id}>
+                          <td>{di+1}. {d.name}</td>
+                          <td>
+                            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                              <div className="bar" style={{flex:1, minWidth:'120px'}}>
+                                <span style={{ width: d.pct + '%' }}></span>
+                              </div>
+                              <span className="pct">{d.pct}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="hint">{T.s11NoDDX}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ marginTop: '14px' }}>
+        <button className="btn" onClick={onAddNew}>{T.s11AddNew}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   RAPOR OLUŞTURMA
+   ========================================================================== */
+function generateReport(ctx) {
+  const { clinical, biometry, afPlasenta, sistemler, systems, lesions, allDdx } = ctx;
+  const L = [];
+  L.push(T.rTitle);
+  L.push('═'.repeat(72));
+  L.push('');
+
+  // Klinik başlık
+  L.push(T.rClinical);
+  L.push('─'.repeat(72));
+  if (clinical.hastaAdi) L.push(`${T.rPatient}            : ${clinical.hastaAdi}`);
+  if (clinical.protokolNo) L.push(`${T.rProtocol}      : ${clinical.protokolNo}`);
+  if (clinical.maternalYas) L.push(`${T.rMaternalAge}     : ${clinical.maternalYas}`);
+  if (clinical.gestasyonelHafta) L.push(`${T.rGA}: ${clinical.gestasyonelHafta}`);
+  if (clinical.gravidaParite) L.push(`${T.rGravPar}   : ${clinical.gravidaParite}`);
+  if (clinical.oncekiCesaryen) L.push(`${T.rPrevCS}  : ${T.rPrevCSYes}`);
+  if (clinical.endikasyon) L.push(`${T.rIndication}       : ${clinical.endikasyon}`);
+  if (clinical.usBulgular) L.push(`${T.rUSFindings}  : ${clinical.usBulgular}`);
+  L.push('');
+
+  // Teknik
+  L.push(T.rExamination);
+  L.push('─'.repeat(72));
+  L.push(T.rExamText);
+  L.push('');
+
+  // Biyometri
+  L.push(T.rBiometry);
+  L.push('─'.repeat(72));
+  const gebTur = biometry.fetusSayisi === '1' ? T.rSingleton
+                : biometry.fetusSayisi === '2' ? T.rTwin
+                : biometry.fetusSayisi === '3+' ? T.rMultiple : '';
+  const satirlar = [];
+  if (gebTur) satirlar.push(gebTur);
+  if (biometry.prezentasyon) satirlar.push(T.rPresentation.replace('{type}', biometry.prezentasyon));
+  if (satirlar.length) L.push(satirlar.join(', ') + '.');
+
+  const biom = [];
+  if (biometry.bpd) biom.push(`BPD: ${biometry.bpd} mm`);
+  if (biometry.hc) biom.push(`HC: ${biometry.hc} mm`);
+  if (biometry.ac) biom.push(`AC: ${biometry.ac} mm`);
+  if (biometry.fl) biom.push(`FL: ${biometry.fl} mm`);
+  if (biometry.efw) biom.push(`EFW: ${biometry.efw} g`);
+  if (biom.length) L.push(T.rBiometryLine + ': ' + biom.join(', ') + '.');
+  if (biometry.persentilNotu) L.push(biometry.persentilNotu);
+  L.push('');
+
+  // AF & Plasenta
+  L.push(T.rAFPlacenta);
+  L.push('─'.repeat(72));
+  L.push((T.rAFMap[afPlasenta.afVolume] || T.rAFDefault) + (afPlasenta.afiMvp ? ` (${afPlasenta.afiMvp})` : '') + '.');
+  const pPart = [];
+  if (afPlasenta.plasentaLokalizasyon) pPart.push(T.rPlacentaLocation.replace('{loc}', afPlasenta.plasentaLokalizasyon));
+  if (afPlasenta.plasentaGrade) pPart.push(`Grade ${afPlasenta.plasentaGrade}`);
+  if (pPart.length) L.push(T.rPlacentaLine + ': ' + pPart.join(', ') + '.');
+  if (afPlasenta.plasentaPreviaVarMi) L.push(T.rPlacentaPrevia);
+  if (afPlasenta.umbilikalDamar) {
+    L.push(T.rUDMap[afPlasenta.umbilikalDamar] + '.');
+  }
+  L.push('');
+
+  // Sistem tarama
+  L.push(T.rSystems);
+  L.push('─'.repeat(72));
+  systems.forEach(s => {
+    const st = sistemler[s.id];
+    if (!st) return;
+    if (st.status === 'normal') {
+      L.push(`${s.label}: ${T.rSysNormal}`);
+    } else if (st.status === 'anormal') {
+      L.push(`${s.label}: ${T.rSysAbnormal}${st.note ? ' ' + st.note : ''}${(lesions || []).some(l => l.organ && s.id === mapOrganToSystem(l.organ)) ? T.rSysAbnormalDetail : ''}`);
+    } else {
+      L.push(`${s.label}: ${T.rSysNE}${st.note ? ' ' + st.note : ''}`);
+    }
+  });
+  L.push('');
+
+  // Lezyonlar
+  if (lesions && lesions.length > 0) {
+    L.push(T.rLesionSection);
+    L.push('─'.repeat(72));
+    lesions.forEach((l, i) => {
+      L.push(T.rLesionHeader.replace('#{n}', i + 1));
+      const organLbl = labelOf(ORGAN_OPTIONS, l.organ);
+      const locs = (l.locations || []).map(loc => labelOf(LOCATION_OPTIONS[l.organ] || [], loc)).join(', ');
+      const sizes = [l.sizeX, l.sizeY, l.sizeZ].filter(Boolean).join(' × ');
+
+      const segments = [];
+      segments.push(`${organLbl}`);
+      if (locs) segments.push(locs);
+      segments.push(`${sizes ? sizes + T.rLesionSizeSuffix : T.rLesionSizeNA}`);
+      if (l.shape) segments.push(`${l.shape} ${T.rShapeSuffix}`);
+      if (l.border) segments.push(`${labelOf(BORDER_OPTIONS, l.border).toLowerCase()} ${T.rBorderSuffix}`);
+      L.push('  • ' + segments.join(', ') + ' ' + T.rLesionInText);
+
+      const sinyal = [];
+      if (l.t2) sinyal.push(`${T.rT2prefix} ${labelOf(T2_OPTIONS, l.t2).toLowerCase()}`);
+      if (l.t1) sinyal.push(`${T.rT1prefix} ${labelOf(T1_OPTIONS, l.t1).toLowerCase()}`);
+      if (sinyal.length) L.push(`    ${T.rLesionSignal}: ` + sinyal.join(', ') + '.');
+
+      if (l.content) L.push(`    ${T.rLesionContent}: ${labelOf(CONTENT_OPTIONS, l.content)}.`);
+      if (l.dwi) L.push(`    ${T.rLesionDWI}: ${labelOf(DWI_OPTIONS, l.dwi)}.`);
+
+      if (l.associated && l.associated.length > 0) {
+        const assocLbls = l.associated.map(id => labelOf(ASSOCIATED_OPTIONS, id));
+        L.push(`    ${T.rLesionAssoc}: ` + assocLbls.join(', ') + '.');
+      }
+      if (l.note) L.push(`    ${T.rLesionNote}: ${l.note}`);
+      L.push('');
+    });
+  }
+
+  // YORUM
+  L.push(T.rComment);
+  L.push('═'.repeat(72));
+  const gw = clinical.gestasyonelHafta ? T.rCommentGW.replace('{ga}', clinical.gestasyonelHafta) : '';
+  L.push(T.rCommentSummary.replace('{gw}', gw));
+  L.push('');
+
+  if (allDdx && allDdx.length > 0) {
+    allDdx.forEach((entry, i) => {
+      const l = entry.lesion;
+      const organLbl = labelOf(ORGAN_OPTIONS, l.organ);
+      L.push(T.rDDXHeader.replace('#{n}', i + 1).replace('{organ}', organLbl));
+      if (entry.ddx.length === 0) {
+        L.push(T.rDDXNone);
+      } else {
+        entry.ddx.forEach((d, di) => {
+          L.push(`  ${di + 1}. ${d.name} — ${d.pct}${T.rDDXMatch}`);
+        });
+        // En yüksek uyumlu patolojinin notu
+        const top = entry.ddx[0];
+        const topFull = LESION_DB.find(p => p.id === top.id);
+        if (topFull && topFull.notes) {
+          L.push('');
+          L.push(`  ${T.rDDXTopNote.replace('{name}', top.name)}: ${topFull.notes}`);
+        }
+      }
+      L.push('');
+    });
+  } else {
+    L.push(T.rNoLesionFound);
+    L.push('');
+  }
+
+  L.push(T.rClosing);
+  L.push('');
+  L.push('─'.repeat(72));
+  L.push(T.rFooter);
+
+  return L.join('\n');
+}
+
+// Yardımcı: lezyon organını sistem tarama başlıklarına maple
+function mapOrganToSystem(organId) {
+  const map = {
+    'ssm': 'ssm',
+    'spinal': 'spinal',
+    'boyun': 'yuz-boyun',
+    'toraks': 'toraks',
+    'abdomen-duvari': 'abdomen',
+    'abdomen-gi': 'abdomen',
+    'genitouriner': 'genitouriner',
+    'plasenta': null
+  };
+  return map[organId] || null;
+}
+
+/* ==========================================================================
+   STEP 12 — Rapor (önizleme + kopyala/indir/yazdır)
+   ========================================================================== */
+function Step12_Rapor(ctx) {
+  const report = useMemo(() => generateReport(ctx), [ctx]);
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = report;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const downloadHtml = () => {
+    const title = T.rTitle;
+    const html =
+      '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title>' +
+      '<style>body{font-family:Courier New,monospace;background:white;color:black;padding:30px;line-height:1.6;font-size:12pt}pre{white-space:pre-wrap}</style>' +
+      '</head><body><pre>' +
+      report.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+      '</pre></body></html>';
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = T.s12FileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const printReport = () => {
+    const el = document.getElementById('print-content');
+    if (el) el.textContent = report;
+    window.print();
+  };
+
+  return (
+    <div className="card">
+      <h2>{T.s12Title}</h2>
+      <div className="subtitle">{T.s12Sub}</div>
+
+      <div style={{ display:'flex', gap:'8px', flexWrap:'wrap', marginBottom:'14px' }}>
+        <button className="btn primary" onClick={copyToClipboard}>
+          {copied ? T.s12Copied : T.s12Copy}
+        </button>
+        <button className="btn" onClick={downloadHtml}>{T.s12DownloadHTML}</button>
+        <button className="btn" onClick={printReport}>{T.s12Print}</button>
+        <button className="btn ghost" onClick={() => ctx.onBack && ctx.onBack()}>
+          {T.s12BackToSummary}
+        </button>
+      </div>
+
+      <pre className="report">{report}</pre>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   RENDER
+   -------------------------------------------------------------------------- */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

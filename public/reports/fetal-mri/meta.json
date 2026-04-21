@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "Fetal MR",
+    "en": "Fetal MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "fetal_mri (1).html"
+}

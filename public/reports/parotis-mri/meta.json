@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "Parotis MR",
+    "en": "Parotid MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "parotis_mri.html"
+}
