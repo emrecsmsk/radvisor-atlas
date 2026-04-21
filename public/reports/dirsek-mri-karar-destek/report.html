@@ -5,49 +5,384 @@
 </head>
 <body><div id="root"></div>
 <script type="text/babel">
-const{useState,useMemo,useRef,useEffect}=React;const STEPS=[{id:'klinik',title:'Klinik Bilgiler',desc:'Hasta demografik ve klinik verileri'},{id:'genel',title:'Genel Değerlendirme',desc:'Effüzyon, sinovit, serbest cisim'},{id:'kemik',title:'Kemik & Kemik İliği',desc:'BME, kırık, AVN, lezyon'},{id:'kemikLez',title:'Kemik Lezyonları',desc:'Çoklu kemik lezyon detayı'},{id:'medial',title:'Medial Yapılar',desc:'UCL, CFT, medial epikondil'},{id:'lateral',title:'Lateral Yapılar',desc:'LCL kompleksi, CET, lat. epikondil'},{id:'anterior',title:'Anterior Yapılar',desc:'Distal biseps, brakiyalis'},{id:'posterior',title:'Posterior Yapılar',desc:'Triseps, olekranon, impingement'},{id:'kikirdak',title:'Kıkırdak & OCD',desc:'Artiküler kıkırdak, OCD'},{id:'sinir',title:'Sinirler',desc:'Ulnar, radial, median sinir'},{id:'bursa',title:'Bursalar',desc:'Olekranon, bikipitoradyal'},{id:'yumDoku',title:'YD Kitleleri',desc:'Çoklu kitle lezyonu'},{id:'vaskuler',title:'Vasküler & Ek',desc:'Brakiyal arter/ven, ek'},{id:'rapor',title:'Rapor',desc:'Structured rapor + ayırıcı tanı'}];const T=STEPS.length;
+const{useState,useMemo,useRef,useEffect}=React;
+const RV_LOCALE=(window.__RADVISOR__&&window.__RADVISOR__.locale)||'tr';
+const T=({
+tr:{
+  /* nav */
+  back:'Geri',next:'İleri',viewReport:'Raporu Görüntüle',
+  /* app header */
+  appTitle:'Dirsek Eklemi MRI Karar Destek',
+  appSubtitle:'Kapsamlı değerlendirme • Ayırıcı tanı • Yapılandırılmış rapor',
+  /* step titles */
+  stKlinik:'Klinik Bilgiler',stGenel:'Genel Değerlendirme',stKemik:'Kemik & Kemik İliği',
+  stKemikLez:'Kemik Lezyonları',stMedial:'Medial Yapılar',stLateral:'Lateral Yapılar',
+  stAnterior:'Anterior Yapılar',stPosterior:'Posterior Yapılar',stKikirdak:'Kıkırdak & OCD',
+  stSinir:'Sinirler',stBursa:'Bursalar',stYumDoku:'YD Kitleleri',stVaskuler:'Vasküler & Ek',stRapor:'Rapor',
+  /* step descs */
+  dKlinik:'Hasta demografik ve klinik verileri',dGenel:'Effüzyon, sinovit, serbest cisim',
+  dKemik:'BME, kırık, AVN, lezyon',dKemikLez:'Çoklu kemik lezyon detayı',
+  dMedial:'UCL, CFT, medial epikondil',dLateral:'LCL kompleksi, CET, lat. epikondil',
+  dAnterior:'Distal biseps, brakiyalis',dPosterior:'Triseps, olekranon, impingement',
+  dKikirdak:'Artiküler kıkırdak, OCD',dSinir:'Ulnar, radial, median sinir',
+  dBursa:'Olekranon, bikipitoradyal',dYumDoku:'Çoklu kitle lezyonu',
+  dVaskuler:'Brakiyal arter/ven, ek',dRapor:'Structured rapor + ayırıcı tanı',
+  /* field labels */
+  age:'Yaş',sex:'Cinsiyet',side:'Taraf',dominant:'Dominant El',duration:'Süre',trauma:'Travma',surgHx:'Cerrahi Öyküsü',
+  effusion:'Effüzyon',synovitis:'Sinovit',alignment:'Carrying Angle',looseBody:'Serbest Cisim',looseBodyDetail:'Serbest Cisim Detay',plica:'Plika',
+  bme:'BME',bmeLoc:'BME Lokalizasyon',bmePattern:'BME Paterni',
+  fracture:'Kırık',fractureLoc:'Kırık Lok.',fractureType:'Kırık Tipi',fractureDetail:'Detay',
+  avn:'AVN',avnLoc:'AVN Lok.',bonyLesion:'Kemik Lezyonu',
+  ucl:'UCL',uclBand:'UCL Band',uclLoc:'UCL Lok.',uclSublux:'Ulnar Sinir Sublux.',uclCalcif:'UCL Kalsif.',
+  cft:'CFT',cftDetail:'CFT Detay',medEpi:'Med. Epikondil',medEpiDetail:'Med.Epi. Detay',addNote:'Ek Not',
+  rcl:'RCL',lucl:'LUCL',annular:'Annular Lig.',cet:'CET',latEpi:'Lat. Epikondil',latEpiDetail:'Lat.Epi. Detay',plri:'PLRI',
+  distalBiceps:'Distal Biseps',bicepsDetail:'Biseps Detay',retraction:'Retraksiyon',
+  brachialis:'Brakiyalis',brachialisDetail:'Brakiyalis Det.',
+  antCapsule:'Ant. Kapsül',antCapsuleDetail:'Kapsül Det.',
+  triceps:'Triseps',tricepsDetail:'Triseps Det.',olecranonSpur:'Olekranon Spur',
+  postImpingement:'Post. İmpingement',postImpDetail:'İmpingement Det.',olecranonStress:'Olekranon Stres Fx',
+  capitellum:'Kapitellum',trochlea:'Troklea',radialHead:'Radyal Baş',olecranon:'Olekranon',ocd:'OCD',ocdLoc:'OCD Lok.',stability:'Stabilite',dipaola:'Dipaola',
+  ulnarNerve:'Ulnar Sinir',ulnarDetail:'Ulnar Det.',ulnarSublux:'Ulnar Sublux.',cubitalTunnel:'Kubital Tünel',
+  radialNerve:'Radyal Sinir',radialDetail:'Radyal Det.',pinSyndrome:'PIN Send.',
+  medianNerve:'Median Sinir',medianDetail:'Median Det.',pronatorSyndrome:'Pronator Send.',
+  olecranonBursa:'Olekranon Bursa',olecranonBursaDetail:'Olek. Bursa Det.',
+  bicipitoradial:'Bikipitoradyal',bicipitoradialDetail:'Bic. Det.',
+  brachialArtery:'Brakiyal Arter',venous:'Venöz',vascularDetail:'Vasküler Det.',additionalFindings:'Ek Bulgular',
+  lesionLoc:'Lokalizasyon',lesionSize:'Boyut (mm)',extraNote:'Ek Not',
+  /* options */
+  male:'Erkek',female:'Kadın',right:'Sağ',left:'Sol',
+  acute:'Akut',subacute:'Subakut',chronic:'Kronik',
+  none:'Yok',minimal:'Minimal',moderate:'Orta',marked:'Belirgin',
+  mild:'Hafif',
+  normal:'Normal',valgus:'Artmış valgus',varus:'Varus',
+  present:'Var',
+  posterolateral:'Posterolateral',other:'Diğer',
+  traumatic:'Travmatik',stress:'Stres',degenerative:'Dejeneratif',overuse:'Overuse',
+  fallDirect:'Düşme/Direkt',valgusStress:'Valgus stres',repetitive:'Tekrarlayan',
+  nondisplaced:'Non-deplase',displaced:'Deplase',comminuted:'Komminüt',avulsion:'Avülsiyon',
+  radHeadFx:'Radyal baş',coronoidFx:'Koronoid',olecranonFx:'Olekranon',supracondylarFx:'Suprakondiler',stressFx:'Stres',
+  kapitellum:'Kapitellum',troklea:'Troklea',radHead:'Radyal baş',coronoid:'Koronoid',medEpiB:'Med. epikondil',latEpiB:'Lat. epikondil',supra:'Suprakondiler',
+  intact:'İntakt',partialTear:'Parsiyel yırtık',completeTear:'Komplet yırtık',
+  tendinopathy:'Tendinopati',
+  anterior:'Anterior',posterior:'Posterior',transverse:'Transvers',all:'Tümü',
+  proximal:'Proksimal',mid:'Midsubstans',distal:'Distal (sublime tb.)',
+  bme_odem:'BME',avulsiyon:'Avülsiyon',apofizit:'Apofizit',
+  strain:'Strain',myositisOss:'Miyozit oss.',
+  thickened:'Kalınlaşmış',torn:'Yırtık',calcific:'Kalsifik',
+  noMin:'Yok/Minimal',lt2cm:'<2cm',gt2cm:'>2cm (cerrahi acil)',
+  olek_bursitis:'Bursit',complicated:'Komplike',
+  enlarged:'Genişlemiş',
+  aneurysm:'Anevrizma',occlusion:'Tıkanıklık',thrombosis:'Tromboz',varicose:'Variköz',
+  homojen:'Homojen',heterojen:'Heterojen',periferal:'Periferal',
+  intakt:'İntakt',incelme:'İncelmiş',destruksiyon:'Destrüksiyon',ekspansiyon:'Ekspansiyon',
+  solidPeriost:'Solid',lamellar:'Lameller',spicule:'Spikül',codman:'Codman',
+  softTissueExt:'YD Uzanım',
+  blooming:'Blooming',
+  lobule:'Lobüle',irregular:'İrregüler',sharp:'Keskin',
+  dwiYok:'Yok',dwiVar:'Var',
+  /* cart grades */
+  g0:'G0 Normal',g1:'G1 Yumuşama',g2:'G2 <50%',g3:'G3 >50%',g4:'G4 Tam kat',
+  stable:'Stabil',unstable:'İnstabil',
+  stage1:'Evre 1',stage2:'Evre 2',stage3:'Evre 3',stage4:'Evre 4',
+  /* info boxes */
+  infoUCL:'UCL anterior band = ana stabilizatör. Valgus stres yaralanması. Tommy John: UCL rekonstrüksiyonu.',
+  infoLCL:'LCL: RCL + LUCL (PLRI) + Annular. CET orijini = lateral epikondil (tennis elbow).',
+  infoCart:'Outerbridge: G0-G4. OCD en sık kapitellumda.',
+  infoNerve:'Ulnar→kubital tünel. Radyal→PIN/Frohse. Median→pronator.',
+  /* badges */
+  badgeImportant:'Önemli',badgeLoop:'Döngü',badgePLRI:'PLRI',badgeTennisElbow:'Tennis Elbow',badgeCubital:'Kubital',
+  /* loop labels */
+  boneLesDot:'Kemik Lez.',massLabel:'Kitle',
+  addNew:(label)=>'+ Yeni '+label,
+  noneAdded:(label)=>'Henüz '+label.toLowerCase()+' eklenmedi.',
+  /* report section titles */
+  secClinical:'KLİNİK',secJoint:'EKLEM & SİNOVYUM',secBone:'KEMİK',secMedial:'MEDİAL',secLateral:'LATERAL',
+  secAnterior:'ANTERİOR',secPosterior:'POSTERİOR',secCartilage:'KIKIRDAK & OCD',secNerves:'SİNİRLER',
+  secBursa:'BURSALAR',secSoftTissue:'YD KİTLELERİ',secVascular:'VASKÜLER',
+  /* report field labels */
+  patient:'Hasta',examination:(side)=>side+' dirsek MRI',dominantLabel:'Dominant',
+  durationLabel:'Süre',traumaLabel:'Travma',
+  effusionLabel:'Effüzyon',synovitisLabel:'Sinovit',alignmentLabel:'Dizilim',looseBodyLabel:'Serbest cisim',
+  bmeLabel:'BME',fractureLabel:'Kırık',avnLabel:'AVN',
+  uclLabel:'UCL',uclCalcifLabel:'UCL kalsif.',cftLabel:'CFT',medEpiLabel:'Med. epikondil',
+  rclLabel:'RCL',luclLabel:'LUCL',annularLabel:'Annular',cetLabel:'CET',plriLabel:'PLRI',
+  bicepsLabel:'Biseps',brachialisLabel:'Brakiyalis',antCapsuleLabel:'Ant.kapsül',
+  tricepsLabel:'Triseps',olecranonSpurLabel:'Olek. spur',postImpLabel:'Post.imp.',olecranonStressFxLabel:'Olek.stres Fx',
+  capitellumLabel:'Kapitellum',trochleaLabel:'Troklea',radialHeadLabel:'Radyal baş',olecranonLabel:'Olekranon',ocdLabel:'OCD',
+  ulnarLabel:'Ulnar',ulnarSubluxLabel:'Ulnar sublux.',cubitalLabel:'Kubital tünel',radialLabel:'Radyal',pinLabel:'PIN',medianLabel:'Median',pronatorLabel:'Pronator',
+  olekBursaLabel:'Olek. bursa',bicipitoradialLabel:'Bikipitoradyal',
+  brachialArtLabel:'Brak. arter',venousLabel:'Venöz',addLabel:'Ek',
+  massEntryLabel:(i)=>'Kitle '+(i+1),boneEntryLabel:(i)=>'Lez.'+(i+1),
+  /* scoring category names */
+  catMedial:'Medial Yapı',catLateral:'Lateral Yapı',catAnterior:'Anterior Yapı',catPosterior:'Posterior Yapı',
+  catBone:'Kemik',catBoneLez:(i)=>'Kemik Lez.'+(i+1),catCartilage:'Kıkırdak',catNerve:'Sinir',
+  catBursa:'Bursa',catSoftTissue:(i)=>'YD Kitle '+(i+1),catGeneral:'Genel',catVascular:'Vasküler',
+  /* scoring diagnosis labels */
+  dxCompleteUCL:'Komplet UCL rüptürü (Tommy John)',dxAntBandRupture:'Anterior band rüptürü',
+  dxPartialUCL:'Parsiyel UCL yırtığı',dxAntBandPartial:'Ant. band parsiyel',
+  dxUCLCalcif:'UCL kalsifikasyonu',dxCFTComplete:'CFT komplet rüptürü',dxCFTPartial:'CFT parsiyel yırtığı',
+  dxGolfer:"Medial epikondilitis (Golfer's)",dxMedEpiAvulsion:'Med.epi. avülsiyon (Little Leaguer)',
+  dxMedialApofizit:'Medial apofizit',dxMedEpiStress:'Med.epi. stres ödemi',dxCombinedUCLCFT:'Kombine UCL+CFT',
+  dxCETComplete:'CET komplet rüptürü',dxCETPartial:'CET parsiyel (tennis elbow)',dxLateralEpicondylitis:'Lateral epikondilitis',
+  dxLUCLComplete:'LUCL komplet',dxLUCLPartial:'LUCL parsiyel',
+  dxRCL:(t)=>'RCL '+t,dxAnnular:(t)=>'Annular '+t,
+  dxPLRI:'PLRI',dxLatEpi:(t)=>'Lat.epi. '+t,
+  dxDistalBicepsRupture:'Distal biseps rüptürü',dxBicepsRetraction:'Biseps rüptürü >2cm retraksiyon',
+  dxBicepsPartial:'Biseps parsiyel yırtığı',dxBicepsTendinopathy:'Biseps tendinopati',
+  dxBrachialisStrain:'Brakiyalis strain',dxMyositis:'Miyozit ossifikans',
+  dxAntCapsuleTear:'Ant. kapsül yırtığı',dxAntCapsuleCalcific:'Ant. kapsül kalsifikasyonu',
+  dxTricepsRupture:'Triseps rüptürü',dxTricepsPartial:'Triseps parsiyel',dxTricepsTendinopathy:'Triseps tendinopati',
+  dxPostImpingement:'Posterior impingement (VEO)',dxOlecranonOsteophytes:'Olekranon osteofitleri',
+  dxOlecranonStress:'Olekranon stres Fx',dxVEO:'VEO sendromu',
+  dxBME:(pattern)=>(pattern||'Non-spesifik')+' BME',
+  dxFracture:{radHead:'Radyal baş',koronoid:'Koronoid',olekranon:'Olekranon',supra:'Suprakondiler',stres:'Stres',diger:'Diğer'},
+  dxFxSuffix:' Fx',dxAVN:(lok)=>'AVN '+(lok||''),
+  dxMalignBone:'Malign kemik tm.',dxMetastasis:'Metastaz',dxEnchondroma:'Enkondrom',dxNOF:'NOF',
+  dxIntraosseousLipoma:'İntraosseöz lipom',dxGCT:'GCT',
+  dxAdvancedChondral:'İleri kondral hasar',dxOA:'Osteoartrit',dxEarlyChondromalacia:'Erken kondromalazi',
+  dxUnstableOCD:'İnstabil OCD',dxStableOCD:'Stabil OCD',dxCapitellumOCD:(young)=>'Kapitellum OCD'+(young?' (Panner?)':''),
+  dxUlnarNeuropathy:'Ulnar nöropati',dxUlnarSublux:'Ulnar sublux.',dxCubitalTunnel:'Kubital tünel',
+  dxRadialNeuropathy:'Radyal nöropati',dxPINSyndrome:'PIN sendromu',dxMedianNeuropathy:'Median nöropati',dxPronatorSyndrome:'Pronator send.',
+  dxOlecranonBursitis:'Olekranon bursit',dxComplicatedBursitis:'Komplike olek. bursit',dxBicipitoradialBursitis:'Bikipitoradyal bursit',
+  dxLipoma:'Lipom',dxPVNS:'PVNS',dxHemangioma:'Hemanjiyom',dxSarcoma:'Sarkom',dxDesmoid:'Desmoid',
+  dxGanglion:'Ganglion',dxSchwannoma:'Schwannom',dxAbscess:'Apse',dxNonspecific:'Non-spesifik',
+  dxInflammatoryArthritis:'İnflamatuar artrit',dxSepticArthritis:'Septik artrit',
+  dxSynovialChondromatosis:'Sinoviyal kondromatozis',dxOsteochondralLooseBody:'Osteokondral serbest cisim',
+  dxBrachialAneurysm:'Brakiyal anevrizma',dxBrachialStenosis:'Brakiyal stenoz',dxVenousThrombosis:'Venöz tromboz',
+  /* comment */
+  noPathology:'Belirgin patolojik bulgu izlenmemektedir.',
+  /* export */
+  reportTitle:'DİRSEK MRI RAPORU',comment:'YORUM',
+  printPreview:'Baskı Önizleme',copyClipboard:'Panoya Kopyala',downloadHTML:'HTML İndir',
+  print:'Yazdır',copy:'Kopyala',close:'Kapat',copied:'Kopyalandı!',copyFailed:'Başarısız',printFallback:'HTML indirin',
+  /* print report */
+  printReportTitle:'Dirsek MRI Raporu',printH2:'💪 Dirsek Eklemi MRI Raporu',
+  diffDiagnosis:'📊 AYIRICI TANI',commentLabel:'YORUM:',
+  /* overlay report heading */
+  overlayH2:'💪 Dirsek Eklemi MRI Raporu',
+  /* placeholders */
+  phAge:'35',phSurgHx:'Ör: UCL rekonstrüksiyonu',phLooseBodyDetail:'Sayı, lokalizasyon',phBMEDetail:'',
+  phFractureLoc:'Detay',phFractureDetail:'Mason vb.',phAVNLoc:'Ör: Kapitellum',
+  phCFTDetail:'Detay',phMedEpiDetail:'Detay',phAddNote:'Ek bulgular',
+  phCETDetail:'Detay',phLatEpiDetail:'Detay',
+  phBicepsDetail:'Detay',phBrachialisDetail:'Detay',phAntCapsuleDetail:'Detay',
+  phTricepsDetail:'Detay',phPostImpDetail:'Detay',phCartNote:'Ek bulgular',
+  phUlnarDetail:'Detay',phRadialDetail:'Detay',phMedianDetail:'Detay',phNerveNote:'Ek bulgular',
+  phOlekBursaDetail:'Detay',phBicipitoradialDetail:'Detay',phBursaNote:'Ek bulgular',
+  phVascularDetail:'Detay',phAdditional:'Lenfadenopati, heterotopik ossifikasyon vb.',
+  phLesionLoc:'Ör: Distal humerus',phLesionSize:'20x15',phLesionNote:'Ek bulgular...',
+  phMassLoc:'Ör: Antekübital',phMassSize:'25x20',
+},
+en:{
+  /* nav */
+  back:'Back',next:'Next',viewReport:'View Report',
+  /* app header */
+  appTitle:'Elbow MRI Decision Support',
+  appSubtitle:'Comprehensive evaluation • Differential diagnosis • Structured report',
+  /* step titles */
+  stKlinik:'Clinical Information',stGenel:'General Assessment',stKemik:'Bone & Bone Marrow',
+  stKemikLez:'Bone Lesions',stMedial:'Medial Structures',stLateral:'Lateral Structures',
+  stAnterior:'Anterior Structures',stPosterior:'Posterior Structures',stKikirdak:'Cartilage & OCD',
+  stSinir:'Nerves',stBursa:'Bursae',stYumDoku:'Soft Tissue Masses',stVaskuler:'Vascular & Other',stRapor:'Report',
+  /* step descs */
+  dKlinik:'Patient demographics and clinical data',dGenel:'Effusion, synovitis, loose body',
+  dKemik:'Bone marrow edema, fracture, AVN, lesion',dKemikLez:'Multiple bone lesion detail',
+  dMedial:'UCL, CFT, medial epicondyle',dLateral:'LCL complex, CET, lat. epicondyle',
+  dAnterior:'Distal biceps, brachialis',dPosterior:'Triceps, olecranon, impingement',
+  dKikirdak:'Articular cartilage, OCD',dSinir:'Ulnar, radial, median nerve',
+  dBursa:'Olecranon, bicipitoradial',dYumDoku:'Multiple mass lesion',
+  dVaskuler:'Brachial artery/vein, other',dRapor:'Structured report + differential diagnosis',
+  /* field labels */
+  age:'Age',sex:'Sex',side:'Side',dominant:'Dominant Hand',duration:'Duration',trauma:'Trauma',surgHx:'Surgical History',
+  effusion:'Effusion',synovitis:'Synovitis',alignment:'Carrying Angle',looseBody:'Loose Body',looseBodyDetail:'Loose Body Detail',plica:'Plica',
+  bme:'Bone Marrow Edema',bmeLoc:'BME Location',bmePattern:'BME Pattern',
+  fracture:'Fracture',fractureLoc:'Fracture Loc.',fractureType:'Fracture Type',fractureDetail:'Detail',
+  avn:'AVN',avnLoc:'AVN Loc.',bonyLesion:'Bone Lesion',
+  ucl:'UCL',uclBand:'UCL Band',uclLoc:'UCL Loc.',uclSublux:'Ulnar Nerve Sublux.',uclCalcif:'UCL Calcification',
+  cft:'CFT',cftDetail:'CFT Detail',medEpi:'Med. Epicondyle',medEpiDetail:'Med. Epi. Detail',addNote:'Additional Note',
+  rcl:'RCL',lucl:'LUCL',annular:'Annular Lig.',cet:'CET',latEpi:'Lat. Epicondyle',latEpiDetail:'Lat. Epi. Detail',plri:'PLRI',
+  distalBiceps:'Distal Biceps',bicepsDetail:'Biceps Detail',retraction:'Retraction',
+  brachialis:'Brachialis',brachialisDetail:'Brachialis Detail',
+  antCapsule:'Ant. Capsule',antCapsuleDetail:'Capsule Detail',
+  triceps:'Triceps',tricepsDetail:'Triceps Detail',olecranonSpur:'Olecranon Spur',
+  postImpingement:'Post. Impingement',postImpDetail:'Impingement Detail',olecranonStress:'Olecranon Stress Fx',
+  capitellum:'Capitellum',trochlea:'Trochlea',radialHead:'Radial Head',olecranon:'Olecranon',ocd:'OCD',ocdLoc:'OCD Loc.',stability:'Stability',dipaola:'DiPaola',
+  ulnarNerve:'Ulnar Nerve',ulnarDetail:'Ulnar Detail',ulnarSublux:'Ulnar Sublux.',cubitalTunnel:'Cubital Tunnel',
+  radialNerve:'Radial Nerve',radialDetail:'Radial Detail',pinSyndrome:'PIN Synd.',
+  medianNerve:'Median Nerve',medianDetail:'Median Detail',pronatorSyndrome:'Pronator Synd.',
+  olecranonBursa:'Olecranon Bursa',olecranonBursaDetail:'Olec. Bursa Detail',
+  bicipitoradial:'Bicipitoradial',bicipitoradialDetail:'Bic. Detail',
+  brachialArtery:'Brachial Artery',venous:'Venous',vascularDetail:'Vascular Detail',additionalFindings:'Additional Findings',
+  lesionLoc:'Location',lesionSize:'Size (mm)',extraNote:'Additional Note',
+  /* options */
+  male:'Male',female:'Female',right:'Right',left:'Left',
+  acute:'Acute',subacute:'Subacute',chronic:'Chronic',
+  none:'None',minimal:'Minimal',moderate:'Moderate',marked:'Marked',
+  mild:'Mild',
+  normal:'Normal',valgus:'Increased valgus',varus:'Varus',
+  present:'Present',
+  posterolateral:'Posterolateral',other:'Other',
+  traumatic:'Traumatic',stress:'Stress',degenerative:'Degenerative',overuse:'Overuse',
+  fallDirect:'Fall/Direct',valgusStress:'Valgus stress',repetitive:'Repetitive',
+  nondisplaced:'Non-displaced',displaced:'Displaced',comminuted:'Comminuted',avulsion:'Avulsion',
+  radHeadFx:'Radial head',coronoidFx:'Coronoid',olecranonFx:'Olecranon',supracondylarFx:'Supracondylar',stressFx:'Stress',
+  radHead:'Radial head',coronoid:'Coronoid',medEpiB:'Med. epicondyle',latEpiB:'Lat. epicondyle',supra:'Supracondylar',
+  kapitellum:'Capitellum',troklea:'Trochlea',
+  intact:'Intact',partialTear:'Partial tear',completeTear:'Complete tear',
+  tendinopathy:'Tendinopathy',
+  anterior:'Anterior',posterior:'Posterior',transverse:'Transverse',all:'All',
+  proximal:'Proximal',mid:'Mid-substance',distal:'Distal (sublime tb.)',
+  bme_odem:'Bone marrow edema',avulsiyon:'Avulsion',apofizit:'Apophysitis',
+  strain:'Strain',myositisOss:'Myositis ossificans',
+  thickened:'Thickened',torn:'Torn',calcific:'Calcific',
+  noMin:'None/Minimal',lt2cm:'<2cm',gt2cm:'>2cm (surgical emergency)',
+  olek_bursitis:'Bursitis',complicated:'Complicated',
+  enlarged:'Enlarged',
+  aneurysm:'Aneurysm',occlusion:'Occlusion',thrombosis:'Thrombosis',varicose:'Varicose',
+  homojen:'Homogeneous',heterojen:'Heterogeneous',periferal:'Peripheral',
+  intakt:'Intact',incelme:'Thinning',destruksiyon:'Destruction',ekspansiyon:'Expansion',
+  solidPeriost:'Solid',lamellar:'Lamellar',spicule:'Spicule',codman:'Codman',
+  softTissueExt:'Soft tissue ext.',
+  blooming:'Blooming',
+  lobule:'Lobulated',irregular:'Irregular',sharp:'Sharp',
+  dwiYok:'None',dwiVar:'Present',
+  /* cart grades */
+  g0:'G0 Normal',g1:'G1 Softening',g2:'G2 <50%',g3:'G3 >50%',g4:'G4 Full thickness',
+  stable:'Stable',unstable:'Unstable',
+  stage1:'Stage 1',stage2:'Stage 2',stage3:'Stage 3',stage4:'Stage 4',
+  /* info boxes */
+  infoUCL:'UCL anterior band = primary stabilizer. Valgus stress injury. Tommy John: UCL reconstruction.',
+  infoLCL:'LCL: RCL + LUCL (PLRI) + Annular. CET origin = lateral epicondyle (tennis elbow).',
+  infoCart:'Outerbridge: G0–G4. OCD most common at capitellum.',
+  infoNerve:'Ulnar→cubital tunnel. Radial→PIN/Frohse. Median→pronator.',
+  /* badges */
+  badgeImportant:'Important',badgeLoop:'Loop',badgePLRI:'PLRI',badgeTennisElbow:'Tennis Elbow',badgeCubital:'Cubital',
+  /* loop labels */
+  boneLesDot:'Bone Les.',massLabel:'Mass',
+  addNew:(label)=>'+ New '+label,
+  noneAdded:(label)=>'No '+label.toLowerCase()+' added yet.',
+  /* report section titles */
+  secClinical:'CLINICAL',secJoint:'JOINT & SYNOVIUM',secBone:'BONE',secMedial:'MEDIAL',secLateral:'LATERAL',
+  secAnterior:'ANTERIOR',secPosterior:'POSTERIOR',secCartilage:'CARTILAGE & OCD',secNerves:'NERVES',
+  secBursa:'BURSAE',secSoftTissue:'SOFT TISSUE MASSES',secVascular:'VASCULAR',
+  /* report field labels */
+  patient:'Patient',examination:(side)=>side+' elbow MRI',dominantLabel:'Dominant',
+  durationLabel:'Duration',traumaLabel:'Trauma',
+  effusionLabel:'Effusion',synovitisLabel:'Synovitis',alignmentLabel:'Alignment',looseBodyLabel:'Loose body',
+  bmeLabel:'Bone marrow edema',fractureLabel:'Fracture',avnLabel:'AVN',
+  uclLabel:'UCL',uclCalcifLabel:'UCL calcif.',cftLabel:'CFT',medEpiLabel:'Med. epicondyle',
+  rclLabel:'RCL',luclLabel:'LUCL',annularLabel:'Annular',cetLabel:'CET',plriLabel:'PLRI',
+  bicepsLabel:'Biceps',brachialisLabel:'Brachialis',antCapsuleLabel:'Ant. capsule',
+  tricepsLabel:'Triceps',olecranonSpurLabel:'Olec. spur',postImpLabel:'Post.imp.',olecranonStressFxLabel:'Olec.stress Fx',
+  capitellumLabel:'Capitellum',trochleaLabel:'Trochlea',radialHeadLabel:'Radial head',olecranonLabel:'Olecranon',ocdLabel:'OCD',
+  ulnarLabel:'Ulnar',ulnarSubluxLabel:'Ulnar sublux.',cubitalLabel:'Cubital tunnel',radialLabel:'Radial',pinLabel:'PIN',medianLabel:'Median',pronatorLabel:'Pronator',
+  olekBursaLabel:'Olec. bursa',bicipitoradialLabel:'Bicipitoradial',
+  brachialArtLabel:'Brach. artery',venousLabel:'Venous',addLabel:'Other',
+  massEntryLabel:(i)=>'Mass '+(i+1),boneEntryLabel:(i)=>'Les.'+(i+1),
+  /* scoring category names */
+  catMedial:'Medial Structure',catLateral:'Lateral Structure',catAnterior:'Anterior Structure',catPosterior:'Posterior Structure',
+  catBone:'Bone',catBoneLez:(i)=>'Bone Les.'+(i+1),catCartilage:'Cartilage',catNerve:'Nerve',
+  catBursa:'Bursa',catSoftTissue:(i)=>'ST Mass '+(i+1),catGeneral:'General',catVascular:'Vascular',
+  /* scoring diagnosis labels */
+  dxCompleteUCL:'Complete UCL rupture (Tommy John)',dxAntBandRupture:'Anterior band rupture',
+  dxPartialUCL:'Partial UCL tear',dxAntBandPartial:'Ant. band partial',
+  dxUCLCalcif:'UCL calcification',dxCFTComplete:'CFT complete rupture',dxCFTPartial:'CFT partial tear',
+  dxGolfer:"Medial epicondylitis (Golfer's)",dxMedEpiAvulsion:'Med.epi. avulsion (Little Leaguer)',
+  dxMedialApofizit:'Medial apophysitis',dxMedEpiStress:'Med.epi. stress edema',dxCombinedUCLCFT:'Combined UCL+CFT',
+  dxCETComplete:'CET complete rupture',dxCETPartial:'CET partial (tennis elbow)',dxLateralEpicondylitis:'Lateral epicondylitis',
+  dxLUCLComplete:'LUCL complete',dxLUCLPartial:'LUCL partial',
+  dxRCL:(t)=>'RCL '+t,dxAnnular:(t)=>'Annular '+t,
+  dxPLRI:'PLRI',dxLatEpi:(t)=>'Lat.epi. '+t,
+  dxDistalBicepsRupture:'Distal biceps rupture',dxBicepsRetraction:'Biceps rupture >2cm retraction',
+  dxBicepsPartial:'Biceps partial tear',dxBicepsTendinopathy:'Biceps tendinopathy',
+  dxBrachialisStrain:'Brachialis strain',dxMyositis:'Myositis ossificans',
+  dxAntCapsuleTear:'Ant. capsule tear',dxAntCapsuleCalcific:'Ant. capsule calcification',
+  dxTricepsRupture:'Triceps rupture',dxTricepsPartial:'Triceps partial',dxTricepsTendinopathy:'Triceps tendinopathy',
+  dxPostImpingement:'Posterior impingement (VEO)',dxOlecranonOsteophytes:'Olecranon osteophytes',
+  dxOlecranonStress:'Olecranon stress Fx',dxVEO:'VEO syndrome',
+  dxBME:(pattern)=>(pattern||'Non-specific')+' bone marrow edema',
+  dxFracture:{radHead:'Radial head',koronoid:'Coronoid',olekranon:'Olecranon',supra:'Supracondylar',stres:'Stress',diger:'Other'},
+  dxFxSuffix:' Fx',dxAVN:(lok)=>'AVN '+(lok||''),
+  dxMalignBone:'Malignant bone tumor',dxMetastasis:'Metastasis',dxEnchondroma:'Enchondroma',dxNOF:'NOF',
+  dxIntraosseousLipoma:'Intraosseous lipoma',dxGCT:'GCT',
+  dxAdvancedChondral:'Advanced chondral damage',dxOA:'Osteoarthritis',dxEarlyChondromalacia:'Early chondromalacia',
+  dxUnstableOCD:'Unstable OCD',dxStableOCD:'Stable OCD',dxCapitellumOCD:(young)=>'Capitellum OCD'+(young?' (Panner?)':''),
+  dxUlnarNeuropathy:'Ulnar neuropathy',dxUlnarSublux:'Ulnar sublux.',dxCubitalTunnel:'Cubital tunnel',
+  dxRadialNeuropathy:'Radial neuropathy',dxPINSyndrome:'PIN syndrome',dxMedianNeuropathy:'Median neuropathy',dxPronatorSyndrome:'Pronator synd.',
+  dxOlecranonBursitis:'Olecranon bursitis',dxComplicatedBursitis:'Complicated olec. bursitis',dxBicipitoradialBursitis:'Bicipitoradial bursitis',
+  dxLipoma:'Lipoma',dxPVNS:'PVNS',dxHemangioma:'Hemangioma',dxSarcoma:'Sarcoma',dxDesmoid:'Desmoid',
+  dxGanglion:'Ganglion',dxSchwannoma:'Schwannoma',dxAbscess:'Abscess',dxNonspecific:'Non-specific',
+  dxInflammatoryArthritis:'Inflammatory arthritis',dxSepticArthritis:'Septic arthritis',
+  dxSynovialChondromatosis:'Synovial chondromatosis',dxOsteochondralLooseBody:'Osteochondral loose body',
+  dxBrachialAneurysm:'Brachial aneurysm',dxBrachialStenosis:'Brachial stenosis',dxVenousThrombosis:'Venous thrombosis',
+  /* comment */
+  noPathology:'No significant pathological findings.',
+  /* export */
+  reportTitle:'ELBOW MRI REPORT',comment:'COMMENT',
+  printPreview:'Print Preview',copyClipboard:'Copy to Clipboard',downloadHTML:'Download HTML',
+  print:'Print',copy:'Copy',close:'Close',copied:'Copied!',copyFailed:'Failed',printFallback:'Download HTML',
+  /* print report */
+  printReportTitle:'Elbow MRI Report',printH2:'💪 Elbow Joint MRI Report',
+  diffDiagnosis:'📊 DIFFERENTIAL DIAGNOSIS',commentLabel:'COMMENT:',
+  /* overlay report heading */
+  overlayH2:'💪 Elbow Joint MRI Report',
+  /* placeholders */
+  phAge:'35',phSurgHx:'E.g.: UCL reconstruction',phLooseBodyDetail:'Count, localization',phBMEDetail:'',
+  phFractureLoc:'Detail',phFractureDetail:'Mason etc.',phAVNLoc:'E.g.: Capitellum',
+  phCFTDetail:'Detail',phMedEpiDetail:'Detail',phAddNote:'Additional findings',
+  phCETDetail:'Detail',phLatEpiDetail:'Detail',
+  phBicepsDetail:'Detail',phBrachialisDetail:'Detail',phAntCapsuleDetail:'Detail',
+  phTricepsDetail:'Detail',phPostImpDetail:'Detail',phCartNote:'Additional findings',
+  phUlnarDetail:'Detail',phRadialDetail:'Detail',phMedianDetail:'Detail',phNerveNote:'Additional findings',
+  phOlekBursaDetail:'Detail',phBicipitoradialDetail:'Detail',phBursaNote:'Additional findings',
+  phVascularDetail:'Detail',phAdditional:'Lymphadenopathy, heterotopic ossification, etc.',
+  phLesionLoc:'E.g.: Distal humerus',phLesionSize:'20x15',phLesionNote:'Additional findings...',
+  phMassLoc:'E.g.: Antecubital',phMassSize:'25x20',
+}
+})[RV_LOCALE];
+const STEPS=[{id:'klinik',title:T.stKlinik,desc:T.dKlinik},{id:'genel',title:T.stGenel,desc:T.dGenel},{id:'kemik',title:T.stKemik,desc:T.dKemik},{id:'kemikLez',title:T.stKemikLez,desc:T.dKemikLez},{id:'medial',title:T.stMedial,desc:T.dMedial},{id:'lateral',title:T.stLateral,desc:T.dLateral},{id:'anterior',title:T.stAnterior,desc:T.dAnterior},{id:'posterior',title:T.stPosterior,desc:T.dPosterior},{id:'kikirdak',title:T.stKikirdak,desc:T.dKikirdak},{id:'sinir',title:T.stSinir,desc:T.dSinir},{id:'bursa',title:T.stBursa,desc:T.dBursa},{id:'yumDoku',title:T.stYumDoku,desc:T.dYumDoku},{id:'vaskuler',title:T.stVaskuler,desc:T.dVaskuler},{id:'rapor',title:T.stRapor,desc:T.dRapor}];const STEP_COUNT=STEPS.length;
 const mkD=()=>({yas:'',cinsiyet:'',taraf:'',sure:'',travma:'',cerrahiOyku:'',dominant:'',effuzyon:'yok',sinovit:'yok',dizilim:'normal',serbCisim:'yok',serbCisimDetay:'',plika:'yok',bmeVar:'yok',bmeLok:[],bmeDesen:'',kirik:'yok',kirikLok:'',kirikTip:'',kirikDetay:'',avnVar:'yok',avnLok:'',kemikLezyonVar:'yok',kemikLezList:[],kemikLezIdx:-1,uclDurum:'intakt',uclBand:'',uclLok:'',uclSublux:'yok',uclKalsif:'yok',cftDurum:'normal',cftDetay:'',medEpikondil:'normal',medEpikondilDetay:'',medEkNot:'',lclDurum:'intakt',luclDurum:'intakt',annularDurum:'intakt',cetDurum:'normal',cetDetay:'',latEpikondil:'normal',latEpikondilDetay:'',plri:'yok',latEkNot:'',bisepsDurum:'normal',bisepsDetay:'',bisepsRet:'',brakiyalis:'normal',brakDet:'',antKapsul:'normal',antKapDet:'',antEk:'',trisepsDurum:'normal',triDet:'',olekSpurs:'yok',postImp:'yok',postImpDet:'',olekStres:'yok',postEk:'',cartKap:'0',cartTro:'0',cartRH:'0',cartOle:'0',ocdVar:'yok',ocdLok:'',ocdStab:'',ocdEvre:'',cartEk:'',ulnarSin:'normal',ulnarDet:'',ulnarSub:'yok',kubital:'yok',radSin:'normal',radDet:'',pinSend:'yok',medSin:'normal',medDet:'',pronator:'yok',sinEk:'',olekBursa:'normal',olekBurDet:'',bicBursa:'normal',bicBurDet:'',bursaEk:'',ydKitleVar:'yok',ydKitleList:[],ydKitleIdx:-1,brakArt:'normal',brakVen:'normal',vasDet:'',ekBulgu:''});
 const mkKL=()=>({lok:'',boyut:'',t1:'',t2:'',kon:'',kor:'',per:'',yd:'yok',not:''});const mkYK=()=>({lok:'',boyut:'',t1:'',t2:'',t2s:'',kon:'',hom:'',sin:'',dwi:'',not:''});
 function App(){const[step,setStep]=useState(0);const[d,setD]=useState(mkD());const[showOv,setShowOv]=useState(false);const ovRef=useRef(null);const u=(k,v)=>setD(p=>({...p,[k]:v}));const tg=(k,v)=>setD(p=>{const a=[...p[k]];const i=a.indexOf(v);i>=0?a.splice(i,1):a.push(v);return{...p,[k]:a}});
 const aKL=()=>{const l=[...d.kemikLezList,mkKL()];setD(p=>({...p,kemikLezList:l,kemikLezIdx:l.length-1}))};const rKL=i=>{const l=d.kemikLezList.filter((_,j)=>j!==i);setD(p=>({...p,kemikLezList:l,kemikLezIdx:l.length>0?Math.min(i,l.length-1):-1}))};const uKL=(i,k,v)=>{const l=[...d.kemikLezList];l[i]={...l[i],[k]:v};setD(p=>({...p,kemikLezList:l}))};
 const aYK=()=>{const l=[...d.ydKitleList,mkYK()];setD(p=>({...p,ydKitleList:l,ydKitleIdx:l.length-1}))};const rYK=i=>{const l=d.ydKitleList.filter((_,j)=>j!==i);setD(p=>({...p,ydKitleList:l,ydKitleIdx:l.length>0?Math.min(i,l.length-1):-1}))};const uYK=(i,k,v)=>{const l=[...d.ydKitleList];l[i]={...l[i],[k]:v};setD(p=>({...p,ydKitleList:l}))};
 const klI=STEPS.findIndex(s=>s.id==='kemikLez'),ykI=STEPS.findIndex(s=>s.id==='yumDoku');
-const goN=()=>{let n=step+1;if(n===klI&&d.kemikLezyonVar==='yok')n++;if(n===ykI&&d.ydKitleVar==='yok')n++;if(n<T)setStep(n)};const goP=()=>{let n=step-1;if(n===klI&&d.kemikLezyonVar==='yok')n--;if(n===ykI&&d.ydKitleVar==='yok')n--;if(n>=0)setStep(n)};
+const goN=()=>{let n=step+1;if(n===klI&&d.kemikLezyonVar==='yok')n++;if(n===ykI&&d.ydKitleVar==='yok')n++;if(n<STEP_COUNT)setStep(n)};const goP=()=>{let n=step-1;if(n===klI&&d.kemikLezyonVar==='yok')n--;if(n===ykI&&d.ydKitleVar==='yok')n--;if(n>=0)setStep(n)};
 useEffect(()=>{if(step!==klI)setD(p=>({...p,kemikLezIdx:-1}));if(step!==ykI)setD(p=>({...p,ydKitleIdx:-1}))},[step]);
 const R=({l,k,o,b})=><div className="field-group"><div className="field-label">{l}{b&&<span className="badge">{b}</span>}</div><div className="radio-group">{o.map(([v,lb])=><div key={v} className={`radio-opt${d[k]===v?' sel':''}`} onClick={()=>u(k,v)}>{lb}</div>)}</div></div>;
 const RC=({l,val,o,fn,b})=><div className="field-group"><div className="field-label">{l}{b&&<span className="badge">{b}</span>}</div><div className="radio-group">{o.map(([v,lb])=><div key={v} className={`radio-opt${val===v?' sel':''}`} onClick={()=>fn(v)}>{lb}</div>)}</div></div>;
 const CH=({l,k,o})=><div className="field-group"><div className="field-label">{l}</div><div>{o.map(([v,lb])=><span key={v} className={`check-opt${d[k].includes(v)?' sel':''}`} onClick={()=>tg(k,v)}>{lb}</span>)}</div></div>;
 const TF=({l,k,ph,ty})=><div className="field-group"><div className="field-label">{l}</div>{ty==='area'?<textarea className="text-input" rows={3} placeholder={ph} value={d[k]} onChange={e=>u(k,e.target.value)}/>:<input className="text-input" placeholder={ph} value={d[k]} onChange={e=>u(k,e.target.value)}/>}</div>;
 const NF=({l,k,ph})=><div className="field-group"><div className="field-label">{l}</div><input className="num-input" type="number" placeholder={ph} value={d[k]} onChange={e=>u(k,e.target.value)}/></div>;
-const tenO=[['normal','Normal'],['tendinopati','Tendinopati'],['parsiyel','Parsiyel yırtık'],['komplet','Komplet yırtık']];const ligO=[['intakt','İntakt'],['parsiyel','Parsiyel yırtık'],['komplet','Komplet yırtık']];const cartO=[['0','G0 Normal'],['1','G1 Yumuşama'],['2','G2 <50%'],['3','G3 >50%'],['4','G4 Tam kat']];
-const renderLoop=(list,idx,pfx,label,addF,remF,updF,lF,bF,rF)=>{if(!list.length)return<div><div className="info-box">Henüz {label.toLowerCase()} eklenmedi.</div><button className="btn btn-primary" onClick={addF}>+ Yeni {label}</button></div>;const c=list[idx]||{};return<><div className="lesion-tabs">{list.map((x,i)=><div key={i} className={`lesion-tab${i===idx?' active':''}`} onClick={()=>setD(p=>({...p,[pfx+'Idx']:i}))}>{label} {i+1}{x[lF[0]]?` (${x[lF[0]].substring(0,12)})`:''}<span className="x" onClick={e=>{e.stopPropagation();remF(i)}}>×</span></div>)}<div className="lesion-tab" onClick={addF} style={{color:'var(--accent)',borderColor:'var(--accent)'}}>+</div></div>{idx>=0&&idx<list.length&&<><div className="field-group"><div className="field-label">{lF[1]}</div><input className="text-input" value={c[lF[0]]||''} onChange={e=>updF(idx,lF[0],e.target.value)} placeholder={lF[2]}/></div><div className="field-group"><div className="field-label">{bF[1]}</div><input className="text-input" value={c[bF[0]]||''} onChange={e=>updF(idx,bF[0],e.target.value)} placeholder={bF[2]}/></div>{rF.map(([k,lb,opts])=><RC key={k} l={lb} val={c[k]} o={opts} fn={v=>updF(idx,k,v)}/>)}<div className="field-group"><div className="field-label">Ek Not</div><textarea className="text-input" rows={2} value={c.not||''} onChange={e=>updF(idx,'not',e.target.value)} placeholder="Ek bulgular..."/></div></>}</>};
+const tenO=[['normal',T.normal],['tendinopati',T.tendinopathy],['parsiyel',T.partialTear],['komplet',T.completeTear]];const ligO=[['intakt',T.intact],['parsiyel',T.partialTear],['komplet',T.completeTear]];const cartO=[['0',T.g0],['1',T.g1],['2',T.g2],['3',T.g3],['4',T.g4]];
+const renderLoop=(list,idx,pfx,label,addF,remF,updF,lF,bF,rF)=>{if(!list.length)return<div><div className="info-box">{T.noneAdded(label)}</div><button className="btn btn-primary" onClick={addF}>{T.addNew(label)}</button></div>;const c=list[idx]||{};return<><div className="lesion-tabs">{list.map((x,i)=><div key={i} className={`lesion-tab${i===idx?' active':''}`} onClick={()=>setD(p=>({...p,[pfx+'Idx']:i}))}>{label} {i+1}{x[lF[0]]?` (${x[lF[0]].substring(0,12)})`:''}<span className="x" onClick={e=>{e.stopPropagation();remF(i)}}>×</span></div>)}<div className="lesion-tab" onClick={addF} style={{color:'var(--accent)',borderColor:'var(--accent)'}}>+</div></div>{idx>=0&&idx<list.length&&<><div className="field-group"><div className="field-label">{lF[1]}</div><input className="text-input" value={c[lF[0]]||''} onChange={e=>updF(idx,lF[0],e.target.value)} placeholder={lF[2]}/></div><div className="field-group"><div className="field-label">{bF[1]}</div><input className="text-input" value={c[bF[0]]||''} onChange={e=>updF(idx,bF[0],e.target.value)} placeholder={bF[2]}/></div>{rF.map(([k,lb,opts])=><RC key={k} l={lb} val={c[k]} o={opts} fn={v=>updF(idx,k,v)}/>)}<div className="field-group"><div className="field-label">{T.extraNote}</div><textarea className="text-input" rows={2} value={c.not||''} onChange={e=>updF(idx,'not',e.target.value)} placeholder={T.phLesionNote}/></div></>}</>};
 const renderStep=()=>{switch(STEPS[step].id){
-case 'klinik':return<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}><NF l="Yaş" k="yas" ph="35"/><R l="Cinsiyet" k="cinsiyet" o={[['E','Erkek'],['K','Kadın']]}/></div><R l="Taraf" k="taraf" o={[['sag','Sağ'],['sol','Sol']]}/><R l="Dominant El" k="dominant" o={[['sag','Sağ'],['sol','Sol']]}/><R l="Süre" k="sure" o={[['akut','Akut'],['subakut','Subakut'],['kronik','Kronik']]}/><R l="Travma" k="travma" o={[['yok','Yok'],['dusmeDirekt','Düşme/Direkt'],['valgusStres','Valgus stres'],['tekrarlayan','Tekrarlayan'],['diger','Diğer']]}/><TF l="Cerrahi Öyküsü" k="cerrahiOyku" ph="Ör: UCL rekonstrüksiyonu"/></>;
-case 'genel':return<><R l="Effüzyon" k="effuzyon" o={[['yok','Yok'],['minimal','Minimal'],['orta','Orta'],['belirgin','Belirgin']]} b="Önemli"/><R l="Sinovit" k="sinovit" o={[['yok','Yok'],['hafif','Hafif'],['orta','Orta'],['belirgin','Belirgin']]}/><R l="Carrying Angle" k="dizilim" o={[['normal','Normal'],['valgus','Artmış valgus'],['varus','Varus']]}/><R l="Serbest Cisim" k="serbCisim" o={[['yok','Yok'],['var','Var']]}/>{d.serbCisim==='var'&&<TF l="Serbest Cisim Detay" k="serbCisimDetay" ph="Sayı, lokalizasyon"/>}<R l="Plika" k="plika" o={[['yok','Yok'],['posterolateral','Posterolateral'],['diger','Diğer']]}/></>;
-case 'kemik':return<><R l="BME" k="bmeVar" o={[['yok','Yok'],['var','Var']]} b="Önemli"/>{d.bmeVar==='var'&&<><CH l="BME Lokalizasyon" k="bmeLok" o={[['kapitellum','Kapitellum'],['troklea','Troklea'],['radHead','Radyal baş'],['koronoid','Koronoid'],['olekranon','Olekranon'],['medEpi','Med. epikondil'],['latEpi','Lat. epikondil'],['supra','Suprakondiler']]}/><R l="BME Paterni" k="bmeDesen" o={[['travmatik','Travmatik'],['stres','Stres'],['dejeneratif','Dejeneratif'],['overuse','Overuse'],['diger','Diğer']]}/></>}<R l="Kırık" k="kirik" o={[['yok','Yok'],['radHead','Radyal baş'],['koronoid','Koronoid'],['olekranon','Olekranon'],['supra','Suprakondiler'],['stres','Stres'],['diger','Diğer']]} b="Önemli"/>{d.kirik!=='yok'&&<><TF l="Kırık Lok." k="kirikLok" ph="Detay"/><R l="Kırık Tipi" k="kirikTip" o={[['nondeplase','Non-deplase'],['deplase','Deplase'],['komminut','Komminüt'],['avulsiyon','Avülsiyon']]}/><TF l="Detay" k="kirikDetay" ph="Mason vb."/></>}<R l="AVN" k="avnVar" o={[['yok','Yok'],['var','Var']]}/>{d.avnVar==='var'&&<TF l="AVN Lok." k="avnLok" ph="Ör: Kapitellum"/>}<R l="Kemik Lezyonu" k="kemikLezyonVar" o={[['yok','Yok'],['var','Var']]} b="Döngü"/></>;
-case 'kemikLez':return renderLoop(d.kemikLezList,d.kemikLezIdx,'kemikLez','Kemik Lez.',aKL,rKL,uKL,['lok','Lokalizasyon','Ör: Distal humerus'],['boyut','Boyut (mm)','20x15'],[['t1','T1A',[['hipo','Hipo'],['izo','İzo'],['hiper','Hiper'],['mikst','Mikst']]],['t2','T2A',[['hipo','Hipo'],['izo','İzo'],['hiper','Hiper'],['mikst','Mikst']]],['kon','Kontrastlanma',[['yok','Yok'],['homojen','Homojen'],['heterojen','Heterojen'],['periferal','Periferal']]],['kor','Korteks',[['intakt','İntakt'],['incelme','İncelmiş'],['destruksiyon','Destrüksiyon'],['ekspansiyon','Ekspansiyon']]],['per','Periost',[['yok','Yok'],['solid','Solid'],['lameller','Lameller'],['spikul','Spikül'],['codman','Codman']]],['yd','YD Uzanım',[['yok','Yok'],['var','Var']]]]);
-case 'medial':return<><div className="info-box">UCL anterior band = ana stabilizatör. Valgus stres yaralanması. Tommy John: UCL rekonstrüksiyonu.</div><R l="UCL" k="uclDurum" o={ligO} b="Önemli"/>{d.uclDurum!=='intakt'&&<><R l="UCL Band" k="uclBand" o={[['anterior','Anterior'],['posterior','Posterior'],['transvers','Transvers'],['tum','Tümü']]}/><R l="UCL Lok." k="uclLok" o={[['proks','Proksimal'],['mid','Midsubstans'],['distal','Distal (sublime tb.)']]}/></>}<R l="Ulnar Sinir Sublux." k="uclSublux" o={[['yok','Yok'],['var','Var']]}/><R l="UCL Kalsif." k="uclKalsif" o={[['yok','Yok'],['var','Var']]}/><R l="CFT" k="cftDurum" o={tenO}/>{d.cftDurum!=='normal'&&<TF l="CFT Detay" k="cftDetay" ph="Detay"/>}<R l="Med. Epikondil" k="medEpikondil" o={[['normal','Normal'],['odem','BME'],['avulsiyon','Avülsiyon'],['apofizit','Apofizit']]}/>{d.medEpikondil!=='normal'&&<TF l="Med.Epi. Detay" k="medEpikondilDetay" ph="Detay"/>}<TF l="Ek Not" k="medEkNot" ph="Ek bulgular"/></>;
-case 'lateral':return<><div className="info-box">LCL: RCL + LUCL (PLRI) + Annular. CET orijini = lateral epikondil (tennis elbow).</div><R l="RCL" k="lclDurum" o={ligO}/><R l="LUCL" k="luclDurum" o={ligO} b="PLRI"/><R l="Annular Lig." k="annularDurum" o={ligO}/><R l="CET" k="cetDurum" o={tenO} b="Tennis Elbow"/>{d.cetDurum!=='normal'&&<TF l="CET Detay" k="cetDetay" ph="Detay"/>}<R l="Lat. Epikondil" k="latEpikondil" o={[['normal','Normal'],['odem','BME'],['avulsiyon','Avülsiyon']]}/>{d.latEpikondil!=='normal'&&<TF l="Lat.Epi. Detay" k="latEpikondilDetay" ph="Detay"/>}<R l="PLRI" k="plri" o={[['yok','Yok'],['var','Var']]}/><TF l="Ek Not" k="latEkNot" ph="Ek bulgular"/></>;
-case 'anterior':return<><R l="Distal Biseps" k="bisepsDurum" o={tenO} b="Önemli"/>{d.bisepsDurum!=='normal'&&<><TF l="Biseps Detay" k="bisepsDetay" ph="Detay"/>{d.bisepsDurum==='komplet'&&<R l="Retraksiyon" k="bisepsRet" o={[['yok','Yok/Minimal'],['hafif','<2cm'],['belirgin','>2cm (cerrahi acil)']]}/>}</>}<R l="Brakiyalis" k="brakiyalis" o={[['normal','Normal'],['strain','Strain'],['miyozit','Miyozit oss.']]}/>{d.brakiyalis!=='normal'&&<TF l="Brakiyalis Det." k="brakDet" ph="Detay"/>}<R l="Ant. Kapsül" k="antKapsul" o={[['normal','Normal'],['kalin','Kalınlaşmış'],['yirtik','Yırtık'],['kalsifik','Kalsifik']]}/>{d.antKapsul!=='normal'&&<TF l="Kapsül Det." k="antKapDet" ph="Detay"/>}<TF l="Ek Not" k="antEk" ph="Ek bulgular"/></>;
-case 'posterior':return<><R l="Triseps" k="trisepsDurum" o={tenO}/>{d.trisepsDurum!=='normal'&&<TF l="Triseps Det." k="triDet" ph="Detay"/>}<R l="Olekranon Spur" k="olekSpurs" o={[['yok','Yok'],['var','Var']]}/><R l="Post. İmpingement" k="postImp" o={[['yok','Yok'],['var','Var']]}/>{d.postImp==='var'&&<TF l="İmpingement Det." k="postImpDet" ph="Detay"/>}<R l="Olekranon Stres Fx" k="olekStres" o={[['yok','Yok'],['var','Var']]}/><TF l="Ek Not" k="postEk" ph="Ek bulgular"/></>;
-case 'kikirdak':return<><div className="info-box">Outerbridge: G0-G4. OCD en sık kapitellumda.</div><R l="Kapitellum" k="cartKap" o={cartO}/><R l="Troklea" k="cartTro" o={cartO}/><R l="Radyal Baş" k="cartRH" o={cartO}/><R l="Olekranon" k="cartOle" o={cartO}/><R l="OCD" k="ocdVar" o={[['yok','Yok'],['var','Var']]} b="Önemli"/>{d.ocdVar==='var'&&<><R l="OCD Lok." k="ocdLok" o={[['kapitellum','Kapitellum'],['troklea','Troklea'],['radHead','Radyal baş']]}/><R l="Stabilite" k="ocdStab" o={[['stabil','Stabil'],['instabil','İnstabil']]}/><R l="Dipaola" k="ocdEvre" o={[['1','Evre 1'],['2','Evre 2'],['3','Evre 3'],['4','Evre 4']]}/></>}<TF l="Ek Not" k="cartEk" ph="Ek bulgular"/></>;
-case 'sinir':return<><div className="info-box">Ulnar→kubital tünel. Radyal→PIN/Frohse. Median→pronator.</div><R l="Ulnar Sinir" k="ulnarSin" o={[['normal','Normal'],['kalin','Kalınlaşmış'],['hiperintens','T2↑'],['komprese','Komprese']]} b="Kubital"/>{d.ulnarSin!=='normal'&&<TF l="Ulnar Det." k="ulnarDet" ph="Detay"/>}<R l="Ulnar Sublux." k="ulnarSub" o={[['yok','Yok'],['var','Var']]}/><R l="Kubital Tünel" k="kubital" o={[['yok','Yok'],['var','Var']]}/><R l="Radyal Sinir" k="radSin" o={[['normal','Normal'],['kalin','Kalınlaşmış'],['hiperintens','T2↑'],['komprese','Komprese']]}/>{d.radSin!=='normal'&&<TF l="Radyal Det." k="radDet" ph="Detay"/>}<R l="PIN Send." k="pinSend" o={[['yok','Yok'],['var','Var']]}/><R l="Median Sinir" k="medSin" o={[['normal','Normal'],['kalin','Kalınlaşmış'],['hiperintens','T2↑'],['komprese','Komprese']]}/>{d.medSin!=='normal'&&<TF l="Median Det." k="medDet" ph="Detay"/>}<R l="Pronator Send." k="pronator" o={[['yok','Yok'],['var','Var']]}/><TF l="Ek Not" k="sinEk" ph="Ek bulgular"/></>;
-case 'bursa':return<><R l="Olekranon Bursa" k="olekBursa" o={[['normal','Normal'],['bursit','Bursit'],['komplike','Komplike']]}/>{d.olekBursa!=='normal'&&<TF l="Olek. Bursa Det." k="olekBurDet" ph="Detay"/>}<R l="Bikipitoradyal" k="bicBursa" o={[['normal','Normal'],['bursit','Bursit'],['genislemis','Genişlemiş']]}/>{d.bicBursa!=='normal'&&<TF l="Bic. Det." k="bicBurDet" ph="Detay"/>}<TF l="Ek Not" k="bursaEk" ph="Ek bulgular"/></>;
-case 'yumDoku':return renderLoop(d.ydKitleList,d.ydKitleIdx,'ydKitle','Kitle',aYK,rYK,uYK,['lok','Lokalizasyon','Ör: Antekübital'],['boyut','Boyut (mm)','25x20'],[['t1','T1A',[['hipo','Hipo'],['izo','İzo'],['hiper','Hiper'],['mikst','Mikst']]],['t2','T2A',[['hipo','Hipo'],['izo','İzo'],['hiper','Hiper'],['mikst','Mikst']]],['t2s','T2*',[['normal','Normal'],['blooming','Blooming']]],['kon','K/M',[['yok','Yok'],['homojen','Homojen'],['heterojen','Heterojen'],['periferal','Periferal']]],['hom','Homojenite',[['homojen','Homojen'],['heterojen','Heterojen'],['kistik','Kistik']]],['sin','Sınır',[['keskin','Keskin'],['lobule','Lobüle'],['irreguler','İrregüler']]],['dwi','DWI',[['yok','Yok'],['var','Var']]]]);
-case 'vaskuler':return<><R l="Brakiyal Arter" k="brakArt" o={[['normal','Normal'],['anevrizma','Anevrizma'],['tikanik','Tıkanıklık']]}/><R l="Venöz" k="brakVen" o={[['normal','Normal'],['tromboz','Tromboz'],['varikoz','Variköz']]}/><TF l="Vasküler Det." k="vasDet" ph="Detay"/><TF l="Ek Bulgular" k="ekBulgu" ty="area" ph="Lenfadenopati, heterotopik ossifikasyon vb."/></>;
+case 'klinik':return<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}><NF l={T.age} k="yas" ph={T.phAge}/><R l={T.sex} k="cinsiyet" o={[['E',T.male],['K',T.female]]}/></div><R l={T.side} k="taraf" o={[['sag',T.right],['sol',T.left]]}/><R l={T.dominant} k="dominant" o={[['sag',T.right],['sol',T.left]]}/><R l={T.duration} k="sure" o={[['akut',T.acute],['subakut',T.subacute],['kronik',T.chronic]]}/><R l={T.trauma} k="travma" o={[['yok',T.none],['dusmeDirekt',T.fallDirect],['valgusStres',T.valgusStress],['tekrarlayan',T.repetitive],['diger',T.other]]}/><TF l={T.surgHx} k="cerrahiOyku" ph={T.phSurgHx}/></>;
+case 'genel':return<><R l={T.effusion} k="effuzyon" o={[['yok',T.none],['minimal',T.minimal],['orta',T.moderate],['belirgin',T.marked]]} b={T.badgeImportant}/><R l={T.synovitis} k="sinovit" o={[['yok',T.none],['hafif',T.mild],['orta',T.moderate],['belirgin',T.marked]]}/><R l={T.alignment} k="dizilim" o={[['normal',T.normal],['valgus',T.valgus],['varus',T.varus]]}/><R l={T.looseBody} k="serbCisim" o={[['yok',T.none],['var',T.present]]}/>{d.serbCisim==='var'&&<TF l={T.looseBodyDetail} k="serbCisimDetay" ph={T.phLooseBodyDetail}/>}<R l={T.plica} k="plika" o={[['yok',T.none],['posterolateral',T.posterolateral],['diger',T.other]]}/></>;
+case 'kemik':return<><R l={T.bme} k="bmeVar" o={[['yok',T.none],['var',T.present]]} b={T.badgeImportant}/>{d.bmeVar==='var'&&<><CH l={T.bmeLoc} k="bmeLok" o={[['kapitellum',T.kapitellum],['troklea',T.troklea],['radHead',T.radHead],['koronoid',T.coronoid],['olekranon',T.olecranon],['medEpi',T.medEpiB],['latEpi',T.latEpiB],['supra',T.supra]]}/><R l={T.bmePattern} k="bmeDesen" o={[['travmatik',T.traumatic],['stres',T.stress],['dejeneratif',T.degenerative],['overuse',T.overuse],['diger',T.other]]}/></>}<R l={T.fracture} k="kirik" o={[['yok',T.none],['radHead',T.radHeadFx],['koronoid',T.coronoidFx],['olekranon',T.olecranonFx],['supra',T.supracondylarFx],['stres',T.stressFx],['diger',T.other]]} b={T.badgeImportant}/>{d.kirik!=='yok'&&<><TF l={T.fractureLoc} k="kirikLok" ph={T.phFractureLoc}/><R l={T.fractureType} k="kirikTip" o={[['nondeplase',T.nondisplaced],['deplase',T.displaced],['komminut',T.comminuted],['avulsiyon',T.avulsion]]}/><TF l={T.fractureDetail} k="kirikDetay" ph={T.phFractureDetail}/></>}<R l={T.avn} k="avnVar" o={[['yok',T.none],['var',T.present]]}/>{d.avnVar==='var'&&<TF l={T.avnLoc} k="avnLok" ph={T.phAVNLoc}/>}<R l={T.bonyLesion} k="kemikLezyonVar" o={[['yok',T.none],['var',T.present]]} b={T.badgeLoop}/></>;
+case 'kemikLez':return renderLoop(d.kemikLezList,d.kemikLezIdx,'kemikLez',T.boneLesDot,aKL,rKL,uKL,['lok',T.lesionLoc,T.phLesionLoc],['boyut',T.lesionSize,T.phLesionSize],[['t1','T1A',[['hipo','Hypo'],['izo','Iso'],['hiper','Hyper'],['mikst','Mixed']]],['t2','T2A',[['hipo','Hypo'],['izo','Iso'],['hiper','Hyper'],['mikst','Mixed']]],['kon',RV_LOCALE==='en'?'Enhancement':'Kontrastlanma',[['yok',T.none],['homojen',T.homojen],['heterojen',T.heterojen],['periferal',T.periferal]]],['kor',RV_LOCALE==='en'?'Cortex':'Korteks',[['intakt',T.intakt],['incelme',T.incelme],['destruksiyon',T.destruksiyon],['ekspansiyon',T.ekspansiyon]]],['per',RV_LOCALE==='en'?'Periosteum':'Periost',[['yok',T.none],['solid',T.solidPeriost],['lameller',T.lamellar],['spikul',T.spicule],['codman',T.codman]]],['yd',T.softTissueExt,[['yok',T.none],['var',T.present]]]]);
+case 'medial':return<><div className="info-box">{T.infoUCL}</div><R l={T.ucl} k="uclDurum" o={ligO} b={T.badgeImportant}/>{d.uclDurum!=='intakt'&&<><R l={T.uclBand} k="uclBand" o={[['anterior',T.anterior],['posterior',T.posterior],['transvers',T.transverse],['tum',T.all]]}/><R l={T.uclLoc} k="uclLok" o={[['proks',T.proximal],['mid',T.mid],['distal',T.distal]]}/></>}<R l={T.uclSublux} k="uclSublux" o={[['yok',T.none],['var',T.present]]}/><R l={T.uclCalcif} k="uclKalsif" o={[['yok',T.none],['var',T.present]]}/><R l={T.cft} k="cftDurum" o={tenO}/>{d.cftDurum!=='normal'&&<TF l={T.cftDetail} k="cftDetay" ph={T.phCFTDetail}/>}<R l={T.medEpi} k="medEpikondil" o={[['normal',T.normal],['odem',T.bme_odem],['avulsiyon',T.avulsiyon],['apofizit',T.apofizit]]}/>{d.medEpikondil!=='normal'&&<TF l={T.medEpiDetail} k="medEpikondilDetay" ph={T.phMedEpiDetail}/>}<TF l={T.addNote} k="medEkNot" ph={T.phAddNote}/></>;
+case 'lateral':return<><div className="info-box">{T.infoLCL}</div><R l={T.rcl} k="lclDurum" o={ligO}/><R l={T.lucl} k="luclDurum" o={ligO} b={T.badgePLRI}/><R l={T.annular} k="annularDurum" o={ligO}/><R l={T.cet} k="cetDurum" o={tenO} b={T.badgeTennisElbow}/>{d.cetDurum!=='normal'&&<TF l={T.cetDetail||'CET Detail'} k="cetDetay" ph={T.phCETDetail}/>}<R l={T.latEpi} k="latEpikondil" o={[['normal',T.normal],['odem',T.bme_odem],['avulsiyon',T.avulsiyon]]}/>{d.latEpikondil!=='normal'&&<TF l={T.latEpiDetail} k="latEpikondilDetay" ph={T.phLatEpiDetail}/>}<R l={T.plri} k="plri" o={[['yok',T.none],['var',T.present]]}/><TF l={T.addNote} k="latEkNot" ph={T.phAddNote}/></>;
+case 'anterior':return<><R l={T.distalBiceps} k="bisepsDurum" o={tenO} b={T.badgeImportant}/>{d.bisepsDurum!=='normal'&&<><TF l={T.bicepsDetail} k="bisepsDetay" ph={T.phBicepsDetail}/>{d.bisepsDurum==='komplet'&&<R l={T.retraction} k="bisepsRet" o={[['yok',T.noMin],['hafif',T.lt2cm],['belirgin',T.gt2cm]]}/>}</>}<R l={T.brachialis} k="brakiyalis" o={[['normal',T.normal],['strain',T.strain],['miyozit',T.myositisOss]]}/>{d.brakiyalis!=='normal'&&<TF l={T.brachialisDetail} k="brakDet" ph={T.phBrachialisDetail}/>}<R l={T.antCapsule} k="antKapsul" o={[['normal',T.normal],['kalin',T.thickened],['yirtik',T.torn],['kalsifik',T.calcific]]}/>{d.antKapsul!=='normal'&&<TF l={T.antCapsuleDetail} k="antKapDet" ph={T.phAntCapsuleDetail}/>}<TF l={T.addNote} k="antEk" ph={T.phAddNote}/></>;
+case 'posterior':return<><R l={T.triceps} k="trisepsDurum" o={tenO}/>{d.trisepsDurum!=='normal'&&<TF l={T.tricepsDetail} k="triDet" ph={T.phTricepsDetail}/>}<R l={T.olecranonSpur} k="olekSpurs" o={[['yok',T.none],['var',T.present]]}/><R l={T.postImpingement} k="postImp" o={[['yok',T.none],['var',T.present]]}/>{d.postImp==='var'&&<TF l={T.postImpDetail} k="postImpDet" ph={T.phPostImpDetail}/>}<R l={T.olecranonStress} k="olekStres" o={[['yok',T.none],['var',T.present]]}/><TF l={T.addNote} k="postEk" ph={T.phAddNote}/></>;
+case 'kikirdak':return<><div className="info-box">{T.infoCart}</div><R l={T.capitellum} k="cartKap" o={cartO}/><R l={T.trochlea} k="cartTro" o={cartO}/><R l={T.radialHead} k="cartRH" o={cartO}/><R l={T.olecranon} k="cartOle" o={cartO}/><R l={T.ocd} k="ocdVar" o={[['yok',T.none],['var',T.present]]} b={T.badgeImportant}/>{d.ocdVar==='var'&&<><R l={T.ocdLoc} k="ocdLok" o={[['kapitellum',T.kapitellum],['troklea',T.troklea],['radHead',T.radHead]]}/><R l={T.stability} k="ocdStab" o={[['stabil',T.stable],['instabil',T.unstable]]}/><R l={T.dipaola} k="ocdEvre" o={[['1',T.stage1],['2',T.stage2],['3',T.stage3],['4',T.stage4]]}/></>}<TF l={T.addNote} k="cartEk" ph={T.phCartNote}/></>;
+case 'sinir':return<><div className="info-box">{T.infoNerve}</div><R l={T.ulnarNerve} k="ulnarSin" o={[['normal',T.normal],['kalin',T.thickened],['hiperintens','T2↑'],['komprese',RV_LOCALE==='en'?'Compressed':'Komprese']]} b={T.badgeCubital}/>{d.ulnarSin!=='normal'&&<TF l={T.ulnarDetail} k="ulnarDet" ph={T.phUlnarDetail}/>}<R l={T.ulnarSublux} k="ulnarSub" o={[['yok',T.none],['var',T.present]]}/><R l={T.cubitalTunnel} k="kubital" o={[['yok',T.none],['var',T.present]]}/><R l={T.radialNerve} k="radSin" o={[['normal',T.normal],['kalin',T.thickened],['hiperintens','T2↑'],['komprese',RV_LOCALE==='en'?'Compressed':'Komprese']]}/>{d.radSin!=='normal'&&<TF l={T.radialDetail} k="radDet" ph={T.phRadialDetail}/>}<R l={T.pinSyndrome} k="pinSend" o={[['yok',T.none],['var',T.present]]}/><R l={T.medianNerve} k="medSin" o={[['normal',T.normal],['kalin',T.thickened],['hiperintens','T2↑'],['komprese',RV_LOCALE==='en'?'Compressed':'Komprese']]}/>{d.medSin!=='normal'&&<TF l={T.medianDetail} k="medDet" ph={T.phMedianDetail}/>}<R l={T.pronatorSyndrome} k="pronator" o={[['yok',T.none],['var',T.present]]}/><TF l={T.addNote} k="sinEk" ph={T.phNerveNote}/></>;
+case 'bursa':return<><R l={T.olecranonBursa} k="olekBursa" o={[['normal',T.normal],['bursit',T.olek_bursitis],['komplike',T.complicated]]}/>{d.olekBursa!=='normal'&&<TF l={T.olecranonBursaDetail} k="olekBurDet" ph={T.phOlekBursaDetail}/>}<R l={T.bicipitoradial} k="bicBursa" o={[['normal',T.normal],['bursit',T.olek_bursitis],['genislemis',T.enlarged]]}/>{d.bicBursa!=='normal'&&<TF l={T.bicipitoradialDetail} k="bicBurDet" ph={T.phBicipitoradialDetail}/>}<TF l={T.addNote} k="bursaEk" ph={T.phBursaNote}/></>;
+case 'yumDoku':return renderLoop(d.ydKitleList,d.ydKitleIdx,'ydKitle',T.massLabel,aYK,rYK,uYK,['lok',T.lesionLoc,T.phMassLoc],['boyut',T.lesionSize,T.phMassSize],[['t1','T1A',[['hipo','Hypo'],['izo','Iso'],['hiper','Hyper'],['mikst','Mixed']]],['t2','T2A',[['hipo','Hypo'],['izo','Iso'],['hiper','Hyper'],['mikst','Mixed']]],['t2s','T2*',[['normal',T.normal],['blooming',T.blooming]]],['kon',RV_LOCALE==='en'?'Enhancement':'K/M',[['yok',T.none],['homojen',T.homojen],['heterojen',T.heterojen],['periferal',T.periferal]]],['hom',RV_LOCALE==='en'?'Homogeneity':'Homojenite',[['homojen',T.homojen],['heterojen',T.heterojen],['kistik',RV_LOCALE==='en'?'Cystic':'Kistik']]],['sin',RV_LOCALE==='en'?'Margin':'Sınır',[['keskin',T.sharp],['lobule',T.lobule],['irreguler',T.irregular]]],['dwi','DWI',[['yok',T.dwiYok],['var',T.dwiVar]]]]);
+case 'vaskuler':return<><R l={T.brachialArtery} k="brakArt" o={[['normal',T.normal],['anevrizma',T.aneurysm],['tikanik',T.occlusion]]}/><R l={T.venous} k="brakVen" o={[['normal',T.normal],['tromboz',T.thrombosis],['varikoz',T.varicose]]}/><TF l={T.vascularDetail} k="vasDet" ph={T.phVascularDetail}/><TF l={T.additionalFindings} k="ekBulgu" ty="area" ph={T.phAdditional}/></>;
 case 'rapor':return renderRapor();default:return null}};
 /* ==================== SCORING ==================== */
-const computeScores=useMemo(()=>{const S={};let med={};if(d.uclDurum==='komplet'){med['Komplet UCL rüptürü (Tommy John)']=95;if(d.uclBand==='anterior')med['Anterior band rüptürü']=97}else if(d.uclDurum==='parsiyel'){med['Parsiyel UCL yırtığı']=82;if(d.uclBand==='anterior')med['Ant. band parsiyel']=85}if(d.uclKalsif==='var')med['UCL kalsifikasyonu']=65;if(d.cftDurum==='komplet')med['CFT komplet rüptürü']=92;else if(d.cftDurum==='parsiyel')med['CFT parsiyel yırtığı']=82;else if(d.cftDurum==='tendinopati')med["Medial epikondilitis (Golfer's)"]=78;if(d.medEpikondil==='avulsiyon')med['Med.epi. avülsiyon (Little Leaguer)']=88;else if(d.medEpikondil==='apofizit')med['Medial apofizit']=75;else if(d.medEpikondil==='odem')med['Med.epi. stres ödemi']=68;if(d.uclDurum!=='intakt'&&d.cftDurum!=='normal')med['Kombine UCL+CFT']=88;if(Object.keys(med).length)S['Medial Yapı']=med;
-let lat={};if(d.cetDurum==='komplet')lat['CET komplet rüptürü']=92;else if(d.cetDurum==='parsiyel')lat['CET parsiyel (tennis elbow)']=85;else if(d.cetDurum==='tendinopati')lat['Lateral epikondilitis']=80;if(d.luclDurum==='komplet')lat['LUCL komplet']=90;else if(d.luclDurum==='parsiyel')lat['LUCL parsiyel']=78;if(d.lclDurum!=='intakt')lat['RCL '+d.lclDurum]=d.lclDurum==='komplet'?88:75;if(d.annularDurum!=='intakt')lat['Annular '+d.annularDurum]=d.annularDurum==='komplet'?85:70;if(d.plri==='var')lat['PLRI']=92;if(d.latEpikondil!=='normal')lat['Lat.epi. '+d.latEpikondil]=d.latEpikondil==='avulsiyon'?85:65;if(Object.keys(lat).length)S['Lateral Yapı']=lat;
-let ant={};if(d.bisepsDurum==='komplet'){ant['Distal biseps rüptürü']=95;if(d.bisepsRet==='belirgin')ant['Biseps rüptürü >2cm retraksiyon']=97}else if(d.bisepsDurum==='parsiyel')ant['Biseps parsiyel yırtığı']=82;else if(d.bisepsDurum==='tendinopati')ant['Biseps tendinopati']=70;if(d.brakiyalis==='strain')ant['Brakiyalis strain']=72;else if(d.brakiyalis==='miyozit')ant['Miyozit ossifikans']=75;if(d.antKapsul==='yirtik')ant['Ant. kapsül yırtığı']=78;else if(d.antKapsul==='kalsifik')ant['Ant. kapsül kalsifikasyonu']=65;if(Object.keys(ant).length)S['Anterior Yapı']=ant;
-let post={};if(d.trisepsDurum==='komplet')post['Triseps rüptürü']=92;else if(d.trisepsDurum==='parsiyel')post['Triseps parsiyel']=80;else if(d.trisepsDurum==='tendinopati')post['Triseps tendinopati']=68;if(d.postImp==='var')post['Posterior impingement (VEO)']=85;if(d.olekSpurs==='var')post['Olekranon osteofitleri']=60;if(d.olekStres==='var')post['Olekranon stres Fx']=88;if(d.postImp==='var'&&d.serbCisim==='var')post['VEO sendromu']=90;if(Object.keys(post).length)S['Posterior Yapı']=post;
-let kem={};if(d.bmeVar==='var')kem[(d.bmeDesen||'Non-spesifik')+' BME']={travmatik:82,stres:78,dejeneratif:70,overuse:72,diger:55}[d.bmeDesen]||55;if(d.kirik!=='yok'){const kN={radHead:'Radyal baş',koronoid:'Koronoid',olekranon:'Olekranon',supra:'Suprakondiler',stres:'Stres',diger:'Diğer'};kem[(kN[d.kirik]||'Diğer')+' Fx']={radHead:85,koronoid:82,olekranon:85,supra:88,stres:78,diger:75}[d.kirik]||75}if(d.avnVar==='var')kem['AVN '+(d.avnLok||'')]=80;d.kemikLezList.forEach((l,i)=>{let lD={};const agr=l.per&&l.per!=='yok'&&l.per!=='solid';if(agr||l.kor==='destruksiyon'||l.yd==='var'){lD['Malign kemik tm.']=82;lD['Metastaz']=75}else{lD['Enkondrom']=65;lD['NOF']=58;if(l.t1==='hiper')lD['İntraosseöz lipom']=68;lD['GCT']=55}S['Kemik Lez.'+(i+1)]=lD});if(Object.keys(kem).length)S['Kemik']=kem;
-let cart={};const cM=Math.max(+d.cartKap,+d.cartTro,+d.cartRH,+d.cartOle);if(cM>=3){cart['İleri kondral hasar']=85;cart['Osteoartrit']=78}else if(cM>=1){cart['Erken kondromalazi']=62}if(d.ocdVar==='var'){cart[d.ocdStab==='instabil'?'İnstabil OCD':'Stabil OCD']=d.ocdStab==='instabil'?92:75;if(d.ocdLok==='kapitellum')cart['Kapitellum OCD'+(+d.yas<15?' (Panner?)':'')]=+d.yas<15?85:70}if(Object.keys(cart).length)S['Kıkırdak']=cart;
-let sin={};if(d.ulnarSin!=='normal')sin['Ulnar nöropati']=d.ulnarSin==='komprese'?88:d.ulnarSin==='hiperintens'?82:72;if(d.ulnarSub==='var')sin['Ulnar sublux.']=78;if(d.kubital==='var')sin['Kubital tünel']=82;if(d.radSin!=='normal')sin['Radyal nöropati']=d.radSin==='komprese'?85:72;if(d.pinSend==='var')sin['PIN sendromu']=80;if(d.medSin!=='normal')sin['Median nöropati']=72;if(d.pronator==='var')sin['Pronator send.']=78;if(Object.keys(sin).length)S['Sinir']=sin;
-let bur={};if(d.olekBursa==='bursit')bur['Olekranon bursit']=78;else if(d.olekBursa==='komplike')bur['Komplike olek. bursit']=85;if(d.bicBursa!=='normal')bur['Bikipitoradyal bursit']=72;if(Object.keys(bur).length)S['Bursa']=bur;
-d.ydKitleList.forEach((k,i)=>{let kD={};if(k.t1==='hiper'&&k.t2==='hiper')kD['Lipom']=85;if(k.t2s==='blooming'){kD['PVNS']=80;kD['Hemanjiyom']=65}if(k.sin==='irreguler'){kD['Sarkom']=75;kD['Desmoid']=62}if(k.t2==='hiper'&&k.sin==='keskin'){kD['Ganglion']=82;kD['Schwannom']=62}if(k.kon==='periferal')kD['Apse']=70;if(!Object.keys(kD).length)kD['Non-spesifik']=50;S['YD Kitle '+(i+1)]=kD});
-let gen={};if(d.effuzyon!=='yok'&&d.sinovit!=='yok'){gen['İnflamatuar artrit']=72;gen['Septik artrit']=d.effuzyon==='belirgin'?65:50}if(d.serbCisim==='var'){gen['Sinoviyal kondromatozis']=72;gen['Osteokondral serbest cisim']=68}if(Object.keys(gen).length)S['Genel']=gen;
-let vas={};if(d.brakArt!=='normal')vas[d.brakArt==='anevrizma'?'Brakiyal anevrizma':'Brakiyal stenoz']=82;if(d.brakVen==='tromboz')vas['Venöz tromboz']=85;if(Object.keys(vas).length)S['Vasküler']=vas;return S},[d]);
+const computeScores=useMemo(()=>{const S={};let med={};if(d.uclDurum==='komplet'){med[T.dxCompleteUCL]=95;if(d.uclBand==='anterior')med[T.dxAntBandRupture]=97}else if(d.uclDurum==='parsiyel'){med[T.dxPartialUCL]=82;if(d.uclBand==='anterior')med[T.dxAntBandPartial]=85}if(d.uclKalsif==='var')med[T.dxUCLCalcif]=65;if(d.cftDurum==='komplet')med[T.dxCFTComplete]=92;else if(d.cftDurum==='parsiyel')med[T.dxCFTPartial]=82;else if(d.cftDurum==='tendinopati')med[T.dxGolfer]=78;if(d.medEpikondil==='avulsiyon')med[T.dxMedEpiAvulsion]=88;else if(d.medEpikondil==='apofizit')med[T.dxMedialApofizit]=75;else if(d.medEpikondil==='odem')med[T.dxMedEpiStress]=68;if(d.uclDurum!=='intakt'&&d.cftDurum!=='normal')med[T.dxCombinedUCLCFT]=88;if(Object.keys(med).length)S[T.catMedial]=med;
+let lat={};if(d.cetDurum==='komplet')lat[T.dxCETComplete]=92;else if(d.cetDurum==='parsiyel')lat[T.dxCETPartial]=85;else if(d.cetDurum==='tendinopati')lat[T.dxLateralEpicondylitis]=80;if(d.luclDurum==='komplet')lat[T.dxLUCLComplete]=90;else if(d.luclDurum==='parsiyel')lat[T.dxLUCLPartial]=78;if(d.lclDurum!=='intakt')lat[T.dxRCL(d.lclDurum)]=d.lclDurum==='komplet'?88:75;if(d.annularDurum!=='intakt')lat[T.dxAnnular(d.annularDurum)]=d.annularDurum==='komplet'?85:70;if(d.plri==='var')lat[T.dxPLRI]=92;if(d.latEpikondil!=='normal')lat[T.dxLatEpi(d.latEpikondil)]=d.latEpikondil==='avulsiyon'?85:65;if(Object.keys(lat).length)S[T.catLateral]=lat;
+let ant={};if(d.bisepsDurum==='komplet'){ant[T.dxDistalBicepsRupture]=95;if(d.bisepsRet==='belirgin')ant[T.dxBicepsRetraction]=97}else if(d.bisepsDurum==='parsiyel')ant[T.dxBicepsPartial]=82;else if(d.bisepsDurum==='tendinopati')ant[T.dxBicepsTendinopathy]=70;if(d.brakiyalis==='strain')ant[T.dxBrachialisStrain]=72;else if(d.brakiyalis==='miyozit')ant[T.dxMyositis]=75;if(d.antKapsul==='yirtik')ant[T.dxAntCapsuleTear]=78;else if(d.antKapsul==='kalsifik')ant[T.dxAntCapsuleCalcific]=65;if(Object.keys(ant).length)S[T.catAnterior]=ant;
+let post={};if(d.trisepsDurum==='komplet')post[T.dxTricepsRupture]=92;else if(d.trisepsDurum==='parsiyel')post[T.dxTricepsPartial]=80;else if(d.trisepsDurum==='tendinopati')post[T.dxTricepsTendinopathy]=68;if(d.postImp==='var')post[T.dxPostImpingement]=85;if(d.olekSpurs==='var')post[T.dxOlecranonOsteophytes]=60;if(d.olekStres==='var')post[T.dxOlecranonStress]=88;if(d.postImp==='var'&&d.serbCisim==='var')post[T.dxVEO]=90;if(Object.keys(post).length)S[T.catPosterior]=post;
+let kem={};if(d.bmeVar==='var')kem[T.dxBME(d.bmeDesen)]={travmatik:82,stres:78,dejeneratif:70,overuse:72,diger:55}[d.bmeDesen]||55;if(d.kirik!=='yok'){kem[(T.dxFracture[d.kirik]||T.dxFracture.diger)+T.dxFxSuffix]={radHead:85,koronoid:82,olekranon:85,supra:88,stres:78,diger:75}[d.kirik]||75}if(d.avnVar==='var')kem[T.dxAVN(d.avnLok)]=80;d.kemikLezList.forEach((l,i)=>{let lD={};const agr=l.per&&l.per!=='yok'&&l.per!=='solid';if(agr||l.kor==='destruksiyon'||l.yd==='var'){lD[T.dxMalignBone]=82;lD[T.dxMetastasis]=75}else{lD[T.dxEnchondroma]=65;lD[T.dxNOF]=58;if(l.t1==='hiper')lD[T.dxIntraosseousLipoma]=68;lD[T.dxGCT]=55}S[T.catBoneLez(i)]=lD});if(Object.keys(kem).length)S[T.catBone]=kem;
+let cart={};const cM=Math.max(+d.cartKap,+d.cartTro,+d.cartRH,+d.cartOle);if(cM>=3){cart[T.dxAdvancedChondral]=85;cart[T.dxOA]=78}else if(cM>=1){cart[T.dxEarlyChondromalacia]=62}if(d.ocdVar==='var'){cart[d.ocdStab==='instabil'?T.dxUnstableOCD:T.dxStableOCD]=d.ocdStab==='instabil'?92:75;if(d.ocdLok==='kapitellum')cart[T.dxCapitellumOCD(+d.yas<15)]=+d.yas<15?85:70}if(Object.keys(cart).length)S[T.catCartilage]=cart;
+let sin={};if(d.ulnarSin!=='normal')sin[T.dxUlnarNeuropathy]=d.ulnarSin==='komprese'?88:d.ulnarSin==='hiperintens'?82:72;if(d.ulnarSub==='var')sin[T.dxUlnarSublux]=78;if(d.kubital==='var')sin[T.dxCubitalTunnel]=82;if(d.radSin!=='normal')sin[T.dxRadialNeuropathy]=d.radSin==='komprese'?85:72;if(d.pinSend==='var')sin[T.dxPINSyndrome]=80;if(d.medSin!=='normal')sin[T.dxMedianNeuropathy]=72;if(d.pronator==='var')sin[T.dxPronatorSyndrome]=78;if(Object.keys(sin).length)S[T.catNerve]=sin;
+let bur={};if(d.olekBursa==='bursit')bur[T.dxOlecranonBursitis]=78;else if(d.olekBursa==='komplike')bur[T.dxComplicatedBursitis]=85;if(d.bicBursa!=='normal')bur[T.dxBicipitoradialBursitis]=72;if(Object.keys(bur).length)S[T.catBursa]=bur;
+d.ydKitleList.forEach((k,i)=>{let kD={};if(k.t1==='hiper'&&k.t2==='hiper')kD[T.dxLipoma]=85;if(k.t2s==='blooming'){kD[T.dxPVNS]=80;kD[T.dxHemangioma]=65}if(k.sin==='irreguler'){kD[T.dxSarcoma]=75;kD[T.dxDesmoid]=62}if(k.t2==='hiper'&&k.sin==='keskin'){kD[T.dxGanglion]=82;kD[T.dxSchwannoma]=62}if(k.kon==='periferal')kD[T.dxAbscess]=70;if(!Object.keys(kD).length)kD[T.dxNonspecific]=50;S[T.catSoftTissue(i)]=kD});
+let gen={};if(d.effuzyon!=='yok'&&d.sinovit!=='yok'){gen[T.dxInflammatoryArthritis]=72;gen[T.dxSepticArthritis]=d.effuzyon==='belirgin'?65:50}if(d.serbCisim==='var'){gen[T.dxSynovialChondromatosis]=72;gen[T.dxOsteochondralLooseBody]=68}if(Object.keys(gen).length)S[T.catGeneral]=gen;
+let vas={};if(d.brakArt!=='normal')vas[d.brakArt==='anevrizma'?T.dxBrachialAneurysm:T.dxBrachialStenosis]=82;if(d.brakVen==='tromboz')vas[T.dxVenousThrombosis]=85;if(Object.keys(vas).length)S[T.catVascular]=vas;return S},[d]);
 const genYorum=()=>{let y='';const c=Object.entries(computeScores);if(!c.length)return'Belirgin patolojik bulgu izlenmemektedir.';c.forEach(([cat,di])=>{if(typeof di==='object'&&Object.keys(di).length){const s=Object.entries(di).sort((a,b)=>b[1]-a[1]);y+='\n'+cat+':\n';s.forEach(([n,p],i)=>{y+='  '+(i===0?'→':'•')+' '+n+': %'+Math.min(100,p)+'\n'})}});return y};
 /* ==================== BUILD SECTIONS ==================== */
 const buildSections=()=>{const S=[];const tf=d.taraf==='sag'?'Sağ':'Sol';
@@ -73,6 +408,6 @@ const hCopy=()=>{const secs=buildSections();const plain='DİRSEK MRI RAPORU\n'+'
 const hDL=()=>{const c=bPH();const b=new Blob([c],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download='Dirsek_MRI_'+new Date().toISOString().slice(0,10)+'.html';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url)};
 const bPH=()=>{const secs=buildSections();let body='';secs.forEach(s=>{body+='<div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;margin-bottom:12px"><div style="background:linear-gradient(135deg,#fdf0e4,#fef8f0);padding:8px 14px;font-weight:700;font-size:11pt;color:#c46820;border-bottom:1px solid #d1d5db">'+s.i+' '+s.t+'</div>';s.r.forEach(([l,v,cls],i)=>{const bg=i%2===0?'#f8f9fa':'#fdf0e4';const vc=cls==='kritik'?'color:#ef4444;font-weight:700':cls==='patolojik'?'color:#d97706':cls==='normal'?'color:#16a34a':'';body+='<div style="display:flex;padding:5px 14px;align-items:baseline;gap:8px;background:'+bg+'"><span style="min-width:180px;font-weight:600;font-size:9.5pt;color:#555">'+l+'</span><span style="flex:1;font-size:10pt;'+vc+'">'+v+'</span></div>'});body+='</div>'});body+='<div style="background:#fdf0e4;border-left:3px solid #e07a2f;padding:10px 14px;margin:16px 0;border-radius:0 8px 8px 0"><strong>YORUM:</strong><pre style="white-space:pre-wrap;font-family:inherit;margin:6px 0 0">'+genYorum()+'</pre></div>';return'<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Dirsek MRI</title><style>body{font-family:Segoe UI,sans-serif;font-size:10.5pt;line-height:1.6;color:#1a1a2e;max-width:210mm;margin:15mm auto;padding:0 15mm}h2{color:#e07a2f;border-bottom:2px solid #e07a2f;padding-bottom:4px;margin:18px 0 10px;font-size:13pt}@media print{body{margin:10mm;padding:0}}</style></head><body><h2>💪 Dirsek Eklemi MRI Raporu</h2><p style="color:#666;font-size:9.5pt">Tarih: '+new Date().toLocaleDateString('tr-TR')+'</p>'+body+'</body></html>'};
 const renderOv=()=>{if(!showOv)return null;return<div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setShowOv(false)}}><div><div className="overlay-toolbar"><button className="btn btn-primary" onClick={()=>{try{window.print()}catch(e){alert('HTML indirin')}}}>Yazdır</button><button className="btn btn-success" onClick={hCopy}>Kopyala</button><button className="btn btn-warn" onClick={hDL}>HTML İndir</button><button className="btn btn-danger" onClick={()=>setShowOv(false)}>Kapat</button></div><div className="overlay-content" ref={ovRef} dangerouslySetInnerHTML={{__html:bPH().replace(/<!DOCTYPE.*?<body>/s,'').replace(/<\/body>.*$/s,'')}}/></div></div>};
-return<div className="app-wrap"><div className="app-header"><h1>💪 Dirsek Eklemi MRI Karar Destek</h1><p>Kapsamlı değerlendirme • Ayırıcı tanı • Yapılandırılmış rapor</p></div><div className="progress-bar">{STEPS.map((s,i)=><div key={i} className={`seg${i<step?' done':''}${i===step?' active':''}`} title={s.title} onClick={()=>setStep(i)} style={{cursor:'pointer'}}/>)}</div><div className="step-card"><div className="step-title">{step+1}/{T} — {STEPS[step].title}</div><div className="step-desc">{STEPS[step].desc}</div>{renderStep()}</div><div className="nav-row"><button className="btn btn-secondary" onClick={goP} disabled={step===0}>← Geri</button><div style={{fontSize:'.8rem',color:'var(--text2)',alignSelf:'center'}}>{STEPS[step].title}</div>{step<T-1?<button className="btn btn-primary" onClick={goN}>İleri →</button>:<button className="btn btn-success" onClick={()=>setShowOv(true)}>Raporu Görüntüle</button>}</div>{renderOv()}</div>}
+return<div className="app-wrap"><div className="app-header"><h1>💪 Dirsek Eklemi MRI Karar Destek</h1><p>Kapsamlı değerlendirme • Ayırıcı tanı • Yapılandırılmış rapor</p></div><div className="progress-bar">{STEPS.map((s,i)=><div key={i} className={`seg${i<step?' done':''}${i===step?' active':''}`} title={s.title} onClick={()=>setStep(i)} style={{cursor:'pointer'}}/>)}</div><div className="step-card"><div className="step-title">{step+1}/{STEP_COUNT} — {STEPS[step].title}</div><div className="step-desc">{STEPS[step].desc}</div>{renderStep()}</div><div className="nav-row"><button className="btn btn-secondary" onClick={goP} disabled={step===0}>← {T.back}</button><div style={{fontSize:'.8rem',color:'var(--text2)',alignSelf:'center'}}>{STEPS[step].title}</div>{step<STEP_COUNT-1?<button className="btn btn-primary" onClick={goN}>{T.next} →</button>:<button className="btn btn-success" onClick={()=>setShowOv(true)}>{T.viewReport}</button>}</div>{renderOv()}</div>}
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script></body></html>

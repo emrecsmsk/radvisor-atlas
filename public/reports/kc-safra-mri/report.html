@@ -150,14 +150,290 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t
 <body>
 
 <div class="app-header">
-<h1>🫁 Karaciğer & Safra Kesesi MRI Karar Destek Sistemi</h1>
-<span class="badge">v3.0 — Segment / Ölçüm / HBP</span>
+<h1 data-i18n-tr="🫁 Karaciğer & Safra Kesesi MRI Karar Destek Sistemi" data-i18n-en="🫁 Liver & Gallbladder MRI Decision Support System"></h1>
+<span class="badge" data-i18n-tr="v3.0 — Segment / Ölçüm / HBP" data-i18n-en="v3.0 — Segment / Measurement / HBP"></span>
 </div>
 
 <div class="container" id="app"></div>
 <div class="report-overlay" id="reportOverlay"></div>
 
 <script>
+// =====================================================
+// i18n BOOTSTRAP
+// =====================================================
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // Header
+    appTitle: '🫁 Karaciğer & Safra Kesesi MRI Karar Destek Sistemi',
+    badgeLabel: 'v3.0 — Segment / Ölçüm / HBP',
+    // Progress / nav labels
+    stepOf: (cur, tot) => `Adım ${cur}/${tot}`,
+    lesionOf: (i, n) => `Lezyon ${i}/${n}`,
+    btnBack: '← Geri',
+    btnNext: 'İleri →',
+    btnShowResults: '📊 Sonuçları Göster',
+    btnBackToStart: '← Başa Dön',
+    btnReport: '📋 Rapor Oluştur',
+    btnPrint: '🖨️ Yazdır',
+    btnCopy: '📋 Kopyala',
+    btnDownload: '💾 HTML İndir',
+    btnClose: '✕ Kapat',
+    btnFinalize: '✅ Lezyon değerlendirmesini tamamla ve genel değerlendirmeye devam et',
+    // Step subtitles / labels
+    liveDiff: '📊 Canlı Ayırıcı Tanı',
+    liveMeas: 'Canlı Değerlendirme:',
+    sizeSummary: 'Boyut özeti:',
+    sizeCategory: 'Kategori:',
+    sizeSm: 'Küçük lezyon (<10 mm)',
+    sizeMd: 'Orta boyut (10-30 mm)',
+    sizeLg: 'Büyük lezyon (>30 mm)',
+    measured: 'Ölçülen:',
+    // Finalize step
+    finalizeTitle: '✓ Lezyon değerlendirmesi özeti:',
+    segUnknown: 'segment?',
+    sizeUnknown: 'boyut?',
+    // Results page
+    resultsTitle: '📊 Ayırıcı Tanı Sonuçları',
+    noMatch: 'Girilen bulgularla eşleşen patoloji bulunamadı.',
+    // Report
+    reportHeading: 'KARACİĞER & SAFRA KESESİ MRI\nKAPSAMLI RAPOR',
+    techProtocol: 'TEKNİK PROTOKOL',
+    contrastAgent: 'Kontrast ajanı:',
+    hbpNote: 'Hepatobiliyer faz değerlendirmesi bu incelemede mevcuttur. Normal parankim HBP\'de hiperintens olur; hepatositik fonksiyon içermeyen lezyonlar (HCC, metastaz, kist, hemanjiyom) hipointens; FNH OATP1 expresse ettiğinden izo/hiperintens izlenir.',
+    liverMeasTitle: 'KARACİĞER BOYUT ÖLÇÜMLERİ',
+    colMeasurement: 'Ölçüm',
+    colValue: 'Değer',
+    colInterpret: 'Yorum',
+    crlNote: (ratio, txt) => `C/RL ORAN YORUMU: Kaudat/sağ lob oranı ${ratio} (${txt}). Harbin kriterine göre C/RL ≥0.65 siroz için %96 özgüllüğe sahiptir. Klinik ve diğer siroz bulguları ile korelasyon önerilir.`,
+    parenchymaTitle: 'KARACİĞER PARANKİMİ',
+    focalTitle: 'FOKAL LEZYON DEĞERLENDİRMESİ',
+    lesionCount: 'Lezyon sayısı:',
+    lesionHeading: (i, segTxt) => `Lezyon ${i} — ${segTxt}`,
+    colFeature: 'Özellik',
+    colFinding: 'Bulgu',
+    colSize: 'Boyut',
+    segNotSpecified: 'segment belirtilmedi',
+    noFocalLesion: 'Fokal karaciğer lezyonu saptanmadı.',
+    diffResultsTitle: 'AYIRICI TANI SONUÇLARI',
+    mriSignalTitle: 'EN OLASI TANILARIN MRI SINYAL ÖZELLİKLERİ',
+    malignWarning: (names) => `⚠️ MALİGNİTE UYARISI: Ayırıcı tanıda malign patoloji(ler) ön sıralarda yer almaktadır: ${names}. Klinik korelasyon, biyopsi ve/veya ileri tetkik önerilir.`,
+    commentLabel: (name, pct) => `Girilen MRI ve klinik bulguları en yüksek oranda ${name} (%${pct}) ile uyumludur. `,
+    commentDiff: (names) => `Ayırıcı tanıda ${names} da değerlendirilmelidir. `,
+    commentFinal: 'Kesin tanı için klinik, laboratuvar ve gerekirse patolojik korelasyon önerilir.',
+    diffuzComment: 'DİFFÜZ PARANKİMAL YORUM:',
+    vaskComment: 'VASKÜLER YORUM:',
+    hbpComment: 'HEPATOBİLİYER FAZ YORUMU:',
+    hbpCommentBody: 'HBP fazında <b>hipointens</b> lezyonlar hepatositik fonksiyon içermeyen patolojileri (HCC, metastaz, kolanjiyokarsinom, kist, abse) düşündürür. <b>İzo/hiperintens</b> lezyonlar ise FNH (OATP1+) için tipiktir. β-katenin mutant adenom da hiperintens olabilir. HCC ile FNH ayırımında HBP bulgusu yüksek diagnostik değer taşır.',
+    criticalTitle: 'KRİTİK MRI KOMBİNASYONLARI — HIZLI REFERANS',
+    colMriFinding: 'MRI Bulgusu',
+    colLikelyDx: 'En Olası Tanı',
+    disclaimer: 'Bu rapor klinik karar destek amaçlıdır. Kesin tanı için klinik, laboratuvar ve patolojik korelasyon gereklidir.',
+    copied: 'Rapor panoya kopyalandı!',
+    // Segment descriptions
+    segKaudat: 'Kaudat',
+    segSolLatSup: 'Sol lat süp',
+    segSolLatInf: 'Sol lat inf',
+    segSolMedSup: 'Sol med süp',
+    segSolMedInf: 'Sol med inf',
+    segSagAntInf: 'Sağ ant inf',
+    segSagPostInf: 'Sağ post inf',
+    segSagPostSup: 'Sağ post süp',
+    segSagAntSup: 'Sağ ant süp',
+    segMulti: 'Birden fazla',
+    // Segment → lobe
+    lobeCaudate: 'Kaudat lob',
+    lobeLeftLateral: 'Sol lob lateral',
+    lobeLeftMedial: 'Sol lob medial',
+    lobeRightAnterior: 'Sağ lob anterior',
+    lobeRightPosterior: 'Sağ lob posterior',
+    lobeMulti: 'Birden fazla segment',
+    // Measurement labels
+    measCCLabel: 'Kraniokaudal (CC) Ölçümler',
+    measTVLabel: 'Transvers Ölçümler (C/RL oranı için)',
+    measSagCCMCL: 'Sağ lob CC — Midklaviküler hat',
+    measSagCCMAL: 'Sağ lob CC — Midaksiller hat',
+    measSolCC: 'Sol lob CC',
+    measKaudatTV: 'Kaudat lob transvers çapı',
+    measSagTV: 'Sağ lob transvers çapı',
+    measHintSagCCMCL: 'Normal: <160 mm',
+    measHintSagCCMAL: 'Normal: ~110-150 mm',
+    measHintSolCC: 'Normal: <90 mm',
+    measHintKaudatTV: 'Portal bif. sev. aksiyel — Normal: <35 mm',
+    measHintSagTV: 'Portal bif. sev. aksiyel — sağ lob lateral kenarına',
+    measLezUzun: 'Uzun çap (aksiyel)',
+    measLezKisa: 'Kısa çap (aksiyel)',
+    measLezCC: 'Kraniokaudal (CC) boyut',
+    pvRef: 'Normal <13 mm; ≥13 mm portal HT lehine',
+    // Size interpret labels
+    intSagCCMCL: (m) => m > 160 ? `Hepatomegali lehine (>160 mm)` : m >= 140 ? 'Normal sınırlarda (140-160 mm)' : 'Küçük boyut (<140 mm) — atrofi?',
+    intSagCCMAL: (a) => a > 150 ? 'Hepatomegali (>150 mm)' : 'Normal sınırlarda',
+    intSolCC: (s) => s > 90 ? 'Hipertrofi lehine (>90 mm)' : 'Normal sınırlarda',
+    intKaudatTV: (k) => k > 35 ? 'Hipertrofi lehine (>35 mm)' : 'Normal sınırlarda',
+    intSagTV: '—',
+    fieldSagCCMCL: 'Sağ lob CC (MKL)',
+    fieldSagCCMAL: 'Sağ lob CC (MAL)',
+    fieldSolCC: 'Sol lob CC',
+    fieldKaudatTV: 'Kaudat lob transvers',
+    fieldSagTV: 'Sağ lob transvers (portal bif. sev.)',
+    fieldCRL: 'Kaudat/Sağ lob oranı (C/RL, Harbin)',
+    crlNormal: 'Normal (<0.60)',
+    crlHigh: '≥0.65 — SİROZ için yüksek özgüllük (Harbin)',
+    crlBorderline: '0.60-0.65 — Borderline/şüpheli',
+    couinaudHint: 'Couinaud: S1 Kaudat | S2-S3 Sol lateral (süp/inf) | S4a-S4b Sol medial (süp/inf) | S5-S8 Sağ (ant-inf / post-inf / post-süp / ant-süp)',
+    // Contrast labels
+    contrastEkstrasel: 'Ekstrasellüler Gd (Gd-DTPA / Gd-DOTA) — 3 fazlı',
+    contrastEOB: 'Hepatobiliyer Gd-EOB-DTPA (Primovist) — 4 fazlı + HBP (20 dk)',
+    contrastBOPTA: 'Hepatobiliyer Gd-BOPTA (MultiHance) — 4 fazlı + HBP (60-120 dk)',
+    contrastNone: 'Kontrastsız',
+    contrastUnspecified: 'Belirtilmedi',
+    // Loop finalize
+    loopFinalizeTitle: 'Lezyon Değerlendirmesi Tamamlandı',
+    loopFinalizeLabel: 'Tüm lezyonlar değerlendirildi. Devam etmek için onayla.',
+    // Report date/institution
+    reportDate: () => new Date().toLocaleDateString('tr-TR'),
+    reportInstitution: 'Gülhane EAH — Radyoloji',
+  },
+  en: {
+    // Header
+    appTitle: '🫁 Liver & Gallbladder MRI Decision Support System',
+    badgeLabel: 'v3.0 — Segment / Measurement / HBP',
+    // Progress / nav labels
+    stepOf: (cur, tot) => `Step ${cur}/${tot}`,
+    lesionOf: (i, n) => `Lesion ${i}/${n}`,
+    btnBack: '← Back',
+    btnNext: 'Next →',
+    btnShowResults: '📊 Show Results',
+    btnBackToStart: '← Back to Start',
+    btnReport: '📋 Generate Report',
+    btnPrint: '🖨️ Print',
+    btnCopy: '📋 Copy',
+    btnDownload: '💾 Download HTML',
+    btnClose: '✕ Close',
+    btnFinalize: '✅ Finalize lesion evaluation and continue to general assessment',
+    // Step subtitles / labels
+    liveDiff: '📊 Live Differential Diagnosis',
+    liveMeas: 'Live Assessment:',
+    sizeSummary: 'Size summary:',
+    sizeCategory: 'Category:',
+    sizeSm: 'Small lesion (<10 mm)',
+    sizeMd: 'Intermediate size (10–30 mm)',
+    sizeLg: 'Large lesion (>30 mm)',
+    measured: 'Measured:',
+    // Finalize step
+    finalizeTitle: '✓ Lesion evaluation summary:',
+    segUnknown: 'segment?',
+    sizeUnknown: 'size?',
+    // Results page
+    resultsTitle: '📊 Differential Diagnosis Results',
+    noMatch: 'No pathology matched the entered findings.',
+    // Report
+    reportHeading: 'LIVER & GALLBLADDER MRI\nCOMPREHENSIVE REPORT',
+    techProtocol: 'TECHNICAL PROTOCOL',
+    contrastAgent: 'Contrast agent:',
+    hbpNote: 'Hepatobiliary phase assessment is available in this study. Normal parenchyma is hyperintense on HBP; lesions lacking hepatocyte function (HCC, metastasis, cyst, hemangioma) are hypointense; FNH, which expresses OATP1, appears iso/hyperintense.',
+    liverMeasTitle: 'LIVER MEASUREMENTS',
+    colMeasurement: 'Measurement',
+    colValue: 'Value',
+    colInterpret: 'Interpretation',
+    crlNote: (ratio, txt) => `C/RL RATIO INTERPRETATION: Caudate/right lobe ratio ${ratio} (${txt}). Per Harbin criterion, C/RL ≥0.65 has 96% specificity for cirrhosis. Correlation with clinical and other cirrhosis findings is recommended.`,
+    parenchymaTitle: 'LIVER PARENCHYMA',
+    focalTitle: 'FOCAL LESION EVALUATION',
+    lesionCount: 'Number of lesions:',
+    lesionHeading: (i, segTxt) => `Lesion ${i} — ${segTxt}`,
+    colFeature: 'Feature',
+    colFinding: 'Finding',
+    colSize: 'Size',
+    segNotSpecified: 'segment not specified',
+    noFocalLesion: 'No focal liver lesion detected.',
+    diffResultsTitle: 'DIFFERENTIAL DIAGNOSIS RESULTS',
+    mriSignalTitle: 'MRI SIGNAL CHARACTERISTICS OF TOP DIAGNOSES',
+    malignWarning: (names) => `⚠️ MALIGNANCY WARNING: Malignant pathology(ies) rank highly in the differential: ${names}. Clinical correlation, biopsy, and/or further work-up is recommended.`,
+    commentLabel: (name, pct) => `The entered MRI and clinical findings are most consistent with <b>${name}</b> (${pct}%). `,
+    commentDiff: (names) => `The differential also includes ${names}. `,
+    commentFinal: 'Definitive diagnosis requires clinical, laboratory, and if necessary pathological correlation.',
+    diffuzComment: 'DIFFUSE PARENCHYMAL INTERPRETATION:',
+    vaskComment: 'VASCULAR INTERPRETATION:',
+    hbpComment: 'HEPATOBILIARY PHASE INTERPRETATION:',
+    hbpCommentBody: 'On HBP, <b>hypointense</b> lesions suggest pathologies lacking hepatocyte function (HCC, metastasis, cholangiocarcinoma, cyst, abscess). <b>Iso/hyperintense</b> lesions are characteristic of FNH (OATP1+). β-catenin mutant adenoma may also be hyperintense. HBP has high diagnostic value in differentiating HCC from FNH.',
+    criticalTitle: 'CRITICAL MRI COMBINATIONS — QUICK REFERENCE',
+    colMriFinding: 'MRI Finding',
+    colLikelyDx: 'Most Likely Diagnosis',
+    disclaimer: 'This report is for clinical decision support purposes only. Definitive diagnosis requires clinical, laboratory, and pathological correlation.',
+    copied: 'Report copied to clipboard!',
+    // Segment descriptions
+    segKaudat: 'Caudate',
+    segSolLatSup: 'Left lat sup',
+    segSolLatInf: 'Left lat inf',
+    segSolMedSup: 'Left med sup',
+    segSolMedInf: 'Left med inf',
+    segSagAntInf: 'Right ant inf',
+    segSagPostInf: 'Right post inf',
+    segSagPostSup: 'Right post sup',
+    segSagAntSup: 'Right ant sup',
+    segMulti: 'Multiple',
+    // Segment → lobe
+    lobeCaudate: 'Caudate lobe',
+    lobeLeftLateral: 'Left lobe lateral',
+    lobeLeftMedial: 'Left lobe medial',
+    lobeRightAnterior: 'Right lobe anterior',
+    lobeRightPosterior: 'Right lobe posterior',
+    lobeMulti: 'Multiple segments',
+    // Measurement labels
+    measCCLabel: 'Craniocaudal (CC) Measurements',
+    measTVLabel: 'Transverse Measurements (for C/RL ratio)',
+    measSagCCMCL: 'Right lobe CC — Midclavicular line',
+    measSagCCMAL: 'Right lobe CC — Midaxillary line',
+    measSolCC: 'Left lobe CC',
+    measKaudatTV: 'Caudate lobe transverse diameter',
+    measSagTV: 'Right lobe transverse diameter',
+    measHintSagCCMCL: 'Normal: <160 mm',
+    measHintSagCCMAL: 'Normal: ~110–150 mm',
+    measHintSolCC: 'Normal: <90 mm',
+    measHintKaudatTV: 'Portal bifurcation level axial — Normal: <35 mm',
+    measHintSagTV: 'Portal bifurcation level axial — to right lobe lateral margin',
+    measLezUzun: 'Long axis (axial)',
+    measLezKisa: 'Short axis (axial)',
+    measLezCC: 'Craniocaudal (CC) dimension',
+    pvRef: 'Normal <13 mm; ≥13 mm favors portal hypertension',
+    // Size interpret labels
+    intSagCCMCL: (m) => m > 160 ? 'Hepatomegaly (>160 mm)' : m >= 140 ? 'Within normal limits (140–160 mm)' : 'Small (<140 mm) — atrophy?',
+    intSagCCMAL: (a) => a > 150 ? 'Hepatomegaly (>150 mm)' : 'Within normal limits',
+    intSolCC: (s) => s > 90 ? 'Hypertrophy (>90 mm)' : 'Within normal limits',
+    intKaudatTV: (k) => k > 35 ? 'Hypertrophy (>35 mm)' : 'Within normal limits',
+    intSagTV: '—',
+    fieldSagCCMCL: 'Right lobe CC (MCL)',
+    fieldSagCCMAL: 'Right lobe CC (MAL)',
+    fieldSolCC: 'Left lobe CC',
+    fieldKaudatTV: 'Caudate lobe transverse',
+    fieldSagTV: 'Right lobe transverse (portal bif. level)',
+    fieldCRL: 'Caudate/Right lobe ratio (C/RL, Harbin)',
+    crlNormal: 'Normal (<0.60)',
+    crlHigh: '≥0.65 — High specificity for cirrhosis (Harbin)',
+    crlBorderline: '0.60–0.65 — Borderline/indeterminate',
+    couinaudHint: 'Couinaud: S1 Caudate | S2–S3 Left lateral (sup/inf) | S4a–S4b Left medial (sup/inf) | S5–S8 Right (ant-inf / post-inf / post-sup / ant-sup)',
+    // Contrast labels
+    contrastEkstrasel: 'Extracellular Gd (Gd-DTPA / Gd-DOTA) — 3-phase',
+    contrastEOB: 'Hepatobiliary Gd-EOB-DTPA (Primovist) — 4-phase + HBP (20 min)',
+    contrastBOPTA: 'Hepatobiliary Gd-BOPTA (MultiHance) — 4-phase + HBP (60–120 min)',
+    contrastNone: 'Non-contrast',
+    contrastUnspecified: 'Not specified',
+    // Loop finalize
+    loopFinalizeTitle: 'Lesion Evaluation Complete',
+    loopFinalizeLabel: 'All lesions evaluated. Confirm to continue.',
+    // Report date/institution
+    reportDate: () => new Date().toLocaleDateString('en-GB'),
+    reportInstitution: 'Gülhane TRH — Radiology',
+  }
+})[RV_LOCALE];
+
+// Apply i18n to static HTML elements
+(function applyI18n(){
+  document.querySelectorAll('[data-i18n-tr]').forEach(el=>{
+    el.textContent = RV_LOCALE==='en' ? el.getAttribute('data-i18n-en') : el.getAttribute('data-i18n-tr');
+  });
+})();
+
 // =====================================================
 // COUINAUD SEGMENTS
 // =====================================================

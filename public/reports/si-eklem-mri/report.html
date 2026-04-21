@@ -121,22 +121,494 @@ body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans
 #printOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;overflow:auto;padding:32px;color:#000}
 @media print{body>*{display:none}#printOverlay{display:block !important;position:static}}
 </style>
-<!-- radvisor-atlas bridge -->
-<script src="/bridge.js"></script>
 </head>
 <body>
 <div id="root"></div>
 <div id="printOverlay"></div>
 
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    /* ── App header ── */
+    appTitle: 'Sakroiliak Eklem MRI',
+    appSub: '14 patoloji · Bilateral değerlendirme · Çok lezyonlu · Ağırlıklı skorlama',
+
+    /* ── Buttons ── */
+    btnNext: 'İleri →',
+    btnBack: '← Geri',
+    btnSaveLesion: 'Lezyon Kaydet ✓',
+    btnGoReport: 'Rapora Git →',
+    btnRestart: '↺ Yeniden',
+    btnCopy: '📋 Kopyala',
+    btnPrint: '🖨 Yazdır',
+    btnDownload: '⬇ TXT İndir',
+    btnAddLesion: 'Evet – Lezyon ekle',
+    btnNoLesion: 'Hayır, fokal lezyon yok',
+    btnDone: 'Tamamlandı – Rapora git',
+    btnDelete: '✕ Sil',
+    alertCopied: 'Rapor panoya kopyalandı.',
+
+    /* ── Progress / step names ── */
+    stepNames: ['Klinik Bilgi','Taraf Seçimi','Sağ Eklem Aralığı','Sol Eklem Aralığı','Kemik İliği Ödemi','T1 Subkondral','Erozyon','Skleroz','Kontrast','Sinoviyal Sıvı','Ankiloz','Yumuşak Doku','DWI','Fokal Lezyon'],
+    lezNames: ['Lokalizasyon','Boyut','T1/T2 Sinyal','DWI/ADC','Kontrast','Komşu Yapı'],
+    reportLabel: 'Rapor',
+
+    /* ── Badges ── */
+    badgeBilateral: 'Her iki taraf',
+    badgeRight: 'SAĞ',
+    badgeLeft: 'SOL',
+
+    /* ── Step 0 – Clinical info ── */
+    s0Title: 'Klinik Bilgi',
+    s0Sub: 'Hasta demografisi ve klinik ön tanıyı giriniz.',
+    s0AgeLabel: 'Yaş Grubu',
+    s0GenderLabel: 'Cinsiyet',
+    s0HlaLabel: 'HLA-B27',
+    s0KlinikLabel: 'Klinik Ön Tanı',
+    s0Age: [['genc','18–45 yaş','Genç erişkin'],['orta','45–60 yaş','Orta yaş'],['yasli','60+ yaş','İleri yaş']],
+    s0Gender: [['erkek','Erkek'],['kadin','Kadın']],
+    s0Hla: [['pozitif','Pozitif'],['negatif','Negatif'],['bilinmiyor','Bilinmiyor']],
+    s0Klinik: [['inflamatuar','İnflamatuar','SpA, artrit'],['enfeksiyoz','Enfeksiyöz','Septik, abse'],['travmatik','Travmatik','Fraktür, yaralanma'],['onkolojik','Onkolojik','Tümör, met.'],['belirsiz','Belirsiz','—']],
+
+    /* ── Step 1 – Side ── */
+    s1Title: 'Değerlendirilen Taraf',
+    s1Bilateral: 'Bilateral',
+    s1BilateralSub: 'Sağ ve sol SI eklem birlikte değerlendiriliyor',
+    s1Right: 'Yalnızca Sağ',
+    s1RightSub: 'Sol SI eklem değerlendirilmiyor',
+    s1Left: 'Yalnızca Sol',
+    s1LeftSub: 'Sağ SI eklem değerlendirilmiyor',
+
+    /* ── Step 2 – Right joint ── */
+    s2Title: 'Sağ Eklem Aralığı',
+    s2StepLabel: 'SAĞ SI EKLEMİ',
+    s2Opts: [['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']],
+
+    /* ── Step 3 – Left joint ── */
+    s3Title: 'Sol Eklem Aralığı',
+    s3StepLabel: 'SOL SI EKLEMİ',
+    s3Opts: [['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']],
+
+    /* ── Step 4 – Bone marrow edema ── */
+    s4Title: 'Kemik İliği Ödemi (STIR / T2 Yağ Baskılı)',
+    s4Sub: 'ASAS aktif sakroiliit kriterleri: bilateral ≥ grade 1 veya tek taraflı ≥ grade 3 BME gerektirir.',
+    s4LatLabel: 'Lateralite',
+    s4SevLabel: 'Şiddet',
+    s4Lat: [['yok','Yok','Kemik iliği ödemi izlenmiyor'],['sag','Sağ SI eklem','Tek taraflı sağ'],['sol','Sol SI eklem','Tek taraflı sol'],['bilateral','Bilateral','Her iki eklemde mevcut']],
+    s4Sev: [['hafif','Hafif','Küçük odak, < 1 cm veya tek kesit'],['orta','Orta','≥ 2 ardışık kesit, 1–2 cm'],['siddetli','Belirgin / Yaygın','> 2 cm veya yaygın tutulum']],
+
+    /* ── Step 5 – T1 signal ── */
+    s5Title: 'T1 Subkondral Kemik Sinyali',
+    s5Opts: [['normal','Normal','Kemik iliği yağ sinyali korunmuş'],['hafif_dusuk','Hafif düşük','Fokal T1 sinyal azalması, subkondral ödem/skleroz'],['belirgin_dusuk','Belirgin düşük','Yaygın T1 sinyal kaybı – aktif BME, tümör veya fraktür']],
+
+    /* ── Step 6 – Erosion ── */
+    s6Title: 'Erozyon',
+    s6Sub: 'mNY kriterlerine göre: Grade ≥ 2 bilateral veya ≥ 3 tek taraflı radyografik sakroiliit.',
+    s6Opts: [['yok','Yok',null],['tek_hafif','Tek taraflı – hafif','< 2 mm, yüzeyel kemik defekti'],['tek_belirgin','Tek taraflı – belirgin','≥ 2 mm veya birden fazla odak'],['tek_ileri','Tek taraflı – ileri','Geniş subkondral kemik kaybı'],['bilateral_hafif','Bilateral – hafif','Her iki eklemde yüzeyel erozyon'],['bilateral_belirgin','Bilateral – belirgin','Her iki eklemde derin erozyon'],['bilateral_ileri','Bilateral – ileri','Her iki eklemde geniş kemik yıkımı']],
+
+    /* ── Step 7 – Sclerosis ── */
+    s7Title: 'Skleroz (Subkondral Dansite Artışı)',
+    s7Opts: [['yok','Yok',null],['iliak_dom','İliak dominant','İliak yüzde belirgin skleroz – OKI, SpA için tipik'],['sakral_dom','Sakral dominant','Sakral yüzde belirgin skleroz'],['bilateral_esit','Bilateral eşit','Her iki yüzde benzer skleroz – OA, SAPHO']],
+
+    /* ── Step 8 – Contrast ── */
+    s8Title: 'Kontrast Tutulumu (Gd sonrası)',
+    s8Opts: [['yok','Kontrast verilmedi / Yok','Tutulum izlenmedi veya incelenmedi'],['hafif','Hafif sübkondral','Minimal aktif inflamasyon işareti'],['belirgin','Belirgin sübkondral','Aktif inflamasyon – axSpA bulgusu'],['sinoviyal','Sinoviyal tutulum','Eklem içi sinoviyal kontrast'],['periostal','Periostal tutulum','Periostit – SAPHO sendromu bulgusu'],['abse','Abse duvarı / halka','Enfeksiyöz süreç işareti']],
+
+    /* ── Step 9 – Synovial fluid ── */
+    s9Title: 'Sinoviyal Sıvı / Eklem İçi Koleksiyon',
+    s9Opts: [['yok','Yok',null],['minimal','Minimal','Fizyolojik sınırda'],['orta','Orta miktar','Anlamlı efüzyon, kapsül distansiyonu'],['fazla','Fazla','Belirgin efüzyon'],['abse','Abse','T2 yüksek, DWI kısıtlanmalı – septik bulgu']],
+
+    /* ── Step 10 – Ankylosis ── */
+    s10Title: 'Ankiloz / Füzyon',
+    s10Opts: [['yok','Yok',null],['fibrous_parsiyel','Parsiyel fibröz','Kısmi fibröz doku köprüsü'],['fibrous_tam','Tam fibröz','Eklem aralığı fibröz dokuyla oblitere'],['kemik_parsiyel','Parsiyel kemik köprüsü','Bölgesel ossifikasyon/sindezmofit'],['kemik_tam','Tam kemik köprüsü','Tam ankiloz – eklem aralığı yok']],
+
+    /* ── Step 11 – Soft tissue ── */
+    s11Title: 'Periartiküler Yumuşak Doku',
+    s11Opts: [['normal','Normal','Çevre yumuşak dokular normal'],['periartikuler_odem','Periartiküler ödem','Ligamentöz veya kapsüler tutulum'],['abse','Abse formasyonu','Periartiküler veya psoas absesi'],['kitle','Yumuşak doku kitlesi','Tümöral infiltrasyon şüphesi']],
+
+    /* ── Step 12 – DWI ── */
+    s12Title: 'DWI / Difüzyon Görüntüleme',
+    s12Opts: [['normal','Normal / Uygulanmadı',null],['kisitlanma','Difüzyon kısıtlanması','Yüksek DWI + düşük ADC → enfeksiyon / tümör'],['serbest','Artmış difüzyon','Yüksek ADC → ödem ağırlıklı süreç']],
+
+    /* ── Step 13 – Focal lesion ── */
+    s13Title: 'Fokal Kemik Lezyonu',
+    s13Sub: 'Sakrum, iliak kanat veya komşu kemiklerde fokal lezyon var mı?',
+    s13AddLesionSub: 'Fokal kemik lezyonu mevcut, ayrıntı girilecek',
+    s13DoneSub: (n) => `${n} lezyon kaydedildi`,
+    s13NoLesionSub: 'Fokal lezyon saptanmadı',
+    s13LezLabel: (n, loc) => `Lezyon ${n} – ${loc}`,
+    s13NotSpecified: 'Belirtilmedi',
+
+    /* ── Lesion sub-steps ── */
+    lezLoc: [['Sakrum gövdesi','Orta hat, H-sign bölgesi'],['Sakral ala','Lateral sakral kitle/lezyon'],['İliak kanat','İliak kemik gövdesi'],['Anterior SI ligaman bölgesi','Ön bağ tutulumu'],['Posterior SI ligaman bölgesi','Arka güçlü ligaman'],['Presakral yumuşak doku','Ekstraartiküler uzanım']],
+    lezSize: [['< 10 mm','Küçük odak'],['10–30 mm','Orta boyut'],['30–50 mm','Büyük lezyon'],['>50 mm','Dev lezyon']],
+    lezSignal: [['T1↓ T2↑ – aktif ödem','Kemik ödemi / aktif inflamasyon'],['T1↓ T2↓ – sklerotik/fibröz','Yoğun sklerotik veya fibröz doku'],['T1↑ T2↑ – yağ/lipomatöz','Lipomatöz içerik'],['T1↓ T2↑↑ – kistik/sıvı','Sıvı içerikli lezyon'],['T1 T2 heterojen','Miks sinyal karakteri'],['T1=T2 izointens','Kas ile izointens, özellik yok']],
+    lezDwi: [['Kısıtlanma (DWI↑ ADC↓)','Enfeksiyon / tümör / abse'],['Serbest difüzyon (ADC↑)','Ödem / nekroz ağırlıklı'],['DWI uygulanmadı / normal','Değerlendirilemedi']],
+    lezContrast: [['Yok','Tutulum izlenmedi'],['Homojen tutulum','Solid tutulum'],['Halka tutulum','Abse / nekrotik merkez'],['Periferik tutulum','Yavaş doldurma paterni'],['Heterojen tutulum','Kompleks lezyon']],
+    lezNeighbor: [['Serbest / intraosseöz','Komşu yapılara etki yok'],['Nöral foramene uzanım','Sinir kökü bası'],['Eklem boşluğuna uzanım','Ekstraartiküler yayılım'],['Presakral bölgeye uzanım','Yumuşak doku invazyonu'],['Spinal kanala uzanım','Medulla spinalis bası riski']],
+
+    /* ── Report page labels ── */
+    rptTitle: 'Sakroiliak Eklem MRI',
+    rptMriBulgular: 'MRI Bulguları',
+    rptFokalLezyonlar: 'Fokal Lezyonlar',
+    rptDiffTitle: 'Ayırıcı Tanı — Ağırlıklı Skor',
+    rptYorumLabel: 'YORUM: ',
+    rptLezLabel: (n, loc) => `Lezyon ${n} – ${loc}`,
+    rptLezNotSpec: 'Belirtilmedi',
+    rptSize: 'Boyut',
+    rptSignal: 'Sinyal',
+    rptDwi: 'DWI',
+    rptContrast: 'Kontrast',
+    rptNeighbor: 'Komşu yapı',
+    rptSideRight: 'Sağ',
+    rptSideLeft: 'Sol',
+
+    /* ── Report table row labels ── */
+    tblRightJoint: 'Sağ eklem aralığı',
+    tblLeftJoint: 'Sol eklem aralığı',
+    tblBme: 'Kemik iliği ödemi (STIR)',
+    tblT1: 'T1 subkondral sinyal',
+    tblErozyon: 'Erozyon',
+    tblSkleroz: 'Skleroz',
+    tblKontrast: 'Kontrast tutulumu',
+    tblSinoviyal: 'Sinoviyal sıvı',
+    tblAnkiloz: 'Ankiloz / Füzyon',
+    tblYumusak: 'Yumuşak doku',
+    tblDwi: 'DWI',
+
+    /* ── Age/gender display in report header ── */
+    ageLabel: {genc:'18–45 yaş', orta:'45–60 yaş', yasli:'60+ yaş'},
+    genderLabel: {erkek:'Erkek', kadin:'Kadın'},
+
+    /* ── Display maps (report table values) ── */
+    maps: {
+      sagEklemAraligi: {normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
+      solEklemAraligi: {normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
+      kemikOdem: {yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'},
+      kemikOdemSiddet: {hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın'},
+      t1Sinyal: {normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'},
+      erozyon: {yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'},
+      skleroz: {yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'},
+      kontrast: {yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'},
+      sinovyalSivi: {yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse'},
+      ankiloz: {yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü (ankiloz)'},
+      yumusak: {normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse',kitle:'Yumuşak doku kitlesi'},
+      dwi: {normal:'Normal',kisitlanma:'Kısıtlanma mevcut',serbest:'Artmış difüzyon'},
+    },
+
+    /* ── buildReportText labels ── */
+    txtReportHeader: 'SAKROİLİAK EKLEM MRI RAPORU',
+    txtSide: 'Taraf',
+    txtSideBilateral: 'Bilateral',
+    txtSideRight: 'Sağ',
+    txtSideLeft: 'Sol',
+    txtRightJoint: 'Sağ eklem aralığı',
+    txtLeftJoint: 'Sol eklem aralığı',
+    txtBme: 'Kemik iliği ödemi (STIR/T2FS)',
+    txtT1: 'T1 subkondral sinyal',
+    txtErozyon: 'Erozyon',
+    txtSkleroz: 'Skleroz',
+    txtKontrast: 'Kontrast tutulumu',
+    txtSinoviyal: 'Sinoviyal sıvı',
+    txtAnkiloz: 'Ankiloz/Füzyon',
+    txtYumusak: 'Yumuşak doku',
+    txtFokalLezyonlar: 'FOKAL LEZYONLAR:',
+    txtDiffTitle: 'AYIRICI TANI (Ağırlıklı Skor):',
+    txtLezLine: (i, l) => `  Lezyon ${i+1}: ${l.lokalizasyon||'?'}${l.boyut?' ('+l.boyut+')':''}${l.t1t2?' | '+l.t1t2:''}${l.lezKontrast?' | Kt: '+l.lezKontrast:''}${l.komsuyapi?' | '+l.komsuyapi:''}`,
+    txtDownloadName: 'SI_Eklem_MRI_Raporu.txt',
+
+    /* ── Display maps for buildReportText ── */
+    txtMaps: {
+      eklem: {normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze','':'—'},
+      oem: {yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'},
+      oemS: {hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın','':'',undefined:''},
+      t1: {normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'},
+      er: {yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'},
+      skl: {yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'},
+      knt: {yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin sübkondral',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'},
+      siv: {yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse formasyonu'},
+      ank: {yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü'},
+      ys: {normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse formasyonu',kitle:'Yumuşak doku kitlesi'},
+      dwi: {normal:'Normal',kisitlanma:'Difüzyon kısıtlanması',serbest:'Artmış difüzyon (serbest)'},
+    },
+
+    /* ── Pathology names & categories ── */
+    patho: {
+      axSpA_AS: {ad:'Aksiyel SpA / Ankilozan Spondilit', kat:'İnflamatuar'},
+      nrAxSpA:  {ad:'nr-axSpA (Non-radyografik SpA)', kat:'İnflamatuar'},
+      psoriatik:{ad:'Psöriatik Artrit', kat:'İnflamatuar'},
+      reaktif:  {ad:'Reaktif Artrit', kat:'İnflamatuar'},
+      enteropatik:{ad:'Enteropatik Artrit (IBD)', kat:'İnflamatuar'},
+      septik:   {ad:'Septik Artrit / Osteomiyelit', kat:'Enfeksiyöz'},
+      okI:      {ad:'Osteitis Kondensans İlii', kat:'Diğer'},
+      oa:       {ad:'Dejeneratif Osteoartrit', kat:'Dejeneratif'},
+      stres:    {ad:'Stres / İnsüfisans Fraktürü', kat:'Travmatik'},
+      sapho:    {ad:'SAPHO Sendromu', kat:'İnflamatuar'},
+      gut:      {ad:'Gut / Kristal Artropati', kat:'Metabolik'},
+      metastaz: {ad:'Tümör / Metastaz', kat:'Onkolojik'},
+      paget:    {ad:'Paget Hastalığı', kat:'Metabolik'},
+      ligament: {ad:'Ligamentöz / Kapsüler Yaralanma', kat:'Travmatik'},
+    },
+
+    /* ── Yorum (commentary) ── */
+    yorum: {
+      noResult: 'Girilen bulgular doğrultusunda yeterli ayırıcı tanı oluşturulamadı. Lütfen bulgularınızı tekrar gözden geçiriniz.',
+      axSpA_AS: 'Bilateral simetrik kemik iliği ödemi, erozyon ve/veya iliak dominant skleroz paternleri aksiyel spondiloartropati (Ankilozan Spondilit) ile uyumludur. mNY ve ASAS kriterleri doğrultusunda klinisyenle değerlendirme önerilir.',
+      nrAxSpA: 'Aktif inflamatuar bulgular (özellikle bilateral kemik ödemi ve kontrast tutulumu) yapısal hasar olmaksızın non-radyografik axSpA ile uyumludur. Klinik, laboratuvar ve HLA-B27 ile korelasyon gerektirir.',
+      septik: 'Tek taraflı yoğun kemik ödemi, sinoviyal koleksiyon ve periartiküler değişiklikler septik artrit/osteomiyelit açısından acil değerlendirme gerektirir. Klinik korelasyon ve laboratuvar tetkiki (CRP, prokalsitonin, kan kültürü) ile birlikte ele alınmalıdır.',
+      okI: 'İliak dominant skleroz ve normal eklem aralığı ile Osteitis Kondensans İlii bulguları izlenmektedir. Genellikle benign, postpartum veya mekanik strese bağlı bir tablo olup klinik korelasyon önerilir.',
+      stres: 'Sakral kemik iliği ödemi ve T1 sinyal değişiklikleri stres/insüfisans fraktürü ile uyumludur. Sakral H-sign varlığı değerlendirilmeli, ince kesit T1 koronal görüntü ile fraktür hattı ortaya koyulabilir.',
+      metastaz: 'Fokal kemik lezyonu ve ilişkili bulgular tümöral infiltrasyon/metastaz açısından incelenmelidir. Primer odak araştırılması, onkolojik değerlendirme ve gerekirse biyopsi planlanmalıdır.',
+      oa: 'Dejeneratif değişiklikler (eklem daralması, bilateral skleroz) osteoartrit ile uyumludur. Semptomların şiddetine göre klinik takip planlanabilir.',
+      default: (ad, s) => `Baskın tanı ${ad} (%${s} uyum skoru) olmakla birlikte klinik ve laboratuvar bulgularıyla korelasyon önerilir.`,
+    },
+  },
+  en: {
+    /* ── App header ── */
+    appTitle: 'Sacroiliac Joint MRI',
+    appSub: '14 pathologies · Bilateral assessment · Multi-lesion · Weighted scoring',
+
+    /* ── Buttons ── */
+    btnNext: 'Next →',
+    btnBack: '← Back',
+    btnSaveLesion: 'Save Lesion ✓',
+    btnGoReport: 'Go to Report →',
+    btnRestart: '↺ Restart',
+    btnCopy: '📋 Copy',
+    btnPrint: '🖨 Print',
+    btnDownload: '⬇ Download TXT',
+    btnAddLesion: 'Yes – Add lesion',
+    btnNoLesion: 'No focal lesion',
+    btnDone: 'Done – Go to report',
+    btnDelete: '✕ Delete',
+    alertCopied: 'Report copied to clipboard.',
+
+    /* ── Progress / step names ── */
+    stepNames: ['Clinical Info','Side Selection','Right Joint Space','Left Joint Space','Bone Marrow Edema','T1 Subchondral','Erosion','Sclerosis','Contrast','Synovial Fluid','Ankylosis','Soft Tissue','DWI','Focal Lesion'],
+    lezNames: ['Localization','Size','T1/T2 Signal','DWI/ADC','Contrast','Adjacent Structure'],
+    reportLabel: 'Report',
+
+    /* ── Badges ── */
+    badgeBilateral: 'Both sides',
+    badgeRight: 'RIGHT',
+    badgeLeft: 'LEFT',
+
+    /* ── Step 0 – Clinical info ── */
+    s0Title: 'Clinical Information',
+    s0Sub: 'Enter patient demographics and clinical pre-diagnosis.',
+    s0AgeLabel: 'Age Group',
+    s0GenderLabel: 'Sex',
+    s0HlaLabel: 'HLA-B27',
+    s0KlinikLabel: 'Clinical Pre-Diagnosis',
+    s0Age: [['genc','18–45 yrs','Young adult'],['orta','45–60 yrs','Middle age'],['yasli','60+ yrs','Elderly']],
+    s0Gender: [['erkek','Male'],['kadin','Female']],
+    s0Hla: [['pozitif','Positive'],['negatif','Negative'],['bilinmiyor','Unknown']],
+    s0Klinik: [['inflamatuar','Inflammatory','SpA, arthritis'],['enfeksiyoz','Infectious','Septic, abscess'],['travmatik','Traumatic','Fracture, injury'],['onkolojik','Oncological','Tumor, metastasis'],['belirsiz','Indeterminate','—']],
+
+    /* ── Step 1 – Side ── */
+    s1Title: 'Side Under Assessment',
+    s1Bilateral: 'Bilateral',
+    s1BilateralSub: 'Right and left SIJ assessed together',
+    s1Right: 'Right Only',
+    s1RightSub: 'Left SIJ not assessed',
+    s1Left: 'Left Only',
+    s1LeftSub: 'Right SIJ not assessed',
+
+    /* ── Step 2 – Right joint ── */
+    s2Title: 'Right Joint Space',
+    s2StepLabel: 'RIGHT SIJ',
+    s2Opts: [['normal','Normal','Joint space appropriate for age'],['daralmis','Narrowed','Degenerative/inflammatory narrowing'],['genislemis','Widened','Ligamentous laxity, active inflammation'],['ankile','Ankylosed','Joint space not discernible']],
+
+    /* ── Step 3 – Left joint ── */
+    s3Title: 'Left Joint Space',
+    s3StepLabel: 'LEFT SIJ',
+    s3Opts: [['normal','Normal','Joint space appropriate for age'],['daralmis','Narrowed','Degenerative/inflammatory narrowing'],['genislemis','Widened','Ligamentous laxity, active inflammation'],['ankile','Ankylosed','Joint space not discernible']],
+
+    /* ── Step 4 – Bone marrow edema ── */
+    s4Title: 'Bone Marrow Edema (BME) (STIR / T2 Fat-Saturated)',
+    s4Sub: 'ASAS active sacroiliitis criteria: bilateral ≥ grade 1 or unilateral ≥ grade 3 BME required.',
+    s4LatLabel: 'Laterality',
+    s4SevLabel: 'Severity',
+    s4Lat: [['yok','Absent','No bone marrow edema'],['sag','Right SIJ','Unilateral right'],['sol','Left SIJ','Unilateral left'],['bilateral','Bilateral','Present in both joints']],
+    s4Sev: [['hafif','Mild','Small focus, < 1 cm or single slice'],['orta','Moderate','≥ 2 consecutive slices, 1–2 cm'],['siddetli','Marked / Extensive','> 2 cm or diffuse involvement']],
+
+    /* ── Step 5 – T1 signal ── */
+    s5Title: 'T1 Subchondral Bone Signal',
+    s5Opts: [['normal','Normal','Bone marrow fat signal preserved'],['hafif_dusuk','Mildly reduced','Focal T1 signal decrease, subchondral edema/sclerosis'],['belirgin_dusuk','Markedly reduced','Diffuse T1 signal loss – active BME, tumor, or fracture']],
+
+    /* ── Step 6 – Erosion ── */
+    s6Title: 'Erosion',
+    s6Sub: 'Per modified New York (mNY) criteria: Grade ≥ 2 bilateral or ≥ 3 unilateral radiographic sacroiliitis.',
+    s6Opts: [['yok','Absent',null],['tek_hafif','Unilateral – mild','< 2 mm, superficial bone defect'],['tek_belirgin','Unilateral – marked','≥ 2 mm or multiple foci'],['tek_ileri','Unilateral – advanced','Extensive subchondral bone loss'],['bilateral_hafif','Bilateral – mild','Superficial erosion in both joints'],['bilateral_belirgin','Bilateral – marked','Deep erosion in both joints'],['bilateral_ileri','Bilateral – advanced','Extensive bone destruction in both joints']],
+
+    /* ── Step 7 – Sclerosis ── */
+    s7Title: 'Sclerosis (Subchondral Density Increase)',
+    s7Opts: [['yok','Absent',null],['iliak_dom','Iliac dominant','Prominent sclerosis on iliac surface – typical for OCI, SpA'],['sakral_dom','Sacral dominant','Prominent sclerosis on sacral surface'],['bilateral_esit','Bilateral equal','Similar sclerosis on both surfaces – OA, SAPHO']],
+
+    /* ── Step 8 – Contrast ── */
+    s8Title: 'Contrast Enhancement (post-Gd)',
+    s8Opts: [['yok','No contrast / Absent','No enhancement seen or not examined'],['hafif','Mild subchondral','Minimal sign of active inflammation'],['belirgin','Marked subchondral','Active inflammation – axSpA finding'],['sinoviyal','Synovial enhancement','Intra-articular synovial contrast'],['periostal','Periosteal enhancement','Periostitis – SAPHO syndrome finding'],['abse','Abscess wall / ring','Sign of infectious process']],
+
+    /* ── Step 9 – Synovial fluid ── */
+    s9Title: 'Synovial Fluid / Intra-articular Collection',
+    s9Opts: [['yok','Absent',null],['minimal','Minimal','Within physiological limits'],['orta','Moderate','Significant effusion, capsular distension'],['fazla','Large','Marked effusion'],['abse','Abscess','T2 high, DWI restricted – septic finding']],
+
+    /* ── Step 10 – Ankylosis ── */
+    s10Title: 'Ankylosis / Fusion',
+    s10Opts: [['yok','Absent',null],['fibrous_parsiyel','Partial fibrous','Partial fibrous tissue bridge'],['fibrous_tam','Complete fibrous','Joint space obliterated by fibrous tissue'],['kemik_parsiyel','Partial bony bridge','Regional ossification / syndesmophyte'],['kemik_tam','Complete bony bridge','Complete ankylosis – no joint space']],
+
+    /* ── Step 11 – Soft tissue ── */
+    s11Title: 'Periarticular Soft Tissue',
+    s11Opts: [['normal','Normal','Surrounding soft tissues normal'],['periartikuler_odem','Periarticular edema','Ligamentous or capsular involvement'],['abse','Abscess formation','Periarticular or psoas abscess'],['kitle','Soft tissue mass','Suspected tumoral infiltration']],
+
+    /* ── Step 12 – DWI ── */
+    s12Title: 'DWI / Diffusion Imaging',
+    s12Opts: [['normal','Normal / Not applied',null],['kisitlanma','Restricted diffusion','High DWI + low ADC → infection / tumor'],['serbest','Increased diffusion','High ADC → predominantly edema']],
+
+    /* ── Step 13 – Focal lesion ── */
+    s13Title: 'Focal Bone Lesion',
+    s13Sub: 'Is there a focal lesion in the sacrum, iliac wing, or adjacent bones?',
+    s13AddLesionSub: 'Focal bone lesion present, details to be entered',
+    s13DoneSub: (n) => `${n} lesion(s) recorded`,
+    s13NoLesionSub: 'No focal lesion detected',
+    s13LezLabel: (n, loc) => `Lesion ${n} – ${loc}`,
+    s13NotSpecified: 'Not specified',
+
+    /* ── Lesion sub-steps ── */
+    lezLoc: [['Sacral body','Midline, H-sign region'],['Sacral ala','Lateral sacral mass/lesion'],['Iliac wing','Iliac bone body'],['Anterior SIJ ligament region','Anterior ligament involvement'],['Posterior SIJ ligament region','Strong posterior ligament'],['Presacral soft tissue','Extra-articular extension']],
+    lezSize: [['< 10 mm','Small focus'],['10–30 mm','Medium size'],['30–50 mm','Large lesion'],['>50 mm','Giant lesion']],
+    lezSignal: [['T1↓ T2↑ – active edema','Bone marrow edema / active inflammation'],['T1↓ T2↓ – sclerotic/fibrous','Dense sclerotic or fibrous tissue'],['T1↑ T2↑ – fat/lipomatous','Lipomatous content'],['T1↓ T2↑↑ – cystic/fluid','Fluid-containing lesion'],['T1 T2 heterogeneous','Mixed signal character'],['T1=T2 isointense','Isointense to muscle, non-specific']],
+    lezDwi: [['Restricted diffusion (DWI↑ ADC↓)','Infection / tumor / abscess'],['Free diffusion (ADC↑)','Predominantly edema / necrosis'],['DWI not applied / normal','Not assessable']],
+    lezContrast: [['Absent','No enhancement'],['Homogeneous enhancement','Solid enhancement'],['Ring enhancement','Abscess / necrotic center'],['Peripheral enhancement','Slow fill-in pattern'],['Heterogeneous enhancement','Complex lesion']],
+    lezNeighbor: [['Free / intraosseous','No effect on adjacent structures'],['Neural foraminal extension','Nerve root compression'],['Joint space extension','Extra-articular spread'],['Presacral extension','Soft tissue invasion'],['Spinal canal extension','Risk of spinal cord compression']],
+
+    /* ── Report page labels ── */
+    rptTitle: 'Sacroiliac Joint MRI',
+    rptMriBulgular: 'MRI Findings',
+    rptFokalLezyonlar: 'Focal Lesions',
+    rptDiffTitle: 'Differential Diagnosis — Weighted Score',
+    rptYorumLabel: 'IMPRESSION: ',
+    rptLezLabel: (n, loc) => `Lesion ${n} – ${loc}`,
+    rptLezNotSpec: 'Not specified',
+    rptSize: 'Size',
+    rptSignal: 'Signal',
+    rptDwi: 'DWI',
+    rptContrast: 'Contrast',
+    rptNeighbor: 'Adjacent structure',
+    rptSideRight: 'Right',
+    rptSideLeft: 'Left',
+
+    /* ── Report table row labels ── */
+    tblRightJoint: 'Right joint space',
+    tblLeftJoint: 'Left joint space',
+    tblBme: 'Bone marrow edema (STIR)',
+    tblT1: 'T1 subchondral signal',
+    tblErozyon: 'Erosion',
+    tblSkleroz: 'Sclerosis',
+    tblKontrast: 'Contrast enhancement',
+    tblSinoviyal: 'Synovial fluid',
+    tblAnkiloz: 'Ankylosis / Fusion',
+    tblYumusak: 'Soft tissue',
+    tblDwi: 'DWI',
+
+    /* ── Age/gender display in report header ── */
+    ageLabel: {genc:'18–45 yrs', orta:'45–60 yrs', yasli:'60+ yrs'},
+    genderLabel: {erkek:'Male', kadin:'Female'},
+
+    /* ── Display maps (report table values) ── */
+    maps: {
+      sagEklemAraligi: {normal:'Normal',daralmis:'Narrowed',genislemis:'Widened',ankile:'Ankylosed'},
+      solEklemAraligi: {normal:'Normal',daralmis:'Narrowed',genislemis:'Widened',ankile:'Ankylosed'},
+      kemikOdem: {yok:'Absent',sag:'Right side',sol:'Left side',bilateral:'Bilateral'},
+      kemikOdemSiddet: {hafif:' – mild',orta:' – moderate',siddetli:' – marked/extensive'},
+      t1Sinyal: {normal:'Normal',hafif_dusuk:'Mildly reduced',belirgin_dusuk:'Markedly reduced'},
+      erozyon: {yok:'Absent',tek_hafif:'Unilateral-mild',tek_belirgin:'Unilateral-marked',tek_ileri:'Unilateral-advanced',bilateral_hafif:'Bilateral-mild',bilateral_belirgin:'Bilateral-marked',bilateral_ileri:'Bilateral-advanced'},
+      skleroz: {yok:'Absent',iliak_dom:'Iliac dominant',sakral_dom:'Sacral dominant',bilateral_esit:'Bilateral equal'},
+      kontrast: {yok:'None/Not applied',hafif:'Mild subchondral',belirgin:'Marked',sinoviyal:'Synovial',periostal:'Periosteal',abse:'Abscess wall'},
+      sinovyalSivi: {yok:'Absent',minimal:'Minimal',orta:'Moderate',fazla:'Large',abse:'Abscess'},
+      ankiloz: {yok:'Absent',fibrous_parsiyel:'Partial fibrous',fibrous_tam:'Complete fibrous',kemik_parsiyel:'Partial bony bridge',kemik_tam:'Complete bony bridge (ankylosis)'},
+      yumusak: {normal:'Normal',periartikuler_odem:'Periarticular edema',abse:'Abscess',kitle:'Soft tissue mass'},
+      dwi: {normal:'Normal',kisitlanma:'Restricted diffusion',serbest:'Increased diffusion'},
+    },
+
+    /* ── buildReportText labels ── */
+    txtReportHeader: 'SACROILIAC JOINT MRI REPORT',
+    txtSide: 'Side',
+    txtSideBilateral: 'Bilateral',
+    txtSideRight: 'Right',
+    txtSideLeft: 'Left',
+    txtRightJoint: 'Right joint space',
+    txtLeftJoint: 'Left joint space',
+    txtBme: 'Bone marrow edema (STIR/T2FS)',
+    txtT1: 'T1 subchondral signal',
+    txtErozyon: 'Erosion',
+    txtSkleroz: 'Sclerosis',
+    txtKontrast: 'Contrast enhancement',
+    txtSinoviyal: 'Synovial fluid',
+    txtAnkiloz: 'Ankylosis/Fusion',
+    txtYumusak: 'Soft tissue',
+    txtFokalLezyonlar: 'FOCAL LESIONS:',
+    txtDiffTitle: 'DIFFERENTIAL DIAGNOSIS (Weighted Score):',
+    txtLezLine: (i, l) => `  Lesion ${i+1}: ${l.lokalizasyon||'?'}${l.boyut?' ('+l.boyut+')':''}${l.t1t2?' | '+l.t1t2:''}${l.lezKontrast?' | Contrast: '+l.lezKontrast:''}${l.komsuyapi?' | '+l.komsuyapi:''}`,
+    txtDownloadName: 'SI_Joint_MRI_Report.txt',
+
+    /* ── Display maps for buildReportText ── */
+    txtMaps: {
+      eklem: {normal:'Normal',daralmis:'Narrowed',genislemis:'Widened',ankile:'Ankylosed','':'—'},
+      oem: {yok:'Absent',sag:'Right side',sol:'Left side',bilateral:'Bilateral'},
+      oemS: {hafif:' – mild',orta:' – moderate',siddetli:' – marked/extensive','':'',undefined:''},
+      t1: {normal:'Normal',hafif_dusuk:'Mildly reduced',belirgin_dusuk:'Markedly reduced'},
+      er: {yok:'Absent',tek_hafif:'Unilateral-mild',tek_belirgin:'Unilateral-marked',tek_ileri:'Unilateral-advanced',bilateral_hafif:'Bilateral-mild',bilateral_belirgin:'Bilateral-marked',bilateral_ileri:'Bilateral-advanced'},
+      skl: {yok:'Absent',iliak_dom:'Iliac dominant',sakral_dom:'Sacral dominant',bilateral_esit:'Bilateral equal'},
+      knt: {yok:'None/Not applied',hafif:'Mild subchondral',belirgin:'Marked subchondral',sinoviyal:'Synovial',periostal:'Periosteal',abse:'Abscess wall'},
+      siv: {yok:'Absent',minimal:'Minimal',orta:'Moderate',fazla:'Large',abse:'Abscess formation'},
+      ank: {yok:'Absent',fibrous_parsiyel:'Partial fibrous',fibrous_tam:'Complete fibrous',kemik_parsiyel:'Partial bony bridge',kemik_tam:'Complete bony bridge'},
+      ys: {normal:'Normal',periartikuler_odem:'Periarticular edema',abse:'Abscess formation',kitle:'Soft tissue mass'},
+      dwi: {normal:'Normal',kisitlanma:'Restricted diffusion',serbest:'Increased diffusion (free)'},
+    },
+
+    /* ── Pathology names & categories ── */
+    patho: {
+      axSpA_AS: {ad:'Axial SpA / Ankylosing Spondylitis', kat:'Inflammatory'},
+      nrAxSpA:  {ad:'nr-axSpA (Non-radiographic SpA)', kat:'Inflammatory'},
+      psoriatik:{ad:'Psoriatic Arthritis', kat:'Inflammatory'},
+      reaktif:  {ad:'Reactive Arthritis', kat:'Inflammatory'},
+      enteropatik:{ad:'Enteropathic Arthritis (IBD)', kat:'Inflammatory'},
+      septik:   {ad:'Septic Arthritis / Osteomyelitis', kat:'Infectious'},
+      okI:      {ad:'Osteitis Condensans Ilii', kat:'Other'},
+      oa:       {ad:'Degenerative Osteoarthritis', kat:'Degenerative'},
+      stres:    {ad:'Stress / Insufficiency Fracture', kat:'Traumatic'},
+      sapho:    {ad:'SAPHO Syndrome', kat:'Inflammatory'},
+      gut:      {ad:'Gout / Crystal Arthropathy', kat:'Metabolic'},
+      metastaz: {ad:'Tumor / Metastasis', kat:'Oncological'},
+      paget:    {ad:'Paget Disease', kat:'Metabolic'},
+      ligament: {ad:'Ligamentous / Capsular Injury', kat:'Traumatic'},
+    },
+
+    /* ── Yorum (commentary) ── */
+    yorum: {
+      noResult: 'Insufficient data to generate a differential diagnosis from the findings entered. Please review the inputs.',
+      axSpA_AS: 'Bilateral symmetric bone marrow edema, erosions, and/or iliac-dominant sclerosis pattern are consistent with axial spondyloarthropathy (Ankylosing Spondylitis). Correlation with mNY and ASAS criteria and clinical assessment is recommended.',
+      nrAxSpA: 'Active inflammatory findings (notably bilateral bone marrow edema and contrast enhancement) without structural damage are consistent with non-radiographic axSpA. Correlation with clinical, laboratory, and HLA-B27 data is required.',
+      septik: 'Unilateral intense bone marrow edema, synovial collection, and periarticular changes warrant urgent evaluation for septic arthritis/osteomyelitis. Should be assessed together with clinical correlation and laboratory tests (CRP, procalcitonin, blood culture).',
+      okI: 'Iliac-dominant sclerosis with normal joint space is consistent with Osteitis Condensans Ilii. This is generally a benign condition related to postpartum state or mechanical stress; clinical correlation is advised.',
+      stres: 'Sacral bone marrow edema and T1 signal changes are consistent with a stress/insufficiency fracture. The sacral H-sign should be assessed; a fine-slice T1 coronal sequence may delineate the fracture line.',
+      metastaz: 'The focal bone lesion and associated findings should be evaluated for tumoral infiltration/metastasis. Primary site workup, oncological evaluation, and biopsy if indicated are recommended.',
+      oa: 'Degenerative changes (joint space narrowing, bilateral sclerosis) are consistent with osteoarthritis. Clinical follow-up may be planned based on symptom severity.',
+      default: (ad, s) => `The leading diagnosis is ${ad} (${s}% compatibility score); correlation with clinical and laboratory findings is recommended.`,
+    },
+  },
+})[RV_LOCALE];
+
 const { useState, useEffect } = React;
 
 /* ═══════════════════════════════════════════════════
-   PATHOLOGY DATABASE — 14 patoloji
+   PATHOLOGY DATABASE — 14 pathologies
 ═══════════════════════════════════════════════════ */
 const PATHO_DB = [
   {
-    id:'axSpA_AS', ad:'Aksiyel SpA / Ankilozan Spondilit', kat:'İnflamatuar', cls:'kt-inf',
+    id:'axSpA_AS', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.kemikOdem==='bilateral')s+=25; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=8;
@@ -155,7 +627,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'nrAxSpA', ad:'nr-axSpA (Non-radyografik SpA)', kat:'İnflamatuar', cls:'kt-inf',
+    id:'nrAxSpA', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.kemikOdem==='bilateral')s+=28; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=15;
@@ -172,7 +644,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'psoriatik', ad:'Psöriatik Artrit', kat:'İnflamatuar', cls:'kt-inf',
+    id:'psoriatik', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=18;
@@ -189,7 +661,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'reaktif', ad:'Reaktif Artrit', kat:'İnflamatuar', cls:'kt-inf',
+    id:'reaktif', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=20;
@@ -205,7 +677,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'enteropatik', ad:'Enteropatik Artrit (IBD)', kat:'İnflamatuar', cls:'kt-inf',
+    id:'enteropatik', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.kemikOdem==='bilateral')s+=22; else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=10;
@@ -219,7 +691,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'septik', ad:'Septik Artrit / Osteomiyelit', kat:'Enfeksiyöz', cls:'kt-enf',
+    id:'septik', cls:'kt-enf',
     puan(d){
       let s=0;
       if(d.lateralite==='tek')s+=22;
@@ -236,7 +708,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'okI', ad:'Osteitis Kondensans İlii', kat:'Diğer', cls:'kt-trv',
+    id:'okI', cls:'kt-trv',
     puan(d){
       let s=0;
       if(d.skleroz==='iliak_dom')s+=38;
@@ -253,7 +725,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'oa', ad:'Dejeneratif Osteoartrit', kat:'Dejeneratif', cls:'kt-dej',
+    id:'oa', cls:'kt-dej',
     puan(d){
       let s=0;
       if(d.sagEklemAraligi==='daralmis'||d.solEklemAraligi==='daralmis')s+=22;
@@ -268,12 +740,12 @@ const PATHO_DB = [
     }
   },
   {
-    id:'stres', ad:'Stres / İnsüfisans Fraktürü', kat:'Travmatik', cls:'kt-trv',
+    id:'stres', cls:'kt-trv',
     puan(d){
       let s=0;
       if(d.klinik==='travmatik')s+=20;
       if(d.t1Sinyal==='belirgin_dusuk')s+=28; else if(d.t1Sinyal==='hafif_dusuk')s+=14;
-      if(d.kemikOdem==='bilateral')s+=18; // sakral H-sign
+      if(d.kemikOdem==='bilateral')s+=18; // sacral H-sign
       else if(d.kemikOdem==='sag'||d.kemikOdem==='sol')s+=10;
       if(d.fokalLezyon==='evet')s+=15;
       if(d.cinsiyet==='kadin')s+=8;
@@ -284,7 +756,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'sapho', ad:'SAPHO Sendromu', kat:'İnflamatuar', cls:'kt-inf',
+    id:'sapho', cls:'kt-inf',
     puan(d){
       let s=0;
       if(d.skleroz==='iliak_dom')s+=22; else if(d.skleroz==='bilateral_esit')s+=16;
@@ -297,21 +769,21 @@ const PATHO_DB = [
     }
   },
   {
-    id:'gut', ad:'Gut / Kristal Artropati', kat:'Metabolik', cls:'kt-met',
+    id:'gut', cls:'kt-met',
     puan(d){
       let s=0;
       if(d.erozyon==='tek_belirgin'||d.erozyon==='bilateral_belirgin')s+=22;
       if(d.t1Sinyal==='belirgin_dusuk')s+=18;
       if(d.sinovyalSivi==='orta'||d.sinovyalSivi==='fazla')s+=12;
       if(d.kontrast==='hafif'||d.kontrast==='belirgin')s+=10;
-      if(d.fokalLezyon==='evet')s+=18; // tofus
+      if(d.fokalLezyon==='evet')s+=18; // tophus
       if(d.klinik==='belirsiz')s+=5;
       if(d.sagEklemAraligi==='daralmis'||d.solEklemAraligi==='daralmis')s+=10;
       return Math.min(100,Math.max(0,s));
     }
   },
   {
-    id:'metastaz', ad:'Tümör / Metastaz', kat:'Onkolojik', cls:'kt-onk',
+    id:'metastaz', cls:'kt-onk',
     puan(d){
       let s=0;
       if(d.fokalLezyon==='evet')s+=32;
@@ -326,7 +798,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'paget', ad:'Paget Hastalığı', kat:'Metabolik', cls:'kt-met',
+    id:'paget', cls:'kt-met',
     puan(d){
       let s=0;
       if(d.t1Sinyal==='hafif_dusuk')s+=15; else if(d.t1Sinyal==='belirgin_dusuk')s+=8;
@@ -340,7 +812,7 @@ const PATHO_DB = [
     }
   },
   {
-    id:'ligament', ad:'Ligamentöz / Kapsüler Yaralanma', kat:'Travmatik', cls:'kt-trv',
+    id:'ligament', cls:'kt-trv',
     puan(d){
       let s=0;
       if(d.klinik==='travmatik')s+=28;
@@ -363,7 +835,12 @@ const RAPOR_STEP = 21;
 const LEZ_STEPS_COUNT = 6;
 
 function scoreAll(d){
-  return PATHO_DB.map(p=>({...p, s:p.puan(d)})).filter(p=>p.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
+  return PATHO_DB.map(p=>({
+    ...p,
+    ad: T.patho[p.id].ad,
+    kat: T.patho[p.id].kat,
+    s: p.puan(d)
+  })).filter(p=>p.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
 }
 
 function Opt({label, sub, sel, onClick}){
@@ -386,45 +863,33 @@ function ProgBar({v}){
    REPORT TEXT BUILDER
 ═══════════════════════════════════════════════════ */
 function buildReportText(d, lez, results){
-  const T = (map,k) => map[k]||k||'—';
-  const ekMap = {normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze','':`—`};
-  const oemMap = {yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'};
-  const oemSMap = {hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın','':``,undefined:''};
-  const t1Map = {normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'};
-  const erMap = {yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'};
-  const sklMap = {yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'};
-  const kntMap = {yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin sübkondral',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'};
-  const sivMap = {yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse formasyonu'};
-  const ankMap = {yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü'};
-  const ysMap = {normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse formasyonu',kitle:'Yumuşak doku kitlesi'};
-  const dwiMap = {normal:'Normal',kisitlanma:'Difüzyon kısıtlanması',serbest:'Artmış difüzyon (serbest)'};
+  const Lk = (map,k) => map[k]||k||'—';
+  const m = T.txtMaps;
 
   let lines = [];
-  lines.push('SAKROİLİAK EKLEM MRI RAPORU');
+  lines.push(T.txtReportHeader);
   lines.push('─'.repeat(48));
-  lines.push(`Taraf: ${d.taraf==='bilateral'?'Bilateral':d.taraf==='sag'?'Sağ':'Sol'}`);
-  if(d.taraf==='bilateral'||d.taraf==='sag') lines.push(`Sağ eklem aralığı: ${T(ekMap,d.sagEklemAraligi)}`);
-  if(d.taraf==='bilateral'||d.taraf==='sol') lines.push(`Sol eklem aralığı: ${T(ekMap,d.solEklemAraligi)}`);
-  lines.push(`Kemik iliği ödemi (STIR/T2FS): ${T(oemMap,d.kemikOdem)}${oemSMap[d.kemikOdemSiddet]||''}`);
-  lines.push(`T1 subkondral sinyal: ${T(t1Map,d.t1Sinyal)}`);
-  lines.push(`Erozyon: ${T(erMap,d.erozyon)}`);
-  lines.push(`Skleroz: ${T(sklMap,d.skleroz)}`);
-  lines.push(`Kontrast tutulumu: ${T(kntMap,d.kontrast)}`);
-  lines.push(`Sinoviyal sıvı: ${T(sivMap,d.sinovyalSivi)}`);
-  lines.push(`Ankiloz/Füzyon: ${T(ankMap,d.ankiloz)}`);
-  lines.push(`Yumuşak doku: ${T(ysMap,d.yumusak)}`);
-  lines.push(`DWI: ${T(dwiMap,d.dwi)}`);
+  lines.push(`${T.txtSide}: ${d.taraf==='bilateral'?T.txtSideBilateral:d.taraf==='sag'?T.txtSideRight:T.txtSideLeft}`);
+  if(d.taraf==='bilateral'||d.taraf==='sag') lines.push(`${T.txtRightJoint}: ${Lk(m.eklem,d.sagEklemAraligi)}`);
+  if(d.taraf==='bilateral'||d.taraf==='sol') lines.push(`${T.txtLeftJoint}: ${Lk(m.eklem,d.solEklemAraligi)}`);
+  lines.push(`${T.txtBme}: ${Lk(m.oem,d.kemikOdem)}${m.oemS[d.kemikOdemSiddet]||''}`);
+  lines.push(`${T.txtT1}: ${Lk(m.t1,d.t1Sinyal)}`);
+  lines.push(`${T.txtErozyon}: ${Lk(m.er,d.erozyon)}`);
+  lines.push(`${T.txtSkleroz}: ${Lk(m.skl,d.skleroz)}`);
+  lines.push(`${T.txtKontrast}: ${Lk(m.knt,d.kontrast)}`);
+  lines.push(`${T.txtSinoviyal}: ${Lk(m.siv,d.sinovyalSivi)}`);
+  lines.push(`${T.txtAnkiloz}: ${Lk(m.ank,d.ankiloz)}`);
+  lines.push(`${T.txtYumusak}: ${Lk(m.ys,d.yumusak)}`);
+  lines.push(`DWI: ${Lk(m.dwi,d.dwi)}`);
   if(lez.length>0){
     lines.push('');
-    lines.push('FOKAL LEZYONLAR:');
-    lez.forEach((l,i)=>{
-      lines.push(`  Lezyon ${i+1}: ${l.lokalizasyon||'?'}${l.boyut?' ('+l.boyut+')':''}${l.t1t2?' | '+l.t1t2:''}${l.lezKontrast?' | Kt: '+l.lezKontrast:''}${l.komsuyapi?' | '+l.komsuyapi:''}`);
-    });
+    lines.push(T.txtFokalLezyonlar);
+    lez.forEach((l,i)=>{ lines.push(T.txtLezLine(i, l)); });
   }
   lines.push('');
   lines.push('─'.repeat(48));
-  lines.push('AYIRICI TANI (Ağırlıklı Skor):');
-  results.forEach((r,i)=>lines.push(`  ${i+1}. ${r.ad} [${r.kat}]  %${r.s}`));
+  lines.push(T.txtDiffTitle);
+  results.forEach((r,i)=>lines.push(`  ${i+1}. ${r.ad} [${r.kat}]  ${r.s}%`));
   return lines.join('\n');
 }
 
@@ -465,7 +930,7 @@ function App(){
       else {
         setLezyonlar(p=>[...p,curLez]);
         setCurLez(null); setLezStep(-1);
-        setStep(13); // back to lezyon check
+        setStep(13);
       }
       return;
     }
@@ -495,14 +960,18 @@ function App(){
 
   const results = step>=RAPOR_STEP ? scoreAll(d) : [];
 
-  const totalVisibleSteps = RAPOR_STEP - (d.taraf!=='bilateral'?1:0);
   const pct = inLez
     ? Math.round(((13+(lezStep+1)/LEZ_STEPS_COUNT)/RAPOR_STEP)*100)
     : Math.round((step/RAPOR_STEP)*100);
 
-  const STEP_NAMES = ['Klinik Bilgi','Taraf Seçimi','Sağ Eklem Aralığı','Sol Eklem Aralığı','Kemik İliği Ödemi','T1 Subkondral','Erozyon','Skleroz','Kontrast','Sinoviyal Sıvı','Ankiloz','Yumuşak Doku','DWI','Fokal Lezyon'];
-  const LEZ_NAMES = ['Lokalizasyon','Boyut','T1/T2 Sinyal','DWI/ADC','Kontrast','Komşu Yapı'];
-  const curStepName = inLez ? `Lezyon ${lezyonlar.length+1} – ${LEZ_NAMES[lezStep]}` : (STEP_NAMES[step]||'Rapor');
+  const curStepName = inLez
+    ? `${T.lezNames[0].replace(T.lezNames[0], T.lezNames[0])} ${lezyonlar.length+1} – ${T.lezNames[lezStep]}`
+    : (T.stepNames[step]||T.reportLabel);
+
+  // Simpler step name for lesion steps:
+  const curStepNameFinal = inLez
+    ? `${RV_LOCALE==='tr'?'Lezyon':'Lesion'} ${lezyonlar.length+1} – ${T.lezNames[lezStep]}`
+    : (T.stepNames[step]||T.reportLabel);
 
   /* ─── RENDER ─── */
   function render(){
@@ -530,43 +999,43 @@ function App(){
   /* ── Step 0 ── */
   function renderKlinik(){
     return <div className="card">
-      <div className="card-step">Adım 1</div>
-      <h3>Klinik Bilgi</h3>
-      <div className="card-sub">Hasta demografisi ve klinik ön tanıyı giriniz.</div>
+      <div className="card-step">{T.stepNames[0]}</div>
+      <h3>{T.s0Title}</h3>
+      <div className="card-sub">{T.s0Sub}</div>
       <div className="grid2">
         <div>
-          <div className="field-label">Yaş Grubu</div>
+          <div className="field-label">{T.s0AgeLabel}</div>
           <div className="opts">
-            {[['genc','18–45 yaş','Genç erişkin'],['orta','45–60 yaş','Orta yaş'],['yasli','60+ yaş','İleri yaş']].map(([v,l,s])=>
+            {T.s0Age.map(([v,l,s])=>
               <Opt key={v} label={l} sub={s} sel={d.yasGrubu===v} onClick={()=>set('yasGrubu',v)}/>
             )}
           </div>
         </div>
         <div>
-          <div className="field-label">Cinsiyet</div>
+          <div className="field-label">{T.s0GenderLabel}</div>
           <div className="opts">
-            {[['erkek','Erkek'],['kadin','Kadın']].map(([v,l])=>
+            {T.s0Gender.map(([v,l])=>
               <Opt key={v} label={l} sel={d.cinsiyet===v} onClick={()=>set('cinsiyet',v)}/>
             )}
           </div>
-          <div className="field-label" style={{marginTop:14}}>HLA-B27</div>
+          <div className="field-label" style={{marginTop:14}}>{T.s0HlaLabel}</div>
           <div className="opts">
-            {[['pozitif','Pozitif'],['negatif','Negatif'],['bilinmiyor','Bilinmiyor']].map(([v,l])=>
+            {T.s0Hla.map(([v,l])=>
               <Opt key={v} label={l} sel={d.hlab27===v} onClick={()=>set('hlab27',v)}/>
             )}
           </div>
         </div>
         <div style={{gridColumn:'1/-1'}}>
-          <div className="field-label">Klinik Ön Tanı</div>
+          <div className="field-label">{T.s0KlinikLabel}</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7}}>
-            {[['inflamatuar','İnflamatuar','SpA, artrit'],['enfeksiyoz','Enfeksiyöz','Septik, abse'],['travmatik','Travmatik','Fraktür, yaralanma'],['onkolojik','Onkolojik','Tümör, met.'],['belirsiz','Belirsiz','—']].map(([v,l,s])=>
+            {T.s0Klinik.map(([v,l,s])=>
               <Opt key={v} label={l} sub={s} sel={d.klinik===v} onClick={()=>set('klinik',v)}/>
             )}
           </div>
         </div>
       </div>
       <div className="btns">
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -574,16 +1043,16 @@ function App(){
   /* ── Step 1 ── */
   function renderTaraf(){
     return <div className="card">
-      <div className="card-step">Adım 2</div>
-      <h3>Değerlendirilen Taraf</h3>
+      <div className="card-step">{T.stepNames[1]}</div>
+      <h3>{T.s1Title}</h3>
       <div className="opts">
-        <Opt label={<>Bilateral <span className="sbadge sb-bil">Her iki taraf</span></>} sub="Sağ ve sol SI eklem birlikte değerlendiriliyor" sel={d.taraf==='bilateral'} onClick={()=>set('taraf','bilateral')}/>
-        <Opt label={<>Yalnızca Sağ <span className="sbadge sb-sag">SAĞ</span></>} sub="Sol SI eklem değerlendirilmiyor" sel={d.taraf==='sag'} onClick={()=>set('taraf','sag')}/>
-        <Opt label={<>Yalnızca Sol <span className="sbadge sb-sol">SOL</span></>} sub="Sağ SI eklem değerlendirilmiyor" sel={d.taraf==='sol'} onClick={()=>set('taraf','sol')}/>
+        <Opt label={<>{T.s1Bilateral} <span className="sbadge sb-bil">{T.badgeBilateral}</span></>} sub={T.s1BilateralSub} sel={d.taraf==='bilateral'} onClick={()=>set('taraf','bilateral')}/>
+        <Opt label={<>{T.s1Right} <span className="sbadge sb-sag">{T.badgeRight}</span></>} sub={T.s1RightSub} sel={d.taraf==='sag'} onClick={()=>set('taraf','sag')}/>
+        <Opt label={<>{T.s1Left} <span className="sbadge sb-sol">{T.badgeLeft}</span></>} sub={T.s1LeftSub} sel={d.taraf==='sol'} onClick={()=>set('taraf','sol')}/>
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -591,16 +1060,16 @@ function App(){
   /* ── Step 2 ── */
   function renderSagEklem(){
     return <div className="card">
-      <div className="card-step">Adım 3 — <span className="sbadge sb-sag">SAĞ SI EKLEMİ</span></div>
-      <h3>Sağ Eklem Aralığı</h3>
+      <div className="card-step">{T.stepNames[2]} — <span className="sbadge sb-sag">{T.s2StepLabel}</span></div>
+      <h3>{T.s2Title}</h3>
       <div className="opts">
-        {[['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']].map(([v,l,s])=>
+        {T.s2Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.sagEklemAraligi===v} onClick={()=>set('sagEklemAraligi',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -608,16 +1077,16 @@ function App(){
   /* ── Step 3 ── */
   function renderSolEklem(){
     return <div className="card">
-      <div className="card-step">Adım {d.taraf==='bilateral'?'4':'3'} — <span className="sbadge sb-sol">SOL SI EKLEMİ</span></div>
-      <h3>Sol Eklem Aralığı</h3>
+      <div className="card-step">{T.stepNames[3]} — <span className="sbadge sb-sol">{T.s3StepLabel}</span></div>
+      <h3>{T.s3Title}</h3>
       <div className="opts">
-        {[['normal','Normal','Eklem aralığı yaşa uygun'],['daralmis','Daralmış','Dejeneratif/inflamatuar daralma'],['genislemis','Genişlemiş','Ligamentöz laksasite, aktif inflamasyon'],['ankile','Ankiloze','Eklem aralığı seçilemiyor']].map(([v,l,s])=>
+        {T.s3Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.solEklemAraligi===v} onClick={()=>set('solEklemAraligi',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -625,26 +1094,26 @@ function App(){
   /* ── Step 4 ── */
   function renderKemikOdem(){
     return <div className="card">
-      <div className="card-step">Adım 5</div>
-      <h3>Kemik İliği Ödemi (STIR / T2 Yağ Baskılı)</h3>
-      <div className="card-sub">ASAS aktif sakroiliit kriterleri: bilateral ≥ grade 1 veya tek taraflı ≥ grade 3 BME gerektirir.</div>
-      <div className="field-label">Lateralite</div>
+      <div className="card-step">{T.stepNames[4]}</div>
+      <h3>{T.s4Title}</h3>
+      <div className="card-sub">{T.s4Sub}</div>
+      <div className="field-label">{T.s4LatLabel}</div>
       <div className="opts">
-        {[['yok','Yok','Kemik iliği ödemi izlenmiyor'],['sag','Sağ SI eklem','Tek taraflı sağ'],['sol','Sol SI eklem','Tek taraflı sol'],['bilateral','Bilateral','Her iki eklemde mevcut']].map(([v,l,s])=>
+        {T.s4Lat.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.kemikOdem===v} onClick={()=>{set('kemikOdem',v);if(v==='yok')set('kemikOdemSiddet','');}}/>
         )}
       </div>
       {d.kemikOdem && d.kemikOdem!=='yok' && <>
-        <div className="field-label" style={{marginTop:14}}>Şiddet</div>
+        <div className="field-label" style={{marginTop:14}}>{T.s4SevLabel}</div>
         <div className="opts">
-          {[['hafif','Hafif','Küçük odak, < 1 cm veya tek kesit'],['orta','Orta','≥ 2 ardışık kesit, 1–2 cm'],['siddetli','Belirgin / Yaygın','> 2 cm veya yaygın tutulum']].map(([v,l,s])=>
+          {T.s4Sev.map(([v,l,s])=>
             <Opt key={v} label={l} sub={s} sel={d.kemikOdemSiddet===v} onClick={()=>set('kemikOdemSiddet',v)}/>
           )}
         </div>
       </>}
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -652,16 +1121,16 @@ function App(){
   /* ── Step 5 ── */
   function renderT1(){
     return <div className="card">
-      <div className="card-step">Adım 6</div>
-      <h3>T1 Subkondral Kemik Sinyali</h3>
+      <div className="card-step">{T.stepNames[5]}</div>
+      <h3>{T.s5Title}</h3>
       <div className="opts">
-        <Opt label="Normal" sub="Kemik iliği yağ sinyali korunmuş" sel={d.t1Sinyal==='normal'} onClick={()=>set('t1Sinyal','normal')}/>
-        <Opt label="Hafif düşük" sub="Fokal T1 sinyal azalması, subkondral ödem/skleroz" sel={d.t1Sinyal==='hafif_dusuk'} onClick={()=>set('t1Sinyal','hafif_dusuk')}/>
-        <Opt label="Belirgin düşük" sub="Yaygın T1 sinyal kaybı – aktif BME, tümör veya fraktür" sel={d.t1Sinyal==='belirgin_dusuk'} onClick={()=>set('t1Sinyal','belirgin_dusuk')}/>
+        {T.s5Opts.map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.t1Sinyal===v} onClick={()=>set('t1Sinyal',v)}/>
+        )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -669,21 +1138,17 @@ function App(){
   /* ── Step 6 ── */
   function renderErozyon(){
     return <div className="card">
-      <div className="card-step">Adım 7</div>
-      <h3>Erozyon</h3>
-      <div className="card-sub">mNY kriterlerine göre: Grade ≥ 2 bilateral veya ≥ 3 tek taraflı radyografik sakroiliit.</div>
+      <div className="card-step">{T.stepNames[6]}</div>
+      <h3>{T.s6Title}</h3>
+      <div className="card-sub">{T.s6Sub}</div>
       <div className="opts">
-        <Opt label="Yok" sel={d.erozyon==='yok'} onClick={()=>set('erozyon','yok')}/>
-        <Opt label="Tek taraflı – hafif" sub="< 2 mm, yüzeyel kemik defekti" sel={d.erozyon==='tek_hafif'} onClick={()=>set('erozyon','tek_hafif')}/>
-        <Opt label="Tek taraflı – belirgin" sub="≥ 2 mm veya birden fazla odak" sel={d.erozyon==='tek_belirgin'} onClick={()=>set('erozyon','tek_belirgin')}/>
-        <Opt label="Tek taraflı – ileri" sub="Geniş subkondral kemik kaybı" sel={d.erozyon==='tek_ileri'} onClick={()=>set('erozyon','tek_ileri')}/>
-        <Opt label="Bilateral – hafif" sub="Her iki eklemde yüzeyel erozyon" sel={d.erozyon==='bilateral_hafif'} onClick={()=>set('erozyon','bilateral_hafif')}/>
-        <Opt label="Bilateral – belirgin" sub="Her iki eklemde derin erozyon" sel={d.erozyon==='bilateral_belirgin'} onClick={()=>set('erozyon','bilateral_belirgin')}/>
-        <Opt label="Bilateral – ileri" sub="Her iki eklemde geniş kemik yıkımı" sel={d.erozyon==='bilateral_ileri'} onClick={()=>set('erozyon','bilateral_ileri')}/>
+        {T.s6Opts.map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.erozyon===v} onClick={()=>set('erozyon',v)}/>
+        )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -691,17 +1156,16 @@ function App(){
   /* ── Step 7 ── */
   function renderSkleroz(){
     return <div className="card">
-      <div className="card-step">Adım 8</div>
-      <h3>Skleroz (Subkondral Dansite Artışı)</h3>
+      <div className="card-step">{T.stepNames[7]}</div>
+      <h3>{T.s7Title}</h3>
       <div className="opts">
-        <Opt label="Yok" sel={d.skleroz==='yok'} onClick={()=>set('skleroz','yok')}/>
-        <Opt label="İliak dominant" sub="İliak yüzde belirgin skleroz – OKI, SpA için tipik" sel={d.skleroz==='iliak_dom'} onClick={()=>set('skleroz','iliak_dom')}/>
-        <Opt label="Sakral dominant" sub="Sakral yüzde belirgin skleroz" sel={d.skleroz==='sakral_dom'} onClick={()=>set('skleroz','sakral_dom')}/>
-        <Opt label="Bilateral eşit" sub="Her iki yüzde benzer skleroz – OA, SAPHO" sel={d.skleroz==='bilateral_esit'} onClick={()=>set('skleroz','bilateral_esit')}/>
+        {T.s7Opts.map(([v,l,s])=>
+          <Opt key={v} label={l} sub={s} sel={d.skleroz===v} onClick={()=>set('skleroz',v)}/>
+        )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -709,23 +1173,16 @@ function App(){
   /* ── Step 8 ── */
   function renderKontrast(){
     return <div className="card">
-      <div className="card-step">Adım 9</div>
-      <h3>Kontrast Tutulumu (Gd sonrası)</h3>
+      <div className="card-step">{T.stepNames[8]}</div>
+      <h3>{T.s8Title}</h3>
       <div className="opts">
-        {[
-          ['yok','Kontrast verilmedi / Yok','Tutulum izlenmedi veya incelenmedi'],
-          ['hafif','Hafif sübkondral','Minimal aktif inflamasyon işareti'],
-          ['belirgin','Belirgin sübkondral','Aktif inflamasyon – axSpA bulgusu'],
-          ['sinoviyal','Sinoviyal tutulum','Eklem içi sinoviyal kontrast'],
-          ['periostal','Periostal tutulum','Periostit – SAPHO sendromu bulgusu'],
-          ['abse','Abse duvarı / halka','Enfeksiyöz süreç işareti'],
-        ].map(([v,l,s])=>
+        {T.s8Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.kontrast===v} onClick={()=>set('kontrast',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -733,16 +1190,16 @@ function App(){
   /* ── Step 9 ── */
   function renderSinoviyal(){
     return <div className="card">
-      <div className="card-step">Adım 10</div>
-      <h3>Sinoviyal Sıvı / Eklem İçi Koleksiyon</h3>
+      <div className="card-step">{T.stepNames[9]}</div>
+      <h3>{T.s9Title}</h3>
       <div className="opts">
-        {[['yok','Yok'],['minimal','Minimal','Fizyolojik sınırda'],['orta','Orta miktar','Anlamlı efüzyon, kapsül distansiyonu'],['fazla','Fazla','Belirgin efüzyon'],['abse','Abse','T2 yüksek, DWI kısıtlanmalı – septik bulgu']].map(([v,l,s])=>
+        {T.s9Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.sinovyalSivi===v} onClick={()=>set('sinovyalSivi',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -750,16 +1207,16 @@ function App(){
   /* ── Step 10 ── */
   function renderAnkiloz(){
     return <div className="card">
-      <div className="card-step">Adım 11</div>
-      <h3>Ankiloz / Füzyon</h3>
+      <div className="card-step">{T.stepNames[10]}</div>
+      <h3>{T.s10Title}</h3>
       <div className="opts">
-        {[['yok','Yok'],['fibrous_parsiyel','Parsiyel fibröz','Kısmi fibröz doku köprüsü'],['fibrous_tam','Tam fibröz','Eklem aralığı fibröz dokuyla oblitere'],['kemik_parsiyel','Parsiyel kemik köprüsü','Bölgesel ossifikasyon/sindezmofit'],['kemik_tam','Tam kemik köprüsü','Tam ankiloz – eklem aralığı yok']].map(([v,l,s])=>
+        {T.s10Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.ankiloz===v} onClick={()=>set('ankiloz',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -767,16 +1224,16 @@ function App(){
   /* ── Step 11 ── */
   function renderYumusak(){
     return <div className="card">
-      <div className="card-step">Adım 12</div>
-      <h3>Periartiküler Yumuşak Doku</h3>
+      <div className="card-step">{T.stepNames[11]}</div>
+      <h3>{T.s11Title}</h3>
       <div className="opts">
-        {[['normal','Normal','Çevre yumuşak dokular normal'],['periartikuler_odem','Periartiküler ödem','Ligamentöz veya kapsüler tutulum'],['abse','Abse formasyonu','Periartiküler veya psoas absesi'],['kitle','Yumuşak doku kitlesi','Tümöral infiltrasyon şüphesi']].map(([v,l,s])=>
+        {T.s11Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.yumusak===v} onClick={()=>set('yumusak',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -784,16 +1241,16 @@ function App(){
   /* ── Step 12 ── */
   function renderDwi(){
     return <div className="card">
-      <div className="card-step">Adım 13</div>
-      <h3>DWI / Difüzyon Görüntüleme</h3>
+      <div className="card-step">{T.stepNames[12]}</div>
+      <h3>{T.s12Title}</h3>
       <div className="opts">
-        {[['normal','Normal / Uygulanmadı'],['kisitlanma','Difüzyon kısıtlanması','Yüksek DWI + düşük ADC → enfeksiyon / tümör'],['serbest','Artmış difüzyon','Yüksek ADC → ödem ağırlıklı süreç']].map(([v,l,s])=>
+        {T.s12Opts.map(([v,l,s])=>
           <Opt key={v} label={l} sub={s} sel={d.dwi===v} onClick={()=>set('dwi',v)}/>
         )}
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>İleri →</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{T.btnNext}</button>
       </div>
     </div>;
   }
@@ -801,38 +1258,40 @@ function App(){
   /* ── Step 13 ── */
   function renderLezCheck(){
     return <div className="card">
-      <div className="card-step">Adım 14</div>
-      <h3>Fokal Kemik Lezyonu</h3>
-      <div className="card-sub">Sakrum, iliak kanat veya komşu kemiklerde fokal lezyon var mı?</div>
+      <div className="card-step">{T.stepNames[13]}</div>
+      <h3>{T.s13Title}</h3>
+      <div className="card-sub">{T.s13Sub}</div>
       {lezyonlar.length>0 && <div className="lez-list">
         {lezyonlar.map((l,i)=><div key={i} className="lez-card">
           <div className="lez-body">
-            <h4>Lezyon {i+1} – {l.lokalizasyon||'Belirtilmedi'}</h4>
-            <p>{[l.boyut&&'Boyut: '+l.boyut, l.t1t2, l.lezKontrast&&'Kt: '+l.lezKontrast].filter(Boolean).join(' · ')}</p>
+            <h4>{T.s13LezLabel(i+1, l.lokalizasyon||T.s13NotSpecified)}</h4>
+            <p>{[l.boyut&&`${T.rptSize}: `+l.boyut, l.t1t2, l.lezKontrast&&`${T.rptContrast}: `+l.lezKontrast].filter(Boolean).join(' · ')}</p>
           </div>
-          <button className="lez-del" onClick={()=>setLezyonlar(p=>p.filter((_,j)=>j!==i))}>✕ Sil</button>
+          <button className="lez-del" onClick={()=>setLezyonlar(p=>p.filter((_,j)=>j!==i))}>{T.btnDelete}</button>
         </div>)}
       </div>}
       <div className="opts">
-        <Opt label="Evet – Lezyon ekle" sub="Fokal kemik lezyonu mevcut, ayrıntı girilecek" sel={false} onClick={startLez}/>
-        <Opt label={lezyonlar.length>0?"Tamamlandı – Rapora git":"Hayır, fokal lezyon yok"} sub={lezyonlar.length>0?`${lezyonlar.length} lezyon kaydedildi`:'Fokal lezyon saptanmadı'} sel={d.fokalLezyon==='hayir'} onClick={()=>{set('fokalLezyon','hayir');}}/>
+        <Opt label={T.btnAddLesion} sub={T.s13AddLesionSub} sel={false} onClick={startLez}/>
+        <Opt label={lezyonlar.length>0?T.btnDone:T.btnNoLesion} sub={lezyonlar.length>0?T.s13DoneSub(lezyonlar.length):T.s13NoLesionSub} sel={d.fokalLezyon==='hayir'} onClick={()=>{set('fokalLezyon','hayir');}}/>
       </div>
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        {(d.fokalLezyon==='hayir'||lezyonlar.length>0) && <button className="btn btn-suc" onClick={()=>setStep(RAPOR_STEP)}>Rapora Git →</button>}
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        {(d.fokalLezyon==='hayir'||lezyonlar.length>0) && <button className="btn btn-suc" onClick={()=>setStep(RAPOR_STEP)}>{T.btnGoReport}</button>}
       </div>
     </div>;
   }
 
-  /* ── Lezyon Loop ── */
+  /* ── Lesion Loop ── */
   function renderLezStep(){
+    const lezWord = RV_LOCALE==='tr' ? 'Lezyon' : 'Lesion';
+    const stepWord = RV_LOCALE==='tr' ? 'Adım' : 'Step';
     return <div className="card">
-      <div className="card-step">Lezyon {lezyonlar.length+1} · Adım {lezStep+1}/6 – {LEZ_NAMES[lezStep]}</div>
-      <h3>{LEZ_NAMES[lezStep]}</h3>
+      <div className="card-step">{lezWord} {lezyonlar.length+1} · {stepWord} {lezStep+1}/6 – {T.lezNames[lezStep]}</div>
+      <h3>{T.lezNames[lezStep]}</h3>
       {renderLezContent()}
       <div className="btns">
-        <button className="btn btn-sec" onClick={goPrev}>← Geri</button>
-        <button className="btn btn-pri" onClick={goNext}>{lezStep<LEZ_STEPS_COUNT-1?'İleri →':'Lezyon Kaydet ✓'}</button>
+        <button className="btn btn-sec" onClick={goPrev}>{T.btnBack}</button>
+        <button className="btn btn-pri" onClick={goNext}>{lezStep<LEZ_STEPS_COUNT-1?T.btnNext:T.btnSaveLesion}</button>
       </div>
     </div>;
   }
@@ -840,32 +1299,32 @@ function App(){
   function renderLezContent(){
     switch(lezStep){
       case 0: return <div className="opts">
-        {[['Sakrum gövdesi','Orta hat, H-sign bölgesi'],['Sakral ala','Lateral sakral kitle/lezyon'],['İliak kanat','İliak kemik gövdesi'],['Anterior SI ligaman bölgesi','Ön bağ tutulumu'],['Posterior SI ligaman bölgesi','Arka güçlü ligaman'],['Presakral yumuşak doku','Ekstraartiküler uzanım']].map(([v,s])=>
+        {T.lezLoc.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.lokalizasyon===v} onClick={()=>setLez('lokalizasyon',v)}/>
         )}
       </div>;
       case 1: return <div className="opts">
-        {[['< 10 mm','Küçük odak'],['10–30 mm','Orta boyut'],['30–50 mm','Büyük lezyon'],['>50 mm','Dev lezyon']].map(([v,s])=>
+        {T.lezSize.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.boyut===v} onClick={()=>setLez('boyut',v)}/>
         )}
       </div>;
       case 2: return <div className="opts">
-        {[['T1↓ T2↑ – aktif ödem','Kemik ödemi / aktif inflamasyon'],['T1↓ T2↓ – sklerotik/fibröz','Yoğun sklerotik veya fibröz doku'],['T1↑ T2↑ – yağ/lipomatöz','Lipomatöz içerik'],['T1↓ T2↑↑ – kistik/sıvı','Sıvı içerikli lezyon'],['T1 T2 heterojen','Miks sinyal karakteri'],['T1=T2 izointens','Kas ile izointens, özellik yok']].map(([v,s])=>
+        {T.lezSignal.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.t1t2===v} onClick={()=>setLez('t1t2',v)}/>
         )}
       </div>;
       case 3: return <div className="opts">
-        {[['Kısıtlanma (DWI↑ ADC↓)','Enfeksiyon / tümör / abse'],['Serbest difüzyon (ADC↑)','Ödem / nekroz ağırlıklı'],['DWI uygulanmadı / normal','Değerlendirilemedi']].map(([v,s])=>
+        {T.lezDwi.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.lezDwi===v} onClick={()=>setLez('lezDwi',v)}/>
         )}
       </div>;
       case 4: return <div className="opts">
-        {[['Yok','Tutulum izlenmedi'],['Homojen tutulum','Solid tutulum'],['Halka tutulum','Abse / nekrotik merkez'],['Periferik tutulum','Yavaş doldurma paterni'],['Heterojen tutulum','Kompleks lezyon']].map(([v,s])=>
+        {T.lezContrast.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.lezKontrast===v} onClick={()=>setLez('lezKontrast',v)}/>
         )}
       </div>;
       case 5: return <div className="opts">
-        {[['Serbest / intraosseöz','Komşu yapılara etki yok'],['Nöral foramene uzanım','Sinir kökü bası'],['Eklem boşluğuna uzanım','Ekstraartiküler yayılım'],['Presakral bölgeye uzanım','Yumuşak doku invazyonu'],['Spinal kanala uzanım','Medulla spinalis bası riski']].map(([v,s])=>
+        {T.lezNeighbor.map(([v,s])=>
           <Opt key={v} label={v} sub={s} sel={curLez?.komsuyapi===v} onClick={()=>setLez('komsuyapi',v)}/>
         )}
       </div>;
@@ -875,43 +1334,20 @@ function App(){
 
   /* ── RAPOR ── */
   function renderRapor(){
-    const dp = {
-      sagEklemAraligi:{normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
-      solEklemAraligi:{normal:'Normal',daralmis:'Daralmış',genislemis:'Genişlemiş',ankile:'Ankiloze'},
-      kemikOdem:{yok:'Yok',sag:'Sağ tarafta',sol:'Sol tarafta',bilateral:'Bilateral'},
-      kemikOdemSiddet:{hafif:' – hafif',orta:' – orta',siddetli:' – belirgin/yaygın'},
-      t1Sinyal:{normal:'Normal',hafif_dusuk:'Hafif düşük',belirgin_dusuk:'Belirgin düşük'},
-      erozyon:{yok:'Yok',tek_hafif:'Tek taraflı-hafif',tek_belirgin:'Tek taraflı-belirgin',tek_ileri:'Tek taraflı-ileri',bilateral_hafif:'Bilateral-hafif',bilateral_belirgin:'Bilateral-belirgin',bilateral_ileri:'Bilateral-ileri'},
-      skleroz:{yok:'Yok',iliak_dom:'İliak dominant',sakral_dom:'Sakral dominant',bilateral_esit:'Bilateral eşit'},
-      kontrast:{yok:'Yok/Uygulanmadı',hafif:'Hafif sübkondral',belirgin:'Belirgin',sinoviyal:'Sinoviyal',periostal:'Periostal',abse:'Abse duvarı'},
-      sinovyalSivi:{yok:'Yok',minimal:'Minimal',orta:'Orta',fazla:'Fazla',abse:'Abse'},
-      ankiloz:{yok:'Yok',fibrous_parsiyel:'Parsiyel fibröz',fibrous_tam:'Tam fibröz',kemik_parsiyel:'Parsiyel kemik köprüsü',kemik_tam:'Tam kemik köprüsü (ankiloz)'},
-      yumusak:{normal:'Normal',periartikuler_odem:'Periartiküler ödem',abse:'Abse',kitle:'Yumuşak doku kitlesi'},
-      dwi:{normal:'Normal',kisitlanma:'Kısıtlanma mevcut',serbest:'Artmış difüzyon'},
-    };
-    const R = (k) => (dp[k]&&dp[k][d[k]])||d[k]||'—';
+    const R = (k) => (T.maps[k]&&T.maps[k][d[k]])||d[k]||'—';
 
     const top = results[0];
     function yorum(){
-      if(!top) return 'Girilen bulgular doğrultusunda yeterli ayırıcı tanı oluşturulamadı. Lütfen bulgularınızı tekrar gözden geçiriniz.';
-      switch(top.id){
-        case 'axSpA_AS': return 'Bilateral simetrik kemik iliği ödemi, erozyon ve/veya iliak dominant skleroz paternleri aksiyel spondiloartropati (Ankilozan Spondilit) ile uyumludur. mNY ve ASAS kriterleri doğrultusunda klinisyenle değerlendirme önerilir.';
-        case 'nrAxSpA': return 'Aktif inflamatuar bulgular (özellikle bilateral kemik ödemi ve kontrast tutulumu) yapısal hasar olmaksızın non-radyografik axSpA ile uyumludur. Klinik, laboratuvar ve HLA-B27 ile korelasyon gerektirir.';
-        case 'septik': return 'Tek taraflı yoğun kemik ödemi, sinoviyal koleksiyon ve periartiküler değişiklikler septik artrit/osteomiyelit açısından acil değerlendirme gerektirir. Klinik korelasyon ve laboratuvar tetkiki (CRP, prokalsitonin, kan kültürü) ile birlikte ele alınmalıdır.';
-        case 'okI': return 'İliak dominant skleroz ve normal eklem aralığı ile Osteitis Kondensans İlii bulguları izlenmektedir. Genellikle benign, postpartum veya mekanik strese bağlı bir tablo olup klinik korelasyon önerilir.';
-        case 'stres': return 'Sakral kemik iliği ödemi ve T1 sinyal değişiklikleri stres/insüfisans fraktürü ile uyumludur. Sakral H-sign varlığı değerlendirilmeli, ince kesit T1 koronal görüntü ile fraktür hattı ortaya koyulabilir.';
-        case 'metastaz': return 'Fokal kemik lezyonu ve ilişkili bulgular tümöral infiltrasyon/metastaz açısından incelenmelidir. Primer odak araştırılması, onkolojik değerlendirme ve gerekirse biyopsi planlanmalıdır.';
-        case 'oa': return 'Dejeneratif değişiklikler (eklem daralması, bilateral skleroz) osteoartrit ile uyumludur. Semptomların şiddetine göre klinik takip planlanabilir.';
-        case 'stres': return 'Travmatik veya insüfisans fraktürü bulguları izlenmektedir. Kemik mineral yoğunluğu değerlendirmesi (DEXA) önerilebilir.';
-        default: return `Baskın tanı ${top.ad} (%${top.s} uyum skoru) olmakla birlikte klinik ve laboratuvar bulgularıyla korelasyon önerilir.`;
-      }
+      if(!top) return T.yorum.noResult;
+      if(T.yorum[top.id]) return T.yorum[top.id];
+      return T.yorum.default(top.ad, top.s);
     }
 
     function copyRep(){
       const txt = buildReportText(d,lezyonlar,results);
       if(navigator.clipboard){navigator.clipboard.writeText(txt);}
       else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
-      alert('Rapor panoya kopyalandı.');
+      alert(T.alertCopied);
     }
     function printRep(){
       const el=document.getElementById('printOverlay');
@@ -922,7 +1358,7 @@ function App(){
       const txt=buildReportText(d,lezyonlar,results);
       const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
       const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download='SI_Eklem_MRI_Raporu.txt';
+      const a=document.createElement('a');a.href=url;a.download=T.txtDownloadName;
       document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
     }
 
@@ -931,57 +1367,57 @@ function App(){
       <div className="card" style={{marginBottom:12}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
-            <div style={{fontSize:'.7rem',fontWeight:800,color:'var(--acc)',textTransform:'uppercase',letterSpacing:'1px'}}>Rapor</div>
-            <div style={{fontSize:'1.15rem',fontWeight:800,color:'var(--txt)'}}>Sakroiliak Eklem MRI</div>
+            <div style={{fontSize:'.7rem',fontWeight:800,color:'var(--acc)',textTransform:'uppercase',letterSpacing:'1px'}}>{T.reportLabel}</div>
+            <div style={{fontSize:'1.15rem',fontWeight:800,color:'var(--txt)'}}>{T.rptTitle}</div>
             <div style={{fontSize:'.78rem',color:'var(--txt2)',marginTop:2}}>
-              {d.taraf==='bilateral'?<><span className="sbadge sb-bil">Bilateral</span></>:d.taraf==='sag'?<span className="sbadge sb-sag">Sağ</span>:<span className="sbadge sb-sol">Sol</span>}
-              {d.yasGrubu && <> · {d.yasGrubu==='genc'?'18–45 yaş':d.yasGrubu==='orta'?'45–60 yaş':'60+ yaş'}</>}
-              {d.cinsiyet && <> · {d.cinsiyet==='erkek'?'Erkek':'Kadın'}</>}
+              {d.taraf==='bilateral'?<><span className="sbadge sb-bil">{T.s1Bilateral}</span></>:d.taraf==='sag'?<span className="sbadge sb-sag">{T.rptSideRight}</span>:<span className="sbadge sb-sol">{T.rptSideLeft}</span>}
+              {d.yasGrubu && <> · {T.ageLabel[d.yasGrubu]}</>}
+              {d.cinsiyet && <> · {T.genderLabel[d.cinsiyet]}</>}
               {d.hlab27==='pozitif' && <> · <span style={{color:'var(--warn)'}}>HLA-B27 +</span></>}
             </div>
           </div>
-          <button className="btn btn-sec" onClick={()=>{setStep(0);setLezyonlar([]);setLezStep(-1);setCurLez(null);setD({yasGrubu:'',cinsiyet:'',klinik:'',hlab27:'',taraf:'bilateral',lateralite:'bilateral',sagEklemAraligi:'',solEklemAraligi:'',kemikOdem:'',kemikOdemSiddet:'',t1Sinyal:'',erozyon:'',skleroz:'',kontrast:'',sinovyalSivi:'',ankiloz:'',yumusak:'',dwi:'',fokalLezyon:''});}}>↺ Yeniden</button>
+          <button className="btn btn-sec" onClick={()=>{setStep(0);setLezyonlar([]);setLezStep(-1);setCurLez(null);setD({yasGrubu:'',cinsiyet:'',klinik:'',hlab27:'',taraf:'bilateral',lateralite:'bilateral',sagEklemAraligi:'',solEklemAraligi:'',kemikOdem:'',kemikOdemSiddet:'',t1Sinyal:'',erozyon:'',skleroz:'',kontrast:'',sinovyalSivi:'',ankiloz:'',yumusak:'',dwi:'',fokalLezyon:''});}}>{T.btnRestart}</button>
         </div>
       </div>
 
-      {/* Bulgular */}
+      {/* Findings */}
       <div className="card" style={{marginBottom:12}}>
-        <div className="sec-hdr">MRI Bulguları</div>
+        <div className="sec-hdr">{T.rptMriBulgular}</div>
         <table className="rep-tbl">
           <tbody>
-            {(d.taraf==='bilateral'||d.taraf==='sag')&&<tr><td>Sağ eklem aralığı</td><td>{R('sagEklemAraligi')}</td></tr>}
-            {(d.taraf==='bilateral'||d.taraf==='sol')&&<tr><td>Sol eklem aralığı</td><td>{R('solEklemAraligi')}</td></tr>}
-            <tr><td>Kemik iliği ödemi (STIR)</td><td>{R('kemikOdem')}{d.kemikOdem!=='yok'&&d.kemikOdemSiddet?(dp.kemikOdemSiddet[d.kemikOdemSiddet]||''):''}</td></tr>
-            <tr><td>T1 subkondral sinyal</td><td>{R('t1Sinyal')}</td></tr>
-            <tr><td>Erozyon</td><td>{R('erozyon')}</td></tr>
-            <tr><td>Skleroz</td><td>{R('skleroz')}</td></tr>
-            <tr><td>Kontrast tutulumu</td><td>{R('kontrast')}</td></tr>
-            <tr><td>Sinoviyal sıvı</td><td>{R('sinovyalSivi')}</td></tr>
-            <tr><td>Ankiloz / Füzyon</td><td>{R('ankiloz')}</td></tr>
-            <tr><td>Yumuşak doku</td><td>{R('yumusak')}</td></tr>
-            <tr><td>DWI</td><td>{R('dwi')}</td></tr>
+            {(d.taraf==='bilateral'||d.taraf==='sag')&&<tr><td>{T.tblRightJoint}</td><td>{R('sagEklemAraligi')}</td></tr>}
+            {(d.taraf==='bilateral'||d.taraf==='sol')&&<tr><td>{T.tblLeftJoint}</td><td>{R('solEklemAraligi')}</td></tr>}
+            <tr><td>{T.tblBme}</td><td>{R('kemikOdem')}{d.kemikOdem!=='yok'&&d.kemikOdemSiddet?(T.maps.kemikOdemSiddet[d.kemikOdemSiddet]||''):''}</td></tr>
+            <tr><td>{T.tblT1}</td><td>{R('t1Sinyal')}</td></tr>
+            <tr><td>{T.tblErozyon}</td><td>{R('erozyon')}</td></tr>
+            <tr><td>{T.tblSkleroz}</td><td>{R('skleroz')}</td></tr>
+            <tr><td>{T.tblKontrast}</td><td>{R('kontrast')}</td></tr>
+            <tr><td>{T.tblSinoviyal}</td><td>{R('sinovyalSivi')}</td></tr>
+            <tr><td>{T.tblAnkiloz}</td><td>{R('ankiloz')}</td></tr>
+            <tr><td>{T.tblYumusak}</td><td>{R('yumusak')}</td></tr>
+            <tr><td>{T.tblDwi}</td><td>{R('dwi')}</td></tr>
           </tbody>
         </table>
       </div>
 
-      {/* Lezyonlar */}
+      {/* Lesions */}
       {lezyonlar.length>0 && <div className="card" style={{marginBottom:12}}>
-        <div className="sec-hdr">Fokal Lezyonlar</div>
+        <div className="sec-hdr">{T.rptFokalLezyonlar}</div>
         {lezyonlar.map((l,i)=><div key={i} style={{background:'var(--surf2)',borderRadius:9,padding:'10px 14px',marginBottom:7,border:'1px solid var(--brd)'}}>
-          <div style={{fontWeight:700,fontSize:'.85rem',color:'var(--acc2)',marginBottom:4}}>Lezyon {i+1} – {l.lokalizasyon||'Belirtilmedi'}</div>
+          <div style={{fontWeight:700,fontSize:'.85rem',color:'var(--acc2)',marginBottom:4}}>{T.rptLezLabel(i+1, l.lokalizasyon||T.rptLezNotSpec)}</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2px 16px',fontSize:'.8rem',color:'var(--txt2)'}}>
-            {l.boyut&&<div>Boyut: {l.boyut}</div>}
-            {l.t1t2&&<div>Sinyal: {l.t1t2}</div>}
-            {l.lezDwi&&<div>DWI: {l.lezDwi}</div>}
-            {l.lezKontrast&&<div>Kontrast: {l.lezKontrast}</div>}
-            {l.komsuyapi&&<div style={{gridColumn:'1/-1'}}>Komşu yapı: {l.komsuyapi}</div>}
+            {l.boyut&&<div>{T.rptSize}: {l.boyut}</div>}
+            {l.t1t2&&<div>{T.rptSignal}: {l.t1t2}</div>}
+            {l.lezDwi&&<div>{T.rptDwi}: {l.lezDwi}</div>}
+            {l.lezKontrast&&<div>{T.rptContrast}: {l.lezKontrast}</div>}
+            {l.komsuyapi&&<div style={{gridColumn:'1/-1'}}>{T.rptNeighbor}: {l.komsuyapi}</div>}
           </div>
         </div>)}
       </div>}
 
-      {/* Diferansiyel Tanı */}
+      {/* Differential Diagnosis */}
       <div className="card" style={{marginBottom:12}}>
-        <div className="sec-hdr">Ayırıcı Tanı — Ağırlıklı Skor</div>
+        <div className="sec-hdr">{T.rptDiffTitle}</div>
         {results.map((r,i)=><div key={r.id} className="diff-item">
           <div className="diff-rank">{i+1}</div>
           <div className="diff-info">
@@ -989,16 +1425,16 @@ function App(){
             <span className={`kat-tag ${r.cls}`}>{r.kat}</span>
           </div>
           <ProgBar v={r.s}/>
-          <div className="diff-pct">%{r.s}</div>
+          <div className="diff-pct">{r.s}%</div>
         </div>)}
-        <div className="yorum"><strong>YORUM: </strong>{yorum()}</div>
+        <div className="yorum"><strong>{T.rptYorumLabel}</strong>{yorum()}</div>
       </div>
 
       {/* Export */}
       <div className="exp-row">
-        <button className="btn btn-sec" onClick={copyRep}>📋 Kopyala</button>
-        <button className="btn btn-sec" onClick={printRep}>🖨 Yazdır</button>
-        <button className="btn btn-sec" onClick={downloadRep}>⬇ TXT İndir</button>
+        <button className="btn btn-sec" onClick={copyRep}>{T.btnCopy}</button>
+        <button className="btn btn-sec" onClick={printRep}>{T.btnPrint}</button>
+        <button className="btn btn-sec" onClick={downloadRep}>{T.btnDownload}</button>
       </div>
     </div>;
   }
@@ -1006,13 +1442,13 @@ function App(){
   return <div className="app">
     <div className="hdr">
       <div className="hdr-icon">🦴</div>
-      <h1>Sakroiliak Eklem MRI</h1>
-      <p>14 patoloji · Bilateral değerlendirme · Çok lezyonlu · Ağırlıklı skorlama</p>
+      <h1>{T.appTitle}</h1>
+      <p>{T.appSub}</p>
     </div>
     <div className="prog-wrap">
       <div className="prog-label">
-        <span className="prog-title">{curStepName}</span>
-        <span className="prog-pct">%{pct}</span>
+        <span className="prog-title">{curStepNameFinal}</span>
+        <span className="prog-pct">{pct}%</span>
       </div>
       <div className="prog-bar-bg"><div className="prog-bar" style={{width:pct+'%'}}/></div>
     </div>
@@ -1022,5 +1458,7 @@ function App(){
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
 </body>
 </html>

@@ -123,6 +123,198 @@ textarea.finput{resize:vertical;min-height:70px}
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Rektum & Anüs MRI',
+    appSub: 'Karar Destek Sistemi — Gülhane EAH Radyoloji',
+    back: '← Geri',
+    stepOf: 'Adım',
+    total: 'TOPLAM',
+    next: 'İleri →',
+    newPatient: '🔄 Yeni Hasta',
+    finishMass: 'Kitle {n} Tamamla',
+    finishFistula: 'Fistül {n} Tamamla',
+    sHasta: 'Hasta',
+    sTeknik: 'Teknik',
+    sGenel: 'Genel',
+    sLezyon: 'Lezyon',
+    sKitleSay: 'Kitle Sayısı',
+    sKitleLok: 'Kitle {n} — Lok',
+    sKitleMorf: 'Kitle {n} — Morfoloji',
+    sKitleSinyal: 'Kitle {n} — Sinyal',
+    sKitleDwi: 'Kitle {n} — DWI/ADC',
+    sKitleIvkm: 'Kitle {n} — IVKM',
+    sKitleYay: 'Kitle {n} — Yayılım',
+    sKitleLn: 'Kitle {n} — Lenf Nodu',
+    sFistulSay: 'Fistül Sayısı',
+    sFistulLok: 'Fistül {n} — Lok',
+    sFistulTip: 'Fistül {n} — Tip',
+    sFistulUzan: 'Fistül {n} — Uzanım',
+    sFistulCevre: 'Fistül {n} — Çevre',
+    sEk: 'Ek Bulgular',
+    sRapor: 'Rapor',
+    printPdf: '🖨️  Yazdır / PDF',
+    copyText: '📋  Metni Kopyala',
+    downloadTxt: '💾  TXT İndir',
+    rptTitle: 'REKTUM & ANÜS MRI RAPORU',
+    rptAge: 'yaş',
+    rptClinTech: 'Klinik & Teknik',
+    rptIndication: 'Endikasyon',
+    rptHistory: 'Öykü',
+    rptFieldCoil: 'Alan Gücü / Coil',
+    rptSequences: 'Sekanslar',
+    rptIVCM: 'IVKM',
+    rptApplied: 'Uygulandı',
+    rptNotApplied: 'Uygulanmadı',
+    rptGeneralPelvis: 'Genel Pelvik Değerlendirme',
+    rptOuterSphicter: 'Dış sfinkter',
+    rptInnerSphicter: 'İç sfinkter',
+    rptLevator: 'Levator ani',
+    rptRectalWall: 'Rektum duvar',
+    rptPerirectal: 'Perirektal yağ',
+    rptNote: 'Not',
+    rptMass: 'Kitle',
+    rptLocalization: 'Lokalizasyon',
+    rptClockface: 'Saat kadranı',
+    rptSize: 'Boyut',
+    rptContour: 'Kontur',
+    rptT1: 'T1A',
+    rptT2: 'T2A',
+    rptChemShift: 'Chemical Shift',
+    rptChemFat: 'Out-phase sinyal kaybı ★ YAĞ',
+    rptDWI: 'DWI',
+    rptADC: 'ADC',
+    rptIVKMChar: 'IVKM karakteri',
+    rptKineticPattern: 'Kinetik patern',
+    rptPerirectalFat: 'Perirektal yağ',
+    rptOrganInv: 'Organ invazyonu',
+    rptMRCDist: 'MRC mesafesi',
+    rptTMEPlan: 'TME planı',
+    rptMesorectalLN: 'Mezorektum LN',
+    rptLNLocation: 'LN yerleşimi',
+    rptImpression: 'YORUM — Ayrıcı Tanı (Ağırlıklı MRI Sinyal Skoru)',
+    rptPrimaryDiag: 'Öncelikli Tanı:',
+    rptFistula: 'Fistül',
+    rptParksType: 'Parks Tipi',
+    rptInternalOpening: 'İnternal açılım',
+    rptClock: 'Saat',
+    rptExternalOpening: 'Dış açılım',
+    rptBranchStructure: 'Dal yapısı',
+    rptInternalExtent: 'İnternal uzanım',
+    rptHorseshoe: 'At nalı uzanım',
+    rptHorseshoeYes: '✅  VAR (Horseshoe)',
+    rptHorseshoeNo: 'Yok',
+    rptInflammation: 'İnflamasyon',
+    rptAbscess: 'Eşlik eden abse',
+    rptAbscessYes: '✅  VAR',
+    rptAdditional: 'Ek Bulgular',
+    rptUrinary: 'İdrar yolları',
+    rptBone: 'Kemik doku',
+    rptOtherPelvis: 'Diğer pelvik',
+    rptNotes: 'Notlar',
+    rptRefTable: 'Rektum & Anüs MRI — Patoloji Referans Tablosu',
+    rptPathology: 'Patoloji',
+    noMassFistula: 'Kitle ve fistül saptanmamış — ek bulgular adımına yönlendirilecek.',
+    noFistula: 'Fistül saptanmamış. İleri butonuna basarak ek bulgulara geçin.',
+    noContrast: 'Kontrast uygulanmamış — bilgi varsa girin, yoksa ilerleyin.',
+  },
+  en: {
+    appTitle: 'Rectum & Anus MRI',
+    appSub: 'Decision Support System — Radiology',
+    back: '← Back',
+    stepOf: 'Step',
+    total: 'TOTAL',
+    next: 'Next →',
+    newPatient: '🔄 New Patient',
+    finishMass: 'Finalize Mass {n}',
+    finishFistula: 'Finalize Fistula {n}',
+    sHasta: 'Patient',
+    sTeknik: 'Technique',
+    sGenel: 'General',
+    sLezyon: 'Lesion',
+    sKitleSay: 'Mass Count',
+    sKitleLok: 'Mass {n} — Location',
+    sKitleMorf: 'Mass {n} — Morphology',
+    sKitleSinyal: 'Mass {n} — Signal',
+    sKitleDwi: 'Mass {n} — DWI/ADC',
+    sKitleIvkm: 'Mass {n} — Contrast',
+    sKitleYay: 'Mass {n} — Spread',
+    sKitleLn: 'Mass {n} — Lymph Node',
+    sFistulSay: 'Fistula Count',
+    sFistulLok: 'Fistula {n} — Location',
+    sFistulTip: 'Fistula {n} — Type',
+    sFistulUzan: 'Fistula {n} — Extent',
+    sFistulCevre: 'Fistula {n} — Surrounding',
+    sEk: 'Additional Findings',
+    sRapor: 'Report',
+    printPdf: '🖨️  Print / PDF',
+    copyText: '📋  Copy Text',
+    downloadTxt: '💾  Download TXT',
+    rptTitle: 'RECTUM & ANUS MRI REPORT',
+    rptAge: 'years',
+    rptClinTech: 'Clinical & Technique',
+    rptIndication: 'Indication',
+    rptHistory: 'History',
+    rptFieldCoil: 'Field Strength / Coil',
+    rptSequences: 'Sequences',
+    rptIVCM: 'IV Contrast',
+    rptApplied: 'Applied',
+    rptNotApplied: 'Not applied',
+    rptGeneralPelvis: 'General Pelvic Assessment',
+    rptOuterSphicter: 'External sphincter',
+    rptInnerSphicter: 'Internal sphincter',
+    rptLevator: 'Levator ani',
+    rptRectalWall: 'Rectal wall',
+    rptPerirectal: 'Perirectal fat',
+    rptNote: 'Note',
+    rptMass: 'Mass',
+    rptLocalization: 'Localization',
+    rptClockface: 'Clock position',
+    rptSize: 'Size',
+    rptContour: 'Contour',
+    rptT1: 'T1W',
+    rptT2: 'T2W',
+    rptChemShift: 'Chemical Shift',
+    rptChemFat: 'Out-of-phase signal loss ★ FAT',
+    rptDWI: 'DWI',
+    rptADC: 'ADC',
+    rptIVKMChar: 'Contrast character',
+    rptKineticPattern: 'Kinetic pattern',
+    rptPerirectalFat: 'Perirectal fat',
+    rptOrganInv: 'Organ invasion',
+    rptMRCDist: 'MRC distance',
+    rptTMEPlan: 'TME plane',
+    rptMesorectalLN: 'Mesorectal LN',
+    rptLNLocation: 'LN location',
+    rptImpression: 'IMPRESSION — Differential Diagnosis (Weighted MRI Signal Score)',
+    rptPrimaryDiag: 'Primary Diagnosis:',
+    rptFistula: 'Fistula',
+    rptParksType: 'Parks Type',
+    rptInternalOpening: 'Internal opening',
+    rptClock: 'O\'clock',
+    rptExternalOpening: 'External opening',
+    rptBranchStructure: 'Branch structure',
+    rptInternalExtent: 'Internal extent',
+    rptHorseshoe: 'Horseshoe extension',
+    rptHorseshoeYes: '✅  PRESENT (Horseshoe)',
+    rptHorseshoeNo: 'None',
+    rptInflammation: 'Inflammation',
+    rptAbscess: 'Associated abscess',
+    rptAbscessYes: '✅  PRESENT',
+    rptAdditional: 'Additional Findings',
+    rptUrinary: 'Urinary tract',
+    rptBone: 'Bone',
+    rptOtherPelvis: 'Other pelvic',
+    rptNotes: 'Notes',
+    rptRefTable: 'Rectum & Anus MRI — Pathology Reference Table',
+    rptPathology: 'Pathology',
+    noMassFistula: 'No mass or fistula detected — proceeding to additional findings.',
+    noFistula: 'No fistula detected. Press Next to proceed to additional findings.',
+    noContrast: 'Contrast not applied — enter if available, otherwise proceed.',
+  },
+})[RV_LOCALE];
+
 const {useState, useEffect} = React;
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -435,7 +627,7 @@ function App(){
         <Tgl lbl="🔴  Kitle / Solid Lezyon Saptandı" val={lez.kitle} chg={v=>setLez(p=>({...p,kitle:v}))}/>
         <Tgl lbl="🔵  Fistül Traktı / Perianal Hastalık Saptandı" val={lez.fistul} chg={v=>setLez(p=>({...p,fistul:v}))}/>
         {!lez.kitle&&!lez.fistul&&(
-          <div className="info-box info-green">Kitle ve fistül saptanmamış — ek bulgular adımına yönlendirilecek.</div>
+          <div className="info-box info-green">{T.noMassFistula}</div>
         )}
       </div>
     </div>
@@ -566,7 +758,7 @@ function App(){
       <div className="card-hdr"><div className="card-num">Kitle {ki+1} / {kSay}</div><div className="card-title">IVKM / Kontrast</div><div className="card-desc">İntravenöz kontrast madde sonrası bulgular</div></div>
       <div className="card-body">
         <div className="loop-tag"><div className="loop-dot"/>Kitle {ki+1} — Kontrast</div>
-        {!tek.kont&&<div className="info-box info-yellow">Kontrast uygulanmamış — bilgi varsa girin, yoksa ilerleyin.</div>}
+        {!tek.kont&&<div className="info-box info-yellow">{T.noContrast}</div>}
         <div className="fg"><label className="flabel">Kontrast Karakteri</label>
           <Radio opts={[
             {v:'kontrastlanmiyor',l:'Kontrastlanmıyor'},{v:'ince_duvar',l:'İnce duvar kontrastlanması'},
@@ -648,7 +840,7 @@ function App(){
       <div className="card-hdr"><div className="card-num">Fistül — Ön Ayar</div><div className="card-title">Fistül Sayısı</div><div className="card-desc">Değerlendirilecek fistül traktı sayısı</div></div>
       <div className="card-body">
         {!lez.fistul?(
-          <div className="info-box info-green">Fistül saptanmamış. İleri butonuna basarak ek bulgulara geçin.</div>
+          <div className="info-box info-green">{T.noFistula}</div>
         ):(
           <div className="fg"><label className="flabel">Fistül Traktı Sayısı</label>
             <Radio opts={[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4+'}]} val={fSay} chg={v=>setFSay(Number(v))}/>
@@ -766,7 +958,7 @@ function App(){
   ══════════════════════════════════════════════════════════════════════════ */
   function s18(){
     const diffs=kitleler.map(k=>calcDiff(k));
-    const tarih=new Date().toLocaleDateString('tr-TR');
+    const tarih=new Date().toLocaleDateString(RV_LOCALE==='en'?'en-GB':'tr-TR');
     const cinLbl=hasta.cin==='erkek'?'Erkek':hasta.cin==='kadin'?'Kadın':'';
 
     const LOKL={rektum:'Rektum',rektosigmoid:'Rektosigmoid bileşke',anal:'Anal kanal',perianal:'Perianal',iskiorektal:'İskiorektal fossa',retrorektal:'Retrorektal / Presaral'};
@@ -877,34 +1069,34 @@ function App(){
       <div>
         {/* Export butonları */}
         <div className="exp-row">
-          <button className="exp-btn pri" onClick={()=>window.print()}>🖨️  Yazdır / PDF</button>
-          <button className="exp-btn" onClick={copyRep}>📋  Metni Kopyala</button>
+          <button className="exp-btn pri" onClick={()=>window.print()}>{T.printPdf}</button>
+          <button className="exp-btn" onClick={copyRep}>{T.copyText}</button>
           <button className="exp-btn" onClick={()=>{
             const blob=new Blob([genText()],{type:'text/plain;charset=utf-8'});
             const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
             a.download=`Rektum_MRI_${(hasta.ad||'Rapor').replace(/\s+/g,'_')}.txt`;
             a.click(); URL.revokeObjectURL(a.href);
-          }}>💾  TXT İndir</button>
+          }}>{T.downloadTxt}</button>
         </div>
 
         {/* Rapor başlık */}
         <div className="rep-wrap">
           <div className="rep-hdr">
-            <div className="rep-title">REKTUM &amp; ANÜS MRI RAPORU</div>
-            <div className="rep-sub">{[hasta.ad, hasta.yas&&hasta.yas+' yaş', cinLbl, tarih].filter(Boolean).join('  ·  ')}</div>
+            <div className="rep-title">{T.rptTitle}</div>
+            <div className="rep-sub">{[hasta.ad, hasta.yas&&hasta.yas+' '+T.rptAge, cinLbl, tarih].filter(Boolean).join('  ·  ')}</div>
           </div>
           <div className="rep-body">
 
             {/* Klinik */}
             <div className="rep-sec">
-              <div className="rep-sec-title">Klinik &amp; Teknik</div>
+              <div className="rep-sec-title">{T.rptClinTech}</div>
               <table className="rep-tbl">
                 <tbody>
-                  {hasta.endik&&<tr><td>Endikasyon</td><td>{hasta.endik}</td></tr>}
-                  {hasta.cert&&<tr><td>Öykü</td><td>{hasta.cert}</td></tr>}
-                  <tr><td>Alan Gücü / Coil</td><td>{tek.tesla} / {tek.coil}</td></tr>
-                  <tr><td>Sekanslar</td><td>{tek.sek.join(', ')}</td></tr>
-                  <tr><td>IVKM</td><td>{tek.kont?'Uygulandı':'Uygulanmadı'}</td></tr>
+                  {hasta.endik&&<tr><td>{T.rptIndication}</td><td>{hasta.endik}</td></tr>}
+                  {hasta.cert&&<tr><td>{T.rptHistory}</td><td>{hasta.cert}</td></tr>}
+                  <tr><td>{T.rptFieldCoil}</td><td>{tek.tesla} / {tek.coil}</td></tr>
+                  <tr><td>{T.rptSequences}</td><td>{tek.sek.join(', ')}</td></tr>
+                  <tr><td>{T.rptIVCM}</td><td>{tek.kont?T.rptApplied:T.rptNotApplied}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -912,15 +1104,15 @@ function App(){
             {/* Genel Pelvik */}
             {(genel.sfDis||genel.sfIs||genel.lev||genel.rDuv||genel.periYag||genel.not)&&(
               <div className="rep-sec">
-                <div className="rep-sec-title">Genel Pelvik Değerlendirme</div>
+                <div className="rep-sec-title">{T.rptGeneralPelvis}</div>
                 <table className="rep-tbl">
                   <tbody>
-                    {genel.sfDis&&<tr><td>Dış sfinkter</td><td>{genel.sfDis}</td></tr>}
-                    {genel.sfIs&&<tr><td>İç sfinkter</td><td>{genel.sfIs}</td></tr>}
-                    {genel.lev&&<tr><td>Levator ani</td><td>{genel.lev}</td></tr>}
-                    {genel.rDuv&&<tr><td>Rektum duvar</td><td>{genel.rDuv}</td></tr>}
-                    {genel.periYag&&<tr><td>Perirektal yağ</td><td>{genel.periYag}</td></tr>}
-                    {genel.not&&<tr><td>Not</td><td>{genel.not}</td></tr>}
+                    {genel.sfDis&&<tr><td>{T.rptOuterSphicter}</td><td>{genel.sfDis}</td></tr>}
+                    {genel.sfIs&&<tr><td>{T.rptInnerSphicter}</td><td>{genel.sfIs}</td></tr>}
+                    {genel.lev&&<tr><td>{T.rptLevator}</td><td>{genel.lev}</td></tr>}
+                    {genel.rDuv&&<tr><td>{T.rptRectalWall}</td><td>{genel.rDuv}</td></tr>}
+                    {genel.periYag&&<tr><td>{T.rptPerirectal}</td><td>{genel.periYag}</td></tr>}
+                    {genel.not&&<tr><td>{T.rptNote}</td><td>{genel.not}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -929,27 +1121,27 @@ function App(){
             {/* Kitleler */}
             {kitleler.map((k,i)=>(
               <div key={i} className="rep-sec">
-                <div className="rep-sec-title">Kitle {i+1} — {LOKL[k.lok]||k.lok||'—'}</div>
+                <div className="rep-sec-title">{T.rptMass} {i+1} — {LOKL[k.lok]||k.lok||'—'}</div>
                 <table className="rep-tbl">
                   <tbody>
-                    {k.lok&&<tr><td>Lokalizasyon</td><td>{LOKL[k.lok]}{k.sev?` — ${SEVL[k.sev]||k.sev}`:''}</td></tr>}
-                    {k.saat&&<tr><td>Saat kadranı</td><td>{k.saat}</td></tr>}
-                    {(k.bAP||k.bT||k.bCC)&&<tr><td>Boyut</td><td>{k.bAP||'?'} × {k.bT||'?'} × {k.bCC||'?'} mm</td></tr>}
-                    {k.kontur&&<tr><td>Kontur</td><td>{k.kontur}</td></tr>}
-                    {k.t1&&<tr><td>T1A</td><td>{k.t1}</td></tr>}
-                    {k.t2&&<tr><td>T2A</td><td>{k.t2}</td></tr>}
-                    {k.chem&&<tr><td>Chemical Shift</td><td>{k.chem==='out_phase'?'Out-phase sinyal kaybı ★ YAĞ':k.chem}</td></tr>}
-                    {k.dwi&&<tr><td>DWI</td><td>{k.dwi}</td></tr>}
-                    {k.adc&&<tr><td>ADC</td><td>{ADCL[k.adc]||k.adc}</td></tr>}
-                    {k.ivkm&&<tr><td>IVKM karakteri</td><td>{k.ivkm}</td></tr>}
-                    {k.kontPat&&k.kontPat!=='yok'&&<tr><td>Kinetik patern</td><td>{k.kontPat}</td></tr>}
-                    {k.cevre&&<tr><td>Perirektal yağ</td><td>{k.cevre}</td></tr>}
-                    {k.organInv&&k.organInv.length>0&&<tr><td>Organ invazyonu</td><td>{k.organInv.map(x=>ORGLL[x]||x).join(', ')}</td></tr>}
-                    {k.mrcMm&&<tr><td>MRC mesafesi</td><td>{k.mrcMm} mm</td></tr>}
-                    {k.tme&&<tr><td>TME planı</td><td>{tmeBadge(k.tme)}</td></tr>}
-                    {k.lnSay&&Number(k.lnSay)>0&&<tr><td>Mezorektum LN</td><td>{k.lnSay} adet / en büyük {k.lnBoy||'?'} mm</td></tr>}
-                    {k.lnYer&&<tr><td>LN yerleşimi</td><td>{k.lnYer}</td></tr>}
-                    {k.not&&<tr><td>Not</td><td>{k.not}</td></tr>}
+                    {k.lok&&<tr><td>{T.rptLocalization}</td><td>{LOKL[k.lok]}{k.sev?` — ${SEVL[k.sev]||k.sev}`:''}</td></tr>}
+                    {k.saat&&<tr><td>{T.rptClockface}</td><td>{k.saat}</td></tr>}
+                    {(k.bAP||k.bT||k.bCC)&&<tr><td>{T.rptSize}</td><td>{k.bAP||'?'} × {k.bT||'?'} × {k.bCC||'?'} mm</td></tr>}
+                    {k.kontur&&<tr><td>{T.rptContour}</td><td>{k.kontur}</td></tr>}
+                    {k.t1&&<tr><td>{T.rptT1}</td><td>{k.t1}</td></tr>}
+                    {k.t2&&<tr><td>{T.rptT2}</td><td>{k.t2}</td></tr>}
+                    {k.chem&&<tr><td>{T.rptChemShift}</td><td>{k.chem==='out_phase'?T.rptChemFat:k.chem}</td></tr>}
+                    {k.dwi&&<tr><td>{T.rptDWI}</td><td>{k.dwi}</td></tr>}
+                    {k.adc&&<tr><td>{T.rptADC}</td><td>{ADCL[k.adc]||k.adc}</td></tr>}
+                    {k.ivkm&&<tr><td>{T.rptIVKMChar}</td><td>{k.ivkm}</td></tr>}
+                    {k.kontPat&&k.kontPat!=='yok'&&<tr><td>{T.rptKineticPattern}</td><td>{k.kontPat}</td></tr>}
+                    {k.cevre&&<tr><td>{T.rptPerirectalFat}</td><td>{k.cevre}</td></tr>}
+                    {k.organInv&&k.organInv.length>0&&<tr><td>{T.rptOrganInv}</td><td>{k.organInv.map(x=>ORGLL[x]||x).join(', ')}</td></tr>}
+                    {k.mrcMm&&<tr><td>{T.rptMRCDist}</td><td>{k.mrcMm} mm</td></tr>}
+                    {k.tme&&<tr><td>{T.rptTMEPlan}</td><td>{tmeBadge(k.tme)}</td></tr>}
+                    {k.lnSay&&Number(k.lnSay)>0&&<tr><td>{T.rptMesorectalLN}</td><td>{k.lnSay} adet / en büyük {k.lnBoy||'?'} mm</td></tr>}
+                    {k.lnYer&&<tr><td>{T.rptLNLocation}</td><td>{k.lnYer}</td></tr>}
+                    {k.not&&<tr><td>{T.rptNote}</td><td>{k.not}</td></tr>}
                   </tbody>
                 </table>
 
@@ -958,7 +1150,7 @@ function App(){
                   <div className="yorum">
                     <div className="yorum-title">
                       <span style={{fontSize:15}}>🔬</span>
-                      YORUM — Ayrıcı Tanı (Ağırlıklı MRI Sinyal Skoru)
+                      {T.rptImpression}
                     </div>
                     {diffs[i].map((d,di)=>(
                       <div key={d.id} className="diff-item">
@@ -982,7 +1174,7 @@ function App(){
                     ))}
                     {diffs[i][0]&&(
                       <div style={{marginTop:12,padding:'10px 13px',background:'rgba(0,0,0,.2)',borderRadius:8,fontSize:12,color:'#cbd5e1',lineHeight:1.7}}>
-                        <strong style={{color:diffs[i][0].clr}}>Öncelikli Tanı:</strong> {diffs[i][0].name}<br/>
+                        <strong style={{color:diffs[i][0].clr}}>{T.rptPrimaryDiag}</strong> {diffs[i][0].name}<br/>
                         {diffs[i][0].info.join(' — ')}
                       </div>
                     )}
@@ -994,18 +1186,18 @@ function App(){
             {/* Fistüller */}
             {fistullar.map((f,i)=>(
               <div key={i} className="rep-sec">
-                <div className="rep-sec-title">Fistül {i+1} — {TIPL[f.tip]||'—'}</div>
+                <div className="rep-sec-title">{T.rptFistula} {i+1} — {TIPL[f.tip]||'—'}</div>
                 <table className="rep-tbl">
                   <tbody>
-                    {f.tip&&<tr><td>Parks Tipi</td><td><strong>{TIPL[f.tip]||f.tip}</strong></td></tr>}
-                    {f.saat&&<tr><td>İnternal açılım</td><td>Saat {f.saat}</td></tr>}
-                    {f.disAc&&<tr><td>Dış açılım</td><td>{DIACL[f.disAc]||f.disAc}</td></tr>}
-                    {f.dal&&<tr><td>Dal yapısı</td><td>{DALLL[f.dal]||f.dal}</td></tr>}
-                    {f.intMes&&<tr><td>İnternal uzanım</td><td>{INTL[f.intMes]||f.intMes}</td></tr>}
-                    {f.karsi&&<tr><td>At nalı uzanım</td><td>{f.karsi==='var'?'✅  VAR (Horseshoe)':'Yok'}</td></tr>}
-                    {f.infla&&f.infla!=='yok'&&<tr><td>İnflamasyon</td><td>{f.infla}</td></tr>}
-                    {f.abse&&<tr><td>Eşlik eden abse</td><td>{f.abse==='var'?'✅  VAR':'Yok'}</td></tr>}
-                    {f.not&&<tr><td>Not</td><td>{f.not}</td></tr>}
+                    {f.tip&&<tr><td>{T.rptParksType}</td><td><strong>{TIPL[f.tip]||f.tip}</strong></td></tr>}
+                    {f.saat&&<tr><td>{T.rptInternalOpening}</td><td>{T.rptClock} {f.saat}</td></tr>}
+                    {f.disAc&&<tr><td>{T.rptExternalOpening}</td><td>{DIACL[f.disAc]||f.disAc}</td></tr>}
+                    {f.dal&&<tr><td>{T.rptBranchStructure}</td><td>{DALLL[f.dal]||f.dal}</td></tr>}
+                    {f.intMes&&<tr><td>{T.rptInternalExtent}</td><td>{INTL[f.intMes]||f.intMes}</td></tr>}
+                    {f.karsi&&<tr><td>{T.rptHorseshoe}</td><td>{f.karsi==='var'?T.rptHorseshoeYes:T.rptHorseshoeNo}</td></tr>}
+                    {f.infla&&f.infla!=='yok'&&<tr><td>{T.rptInflammation}</td><td>{f.infla}</td></tr>}
+                    {f.abse&&<tr><td>{T.rptAbscess}</td><td>{f.abse==='var'?T.rptAbscessYes:T.rptHorseshoeNo}</td></tr>}
+                    {f.not&&<tr><td>{T.rptNote}</td><td>{f.not}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1014,13 +1206,13 @@ function App(){
             {/* Ek Bulgular */}
             {(ek.idrar||ek.kemik||ek.diger||ek.not)&&(
               <div className="rep-sec">
-                <div className="rep-sec-title">Ek Bulgular</div>
+                <div className="rep-sec-title">{T.rptAdditional}</div>
                 <table className="rep-tbl">
                   <tbody>
-                    {ek.idrar&&<tr><td>İdrar yolları</td><td>{ek.idrar}</td></tr>}
-                    {ek.kemik&&<tr><td>Kemik doku</td><td>{ek.kemik}</td></tr>}
-                    {ek.diger&&<tr><td>Diğer pelvik</td><td>{ek.diger}</td></tr>}
-                    {ek.not&&<tr><td>Notlar</td><td>{ek.not}</td></tr>}
+                    {ek.idrar&&<tr><td>{T.rptUrinary}</td><td>{ek.idrar}</td></tr>}
+                    {ek.kemik&&<tr><td>{T.rptBone}</td><td>{ek.kemik}</td></tr>}
+                    {ek.diger&&<tr><td>{T.rptOtherPelvis}</td><td>{ek.diger}</td></tr>}
+                    {ek.not&&<tr><td>{T.rptNotes}</td><td>{ek.not}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1028,7 +1220,7 @@ function App(){
 
             {/* MRI Sinyal Referans Tablosu */}
             <div className="rep-sec">
-              <div className="rep-sec-title">Rektum &amp; Anüs MRI — Patoloji Referans Tablosu</div>
+              <div className="rep-sec-title">{T.rptRefTable}</div>
               <div style={{overflowX:'auto'}}>
                 <table className="rep-tbl" style={{minWidth:700}}>
                   <thead>
@@ -1098,15 +1290,15 @@ function App(){
   }
 
   const stepLabel=[
-    'Hasta','Teknik','Genel','Lezyon','Kitle Sayısı',
-    `Kitle ${ki+1} — Lok`,`Kitle ${ki+1} — Morfoloji`,`Kitle ${ki+1} — Sinyal`,
-    `Kitle ${ki+1} — DWI/ADC`,`Kitle ${ki+1} — IVKM`,`Kitle ${ki+1} — Yayılım`,
-    `Kitle ${ki+1} — Lenf Nodu`,'Fistül Sayısı',
-    `Fistül ${fi+1} — Lok`,`Fistül ${fi+1} — Tip`,`Fistül ${fi+1} — Uzanım`,
-    `Fistül ${fi+1} — Çevre`,'Ek Bulgular','Rapor',
+    T.sHasta,T.sTeknik,T.sGenel,T.sLezyon,T.sKitleSay,
+    T.sKitleLok.replace('{n}',ki+1),T.sKitleMorf.replace('{n}',ki+1),T.sKitleSinyal.replace('{n}',ki+1),
+    T.sKitleDwi.replace('{n}',ki+1),T.sKitleIvkm.replace('{n}',ki+1),T.sKitleYay.replace('{n}',ki+1),
+    T.sKitleLn.replace('{n}',ki+1),T.sFistulSay,
+    T.sFistulLok.replace('{n}',fi+1),T.sFistulTip.replace('{n}',fi+1),T.sFistulUzan.replace('{n}',fi+1),
+    T.sFistulCevre.replace('{n}',fi+1),T.sEk,T.sRapor,
   ];
 
-  const nextLabel=step===18?null:(step===11?`Kitle ${ki+1} Tamamla`:(step===16?`Fistül ${fi+1} Tamamla`:'İleri →'));
+  const nextLabel=step===18?null:(step===11?T.finishMass.replace('{n}',ki+1):(step===16?T.finishFistula.replace('{n}',fi+1):T.next));
 
   return(
     <div>
@@ -1114,18 +1306,18 @@ function App(){
       <div className="app-hdr">
         <div className="hdr-icon">🫁</div>
         <div>
-          <div className="hdr-title">Rektum &amp; Anüs MRI</div>
-          <div className="hdr-sub">Karar Destek Sistemi — Gülhane EAH Radyoloji</div>
+          <div className="hdr-title">{T.appTitle}</div>
+          <div className="hdr-sub">{T.appSub}</div>
         </div>
         <div className="step-badge">{stepLabel[step]||''}</div>
       </div>
       <div className="wiz">{renderStep()}</div>
       {step<19&&(
         <div className="nav-foot">
-          <button className="nbtn btn-prev" onClick={goPrev} disabled={step===0}>← Geri</button>
-          <span style={{fontSize:12,color:'var(--muted)'}}>Adım {step+1} / {TOTAL}</span>
+          <button className="nbtn btn-prev" onClick={goPrev} disabled={step===0}>{T.back}</button>
+          <span style={{fontSize:12,color:'var(--muted)'}}>{T.stepOf} {step+1} / {TOTAL}</span>
           {step<18&&<button className="nbtn btn-next" onClick={goNext}>{nextLabel}</button>}
-          {step===18&&<button className="nbtn btn-next" onClick={()=>setStep(0)} style={{background:'linear-gradient(135deg,#10b981,#059669)'}}>🔄 Yeni Hasta</button>}
+          {step===18&&<button className="nbtn btn-next" onClick={()=>setStep(0)} style={{background:'linear-gradient(135deg,#10b981,#059669)'}}>{T.newPatient}</button>}
         </div>
       )}
     </div>

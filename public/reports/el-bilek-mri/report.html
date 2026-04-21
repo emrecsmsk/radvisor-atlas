@@ -95,6 +95,942 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 <script type="text/babel">
 const {useState,useCallback,useMemo,useRef,useEffect}=React;
 
+/* ============================================================
+   LOCALE
+============================================================ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'El & El Bileği MRI Değerlendirme',
+    appSub: 'Kemik • Ligament • Tendon • Eklem • Kitle • Sinir — 35 Patoloji Skorlama',
+    // Nav
+    back: '← Geri',
+    forward: 'İleri →',
+    // Steps
+    s0Title: '🩺 Klinik Bilgi',
+    s0Sub: 'Hasta demografik ve klinik verileri',
+    s1Title: '⚙️ Teknik Parametreler',
+    s1Sub: 'Cihaz ve sekans bilgileri',
+    s2Title: '🦴 Distal Radius & Ulna',
+    s2Sub: 'Distal radius ve ulna kemik yapıları',
+    s3Title: '🦴 Karpal Kemikler — Proksimal Sıra',
+    s3Sub: 'Skafoid, Lunat, Trikuetrum, Pisiform',
+    s4Title: '🦴 Karpal Kemikler — Distal Sıra',
+    s4Sub: 'Trapezium, Trapezoid, Kapitat, Hamat',
+    s5Title: '🦴 Metakarp & Falankslar',
+    s5Sub: 'Metakarpal ve falanks kemik yapıları',
+    s6Title: '🔗 TFCC (Triangular Fibrokartilaj Kompleks)',
+    s6Sub: 'Disk, menisküs homoloğu, ligamentöz komponentler',
+    s7Title: '🔗 İntrinsik Ligamentler',
+    s7Sub: 'Skafolünat (SL) ve Lünotrikuetral (LT) ligamentler',
+    s8Title: '🔗 Ekstrinsik Ligamentler',
+    s8Sub: 'Dorsal ve volar ekstrinsik ligament kompleksleri',
+    s9Title: '🔄 DRUJ (Distal Radioulnar Eklem)',
+    s9Sub: 'Eklem kongrüitesi, stabilite, efüzyon',
+    s10Title: '💪 Fleksör Tendonlar & Karpal Tünel',
+    s10Sub: 'FDS, FDP, FPL, median sinir, transvers karpal ligament',
+    s11Title: '💪 Ekstansör Tendonlar',
+    s11Sub: '6 ekstansör kompartman değerlendirmesi',
+    s12Title: '🏥 Eklemler & Sinovya',
+    s12Sub: 'Radiokarpal, midkarpal, CMC, MCP, PIP, DIP eklemleri',
+    s13Title: '🎯 Lezyon Döngüsü',
+    s13Sub: 'Kitle / fokal lezyon varsa ekleyin (çoklu lezyon desteklenir)',
+    s14Title: '🩸 Vasküler & Nöral Yapılar',
+    s14Sub: 'Arterler, venler ve periferik sinirler',
+    s15Title: '📋 Ek Bulgular',
+    s15Sub: 'Yumuşak doku, subkutan alan, palmar fasya, diğer',
+    s16Title: '📊 Ayırıcı Tanı & Rapor',
+    s16Sub: 'Ağırlıklı skorlama ile hesaplanmış olasılıklar ve kutulu zebra rapor',
+    // Step labels in STEPS array
+    stKlinik: 'Klinik Bilgi',
+    stTeknik: 'Teknik',
+    stRadius: 'Distal Radius & Ulna',
+    stKarpalP: 'Karpal Kemikler (Proks.)',
+    stKarpalD: 'Karpal Kemikler (Dist.)',
+    stMetakarp: 'Metakarp & Falanks',
+    stTfcc: 'TFCC',
+    stIntrLig: 'İntrinsik Ligament',
+    stEkstrLig: 'Ekstrinsik Ligament',
+    stDruj: 'DRUJ',
+    stFleksör: 'Fleksör Tendon & Karpal Tünel',
+    stEktansör: 'Ekstansör Tendon',
+    stEklem: 'Eklem & Sinovya',
+    stLezyon: 'Lezyon Döngüsü',
+    stVasNör: 'Vasküler & Nöral',
+    stEk: 'Ek Bulgular',
+    stRapor: 'Ayırıcı Tanı & Rapor',
+    // Section headers
+    shDistalRadius: 'Distal Radius',
+    shDistalUlna: 'Distal Ulna',
+    shSkafoid: 'Skafoid',
+    shLunat: 'Lunat',
+    shTrikPis: 'Trikuetrum & Pisiform',
+    shHamat: 'Hamat',
+    shKuçükEklemler: 'Küçük Eklemler',
+    shBüyükEklemler: 'Büyük Eklemler',
+    shSinovyal: 'Sinoviyal Değerlendirme',
+    shFleksörTendon: 'Fleksör Tendonlar',
+    shKarpalTünel: 'Karpal Tünel',
+    shSL: 'Skafolünat (SL) Ligament',
+    shLT: 'Lünotrikuetral (LT) Ligament',
+    shVasküler: 'Vasküler',
+    shNöral: 'Nöral',
+    shAyiriciTani: 'Ayırıcı Tanı Skorları',
+    shYapiRapor: 'Yapılandırılmış Rapor — Kutulu Zebra Format',
+    // Field labels
+    lAge: 'Yaş',
+    lSex: 'Cinsiyet',
+    lSide: 'Taraf',
+    lSymptoms: 'Semptomlar',
+    lHistory: 'Özgeçmiş',
+    lIndication: 'Endikasyon',
+    lIndicationPh: 'İstek nedeni',
+    lMagnet: 'Manyetik Alan',
+    lCoil: 'Koil',
+    lSequences: 'Sekanslar',
+    lPlane: 'Plan',
+    lContrast: 'Kontrast',
+    lContrastNote: 'Kontrast Notu',
+    lContrastNotePh: 'Kontrast madde detayı',
+    lCortex: 'Korteks',
+    lBoneSig: 'Kemik Sinyal',
+    lMarrowEdema: 'Kemik İliği Ödemi',
+    lFractureLine: 'Kırık Hattı',
+    lDeformity: 'Deformite',
+    lNotes: 'Not',
+    lNotesUlna: 'Not (Ulna)',
+    lSignal: 'Sinyal',
+    lSiloid: 'Stiloid',
+    lSiloidFx: 'Stiloid Kırığı',
+    lEdema: 'Ödem',
+    lMorphology: 'Morfoloji',
+    lFracture: 'Kırık',
+    lFxLoc: 'Lokalizasyon',
+    lFxLocPh: 'Hangi metakarp/falanks',
+    lPhalanxEval: 'Falanks Değerlendirme',
+    lTfccMorph: 'Morfoloji',
+    lTfccSig: 'Sinyal',
+    lTfccTear: 'Yırtık',
+    lTfccTearType: 'Yırtık Tipi',
+    lTfccTearLoc: 'Yırtık Lokalizasyonu',
+    lTfccPalmer: 'Palmer Sınıflaması',
+    lTfccDisc: 'Artiküler Disk',
+    lSlIntegrity: 'Bütünlük',
+    lSlSignal: 'Sinyal',
+    lSlGap: 'SL Aralık',
+    lGapMm: 'Gap (mm)',
+    lGapMmPh: 'mm',
+    lDISI: 'DISI Paterni',
+    lLtIntegrity: 'Bütünlük',
+    lLtSignal: 'Sinyal',
+    lLtGap: 'LT Aralık',
+    lDorsal: 'Dorsal Ligamentler (DRC, DIC)',
+    lVolar: 'Volar Ligamentler (RSC, RL, RSL)',
+    lCongruity: 'Kongrüite',
+    lSubluxation: 'Subluksasyon',
+    lEffusion: 'Efüzyon',
+    lJointSpace: 'Eklem Aralığı',
+    lFDS: 'FDS',
+    lFDP: 'FDP',
+    lFPL: 'FPL',
+    lTenosynovitis: 'Tenosinovit',
+    lPeritenFluid: 'Peritendinöz Sıvı',
+    lTear: 'Yırtık',
+    lTearDetail: 'Yırtık Detayı',
+    lTearDetailPh: 'Hangi tendon, seviye, derece',
+    lCarpalTunnel: 'Karpal Tünel Genel',
+    lMedianNerve: 'Median Sinir',
+    lMedianAP: 'Median AP Çap (mm)',
+    lMedianAPPh: 'mm',
+    lMedianSignal: 'Median Sinir Sinyali',
+    lMedianFlat: 'Sinir Düzleşmesi',
+    lRetinac: 'Transvers Karpal Ligament',
+    lComp1: '1. Komp (APL/EPB)',
+    lDeQuervain: 'De Quervain?',
+    lComp2: '2. Komp (ECRL/ECRB)',
+    lComp3: '3. Komp (EPL)',
+    lComp4: '4. Komp (EDC/EIP)',
+    lComp5: '5. Komp (EDM)',
+    lComp6: '6. Komp (ECU)',
+    lGenTeno: 'Genel Tenosinovit',
+    lExtTear: 'Yırtık',
+    lExtTearDetail: 'Yırtık Detayı',
+    lExtTearDetailPh: 'Hangi tendon, seviye',
+    lRadiocarpal: 'Radiokarpal',
+    lRCEffusion: 'Efüzyon',
+    lMidcarpal: 'Midkarpal',
+    lMCEffusion: 'Efüzyon',
+    lCMC1: 'CMC-1 (Başparmak)',
+    lCMCEffusion: 'CMC Efüzyon',
+    lMCP: 'MCP Eklemler',
+    lPIP: 'PIP Eklemler',
+    lDIP: 'DIP Eklemler',
+    lSynovium: 'Sinovyum',
+    lSynovEnhance: 'Sinoviyal Kontrastlanma',
+    lPannus: 'Pannus',
+    lErosion: 'Erozyon',
+    lErosionLoc: 'Erozyon Lokalizasyonu',
+    lErosionLocPh: 'Etkilenen kemik/eklemler',
+    lLooseBodies: 'Serbest Cisim',
+    lCartilage: 'Kıkırdak',
+    lOsteophyte: 'Osteofit',
+    lLesionLoc: 'Lokalizasyon',
+    lLesionLocPh: 'Ör: Dorsal el bileği, Volar subkutan, İntraosseöz skafoid...',
+    lLesionSize: 'Boyut',
+    lLesionSizePh: 'Ör: 12x8x10 mm',
+    lT1Sig: 'T1W Sinyal',
+    lT2Sig: 'T2W Sinyal',
+    lSTIR: 'STIR',
+    lDWI: 'DWI',
+    lADC: 'ADC',
+    lContrastSig: 'Kontrast',
+    lMargin: 'Sınır',
+    lContent: 'İçerik',
+    lLesionNotesPh: 'Ek özellikler, hemosiderin, septasyon vb.',
+    lRadialArt: 'Radial Arter',
+    lUlnarArt: 'Ulnar Arter',
+    lPalmarArch: 'Palmar Arkus',
+    lVeins: 'Venöz Yapılar',
+    lVascNote: 'Vasküler Not',
+    lMedianNerveWrist: 'Median Sinir (bilek)',
+    lUlnarNerveWrist: 'Ulnar Sinir (bilek)',
+    lUlnarNerveGuyon: 'Ulnar Sinir (Guyon)',
+    lRadialNerve: 'Radial Sinir',
+    lNeuralNote: 'Nöral Not',
+    lSkin: 'Cilt / Yumuşak Doku',
+    lSubcut: 'Subkutan Doku',
+    lPalmarFascia: 'Palmar Fasya',
+    lDupuytren: 'Dupuytren',
+    lLymph: 'Lenf Nodları',
+    lOther: 'Diğer',
+    lOtherPh: 'Ek not veya bulgular',
+    lSLNote: 'Not (SL)',
+    lLTNote: 'Not (LT)',
+    // Lesion panel
+    lzNoLesion: 'Lezyon/kitle saptandıysa ekleyin:',
+    lzAddNew: '+ Yeni Lezyon Ekle',
+    lzHeader: 'Lezyon #',
+    lzSave: 'Lezyonu Kaydet',
+    lzCancel: 'İptal',
+    lzLocRequired: 'Lokalizasyon gerekli!',
+    lzSaved: 'Lezyon kaydedildi',
+    lzDeleted: 'Lezyon silindi',
+    // DDx
+    ddxNoFindings: 'Belirgin patolojik bulgu saptanmadı — rapor normal olarak oluşturulacaktır.',
+    ddxHigh: 'YÜK',
+    ddxMid: 'ORT',
+    ddxLow: 'DÜŞ',
+    // Report buttons
+    btnCopyText: '📋 Düz Metin Kopyala',
+    btnDownload: '💾 İndir (.txt)',
+    btnOpenOverlay: '📄 Raporu Aç (Seç & Kopyala)',
+    // Toast messages
+    toastCopied: 'Rapor kopyalandı!',
+    toastDownloaded: 'İndirildi!',
+    toastSelectAll: 'Tümü seçildi — Ctrl+C ile kopyalayın',
+    // Overlay
+    overlayTitle: 'Düz Metin Rapor — Seç & Kopyala',
+    overlaySelectAll: 'Tümünü Seç',
+    overlayClose: '✕ Kapat',
+    // Report headers and labels (genReportJSX + genPlainReport)
+    rptH2: 'EL VE EL BİLEĞİ MRG İNCELEME RAPORU',
+    rptDate: 'Tarih',
+    rptAge: 'yaş',
+    rptElBilegi: 'el bileği',
+    rptEndikasyon: 'Endikasyon',
+    rptTeknik: 'Teknik',
+    rptKontrast: 'Kontrast',
+    rptSecKemik: '■ KEMİK YAPILAR — Distal Radius & Ulna',
+    rptSecKarpalP: '■ KARPAL KEMİKLER — Proksimal Sıra',
+    rptSecKarpalD: '■ KARPAL KEMİKLER — Distal Sıra',
+    rptSecMetakarp: '■ METAKARP & FALANKS',
+    rptSecTfcc: '■ TFCC',
+    rptSecIntLig: '■ İNTRİNSİK LİGAMENTLER',
+    rptSecExtLig: '■ EKSTRİNSİK LİGAMENTLER',
+    rptSecDruj: '■ DRUJ',
+    rptSecFleksör: '■ FLEKSÖR TENDONLAR & KARPAL TÜNEL',
+    rptSecEktansör: '■ EKSTANSÖR TENDONLAR',
+    rptSecEklem: '■ EKLEMLER & SİNOVYA',
+    rptSecLezyon: '■ LEZYON(LAR) — ',
+    rptSecLezyonSuffix: ' adet',
+    rptLezyon: 'Lezyon #',
+    rptSecVascNeur: '■ VASKÜLER & NÖRAL',
+    rptSecEk: '■ EK BULGULAR',
+    rptSecAyirici: '■ AYIRICI TANI',
+    rptSonuc: 'SONUÇ',
+    rptUyumlu: ' ile uyumlu bulgular.',
+    rptNormalSonuc: 'İncelenen el ve el bileğinde belirgin patolojik sinyal değişikliği veya yapısal anomali saptanmamıştır.',
+    rptKlinikKor: 'Klinik korelasyon önerilir.',
+    rptBelirginPat: '  Belirgin patolojik bulgu saptanmamıştır.',
+    // Report row labels
+    rrRadiusKorteks: 'Radius Korteks',
+    rrRadiusSinyal: 'Radius Sinyal',
+    rrRadiusOdem: 'Radius Ödem',
+    rrKirikHatti: 'Kırık Hattı',
+    rrDeformite: 'Deformite',
+    rrUlnaSinyal: 'Ulna Sinyal',
+    rrUlnaSiloid: 'Ulna Stiloid',
+    rrSiloidKirik: 'Stiloid Kırığı',
+    rrUlnaOdem: 'Ulna Ödem',
+    rrNot: 'Not',
+    rrNotUlna: 'Not (Ulna)',
+    rrSkafoidSig: 'Skafoid Sinyal',
+    rrSkafoidMorf: 'Skafoid Morfoloji',
+    rrSkafoidOdem: 'Skafoid Ödem',
+    rrSkafoidKirik: 'Skafoid Kırık',
+    rrSkafoidAVN: 'Skafoid AVN',
+    rrLunatSig: 'Lunat Sinyal',
+    rrLunatMorf: 'Lunat Morfoloji',
+    rrLunatOdem: 'Lunat Ödem',
+    rrLunatKollaps: 'Lunat Kollaps',
+    rrLunatFragman: 'Lunat Fragmantasyon',
+    rrTriqSig: 'Trikuetrum Sinyal',
+    rrTriqOdem: 'Trikuetrum Ödem',
+    rrPisiSig: 'Pisiform Sinyal',
+    rrPisiOdem: 'Pisiform Ödem',
+    rrTrapezium: 'Trapezium',
+    rrTrapezoid: 'Trapezoid',
+    rrKapitat: 'Kapitat',
+    rrHamatSig: 'Hamat Sinyal',
+    rrHamatKanca: 'Hamatum Kancası',
+    rrKancaKirik: 'Kanca Kırığı',
+    rrMetSig: 'Sinyal',
+    rrMetOdem: 'Ödem',
+    rrMetKirik: 'Kırık',
+    rrMetKirikLok: 'Kırık Lokalizasyonu',
+    rrFalanks: 'Falanks',
+    rrTfccMorf: 'Morfoloji',
+    rrTfccSig: 'Sinyal',
+    rrTfccYirtik: 'Yırtık',
+    rrTfccYirtikTip: 'Yırtık Tipi',
+    rrTfccYirtikLok: 'Yırtık Lokalizasyonu',
+    rrTfccPalmer: 'Palmer Sınıflaması',
+    rrTfccDisk: 'Artiküler Disk',
+    rrSLButunluk: 'SL Bütünlük',
+    rrSLSig: 'SL Sinyal',
+    rrSLAralik: 'SL Aralık',
+    rrGapMm: 'Gap (mm)',
+    rrDISI: 'DISI Paterni',
+    rrLTButunluk: 'LT Bütünlük',
+    rrLTSig: 'LT Sinyal',
+    rrLTAralik: 'LT Aralık',
+    rrSLNot: 'Not (SL)',
+    rrLTNot: 'Not (LT)',
+    rrDorsalLig: 'Dorsal (DRC, DIC)',
+    rrVolarLig: 'Volar (RSC, RL, RSL)',
+    rrDRUJKongruite: 'Kongrüite',
+    rrDRUJSubluk: 'Subluksasyon',
+    rrDRUJEfuz: 'Efüzyon',
+    rrDRUJAralik: 'Eklem Aralığı',
+    rrFDS: 'FDS',
+    rrFDP: 'FDP',
+    rrFPL: 'FPL',
+    rrTeno: 'Tenosinovit',
+    rrFluid: 'Peritendinöz Sıvı',
+    rrYirtik: 'Yırtık',
+    rrYirtikDetail: 'Yırtık Detayı',
+    rrKarpalTunel: 'Karpal Tünel',
+    rrMedianSinir: 'Median Sinir',
+    rrMedianAP: 'Median AP Çap',
+    rrMedianAPUnit: ' mm',
+    rrMedianSig: 'Median Sinyal',
+    rrSinirDuz: 'Sinir Düzleşmesi',
+    rrRetinakulum: 'Retinakulum',
+    rrComp1: '1. Komp (APL/EPB)',
+    rrDeQuervain: 'De Quervain',
+    rrComp2: '2. Komp (ECRL/ECRB)',
+    rrComp3: '3. Komp (EPL)',
+    rrComp4: '4. Komp (EDC/EIP)',
+    rrComp5: '5. Komp (EDM)',
+    rrComp6: '6. Komp (ECU)',
+    rrGenTeno: 'Genel Tenosinovit',
+    rrRadiokarpal: 'Radiokarpal',
+    rrRCEfuz: 'Radiokarpal Efüzyon',
+    rrMidkarpal: 'Midkarpal',
+    rrMCEfuz: 'Midkarpal Efüzyon',
+    rrCMC1: 'CMC-1',
+    rrCMCEfuz: 'CMC Efüzyon',
+    rrMCP: 'MCP Eklemler',
+    rrPIP: 'PIP Eklemler',
+    rrDIP: 'DIP Eklemler',
+    rrSinovyum: 'Sinovyum',
+    rrSinovEnhance: 'Sinoviyal Kontrastlanma',
+    rrPannus: 'Pannus',
+    rrErozyon: 'Erozyon',
+    rrErozyonLok: 'Erozyon Lokalizasyonu',
+    rrSerbest: 'Serbest Cisim',
+    rrKikirdak: 'Kıkırdak',
+    rrOsteofit: 'Osteofit',
+    rrT1W: 'T1W',
+    rrT2W: 'T2W',
+    rrSTIR: 'STIR',
+    rrDWI: 'DWI',
+    rrADC: 'ADC',
+    rrKontrast: 'Kontrast',
+    rrSinir: 'Sınır',
+    rrIcerik: 'İçerik',
+    rrRadialArt: 'Radial Arter',
+    rrUlnarArt: 'Ulnar Arter',
+    rrPalmarArk: 'Palmar Arkus',
+    rrVenler: 'Venöz Yapılar',
+    rrMedianSinirRpt: 'Median Sinir',
+    rrUlnarSinir: 'Ulnar Sinir',
+    rrGuyonRpt: 'Ulnar (Guyon)',
+    rrRadialSinir: 'Radial Sinir',
+    rrVascNot: 'Vasküler Not',
+    rrNeuralNot: 'Nöral Not',
+    rrCilt: 'Cilt / Yumuşak Doku',
+    rrSubkutan: 'Subkutan Doku',
+    rrPalmarFasya: 'Palmar Fasya',
+    rrDupuytren: 'Dupuytren',
+    rrLenf: 'Lenf Nodları',
+    rrDiger: 'Diğer',
+    // Plain text report strings
+    ptTitle: 'EL VE EL BİLEĞİ MRG İNCELEME RAPORU',
+    ptTarih: 'Tarih',
+    ptHasta: 'Hasta',
+    ptYas: ' yaş, ',
+    ptElBilegi: ' el bileği',
+    ptEndikasyon: 'Endikasyon',
+    ptTeknikLbl: 'Teknik',
+    ptKontrastLbl: 'Kontrast',
+    ptBulgular: 'BULGULAR',
+    ptKemik: '■ KEMİK YAPILAR',
+    ptTFCC: '■ TFCC',
+    ptLigament: '■ LİGAMENTLER',
+    ptDRUJ: '■ DRUJ',
+    ptFleksör: '■ FLEKSÖR TENDONLAR & KARPAL TÜNEL',
+    ptEktansör: '■ EKSTANSÖR TENDONLAR',
+    ptEklem: '■ EKLEMLER & SİNOVYA',
+    ptLezyonlar: '■ LEZYONLAR',
+    ptLezyon: '  Lezyon #',
+    ptVascNeur: '■ VASKÜLER & NÖRAL',
+    ptEk: '■ EK BULGULAR',
+    ptAyirici: 'AYIRICI TANI',
+    ptSonuc: 'SONUÇ',
+    ptNoPat: '  Belirgin patolojik bulgu saptanmamıştır.',
+    ptNormalResult: 'İncelenen el ve el bileğinde belirgin patolojik sinyal değişikliği veya yapısal anomali saptanmamıştır.',
+    ptKlinikKor: 'Klinik korelasyon önerilir.',
+    ptUyumlu: ' ile uyumlu bulgular.',
+    ptAvn: '  Skafoid AVN',
+    ptLunatKollaps: '  Lunat Kollaps',
+    ptKancaKirik: '  Kanca Kırığı',
+    ptFxHatti: '  Kırık Hattı',
+    ptTfccTearDetail: '  Tip',
+    ptTfccLok: '  Lok.',
+    ptTfccPalmerLbl: 'Palmer',
+    ptDisk: 'Disk',
+    ptSL: 'SL',
+    ptLT: 'LT',
+    ptEkstrinsik: 'Ekstrinsik',
+    ptDorsal: 'Dorsal',
+    ptVolar: 'Volar',
+    ptKongrüite: 'Kongrüite',
+    ptSubluks: 'Subluksasyon',
+    ptEfuz: 'Efüzyon',
+    ptFDS: 'FDS',
+    ptFDP: 'FDP',
+    ptFPL: 'FPL',
+    ptTeno: 'Tenosinovit',
+    ptFluid: 'Sıvı',
+    ptFxYirtik: '  Yırtık',
+    ptKarpalTunel: 'Karpal Tünel',
+    ptMedianSinir: 'Median Sinir',
+    ptAPUnit: 'mm',
+    ptRetinakulum: 'Retinakulum',
+    pt1K: '1.K',
+    pt2K: '2.K',
+    pt3K: '3.K',
+    pt4K: '4.K',
+    pt5K: '5.K',
+    pt6K: '6.K',
+    ptDeQuervain: ' (De Quervain: ',
+    ptRadiokarpal: 'Radiokarpal',
+    ptRCEfuz: 'Efüzyon',
+    ptMidkarpal: 'Midkarpal',
+    ptCMC1: 'CMC-1',
+    ptMCPJoints: 'MCP',
+    ptPIPJoints: 'PIP',
+    ptDIPJoints: 'DIP',
+    ptSinovyum: 'Sinovyum',
+    ptKontrast2: 'Kontrastlanma',
+    ptPannus: 'Pannus',
+    ptErozyon: 'Erozyon',
+    ptSerbest: 'Serbest Cisim',
+    ptKikirdak: 'Kıkırdak',
+    ptOsteofit: 'Osteofit',
+    ptRadialA: 'Radial A.',
+    ptUlnarA: 'Ulnar A.',
+    ptPalmarArkus: 'Palmar Arkus',
+    ptMedianN: 'Median N.',
+    ptUlnarN: 'Ulnar N.',
+    ptGuyon: 'Guyon',
+    ptCilt: 'Cilt/YD',
+    ptPalmarFasya: 'Palmar Fasya',
+    ptDupuytrenLbl: 'Dupuytren',
+    ptSkafoidKirik: '  Skafoid Kırık',
+    ptMetakarpKirik: '  Metakarp/Falanks Sinyal',
+  },
+  en: {
+    appTitle: 'Hand & Wrist MRI Evaluation',
+    appSub: 'Bone • Ligament • Tendon • Joint • Mass • Nerve — 35 Pathology Scoring',
+    back: '← Back',
+    forward: 'Forward →',
+    s0Title: '🩺 Clinical Information',
+    s0Sub: 'Patient demographics and clinical data',
+    s1Title: '⚙️ Technical Parameters',
+    s1Sub: 'Equipment and sequence information',
+    s2Title: '🦴 Distal Radius & Ulna',
+    s2Sub: 'Distal radius and ulna bone structures',
+    s3Title: '🦴 Carpal Bones — Proximal Row',
+    s3Sub: 'Scaphoid, Lunate, Triquetrum, Pisiform',
+    s4Title: '🦴 Carpal Bones — Distal Row',
+    s4Sub: 'Trapezium, Trapezoid, Capitate, Hamate',
+    s5Title: '🦴 Metacarpals & Phalanges',
+    s5Sub: 'Metacarpal and phalanx bone structures',
+    s6Title: '🔗 TFCC (Triangular Fibrocartilage Complex)',
+    s6Sub: 'Disk, meniscal homolog, ligamentous components',
+    s7Title: '🔗 Intrinsic Ligaments',
+    s7Sub: 'Scapholunate (SL) and Lunotriquetral (LT) ligaments',
+    s8Title: '🔗 Extrinsic Ligaments',
+    s8Sub: 'Dorsal and volar extrinsic ligament complexes',
+    s9Title: '🔄 DRUJ (Distal Radioulnar Joint)',
+    s9Sub: 'Joint congruity, stability, effusion',
+    s10Title: '💪 Flexor Tendons & Carpal Tunnel',
+    s10Sub: 'FDS, FDP, FPL, median nerve, transverse carpal ligament',
+    s11Title: '💪 Extensor Tendons',
+    s11Sub: '6 extensor compartment evaluation',
+    s12Title: '🏥 Joints & Synovium',
+    s12Sub: 'Radiocarpal, midcarpal, CMC, MCP, PIP, DIP joints',
+    s13Title: '🎯 Lesion Loop',
+    s13Sub: 'Add any mass / focal lesion (multiple lesions supported)',
+    s14Title: '🩸 Vascular & Neural Structures',
+    s14Sub: 'Arteries, veins and peripheral nerves',
+    s15Title: '📋 Additional Findings',
+    s15Sub: 'Soft tissue, subcutaneous space, palmar fascia, other',
+    s16Title: '📊 Differential Diagnosis & Report',
+    s16Sub: 'Weighted scoring probabilities and structured zebra report',
+    stKlinik: 'Clinical Info',
+    stTeknik: 'Technical',
+    stRadius: 'Distal Radius & Ulna',
+    stKarpalP: 'Carpal Bones (Prox.)',
+    stKarpalD: 'Carpal Bones (Dist.)',
+    stMetakarp: 'Metacarpal & Phalanx',
+    stTfcc: 'TFCC',
+    stIntrLig: 'Intrinsic Ligament',
+    stEkstrLig: 'Extrinsic Ligament',
+    stDruj: 'DRUJ',
+    stFleksör: 'Flexor Tendon & Carpal Tunnel',
+    stEktansör: 'Extensor Tendon',
+    stEklem: 'Joint & Synovium',
+    stLezyon: 'Lesion Loop',
+    stVasNör: 'Vascular & Neural',
+    stEk: 'Additional Findings',
+    stRapor: 'DDx & Report',
+    shDistalRadius: 'Distal Radius',
+    shDistalUlna: 'Distal Ulna',
+    shSkafoid: 'Scaphoid',
+    shLunat: 'Lunate',
+    shTrikPis: 'Triquetrum & Pisiform',
+    shHamat: 'Hamate',
+    shKuçükEklemler: 'Small Joints',
+    shBüyükEklemler: 'Large Joints',
+    shSinovyal: 'Synovial Assessment',
+    shFleksörTendon: 'Flexor Tendons',
+    shKarpalTünel: 'Carpal Tunnel',
+    shSL: 'Scapholunate (SL) Ligament',
+    shLT: 'Lunotriquetral (LT) Ligament',
+    shVasküler: 'Vascular',
+    shNöral: 'Neural',
+    shAyiriciTani: 'Differential Diagnosis Scores',
+    shYapiRapor: 'Structured Report — Zebra Format',
+    lAge: 'Age',
+    lSex: 'Sex',
+    lSide: 'Side',
+    lSymptoms: 'Symptoms',
+    lHistory: 'History',
+    lIndication: 'Indication',
+    lIndicationPh: 'Reason for request',
+    lMagnet: 'Magnetic Field',
+    lCoil: 'Coil',
+    lSequences: 'Sequences',
+    lPlane: 'Plane',
+    lContrast: 'Contrast',
+    lContrastNote: 'Contrast Note',
+    lContrastNotePh: 'Contrast agent details',
+    lCortex: 'Cortex',
+    lBoneSig: 'Bone Signal',
+    lMarrowEdema: 'Bone Marrow Edema',
+    lFractureLine: 'Fracture Line',
+    lDeformity: 'Deformity',
+    lNotes: 'Notes',
+    lNotesUlna: 'Notes (Ulna)',
+    lSignal: 'Signal',
+    lSiloid: 'Styloid',
+    lSiloidFx: 'Styloid Fracture',
+    lEdema: 'Edema',
+    lMorphology: 'Morphology',
+    lFracture: 'Fracture',
+    lFxLoc: 'Localization',
+    lFxLocPh: 'Which metacarpal/phalanx',
+    lPhalanxEval: 'Phalanx Evaluation',
+    lTfccMorph: 'Morphology',
+    lTfccSig: 'Signal',
+    lTfccTear: 'Tear',
+    lTfccTearType: 'Tear Type',
+    lTfccTearLoc: 'Tear Localization',
+    lTfccPalmer: 'Palmer Classification',
+    lTfccDisc: 'Articular Disc',
+    lSlIntegrity: 'Integrity',
+    lSlSignal: 'Signal',
+    lSlGap: 'SL Gap',
+    lGapMm: 'Gap (mm)',
+    lGapMmPh: 'mm',
+    lDISI: 'DISI Pattern',
+    lLtIntegrity: 'Integrity',
+    lLtSignal: 'Signal',
+    lLtGap: 'LT Gap',
+    lDorsal: 'Dorsal Ligaments (DRC, DIC)',
+    lVolar: 'Volar Ligaments (RSC, RL, RSL)',
+    lCongruity: 'Congruity',
+    lSubluxation: 'Subluxation',
+    lEffusion: 'Effusion',
+    lJointSpace: 'Joint Space',
+    lFDS: 'FDS',
+    lFDP: 'FDP',
+    lFPL: 'FPL',
+    lTenosynovitis: 'Tenosynovitis',
+    lPeritenFluid: 'Peritendinous Fluid',
+    lTear: 'Tear',
+    lTearDetail: 'Tear Detail',
+    lTearDetailPh: 'Which tendon, level, grade',
+    lCarpalTunnel: 'Carpal Tunnel General',
+    lMedianNerve: 'Median Nerve',
+    lMedianAP: 'Median AP Diameter (mm)',
+    lMedianAPPh: 'mm',
+    lMedianSignal: 'Median Nerve Signal',
+    lMedianFlat: 'Nerve Flattening',
+    lRetinac: 'Transverse Carpal Ligament',
+    lComp1: '1st Comp (APL/EPB)',
+    lDeQuervain: 'De Quervain?',
+    lComp2: '2nd Comp (ECRL/ECRB)',
+    lComp3: '3rd Comp (EPL)',
+    lComp4: '4th Comp (EDC/EIP)',
+    lComp5: '5th Comp (EDM)',
+    lComp6: '6th Comp (ECU)',
+    lGenTeno: 'General Tenosynovitis',
+    lExtTear: 'Tear',
+    lExtTearDetail: 'Tear Detail',
+    lExtTearDetailPh: 'Which tendon, level',
+    lRadiocarpal: 'Radiocarpal',
+    lRCEffusion: 'Effusion',
+    lMidcarpal: 'Midcarpal',
+    lMCEffusion: 'Effusion',
+    lCMC1: 'CMC-1 (Thumb)',
+    lCMCEffusion: 'CMC Effusion',
+    lMCP: 'MCP Joints',
+    lPIP: 'PIP Joints',
+    lDIP: 'DIP Joints',
+    lSynovium: 'Synovium',
+    lSynovEnhance: 'Synovial Enhancement',
+    lPannus: 'Pannus',
+    lErosion: 'Erosion',
+    lErosionLoc: 'Erosion Localization',
+    lErosionLocPh: 'Affected bone/joints',
+    lLooseBodies: 'Loose Bodies',
+    lCartilage: 'Cartilage',
+    lOsteophyte: 'Osteophyte',
+    lLesionLoc: 'Localization',
+    lLesionLocPh: 'e.g. Dorsal wrist, Volar subcutaneous, Intraosseous scaphoid...',
+    lLesionSize: 'Size',
+    lLesionSizePh: 'e.g. 12x8x10 mm',
+    lT1Sig: 'T1W Signal',
+    lT2Sig: 'T2W Signal',
+    lSTIR: 'STIR',
+    lDWI: 'DWI',
+    lADC: 'ADC',
+    lContrastSig: 'Contrast',
+    lMargin: 'Margin',
+    lContent: 'Content',
+    lLesionNotesPh: 'Additional features, hemosiderin, septation, etc.',
+    lRadialArt: 'Radial Artery',
+    lUlnarArt: 'Ulnar Artery',
+    lPalmarArch: 'Palmar Arch',
+    lVeins: 'Venous Structures',
+    lVascNote: 'Vascular Note',
+    lMedianNerveWrist: 'Median Nerve (wrist)',
+    lUlnarNerveWrist: 'Ulnar Nerve (wrist)',
+    lUlnarNerveGuyon: 'Ulnar Nerve (Guyon)',
+    lRadialNerve: 'Radial Nerve',
+    lNeuralNote: 'Neural Note',
+    lSkin: 'Skin / Soft Tissue',
+    lSubcut: 'Subcutaneous Tissue',
+    lPalmarFascia: 'Palmar Fascia',
+    lDupuytren: 'Dupuytren',
+    lLymph: 'Lymph Nodes',
+    lOther: 'Other',
+    lOtherPh: 'Additional notes or findings',
+    lSLNote: 'Notes (SL)',
+    lLTNote: 'Notes (LT)',
+    lzNoLesion: 'Add if a lesion/mass is detected:',
+    lzAddNew: '+ Add New Lesion',
+    lzHeader: 'Lesion #',
+    lzSave: 'Save Lesion',
+    lzCancel: 'Cancel',
+    lzLocRequired: 'Localization required!',
+    lzSaved: 'Lesion saved',
+    lzDeleted: 'Lesion deleted',
+    ddxNoFindings: 'No significant pathological finding detected — report will be generated as normal.',
+    ddxHigh: 'HIGH',
+    ddxMid: 'MED',
+    ddxLow: 'LOW',
+    btnCopyText: '📋 Copy Plain Text',
+    btnDownload: '💾 Download (.txt)',
+    btnOpenOverlay: '📄 Open Report (Select & Copy)',
+    toastCopied: 'Report copied!',
+    toastDownloaded: 'Downloaded!',
+    toastSelectAll: 'All selected — press Ctrl+C to copy',
+    overlayTitle: 'Plain Text Report — Select & Copy',
+    overlaySelectAll: 'Select All',
+    overlayClose: '✕ Close',
+    rptH2: 'HAND AND WRIST MRI EXAMINATION REPORT',
+    rptDate: 'Date',
+    rptAge: ' years old',
+    rptElBilegi: ' wrist',
+    rptEndikasyon: 'Indication',
+    rptTeknik: 'Technical',
+    rptKontrast: 'Contrast',
+    rptSecKemik: '■ BONE STRUCTURES — Distal Radius & Ulna',
+    rptSecKarpalP: '■ CARPAL BONES — Proximal Row',
+    rptSecKarpalD: '■ CARPAL BONES — Distal Row',
+    rptSecMetakarp: '■ METACARPALS & PHALANGES',
+    rptSecTfcc: '■ TFCC',
+    rptSecIntLig: '■ INTRINSIC LIGAMENTS',
+    rptSecExtLig: '■ EXTRINSIC LIGAMENTS',
+    rptSecDruj: '■ DRUJ',
+    rptSecFleksör: '■ FLEXOR TENDONS & CARPAL TUNNEL',
+    rptSecEktansör: '■ EXTENSOR TENDONS',
+    rptSecEklem: '■ JOINTS & SYNOVIUM',
+    rptSecLezyon: '■ LESION(S) — ',
+    rptSecLezyonSuffix: ' lesion(s)',
+    rptLezyon: 'Lesion #',
+    rptSecVascNeur: '■ VASCULAR & NEURAL',
+    rptSecEk: '■ ADDITIONAL FINDINGS',
+    rptSecAyirici: '■ DIFFERENTIAL DIAGNOSIS',
+    rptSonuc: 'CONCLUSION',
+    rptUyumlu: ' compatible findings.',
+    rptNormalSonuc: 'No significant pathological signal change or structural abnormality was detected in the examined hand and wrist.',
+    rptKlinikKor: 'Clinical correlation is recommended.',
+    rptBelirginPat: '  No significant pathological finding detected.',
+    rrRadiusKorteks: 'Radius Cortex',
+    rrRadiusSinyal: 'Radius Signal',
+    rrRadiusOdem: 'Radius Edema',
+    rrKirikHatti: 'Fracture Line',
+    rrDeformite: 'Deformity',
+    rrUlnaSinyal: 'Ulna Signal',
+    rrUlnaSiloid: 'Ulna Styloid',
+    rrSiloidKirik: 'Styloid Fracture',
+    rrUlnaOdem: 'Ulna Edema',
+    rrNot: 'Notes',
+    rrNotUlna: 'Notes (Ulna)',
+    rrSkafoidSig: 'Scaphoid Signal',
+    rrSkafoidMorf: 'Scaphoid Morphology',
+    rrSkafoidOdem: 'Scaphoid Edema',
+    rrSkafoidKirik: 'Scaphoid Fracture',
+    rrSkafoidAVN: 'Scaphoid AVN',
+    rrLunatSig: 'Lunate Signal',
+    rrLunatMorf: 'Lunate Morphology',
+    rrLunatOdem: 'Lunate Edema',
+    rrLunatKollaps: 'Lunate Collapse',
+    rrLunatFragman: 'Lunate Fragmentation',
+    rrTriqSig: 'Triquetrum Signal',
+    rrTriqOdem: 'Triquetrum Edema',
+    rrPisiSig: 'Pisiform Signal',
+    rrPisiOdem: 'Pisiform Edema',
+    rrTrapezium: 'Trapezium',
+    rrTrapezoid: 'Trapezoid',
+    rrKapitat: 'Capitate',
+    rrHamatSig: 'Hamate Signal',
+    rrHamatKanca: 'Hamate Hook',
+    rrKancaKirik: 'Hook Fracture',
+    rrMetSig: 'Signal',
+    rrMetOdem: 'Edema',
+    rrMetKirik: 'Fracture',
+    rrMetKirikLok: 'Fracture Localization',
+    rrFalanks: 'Phalanx',
+    rrTfccMorf: 'Morphology',
+    rrTfccSig: 'Signal',
+    rrTfccYirtik: 'Tear',
+    rrTfccYirtikTip: 'Tear Type',
+    rrTfccYirtikLok: 'Tear Localization',
+    rrTfccPalmer: 'Palmer Classification',
+    rrTfccDisk: 'Articular Disc',
+    rrSLButunluk: 'SL Integrity',
+    rrSLSig: 'SL Signal',
+    rrSLAralik: 'SL Gap',
+    rrGapMm: 'Gap (mm)',
+    rrDISI: 'DISI Pattern',
+    rrLTButunluk: 'LT Integrity',
+    rrLTSig: 'LT Signal',
+    rrLTAralik: 'LT Gap',
+    rrSLNot: 'Notes (SL)',
+    rrLTNot: 'Notes (LT)',
+    rrDorsalLig: 'Dorsal (DRC, DIC)',
+    rrVolarLig: 'Volar (RSC, RL, RSL)',
+    rrDRUJKongruite: 'Congruity',
+    rrDRUJSubluk: 'Subluxation',
+    rrDRUJEfuz: 'Effusion',
+    rrDRUJAralik: 'Joint Space',
+    rrFDS: 'FDS',
+    rrFDP: 'FDP',
+    rrFPL: 'FPL',
+    rrTeno: 'Tenosynovitis',
+    rrFluid: 'Peritendinous Fluid',
+    rrYirtik: 'Tear',
+    rrYirtikDetail: 'Tear Detail',
+    rrKarpalTunel: 'Carpal Tunnel',
+    rrMedianSinir: 'Median Nerve',
+    rrMedianAP: 'Median AP Diameter',
+    rrMedianAPUnit: ' mm',
+    rrMedianSig: 'Median Signal',
+    rrSinirDuz: 'Nerve Flattening',
+    rrRetinakulum: 'Retinaculum',
+    rrComp1: '1st Comp (APL/EPB)',
+    rrDeQuervain: 'De Quervain',
+    rrComp2: '2nd Comp (ECRL/ECRB)',
+    rrComp3: '3rd Comp (EPL)',
+    rrComp4: '4th Comp (EDC/EIP)',
+    rrComp5: '5th Comp (EDM)',
+    rrComp6: '6th Comp (ECU)',
+    rrGenTeno: 'General Tenosynovitis',
+    rrRadiokarpal: 'Radiocarpal',
+    rrRCEfuz: 'Radiocarpal Effusion',
+    rrMidkarpal: 'Midcarpal',
+    rrMCEfuz: 'Midcarpal Effusion',
+    rrCMC1: 'CMC-1',
+    rrCMCEfuz: 'CMC Effusion',
+    rrMCP: 'MCP Joints',
+    rrPIP: 'PIP Joints',
+    rrDIP: 'DIP Joints',
+    rrSinovyum: 'Synovium',
+    rrSinovEnhance: 'Synovial Enhancement',
+    rrPannus: 'Pannus',
+    rrErozyon: 'Erosion',
+    rrErozyonLok: 'Erosion Localization',
+    rrSerbest: 'Loose Bodies',
+    rrKikirdak: 'Cartilage',
+    rrOsteofit: 'Osteophyte',
+    rrT1W: 'T1W',
+    rrT2W: 'T2W',
+    rrSTIR: 'STIR',
+    rrDWI: 'DWI',
+    rrADC: 'ADC',
+    rrKontrast: 'Contrast',
+    rrSinir: 'Margin',
+    rrIcerik: 'Content',
+    rrRadialArt: 'Radial Artery',
+    rrUlnarArt: 'Ulnar Artery',
+    rrPalmarArk: 'Palmar Arch',
+    rrVenler: 'Venous Structures',
+    rrMedianSinirRpt: 'Median Nerve',
+    rrUlnarSinir: 'Ulnar Nerve',
+    rrGuyonRpt: 'Ulnar (Guyon)',
+    rrRadialSinir: 'Radial Nerve',
+    rrVascNot: 'Vascular Note',
+    rrNeuralNot: 'Neural Note',
+    rrCilt: 'Skin / Soft Tissue',
+    rrSubkutan: 'Subcutaneous Tissue',
+    rrPalmarFasya: 'Palmar Fascia',
+    rrDupuytren: 'Dupuytren',
+    rrLenf: 'Lymph Nodes',
+    rrDiger: 'Other',
+    ptTitle: 'HAND AND WRIST MRI EXAMINATION REPORT',
+    ptTarih: 'Date',
+    ptHasta: 'Patient',
+    ptYas: ' years old, ',
+    ptElBilegi: ' wrist',
+    ptEndikasyon: 'Indication',
+    ptTeknikLbl: 'Technical',
+    ptKontrastLbl: 'Contrast',
+    ptBulgular: 'FINDINGS',
+    ptKemik: '■ BONE STRUCTURES',
+    ptTFCC: '■ TFCC',
+    ptLigament: '■ LIGAMENTS',
+    ptDRUJ: '■ DRUJ',
+    ptFleksör: '■ FLEXOR TENDONS & CARPAL TUNNEL',
+    ptEktansör: '■ EXTENSOR TENDONS',
+    ptEklem: '■ JOINTS & SYNOVIUM',
+    ptLezyonlar: '■ LESIONS',
+    ptLezyon: '  Lesion #',
+    ptVascNeur: '■ VASCULAR & NEURAL',
+    ptEk: '■ ADDITIONAL FINDINGS',
+    ptAyirici: 'DIFFERENTIAL DIAGNOSIS',
+    ptSonuc: 'CONCLUSION',
+    ptNoPat: '  No significant pathological finding detected.',
+    ptNormalResult: 'No significant pathological signal change or structural abnormality was detected in the examined hand and wrist.',
+    ptKlinikKor: 'Clinical correlation is recommended.',
+    ptUyumlu: ' compatible findings.',
+    ptAvn: '  Scaphoid AVN',
+    ptLunatKollaps: '  Lunate Collapse',
+    ptKancaKirik: '  Hook Fracture',
+    ptFxHatti: '  Fracture Line',
+    ptTfccTearDetail: '  Type',
+    ptTfccLok: '  Loc.',
+    ptTfccPalmerLbl: 'Palmer',
+    ptDisk: 'Disc',
+    ptSL: 'SL',
+    ptLT: 'LT',
+    ptEkstrinsik: 'Extrinsic',
+    ptDorsal: 'Dorsal',
+    ptVolar: 'Volar',
+    ptKongrüite: 'Congruity',
+    ptSubluks: 'Subluxation',
+    ptEfuz: 'Effusion',
+    ptFDS: 'FDS',
+    ptFDP: 'FDP',
+    ptFPL: 'FPL',
+    ptTeno: 'Tenosynovitis',
+    ptFluid: 'Fluid',
+    ptFxYirtik: '  Tear',
+    ptKarpalTunel: 'Carpal Tunnel',
+    ptMedianSinir: 'Median Nerve',
+    ptAPUnit: 'mm',
+    ptRetinakulum: 'Retinaculum',
+    pt1K: '1.C',
+    pt2K: '2.C',
+    pt3K: '3.C',
+    pt4K: '4.C',
+    pt5K: '5.C',
+    pt6K: '6.C',
+    ptDeQuervain: ' (De Quervain: ',
+    ptRadiokarpal: 'Radiocarpal',
+    ptRCEfuz: 'Effusion',
+    ptMidkarpal: 'Midcarpal',
+    ptCMC1: 'CMC-1',
+    ptMCPJoints: 'MCP',
+    ptPIPJoints: 'PIP',
+    ptDIPJoints: 'DIP',
+    ptSinovyum: 'Synovium',
+    ptKontrast2: 'Enhancement',
+    ptPannus: 'Pannus',
+    ptErozyon: 'Erosion',
+    ptSerbest: 'Loose Bodies',
+    ptKikirdak: 'Cartilage',
+    ptOsteofit: 'Osteophyte',
+    ptRadialA: 'Radial A.',
+    ptUlnarA: 'Ulnar A.',
+    ptPalmarArkus: 'Palmar Arch',
+    ptMedianN: 'Median N.',
+    ptUlnarN: 'Ulnar N.',
+    ptGuyon: 'Guyon',
+    ptCilt: 'Skin/ST',
+    ptPalmarFasya: 'Palmar Fascia',
+    ptDupuytrenLbl: 'Dupuytren',
+    ptSkafoidKirik: '  Scaphoid Fracture',
+    ptMetakarpKirik: '  Metacarpal/Phalanx Signal',
+  },
+})[RV_LOCALE];
+
 /* ───────── PATHOLOGY DATABASE ───────── */
 const LESION_DB=[
 {id:"scaphoidFx",name:"Skafoid Kırık",cat:"kemik",keys:["scaphoidFx","scaphoidOdem","scaphoidLine","T1dark","T2bright","yas_genc"]},
@@ -187,10 +1123,10 @@ const DWI_W=6,ADC_W=5,KONTRAST_W=5;
 
 /* ───────── STEP LABELS ───────── */
 const STEPS=[
-"Klinik Bilgi","Teknik","Distal Radius & Ulna","Karpal Kemikler (Proks.)","Karpal Kemikler (Dist.)",
-"Metakarp & Falanks","TFCC","İntrinsik Ligament","Ekstrinsik Ligament","DRUJ",
-"Fleksör Tendon & Karpal Tünel","Ekstansör Tendon","Eklem & Sinovya","Lezyon Döngüsü",
-"Vasküler & Nöral","Ek Bulgular","Ayırıcı Tanı & Rapor"
+T.stKlinik,T.stTeknik,T.stRadius,T.stKarpalP,T.stKarpalD,
+T.stMetakarp,T.stTfcc,T.stIntrLig,T.stEkstrLig,T.stDruj,
+T.stFleksör,T.stEktansör,T.stEklem,T.stLezyon,
+T.stVasNör,T.stEk,T.stRapor
 ];
 
 const mkS=()=>({
@@ -407,14 +1343,14 @@ const showToast=(msg)=>{setToast(msg);setTimeout(()=>setToast(""),2000)};
 const addLesion=()=>{setCurrentLesion(mkL());setCurrentLesionIdx(s.lesions.length)};
 const editLesion=(i)=>{setCurrentLesion({...s.lesions[i]});setCurrentLesionIdx(i)};
 const finalizeLesion=()=>{
-if(!currentLesion.loc){showToast("Lokalizasyon gerekli!");return}
+if(!currentLesion.loc){showToast(T.lzLocRequired);return}
 setS(p=>{const ls=[...p.lesions];
 if(currentLesionIdx<p.lesions.length) ls[currentLesionIdx]=currentLesion;
 else ls.push(currentLesion);
 return{...p,lesions:ls}});
-setCurrentLesionIdx(-1);setCurrentLesion(mkL());showToast("Lezyon kaydedildi");
+setCurrentLesionIdx(-1);setCurrentLesion(mkL());showToast(T.lzSaved);
 };
-const removeLesion=(i)=>{setS(p=>({...p,lesions:p.lesions.filter((_,j)=>j!==i)}));showToast("Lezyon silindi")};
+const removeLesion=(i)=>{setS(p=>({...p,lesions:p.lesions.filter((_,j)=>j!==i)}));showToast(T.lzDeleted)};
 const updL=(f,v)=>setCurrentLesion(p=>({...p,[f]:v}));
 
 const goNext=()=>{
@@ -444,191 +1380,191 @@ const genReportJSX=()=>{
 const c=s.clin,t=s.tech,cp=s.carpalProx,cd=s.carpalDist;
 return(<div>
 <div className="rpt-header">
-<h2>EL VE EL BİLEĞİ MRG İNCELEME RAPORU</h2>
+<h2>{T.rptH2}</h2>
 <div className="rpt-meta">
-Tarih: {new Date().toLocaleDateString("tr-TR")} &nbsp;|&nbsp; {c.age} yaş, {c.sex}, {c.side} el bileği<br/>
-Endikasyon: {c.indication||c.symptoms.join(", ")||"—"}<br/>
-Teknik: {t.magnet}, {t.coil}, {t.sequences.join(" / ")}, {t.plane} — Kontrast: {t.contrast}{t.contrastNote?(" ("+t.contrastNote+")"):""}
+{T.rptDate}: {new Date().toLocaleDateString(RV_LOCALE==='en'?'en-GB':'tr-TR')} &nbsp;|&nbsp; {c.age}{T.rptAge}, {c.sex},{T.rptElBilegi.replace(' wrist',` ${c.side} wrist`).replace(' el bileği',` ${c.side} el bileği`)}<br/>
+{T.rptEndikasyon}: {c.indication||c.symptoms.join(", ")||"—"}<br/>
+{T.rptTeknik}: {t.magnet}, {t.coil}, {t.sequences.join(" / ")}, {t.plane} — {T.rptKontrast}: {t.contrast}{t.contrastNote?(" ("+t.contrastNote+")"):""}
 </div>
 </div>
 
-<RptSection title="■ KEMİK YAPILAR — Distal Radius & Ulna">
-<RptRow label="Radius Korteks" value={s.radius.cortex}/>
-<RptRow label="Radius Sinyal" value={s.radius.signal}/>
-<RptRow label="Radius Ödem" value={s.radius.odem}/>
-{s.radius.fractureLine!=="Yok"&&<RptRow label="Kırık Hattı" value={s.radius.fractureLine}/>}
-{s.radius.deformity!=="Yok"&&<RptRow label="Deformite" value={s.radius.deformity}/>}
-<RptRow label="Ulna Sinyal" value={s.ulna.signal}/>
-<RptRow label="Ulna Stiloid" value={s.ulna.stiloid}/>
-<RptRow label="Stiloid Kırığı" value={s.ulna.stiloidFx}/>
-<RptRow label="Ulna Ödem" value={s.ulna.odem}/>
-{s.radius.notes&&<RptRow label="Not" value={s.radius.notes}/>}
-{s.ulna.notes&&<RptRow label="Not (Ulna)" value={s.ulna.notes}/>}
+<RptSection title={T.rptSecKemik}>
+<RptRow label={T.rrRadiusKorteks} value={s.radius.cortex}/>
+<RptRow label={T.rrRadiusSinyal} value={s.radius.signal}/>
+<RptRow label={T.rrRadiusOdem} value={s.radius.odem}/>
+{s.radius.fractureLine!=="Yok"&&<RptRow label={T.rrKirikHatti} value={s.radius.fractureLine}/>}
+{s.radius.deformity!=="Yok"&&<RptRow label={T.rrDeformite} value={s.radius.deformity}/>}
+<RptRow label={T.rrUlnaSinyal} value={s.ulna.signal}/>
+<RptRow label={T.rrUlnaSiloid} value={s.ulna.stiloid}/>
+<RptRow label={T.rrSiloidKirik} value={s.ulna.stiloidFx}/>
+<RptRow label={T.rrUlnaOdem} value={s.ulna.odem}/>
+{s.radius.notes&&<RptRow label={T.rrNot} value={s.radius.notes}/>}
+{s.ulna.notes&&<RptRow label={T.rrNotUlna} value={s.ulna.notes}/>}
 </RptSection>
 
-<RptSection title="■ KARPAL KEMİKLER — Proksimal Sıra">
-<RptRow label="Skafoid Sinyal" value={cp.scaphoid_signal}/>
-<RptRow label="Skafoid Morfoloji" value={cp.scaphoid_morph}/>
-<RptRow label="Skafoid Ödem" value={cp.scaphoid_odem}/>
-{cp.scaphoid_fx!=="Yok"&&<RptRow label="Skafoid Kırık" value={cp.scaphoid_fx}/>}
-{cp.scaphoid_avn!=="Yok"&&<RptRow label="Skafoid AVN" value={cp.scaphoid_avn}/>}
-<RptRow label="Lunat Sinyal" value={cp.lunate_signal}/>
-<RptRow label="Lunat Morfoloji" value={cp.lunate_morph}/>
-<RptRow label="Lunat Ödem" value={cp.lunate_odem}/>
-{cp.lunate_collapse!=="Yok"&&<RptRow label="Lunat Kollaps" value={cp.lunate_collapse}/>}
-{cp.lunate_fragman!=="Yok"&&<RptRow label="Lunat Fragmantasyon" value={cp.lunate_fragman}/>}
-<RptRow label="Trikuetrum Sinyal" value={cp.triquetrum_signal}/>
-<RptRow label="Trikuetrum Ödem" value={cp.triquetrum_odem}/>
-<RptRow label="Pisiform Sinyal" value={cp.pisiform_signal}/>
-<RptRow label="Pisiform Ödem" value={cp.pisiform_odem}/>
-{cp.notes&&<RptRow label="Not" value={cp.notes}/>}
+<RptSection title={T.rptSecKarpalP}>
+<RptRow label={T.rrSkafoidSig} value={cp.scaphoid_signal}/>
+<RptRow label={T.rrSkafoidMorf} value={cp.scaphoid_morph}/>
+<RptRow label={T.rrSkafoidOdem} value={cp.scaphoid_odem}/>
+{cp.scaphoid_fx!=="Yok"&&<RptRow label={T.rrSkafoidKirik} value={cp.scaphoid_fx}/>}
+{cp.scaphoid_avn!=="Yok"&&<RptRow label={T.rrSkafoidAVN} value={cp.scaphoid_avn}/>}
+<RptRow label={T.rrLunatSig} value={cp.lunate_signal}/>
+<RptRow label={T.rrLunatMorf} value={cp.lunate_morph}/>
+<RptRow label={T.rrLunatOdem} value={cp.lunate_odem}/>
+{cp.lunate_collapse!=="Yok"&&<RptRow label={T.rrLunatKollaps} value={cp.lunate_collapse}/>}
+{cp.lunate_fragman!=="Yok"&&<RptRow label={T.rrLunatFragman} value={cp.lunate_fragman}/>}
+<RptRow label={T.rrTriqSig} value={cp.triquetrum_signal}/>
+<RptRow label={T.rrTriqOdem} value={cp.triquetrum_odem}/>
+<RptRow label={T.rrPisiSig} value={cp.pisiform_signal}/>
+<RptRow label={T.rrPisiOdem} value={cp.pisiform_odem}/>
+{cp.notes&&<RptRow label={T.rrNot} value={cp.notes}/>}
 </RptSection>
 
-<RptSection title="■ KARPAL KEMİKLER — Distal Sıra">
-<RptRow label="Trapezium" value={cd.trapezium_signal}/>
-<RptRow label="Trapezoid" value={cd.trapezoid_signal}/>
-<RptRow label="Kapitat" value={cd.capitate_signal}/>
-<RptRow label="Hamat Sinyal" value={cd.hamate_signal}/>
-<RptRow label="Hamatum Kancası" value={cd.hamate_hook}/>
-{cd.hamate_hookFx!=="Yok"&&<RptRow label="Kanca Kırığı" value={cd.hamate_hookFx}/>}
-{cd.notes&&<RptRow label="Not" value={cd.notes}/>}
+<RptSection title={T.rptSecKarpalD}>
+<RptRow label={T.rrTrapezium} value={cd.trapezium_signal}/>
+<RptRow label={T.rrTrapezoid} value={cd.trapezoid_signal}/>
+<RptRow label={T.rrKapitat} value={cd.capitate_signal}/>
+<RptRow label={T.rrHamatSig} value={cd.hamate_signal}/>
+<RptRow label={T.rrHamatKanca} value={cd.hamate_hook}/>
+{cd.hamate_hookFx!=="Yok"&&<RptRow label={T.rrKancaKirik} value={cd.hamate_hookFx}/>}
+{cd.notes&&<RptRow label={T.rrNot} value={cd.notes}/>}
 </RptSection>
 
-<RptSection title="■ METAKARP & FALANKS">
-<RptRow label="Sinyal" value={s.metacarp.signal}/>
-<RptRow label="Ödem" value={s.metacarp.odem}/>
-<RptRow label="Kırık" value={s.metacarp.fracture}/>
-{s.metacarp.fracture!=="Yok"&&<RptRow label="Kırık Lokalizasyonu" value={s.metacarp.fractureLoc||"—"}/>}
-<RptRow label="Falanks" value={s.metacarp.phalanx}/>
-{s.metacarp.notes&&<RptRow label="Not" value={s.metacarp.notes}/>}
+<RptSection title={T.rptSecMetakarp}>
+<RptRow label={T.rrMetSig} value={s.metacarp.signal}/>
+<RptRow label={T.rrMetOdem} value={s.metacarp.odem}/>
+<RptRow label={T.rrMetKirik} value={s.metacarp.fracture}/>
+{s.metacarp.fracture!=="Yok"&&<RptRow label={T.rrMetKirikLok} value={s.metacarp.fractureLoc||"—"}/>}
+<RptRow label={T.rrFalanks} value={s.metacarp.phalanx}/>
+{s.metacarp.notes&&<RptRow label={T.rrNot} value={s.metacarp.notes}/>}
 </RptSection>
 
-<RptSection title="■ TFCC">
-<RptRow label="Morfoloji" value={s.tfcc.morph}/>
-<RptRow label="Sinyal" value={s.tfcc.signal}/>
-<RptRow label="Yırtık" value={s.tfcc.tear}/>
-{s.tfcc.tear!=="Yok"&&<><RptRow label="Yırtık Tipi" value={s.tfcc.tearType}/><RptRow label="Yırtık Lokalizasyonu" value={s.tfcc.tearLoc}/></>}
-{s.tfcc.palmerClass&&<RptRow label="Palmer Sınıflaması" value={s.tfcc.palmerClass}/>}
-<RptRow label="Artiküler Disk" value={s.tfcc.disc}/>
-{s.tfcc.notes&&<RptRow label="Not" value={s.tfcc.notes}/>}
+<RptSection title={T.rptSecTfcc}>
+<RptRow label={T.rrTfccMorf} value={s.tfcc.morph}/>
+<RptRow label={T.rrTfccSig} value={s.tfcc.signal}/>
+<RptRow label={T.rrTfccYirtik} value={s.tfcc.tear}/>
+{s.tfcc.tear!=="Yok"&&<><RptRow label={T.rrTfccYirtikTip} value={s.tfcc.tearType}/><RptRow label={T.rrTfccYirtikLok} value={s.tfcc.tearLoc}/></>}
+{s.tfcc.palmerClass&&<RptRow label={T.rrTfccPalmer} value={s.tfcc.palmerClass}/>}
+<RptRow label={T.rrTfccDisk} value={s.tfcc.disc}/>
+{s.tfcc.notes&&<RptRow label={T.rrNot} value={s.tfcc.notes}/>}
 </RptSection>
 
-<RptSection title="■ İNTRİNSİK LİGAMENTLER">
-<RptRow label="SL Bütünlük" value={s.slLig.integrity} normals={["İntakt"]}/>
-<RptRow label="SL Sinyal" value={s.slLig.signal}/>
-<RptRow label="SL Aralık" value={s.slLig.gap}/>
-{s.slLig.gap!=="Yok"&&<><RptRow label="Gap (mm)" value={s.slLig.gapMm||"—"}/><RptRow label="DISI Paterni" value={s.slLig.dlsi}/></>}
-<RptRow label="LT Bütünlük" value={s.ltLig.integrity} normals={["İntakt"]}/>
-<RptRow label="LT Sinyal" value={s.ltLig.signal}/>
-<RptRow label="LT Aralık" value={s.ltLig.gap}/>
-{s.slLig.notes&&<RptRow label="Not (SL)" value={s.slLig.notes}/>}
-{s.ltLig.notes&&<RptRow label="Not (LT)" value={s.ltLig.notes}/>}
+<RptSection title={T.rptSecIntLig}>
+<RptRow label={T.rrSLButunluk} value={s.slLig.integrity} normals={["İntakt"]}/>
+<RptRow label={T.rrSLSig} value={s.slLig.signal}/>
+<RptRow label={T.rrSLAralik} value={s.slLig.gap}/>
+{s.slLig.gap!=="Yok"&&<><RptRow label={T.rrGapMm} value={s.slLig.gapMm||"—"}/><RptRow label={T.rrDISI} value={s.slLig.dlsi}/></>}
+<RptRow label={T.rrLTButunluk} value={s.ltLig.integrity} normals={["İntakt"]}/>
+<RptRow label={T.rrLTSig} value={s.ltLig.signal}/>
+<RptRow label={T.rrLTAralik} value={s.ltLig.gap}/>
+{s.slLig.notes&&<RptRow label={T.rrSLNot} value={s.slLig.notes}/>}
+{s.ltLig.notes&&<RptRow label={T.rrLTNot} value={s.ltLig.notes}/>}
 </RptSection>
 
-<RptSection title="■ EKSTRİNSİK LİGAMENTLER">
-<RptRow label="Dorsal (DRC, DIC)" value={s.extrLig.dorsal}/>
-<RptRow label="Volar (RSC, RL, RSL)" value={s.extrLig.volar}/>
-{s.extrLig.notes&&<RptRow label="Not" value={s.extrLig.notes}/>}
+<RptSection title={T.rptSecExtLig}>
+<RptRow label={T.rrDorsalLig} value={s.extrLig.dorsal}/>
+<RptRow label={T.rrVolarLig} value={s.extrLig.volar}/>
+{s.extrLig.notes&&<RptRow label={T.rrNot} value={s.extrLig.notes}/>}
 </RptSection>
 
-<RptSection title="■ DRUJ">
-<RptRow label="Kongrüite" value={s.druj.congruity}/>
-<RptRow label="Subluksasyon" value={s.druj.subluxation}/>
-<RptRow label="Efüzyon" value={s.druj.effusion}/>
-<RptRow label="Eklem Aralığı" value={s.druj.widening}/>
-{s.druj.notes&&<RptRow label="Not" value={s.druj.notes}/>}
+<RptSection title={T.rptSecDruj}>
+<RptRow label={T.rrDRUJKongruite} value={s.druj.congruity}/>
+<RptRow label={T.rrDRUJSubluk} value={s.druj.subluxation}/>
+<RptRow label={T.rrDRUJEfuz} value={s.druj.effusion}/>
+<RptRow label={T.rrDRUJAralik} value={s.druj.widening}/>
+{s.druj.notes&&<RptRow label={T.rrNot} value={s.druj.notes}/>}
 </RptSection>
 
-<RptSection title="■ FLEKSÖR TENDONLAR & KARPAL TÜNEL">
-<RptRow label="FDS" value={s.flexor.fds}/>
-<RptRow label="FDP" value={s.flexor.fdp}/>
-<RptRow label="FPL" value={s.flexor.fpl}/>
-<RptRow label="Tenosinovit" value={s.flexor.teno}/>
-<RptRow label="Peritendinöz Sıvı" value={s.flexor.fluid}/>
-{s.flexor.tear!=="Yok"&&<><RptRow label="Yırtık" value={s.flexor.tear}/><RptRow label="Yırtık Detayı" value={s.flexor.tearDetail}/></>}
-<RptRow label="Karpal Tünel" value={s.flexor.carpalTunnel}/>
-<RptRow label="Median Sinir" value={s.flexor.medianNerve}/>
-{s.flexor.medianSize&&<RptRow label="Median AP Çap" value={s.flexor.medianSize+" mm"}/>}
-<RptRow label="Median Sinyal" value={s.flexor.medianSignal}/>
-<RptRow label="Sinir Düzleşmesi" value={s.flexor.medianFlat}/>
-<RptRow label="Retinakulum" value={s.flexor.retinac}/>
-{s.flexor.notes&&<RptRow label="Not" value={s.flexor.notes}/>}
+<RptSection title={T.rptSecFleksör}>
+<RptRow label={T.rrFDS} value={s.flexor.fds}/>
+<RptRow label={T.rrFDP} value={s.flexor.fdp}/>
+<RptRow label={T.rrFPL} value={s.flexor.fpl}/>
+<RptRow label={T.rrTeno} value={s.flexor.teno}/>
+<RptRow label={T.rrFluid} value={s.flexor.fluid}/>
+{s.flexor.tear!=="Yok"&&<><RptRow label={T.rrYirtik} value={s.flexor.tear}/><RptRow label={T.rrYirtikDetail} value={s.flexor.tearDetail}/></>}
+<RptRow label={T.rrKarpalTunel} value={s.flexor.carpalTunnel}/>
+<RptRow label={T.rrMedianSinir} value={s.flexor.medianNerve}/>
+{s.flexor.medianSize&&<RptRow label={T.rrMedianAP} value={s.flexor.medianSize+T.rrMedianAPUnit}/>}
+<RptRow label={T.rrMedianSig} value={s.flexor.medianSignal}/>
+<RptRow label={T.rrSinirDuz} value={s.flexor.medianFlat}/>
+<RptRow label={T.rrRetinakulum} value={s.flexor.retinac}/>
+{s.flexor.notes&&<RptRow label={T.rrNot} value={s.flexor.notes}/>}
 </RptSection>
 
-<RptSection title="■ EKSTANSÖR TENDONLAR">
-<RptRow label="1. Komp (APL/EPB)" value={s.extensor.comp1}/>
-{s.extensor.comp1Teno!=="Yok"&&<RptRow label="De Quervain" value={s.extensor.comp1Teno}/>}
-<RptRow label="2. Komp (ECRL/ECRB)" value={s.extensor.comp2}/>
-<RptRow label="3. Komp (EPL)" value={s.extensor.comp3}/>
-<RptRow label="4. Komp (EDC/EIP)" value={s.extensor.comp4}/>
-<RptRow label="5. Komp (EDM)" value={s.extensor.comp5}/>
-<RptRow label="6. Komp (ECU)" value={s.extensor.comp6}/>
-<RptRow label="Genel Tenosinovit" value={s.extensor.teno}/>
-{s.extensor.tear!=="Yok"&&<><RptRow label="Yırtık" value={s.extensor.tear}/><RptRow label="Yırtık Detayı" value={s.extensor.tearDetail}/></>}
-{s.extensor.notes&&<RptRow label="Not" value={s.extensor.notes}/>}
+<RptSection title={T.rptSecEktansör}>
+<RptRow label={T.rrComp1} value={s.extensor.comp1}/>
+{s.extensor.comp1Teno!=="Yok"&&<RptRow label={T.rrDeQuervain} value={s.extensor.comp1Teno}/>}
+<RptRow label={T.rrComp2} value={s.extensor.comp2}/>
+<RptRow label={T.rrComp3} value={s.extensor.comp3}/>
+<RptRow label={T.rrComp4} value={s.extensor.comp4}/>
+<RptRow label={T.rrComp5} value={s.extensor.comp5}/>
+<RptRow label={T.rrComp6} value={s.extensor.comp6}/>
+<RptRow label={T.rrGenTeno} value={s.extensor.teno}/>
+{s.extensor.tear!=="Yok"&&<><RptRow label={T.rrYirtik} value={s.extensor.tear}/><RptRow label={T.rrYirtikDetail} value={s.extensor.tearDetail}/></>}
+{s.extensor.notes&&<RptRow label={T.rrNot} value={s.extensor.notes}/>}
 </RptSection>
 
-<RptSection title="■ EKLEMLER & SİNOVYA">
-<RptRow label="Radiokarpal" value={s.joints.radiocarpal}/>
-<RptRow label="Radiokarpal Efüzyon" value={s.joints.radiocarpalEffusion}/>
-<RptRow label="Midkarpal" value={s.joints.midcarpal}/>
-<RptRow label="Midkarpal Efüzyon" value={s.joints.midcarpalEffusion}/>
-<RptRow label="CMC-1" value={s.joints.cmc1}/>
-<RptRow label="CMC Efüzyon" value={s.joints.cmc1Effusion}/>
-<RptRow label="MCP Eklemler" value={s.joints.mcpJoints}/>
-<RptRow label="PIP Eklemler" value={s.joints.pipJoints}/>
-<RptRow label="DIP Eklemler" value={s.joints.dipJoints}/>
-<RptRow label="Sinovyum" value={s.joints.synovium}/>
-<RptRow label="Sinoviyal Kontrastlanma" value={s.joints.synovialEnhance}/>
-<RptRow label="Pannus" value={s.joints.pannus}/>
-<RptRow label="Erozyon" value={s.joints.erosion}/>
-{s.joints.erosion!=="Yok"&&<RptRow label="Erozyon Lokalizasyonu" value={s.joints.erosionLoc}/>}
-<RptRow label="Serbest Cisim" value={s.joints.looseBodies}/>
-<RptRow label="Kıkırdak" value={s.joints.cartilage}/>
-<RptRow label="Osteofit" value={s.joints.osteophyte}/>
-{s.joints.notes&&<RptRow label="Not" value={s.joints.notes}/>}
+<RptSection title={T.rptSecEklem}>
+<RptRow label={T.rrRadiokarpal} value={s.joints.radiocarpal}/>
+<RptRow label={T.rrRCEfuz} value={s.joints.radiocarpalEffusion}/>
+<RptRow label={T.rrMidkarpal} value={s.joints.midcarpal}/>
+<RptRow label={T.rrMCEfuz} value={s.joints.midcarpalEffusion}/>
+<RptRow label={T.rrCMC1} value={s.joints.cmc1}/>
+<RptRow label={T.rrCMCEfuz} value={s.joints.cmc1Effusion}/>
+<RptRow label={T.rrMCP} value={s.joints.mcpJoints}/>
+<RptRow label={T.rrPIP} value={s.joints.pipJoints}/>
+<RptRow label={T.rrDIP} value={s.joints.dipJoints}/>
+<RptRow label={T.rrSinovyum} value={s.joints.synovium}/>
+<RptRow label={T.rrSinovEnhance} value={s.joints.synovialEnhance}/>
+<RptRow label={T.rrPannus} value={s.joints.pannus}/>
+<RptRow label={T.rrErozyon} value={s.joints.erosion}/>
+{s.joints.erosion!=="Yok"&&<RptRow label={T.rrErozyonLok} value={s.joints.erosionLoc}/>}
+<RptRow label={T.rrSerbest} value={s.joints.looseBodies}/>
+<RptRow label={T.rrKikirdak} value={s.joints.cartilage}/>
+<RptRow label={T.rrOsteofit} value={s.joints.osteophyte}/>
+{s.joints.notes&&<RptRow label={T.rrNot} value={s.joints.notes}/>}
 </RptSection>
 
-{s.lesions.length>0&&<RptSection title={"■ LEZYON(LAR) — "+s.lesions.length+" adet"}>
+{s.lesions.length>0&&<RptSection title={T.rptSecLezyon+s.lesions.length+T.rptSecLezyonSuffix}>
 {s.lesions.map((l,i)=><React.Fragment key={i}>
 <div className="rpt-row" style={{background:"rgba(0,180,216,.08)",fontWeight:700,color:"var(--accent)",fontSize:12}}>
-<div className="rpt-label">Lezyon #{i+1}</div><div className="rpt-val">{l.loc} {l.size&&("— "+l.size)}</div>
+<div className="rpt-label">{T.rptLezyon}{i+1}</div><div className="rpt-val">{l.loc} {l.size&&("— "+l.size)}</div>
 </div>
-<RptRow label="T1W" value={l.t1}/>
-<RptRow label="T2W" value={l.t2}/>
-<RptRow label="STIR" value={l.stir}/>
-<RptRow label="DWI" value={l.dwi}/>
-<RptRow label="ADC" value={l.adc}/>
-<RptRow label="Kontrast" value={l.contrast}/>
-<RptRow label="Sınır" value={l.margin}/>
-<RptRow label="İçerik" value={l.content}/>
-{l.notes&&<RptRow label="Not" value={l.notes}/>}
+<RptRow label={T.rrT1W} value={l.t1}/>
+<RptRow label={T.rrT2W} value={l.t2}/>
+<RptRow label={T.rrSTIR} value={l.stir}/>
+<RptRow label={T.rrDWI} value={l.dwi}/>
+<RptRow label={T.rrADC} value={l.adc}/>
+<RptRow label={T.rrKontrast} value={l.contrast}/>
+<RptRow label={T.rrSinir} value={l.margin}/>
+<RptRow label={T.rrIcerik} value={l.content}/>
+{l.notes&&<RptRow label={T.rrNot} value={l.notes}/>}
 </React.Fragment>)}
 </RptSection>}
 
-<RptSection title="■ VASKÜLER & NÖRAL">
-<RptRow label="Radial Arter" value={s.vascular.radialArt}/>
-<RptRow label="Ulnar Arter" value={s.vascular.ulnarArt}/>
-<RptRow label="Palmar Arkus" value={s.vascular.palmarArch}/>
-<RptRow label="Venöz Yapılar" value={s.vascular.veins}/>
-<RptRow label="Median Sinir" value={s.neural.medianNerve}/>
-<RptRow label="Ulnar Sinir" value={s.neural.ulnarNerve}/>
-<RptRow label="Ulnar (Guyon)" value={s.neural.ulnarNerveGuyon}/>
-<RptRow label="Radial Sinir" value={s.neural.radialNerve}/>
-{s.vascular.notes&&<RptRow label="Vasküler Not" value={s.vascular.notes}/>}
-{s.neural.notes&&<RptRow label="Nöral Not" value={s.neural.notes}/>}
+<RptSection title={T.rptSecVascNeur}>
+<RptRow label={T.rrRadialArt} value={s.vascular.radialArt}/>
+<RptRow label={T.rrUlnarArt} value={s.vascular.ulnarArt}/>
+<RptRow label={T.rrPalmarArk} value={s.vascular.palmarArch}/>
+<RptRow label={T.rrVenler} value={s.vascular.veins}/>
+<RptRow label={T.rrMedianSinirRpt} value={s.neural.medianNerve}/>
+<RptRow label={T.rrUlnarSinir} value={s.neural.ulnarNerve}/>
+<RptRow label={T.rrGuyonRpt} value={s.neural.ulnarNerveGuyon}/>
+<RptRow label={T.rrRadialSinir} value={s.neural.radialNerve}/>
+{s.vascular.notes&&<RptRow label={T.rrVascNot} value={s.vascular.notes}/>}
+{s.neural.notes&&<RptRow label={T.rrNeuralNot} value={s.neural.notes}/>}
 </RptSection>
 
-<RptSection title="■ EK BULGULAR">
-<RptRow label="Cilt / Yumuşak Doku" value={s.extra.skinSoftTissue}/>
-<RptRow label="Subkutan Doku" value={s.extra.subcutaneous}/>
-<RptRow label="Palmar Fasya" value={s.extra.palmarFascia}/>
-<RptRow label="Dupuytren" value={s.extra.dupuytren}/>
-<RptRow label="Lenf Nodları" value={s.extra.lymph}/>
-{s.extra.other&&<RptRow label="Diğer" value={s.extra.other}/>}
+<RptSection title={T.rptSecEk}>
+<RptRow label={T.rrCilt} value={s.extra.skinSoftTissue}/>
+<RptRow label={T.rrSubkutan} value={s.extra.subcutaneous}/>
+<RptRow label={T.rrPalmarFasya} value={s.extra.palmarFascia}/>
+<RptRow label={T.rrDupuytren} value={s.extra.dupuytren}/>
+<RptRow label={T.rrLenf} value={s.extra.lymph}/>
+{s.extra.other&&<RptRow label={T.rrDiger} value={s.extra.other}/>}
 </RptSection>
 
-{dx.length>0&&<RptSection title="■ AYIRICI TANI">
+{dx.length>0&&<RptSection title={T.rptSecAyirici}>
 {dx.map((d,i)=>{
 const color=d.pct>=60?"var(--danger)":d.pct>=30?"var(--warn)":"var(--success)";
 return(<div key={d.id} className="rpt-dx-row">
@@ -640,10 +1576,10 @@ return(<div key={d.id} className="rpt-dx-row">
 </RptSection>}
 
 <div className="rpt-conclusion">
-<strong>SONUÇ:</strong><br/>
-{dx.length>0?dx.slice(0,3).map((d,i)=><span key={d.id}>{i+1}. {d.name} (%{d.pct}) ile uyumlu bulgular.<br/></span>)
-:<span>İncelenen el ve el bileğinde belirgin patolojik sinyal değişikliği veya yapısal anomali saptanmamıştır.</span>}
-<br/>Klinik korelasyon önerilir.
+<strong>{T.rptSonuc}:</strong><br/>
+{dx.length>0?dx.slice(0,3).map((d,i)=><span key={d.id}>{i+1}. {d.name} (%{d.pct}){T.rptUyumlu}<br/></span>)
+:<span>{T.rptNormalSonuc}</span>}
+<br/>{T.rptKlinikKor}
 </div>
 </div>);
 };
@@ -652,66 +1588,66 @@ return(<div key={d.id} className="rpt-dx-row">
 const genPlainReport=()=>{
 const c=s.clin,t=s.tech,cp=s.carpalProx,cd=s.carpalDist;
 const L=(lbl,val)=>lbl+": "+val;
-let r=`EL VE EL BİLEĞİ MRG İNCELEME RAPORU\n${"═".repeat(48)}\n`;
-r+=`Tarih: ${new Date().toLocaleDateString("tr-TR")}\n`;
-r+=`Hasta: ${c.age} yaş, ${c.sex}, ${c.side} el bileği\n`;
-r+=`Endikasyon: ${c.indication||c.symptoms.join(", ")||"—"}\n`;
-r+=`Teknik: ${t.magnet}, ${t.coil}, ${t.sequences.join("/")}, ${t.plane}, Kontrast: ${t.contrast}\n\n`;
-r+=`BULGULAR\n${"─".repeat(48)}\n\n`;
-r+=`■ KEMİK YAPILAR\n`;
-r+=`  ${L("Radius Korteks",s.radius.cortex)}, ${L("Sinyal",s.radius.signal)}, ${L("Ödem",s.radius.odem)}\n`;
-if(s.radius.fractureLine!=="Yok") r+=`  Kırık Hattı: ${s.radius.fractureLine}\n`;
-r+=`  ${L("Ulna Sinyal",s.ulna.signal)}, ${L("Stiloid",s.ulna.stiloid)}, ${L("Stiloid Kırığı",s.ulna.stiloidFx)}\n`;
-r+=`  ${L("Skafoid",cp.scaphoid_signal)}, ${L("Morfoloji",cp.scaphoid_morph)}, ${L("Ödem",cp.scaphoid_odem)}\n`;
-if(cp.scaphoid_fx!=="Yok") r+=`  Skafoid Kırık: ${cp.scaphoid_fx}\n`;
-if(cp.scaphoid_avn!=="Yok") r+=`  Skafoid AVN: ${cp.scaphoid_avn}\n`;
-r+=`  ${L("Lunat",cp.lunate_signal)}, ${L("Morfoloji",cp.lunate_morph)}, ${L("Ödem",cp.lunate_odem)}\n`;
-if(cp.lunate_collapse!=="Yok") r+=`  Lunat Kollaps: ${cp.lunate_collapse}\n`;
-r+=`  ${L("Trikuetrum",cp.triquetrum_signal)}, ${L("Pisiform",cp.pisiform_signal)}\n`;
-r+=`  ${L("Trapezium",cd.trapezium_signal)}, ${L("Trapezoid",cd.trapezoid_signal)}, ${L("Kapitat",cd.capitate_signal)}\n`;
-r+=`  ${L("Hamat",cd.hamate_signal)}, ${L("Kanca",cd.hamate_hook)}\n`;
-if(cd.hamate_hookFx!=="Yok") r+=`  Kanca Kırığı: ${cd.hamate_hookFx}\n`;
-r+=`  ${L("Metakarp/Falanks Sinyal",s.metacarp.signal)}, ${L("Kırık",s.metacarp.fracture)}\n\n`;
-r+=`■ TFCC\n`;
-r+=`  ${L("Morfoloji",s.tfcc.morph)}, ${L("Sinyal",s.tfcc.signal)}, ${L("Yırtık",s.tfcc.tear)}\n`;
-if(s.tfcc.tear!=="Yok") r+=`  ${L("Tip",s.tfcc.tearType)}, ${L("Lok.",s.tfcc.tearLoc)}${s.tfcc.palmerClass?(", Palmer: "+s.tfcc.palmerClass):""}\n`;
-r+=`  ${L("Disk",s.tfcc.disc)}\n\n`;
-r+=`■ LİGAMENTLER\n`;
-r+=`  SL: ${s.slLig.integrity}, ${L("Sinyal",s.slLig.signal)}, ${L("Gap",s.slLig.gap)}\n`;
-r+=`  LT: ${s.ltLig.integrity}, ${L("Sinyal",s.ltLig.signal)}, ${L("Gap",s.ltLig.gap)}\n`;
-r+=`  Ekstrinsik: ${L("Dorsal",s.extrLig.dorsal)}, ${L("Volar",s.extrLig.volar)}\n\n`;
-r+=`■ DRUJ\n`;
-r+=`  ${L("Kongrüite",s.druj.congruity)}, ${L("Subluksasyon",s.druj.subluxation)}, ${L("Efüzyon",s.druj.effusion)}\n\n`;
-r+=`■ FLEKSÖR TENDONLAR & KARPAL TÜNEL\n`;
-r+=`  ${L("FDS",s.flexor.fds)}, ${L("FDP",s.flexor.fdp)}, ${L("FPL",s.flexor.fpl)}\n`;
-r+=`  ${L("Tenosinovit",s.flexor.teno)}, ${L("Sıvı",s.flexor.fluid)}\n`;
-if(s.flexor.tear!=="Yok") r+=`  Yırtık: ${s.flexor.tear} — ${s.flexor.tearDetail}\n`;
-r+=`  ${L("Karpal Tünel",s.flexor.carpalTunnel)}, ${L("Median Sinir",s.flexor.medianNerve)}${s.flexor.medianSize?(", AP: "+s.flexor.medianSize+"mm"):""}\n`;
-r+=`  ${L("Retinakulum",s.flexor.retinac)}\n\n`;
-r+=`■ EKSTANSÖR TENDONLAR\n`;
-r+=`  1.K: ${s.extensor.comp1}${s.extensor.comp1Teno!=="Yok"?" (De Quervain: "+s.extensor.comp1Teno+")":""}, 2.K: ${s.extensor.comp2}, 3.K: ${s.extensor.comp3}\n`;
-r+=`  4.K: ${s.extensor.comp4}, 5.K: ${s.extensor.comp5}, 6.K: ${s.extensor.comp6}\n`;
-if(s.extensor.tear!=="Yok") r+=`  Yırtık: ${s.extensor.tear} — ${s.extensor.tearDetail}\n`;
-r+=`\n■ EKLEMLER & SİNOVYA\n`;
-r+=`  ${L("Radiokarpal",s.joints.radiocarpal)}, ${L("Efüzyon",s.joints.radiocarpalEffusion)}\n`;
-r+=`  ${L("Midkarpal",s.joints.midcarpal)}, ${L("CMC-1",s.joints.cmc1)}\n`;
-r+=`  ${L("MCP",s.joints.mcpJoints)}, ${L("PIP",s.joints.pipJoints)}, ${L("DIP",s.joints.dipJoints)}\n`;
-r+=`  ${L("Sinovyum",s.joints.synovium)}, ${L("Kontrastlanma",s.joints.synovialEnhance)}, ${L("Pannus",s.joints.pannus)}\n`;
-r+=`  ${L("Erozyon",s.joints.erosion)}${s.joints.erosionLoc?(", "+s.joints.erosionLoc):""}\n`;
-r+=`  ${L("Serbest Cisim",s.joints.looseBodies)}, ${L("Kıkırdak",s.joints.cartilage)}, ${L("Osteofit",s.joints.osteophyte)}\n\n`;
-if(s.lesions.length>0){r+=`■ LEZYONLAR\n`;s.lesions.forEach((l,i)=>{r+=`  Lezyon #${i+1}: ${l.loc} (${l.size||"—"})\n    T1:${l.t1||"—"} T2:${l.t2||"—"} STIR:${l.stir||"—"} DWI:${l.dwi||"—"} ADC:${l.adc||"—"}\n    Kontrast:${l.contrast||"—"} Sınır:${l.margin||"—"} İçerik:${l.content||"—"}\n`});r+=`\n`}
-r+=`■ VASKÜLER & NÖRAL\n`;
-r+=`  ${L("Radial A.",s.vascular.radialArt)}, ${L("Ulnar A.",s.vascular.ulnarArt)}, ${L("Palmar Arkus",s.vascular.palmarArch)}\n`;
-r+=`  ${L("Median N.",s.neural.medianNerve)}, ${L("Ulnar N.",s.neural.ulnarNerve)}, ${L("Guyon",s.neural.ulnarNerveGuyon)}\n\n`;
-r+=`■ EK BULGULAR\n`;
-r+=`  ${L("Cilt/YD",s.extra.skinSoftTissue)}, ${L("Palmar Fasya",s.extra.palmarFascia)}, ${L("Dupuytren",s.extra.dupuytren)}\n\n`;
-r+=`AYIRICI TANI\n${"─".repeat(48)}\n`;
-if(dx.length===0) r+=`  Belirgin patolojik bulgu saptanmamıştır.\n`;
+let r=`${T.ptTitle}\n${"═".repeat(48)}\n`;
+r+=`${T.ptTarih}: ${new Date().toLocaleDateString(RV_LOCALE==='en'?'en-GB':'tr-TR')}\n`;
+r+=`${T.ptHasta}: ${c.age}${T.ptYas}${c.sex}, ${c.side}${T.ptElBilegi}\n`;
+r+=`${T.ptEndikasyon}: ${c.indication||c.symptoms.join(", ")||"—"}\n`;
+r+=`${T.ptTeknikLbl}: ${t.magnet}, ${t.coil}, ${t.sequences.join("/")}, ${t.plane}, ${T.ptKontrastLbl}: ${t.contrast}\n\n`;
+r+=`${T.ptBulgular}\n${"─".repeat(48)}\n\n`;
+r+=`${T.ptKemik}\n`;
+r+=`  ${L(T.rrRadiusKorteks,s.radius.cortex)}, ${L(T.rrRadiusSinyal,s.radius.signal)}, ${L(T.rrRadiusOdem,s.radius.odem)}\n`;
+if(s.radius.fractureLine!=="Yok") r+=`${T.ptFxHatti}: ${s.radius.fractureLine}\n`;
+r+=`  ${L(T.rrUlnaSinyal,s.ulna.signal)}, ${L(T.rrUlnaSiloid,s.ulna.stiloid)}, ${L(T.rrSiloidKirik,s.ulna.stiloidFx)}\n`;
+r+=`  ${L(T.rrSkafoidSig,cp.scaphoid_signal)}, ${L(T.rrSkafoidMorf,cp.scaphoid_morph)}, ${L(T.rrSkafoidOdem,cp.scaphoid_odem)}\n`;
+if(cp.scaphoid_fx!=="Yok") r+=`${T.ptSkafoidKirik}: ${cp.scaphoid_fx}\n`;
+if(cp.scaphoid_avn!=="Yok") r+=`${T.ptAvn}: ${cp.scaphoid_avn}\n`;
+r+=`  ${L(T.rrLunatSig,cp.lunate_signal)}, ${L(T.rrLunatMorf,cp.lunate_morph)}, ${L(T.rrLunatOdem,cp.lunate_odem)}\n`;
+if(cp.lunate_collapse!=="Yok") r+=`${T.ptLunatKollaps}: ${cp.lunate_collapse}\n`;
+r+=`  ${L(T.rrTriqSig,cp.triquetrum_signal)}, ${L(T.rrPisiSig,cp.pisiform_signal)}\n`;
+r+=`  ${L(T.rrTrapezium,cd.trapezium_signal)}, ${L(T.rrTrapezoid,cd.trapezoid_signal)}, ${L(T.rrKapitat,cd.capitate_signal)}\n`;
+r+=`  ${L(T.rrHamatSig,cd.hamate_signal)}, ${L(T.rrHamatKanca,cd.hamate_hook)}\n`;
+if(cd.hamate_hookFx!=="Yok") r+=`${T.ptKancaKirik}: ${cd.hamate_hookFx}\n`;
+r+=`${T.ptMetakarpKirik}: ${s.metacarp.signal}, ${L(T.rrMetKirik,s.metacarp.fracture)}\n\n`;
+r+=`${T.ptTFCC}\n`;
+r+=`  ${L(T.rrTfccMorf,s.tfcc.morph)}, ${L(T.rrTfccSig,s.tfcc.signal)}, ${L(T.rrTfccYirtik,s.tfcc.tear)}\n`;
+if(s.tfcc.tear!=="Yok") r+=`${T.ptTfccTearDetail}: ${s.tfcc.tearType}, ${T.ptTfccLok} ${s.tfcc.tearLoc}${s.tfcc.palmerClass?(", "+T.ptTfccPalmerLbl+": "+s.tfcc.palmerClass):""}\n`;
+r+=`  ${L(T.ptDisk,s.tfcc.disc)}\n\n`;
+r+=`${T.ptLigament}\n`;
+r+=`  ${T.ptSL}: ${s.slLig.integrity}, ${L(T.rrSLSig,s.slLig.signal)}, ${L(T.rrSLAralik,s.slLig.gap)}\n`;
+r+=`  ${T.ptLT}: ${s.ltLig.integrity}, ${L(T.rrLTSig,s.ltLig.signal)}, ${L(T.rrLTAralik,s.ltLig.gap)}\n`;
+r+=`  ${T.ptEkstrinsik}: ${L(T.ptDorsal,s.extrLig.dorsal)}, ${L(T.ptVolar,s.extrLig.volar)}\n\n`;
+r+=`${T.ptDRUJ}\n`;
+r+=`  ${L(T.ptKongrüite,s.druj.congruity)}, ${L(T.ptSubluks,s.druj.subluxation)}, ${L(T.ptEfuz,s.druj.effusion)}\n\n`;
+r+=`${T.ptFleksör}\n`;
+r+=`  ${L(T.ptFDS,s.flexor.fds)}, ${L(T.ptFDP,s.flexor.fdp)}, ${L(T.ptFPL,s.flexor.fpl)}\n`;
+r+=`  ${L(T.ptTeno,s.flexor.teno)}, ${L(T.ptFluid,s.flexor.fluid)}\n`;
+if(s.flexor.tear!=="Yok") r+=`${T.ptFxYirtik}: ${s.flexor.tear} — ${s.flexor.tearDetail}\n`;
+r+=`  ${L(T.ptKarpalTunel,s.flexor.carpalTunnel)}, ${L(T.ptMedianSinir,s.flexor.medianNerve)}${s.flexor.medianSize?(", AP: "+s.flexor.medianSize+T.ptAPUnit):""}\n`;
+r+=`  ${L(T.ptRetinakulum,s.flexor.retinac)}\n\n`;
+r+=`${T.ptEktansör}\n`;
+r+=`  ${T.pt1K}: ${s.extensor.comp1}${s.extensor.comp1Teno!=="Yok"?T.ptDeQuervain+s.extensor.comp1Teno+")":""}, ${T.pt2K}: ${s.extensor.comp2}, ${T.pt3K}: ${s.extensor.comp3}\n`;
+r+=`  ${T.pt4K}: ${s.extensor.comp4}, ${T.pt5K}: ${s.extensor.comp5}, ${T.pt6K}: ${s.extensor.comp6}\n`;
+if(s.extensor.tear!=="Yok") r+=`${T.ptFxYirtik}: ${s.extensor.tear} — ${s.extensor.tearDetail}\n`;
+r+=`\n${T.ptEklem}\n`;
+r+=`  ${L(T.ptRadiokarpal,s.joints.radiocarpal)}, ${L(T.ptRCEfuz,s.joints.radiocarpalEffusion)}\n`;
+r+=`  ${L(T.ptMidkarpal,s.joints.midcarpal)}, ${L(T.ptCMC1,s.joints.cmc1)}\n`;
+r+=`  ${L(T.ptMCPJoints,s.joints.mcpJoints)}, ${L(T.ptPIPJoints,s.joints.pipJoints)}, ${L(T.ptDIPJoints,s.joints.dipJoints)}\n`;
+r+=`  ${L(T.ptSinovyum,s.joints.synovium)}, ${L(T.ptKontrast2,s.joints.synovialEnhance)}, ${L(T.ptPannus,s.joints.pannus)}\n`;
+r+=`  ${L(T.ptErozyon,s.joints.erosion)}${s.joints.erosionLoc?(", "+s.joints.erosionLoc):""}\n`;
+r+=`  ${L(T.ptSerbest,s.joints.looseBodies)}, ${L(T.ptKikirdak,s.joints.cartilage)}, ${L(T.ptOsteofit,s.joints.osteophyte)}\n\n`;
+if(s.lesions.length>0){r+=`${T.ptLezyonlar}\n`;s.lesions.forEach((l,i)=>{r+=`${T.ptLezyon}${i+1}: ${l.loc} (${l.size||"—"})\n    T1:${l.t1||"—"} T2:${l.t2||"—"} STIR:${l.stir||"—"} DWI:${l.dwi||"—"} ADC:${l.adc||"—"}\n    ${T.rrKontrast}:${l.contrast||"—"} ${T.rrSinir}:${l.margin||"—"} ${T.rrIcerik}:${l.content||"—"}\n`});r+=`\n`}
+r+=`${T.ptVascNeur}\n`;
+r+=`  ${L(T.ptRadialA,s.vascular.radialArt)}, ${L(T.ptUlnarA,s.vascular.ulnarArt)}, ${L(T.ptPalmarArkus,s.vascular.palmarArch)}\n`;
+r+=`  ${L(T.ptMedianN,s.neural.medianNerve)}, ${L(T.ptUlnarN,s.neural.ulnarNerve)}, ${L(T.ptGuyon,s.neural.ulnarNerveGuyon)}\n\n`;
+r+=`${T.ptEk}\n`;
+r+=`  ${L(T.ptCilt,s.extra.skinSoftTissue)}, ${L(T.ptPalmarFasya,s.extra.palmarFascia)}, ${L(T.ptDupuytrenLbl,s.extra.dupuytren)}\n\n`;
+r+=`${T.ptAyirici}\n${"─".repeat(48)}\n`;
+if(dx.length===0) r+=`${T.ptNoPat}\n`;
 else dx.forEach((d,i)=>{r+=`  ${i+1}. ${d.name} — %${d.pct}\n`});
-r+=`\nSONUÇ\n${"─".repeat(48)}\n`;
-if(dx.length>0) r+=dx.slice(0,3).map((d,i)=>`${i+1}. ${d.name} (%${d.pct}) ile uyumlu bulgular.`).join("\n")+"\n";
-else r+=`İncelenen el ve el bileğinde belirgin patolojik sinyal değişikliği veya yapısal anomali saptanmamıştır.\n`;
-r+=`\nKlinik korelasyon önerilir.\n`;
+r+=`\n${T.ptSonuc}\n${"─".repeat(48)}\n`;
+if(dx.length>0) r+=dx.slice(0,3).map((d,i)=>`${i+1}. ${d.name} (%${d.pct})${T.ptUyumlu}`).join("\n")+"\n";
+else r+=`${T.ptNormalResult}\n`;
+r+=`\n${T.ptKlinikKor}\n`;
 return r;
 };
 
@@ -721,7 +1657,7 @@ const overlayRef=useRef(null);
 const copyReport=()=>{
 const r=genPlainReport();
 if(navigator.clipboard&&navigator.clipboard.writeText){
-navigator.clipboard.writeText(r).then(()=>showToast("Rapor kopyalandı!")).catch(()=>setShowOverlay(true));
+navigator.clipboard.writeText(r).then(()=>showToast(T.toastCopied)).catch(()=>setShowOverlay(true));
 }else{setShowOverlay(true)}
 };
 const downloadReport=()=>{
@@ -732,310 +1668,310 @@ const url=URL.createObjectURL(blob);
 const a=document.createElement("a");a.href=url;a.download="el_bilek_mri_rapor.txt";
 document.body.appendChild(a);a.click();document.body.removeChild(a);
 setTimeout(()=>URL.revokeObjectURL(url),100);
-showToast("İndirildi!");
+showToast(T.toastDownloaded);
 }catch(e){setShowOverlay(true)}
 };
 const selectAllOverlay=()=>{
-if(overlayRef.current){overlayRef.current.select();overlayRef.current.focus();showToast("Tümü seçildi — Ctrl+C ile kopyalayın")}
+if(overlayRef.current){overlayRef.current.select();overlayRef.current.focus();showToast(T.toastSelectAll)}
 };
 
 /* ───────── STEP RENDERERS ───────── */
 const renderStep=()=>{
 switch(step){
 case 0: return(<div>
-<div className="step-title">🩺 Klinik Bilgi</div>
-<div className="step-sub">Hasta demografik ve klinik verileri</div>
+<div className="step-title">{T.s0Title}</div>
+<div className="step-sub">{T.s0Sub}</div>
 <div className="row">
-<F label="Yaş"><Inp value={s.clin.age} onChange={v=>upd("clin","age",v)} placeholder="Yaş" type="number"/></F>
-<F label="Cinsiyet"><Radio options={["Erkek","Kadın"]} value={s.clin.sex} onChange={v=>upd("clin","sex",v)}/></F>
-<F label="Taraf"><Radio options={["Sağ","Sol","Bilateral"]} value={s.clin.side} onChange={v=>upd("clin","side",v)}/></F>
+<F label={T.lAge}><Inp value={s.clin.age} onChange={v=>upd("clin","age",v)} placeholder={T.lAge} type="number"/></F>
+<F label={T.lSex}><Radio options={["Erkek","Kadın"]} value={s.clin.sex} onChange={v=>upd("clin","sex",v)}/></F>
+<F label={T.lSide}><Radio options={["Sağ","Sol","Bilateral"]} value={s.clin.side} onChange={v=>upd("clin","side",v)}/></F>
 </div>
-<F label="Semptomlar"><Check options={["Ağrı","Şişlik","Hareket kısıtlılığı","Uyuşma","Travma","Gece ağrısı","Radial ağrı","Ulnar ağrı","Ateş","Krepitasyon","Tetik fenomeni","Güçsüzlük","Kontraktür"]} value={s.clin.symptoms} onChange={v=>upd("clin","symptoms",v)}/></F>
-<F label="Özgeçmiş"><Check options={["RA","Gut","Psöriazis","DM","Travma öyküsü","Cerrahi öyküsü","Malignite","Enfeksiyon","Dupuytren ailevi"]} value={s.clin.history} onChange={v=>upd("clin","history",v)}/></F>
-<F label="Endikasyon"><Txt value={s.clin.indication} onChange={v=>upd("clin","indication",v)} placeholder="İstek nedeni"/></F>
+<F label={T.lSymptoms}><Check options={["Ağrı","Şişlik","Hareket kısıtlılığı","Uyuşma","Travma","Gece ağrısı","Radial ağrı","Ulnar ağrı","Ateş","Krepitasyon","Tetik fenomeni","Güçsüzlük","Kontraktür"]} value={s.clin.symptoms} onChange={v=>upd("clin","symptoms",v)}/></F>
+<F label={T.lHistory}><Check options={["RA","Gut","Psöriazis","DM","Travma öyküsü","Cerrahi öyküsü","Malignite","Enfeksiyon","Dupuytren ailevi"]} value={s.clin.history} onChange={v=>upd("clin","history",v)}/></F>
+<F label={T.lIndication}><Txt value={s.clin.indication} onChange={v=>upd("clin","indication",v)} placeholder={T.lIndicationPh}/></F>
 </div>);
 
 case 1: return(<div>
-<div className="step-title">⚙️ Teknik Parametreler</div>
-<div className="step-sub">Cihaz ve sekans bilgileri</div>
+<div className="step-title">{T.s1Title}</div>
+<div className="step-sub">{T.s1Sub}</div>
 <div className="row">
-<F label="Manyetik Alan"><Radio options={["1.5T","3T"]} value={s.tech.magnet} onChange={v=>upd("tech","magnet",v)}/></F>
-<F label="Koil"><Inp value={s.tech.coil} onChange={v=>upd("tech","coil",v)}/></F>
+<F label={T.lMagnet}><Radio options={["1.5T","3T"]} value={s.tech.magnet} onChange={v=>upd("tech","magnet",v)}/></F>
+<F label={T.lCoil}><Inp value={s.tech.coil} onChange={v=>upd("tech","coil",v)}/></F>
 </div>
-<F label="Sekanslar"><Check options={["T1W","T2W","PD-FS","STIR","T1W+C","T2*","DWI","3D-DESS","MR Artrografi"]} value={s.tech.sequences} onChange={v=>upd("tech","sequences",v)}/></F>
+<F label={T.lSequences}><Check options={["T1W","T2W","PD-FS","STIR","T1W+C","T2*","DWI","3D-DESS","MR Artrografi"]} value={s.tech.sequences} onChange={v=>upd("tech","sequences",v)}/></F>
 <div className="row">
-<F label="Plan"><Inp value={s.tech.plane} onChange={v=>upd("tech","plane",v)}/></F>
-<F label="Kontrast"><Radio options={["Var","Yok"]} value={s.tech.contrast} onChange={v=>upd("tech","contrast",v)}/></F>
+<F label={T.lPlane}><Inp value={s.tech.plane} onChange={v=>upd("tech","plane",v)}/></F>
+<F label={T.lContrast}><Radio options={["Var","Yok"]} value={s.tech.contrast} onChange={v=>upd("tech","contrast",v)}/></F>
 </div>
-{s.tech.contrast==="Var"&&<F label="Kontrast Notu"><Inp value={s.tech.contrastNote} onChange={v=>upd("tech","contrastNote",v)} placeholder="Kontrast madde detayı"/></F>}
+{s.tech.contrast==="Var"&&<F label={T.lContrastNote}><Inp value={s.tech.contrastNote} onChange={v=>upd("tech","contrastNote",v)} placeholder={T.lContrastNotePh}/></F>}
 </div>);
 
 case 2: return(<div>
-<div className="step-title">🦴 Distal Radius & Ulna</div>
-<div className="step-sub">Distal radius ve ulna kemik yapıları</div>
-<div className="section-hdr">Distal Radius</div>
+<div className="step-title">{T.s2Title}</div>
+<div className="step-sub">{T.s2Sub}</div>
+<div className="section-hdr">{T.shDistalRadius}</div>
 <div className="row">
-<F label="Korteks"><Radio options={["Normal","Düzensiz","İncelmiş","Kırık hattı"]} value={s.radius.cortex} onChange={v=>upd("radius","cortex",v)}/></F>
-<F label="Kemik Sinyal"><Radio options={["Normal","Heterojen","Hipointens (T1)","Hiperintens (T2/STIR)"]} value={s.radius.signal} onChange={v=>upd("radius","signal",v)}/></F>
+<F label={T.lCortex}><Radio options={["Normal","Düzensiz","İncelmiş","Kırık hattı"]} value={s.radius.cortex} onChange={v=>upd("radius","cortex",v)}/></F>
+<F label={T.lBoneSig}><Radio options={["Normal","Heterojen","Hipointens (T1)","Hiperintens (T2/STIR)"]} value={s.radius.signal} onChange={v=>upd("radius","signal",v)}/></F>
 </div>
 <div className="row">
-<F label="Kemik İliği Ödemi"><Radio options={["Yok","Fokal","Diffüz"]} value={s.radius.odem} onChange={v=>upd("radius","odem",v)}/></F>
-<F label="Kırık Hattı"><Radio options={["Yok","Mevcut - non-deplase","Mevcut - deplase","Stres kırığı"]} value={s.radius.fractureLine} onChange={v=>upd("radius","fractureLine",v)}/></F>
+<F label={T.lMarrowEdema}><Radio options={["Yok","Fokal","Diffüz"]} value={s.radius.odem} onChange={v=>upd("radius","odem",v)}/></F>
+<F label={T.lFractureLine}><Radio options={["Yok","Mevcut - non-deplase","Mevcut - deplase","Stres kırığı"]} value={s.radius.fractureLine} onChange={v=>upd("radius","fractureLine",v)}/></F>
 </div>
-<F label="Deformite"><Radio options={["Yok","Dorsal tilt","Volar tilt","Radial inklinasyon kaybı"]} value={s.radius.deformity} onChange={v=>upd("radius","deformity",v)}/></F>
-<F label="Not"><Txt value={s.radius.notes} onChange={v=>upd("radius","notes",v)}/></F>
+<F label={T.lDeformity}><Radio options={["Yok","Dorsal tilt","Volar tilt","Radial inklinasyon kaybı"]} value={s.radius.deformity} onChange={v=>upd("radius","deformity",v)}/></F>
+<F label={T.lNotes}><Txt value={s.radius.notes} onChange={v=>upd("radius","notes",v)}/></F>
 
-<div className="section-hdr">Distal Ulna</div>
+<div className="section-hdr">{T.shDistalUlna}</div>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Anormal"]} value={s.ulna.signal} onChange={v=>upd("ulna","signal",v)}/></F>
-<F label="Stiloid"><Radio options={["Normal","Düzensiz","Fragmante"]} value={s.ulna.stiloid} onChange={v=>upd("ulna","stiloid",v)}/></F>
+<F label={T.lSignal}><Radio options={["Normal","Anormal"]} value={s.ulna.signal} onChange={v=>upd("ulna","signal",v)}/></F>
+<F label={T.lSiloid}><Radio options={["Normal","Düzensiz","Fragmante"]} value={s.ulna.stiloid} onChange={v=>upd("ulna","stiloid",v)}/></F>
 </div>
 <div className="row">
-<F label="Stiloid Kırığı"><Radio options={["Yok","Tip 1 (uç)","Tip 2 (taban)"]} value={s.ulna.stiloidFx} onChange={v=>upd("ulna","stiloidFx",v)}/></F>
-<F label="Ödem"><Radio options={["Yok","Var"]} value={s.ulna.odem} onChange={v=>upd("ulna","odem",v)}/></F>
+<F label={T.lSiloidFx}><Radio options={["Yok","Tip 1 (uç)","Tip 2 (taban)"]} value={s.ulna.stiloidFx} onChange={v=>upd("ulna","stiloidFx",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Var"]} value={s.ulna.odem} onChange={v=>upd("ulna","odem",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.ulna.notes} onChange={v=>upd("ulna","notes",v)}/></F>
+<F label={T.lNotesUlna}><Txt value={s.ulna.notes} onChange={v=>upd("ulna","notes",v)}/></F>
 </div>);
 
 case 3: return(<div>
-<div className="step-title">🦴 Karpal Kemikler — Proksimal Sıra</div>
-<div className="step-sub">Skafoid, Lunat, Trikuetrum, Pisiform</div>
-<div className="section-hdr">Skafoid</div>
+<div className="step-title">{T.s3Title}</div>
+<div className="step-sub">{T.s3Sub}</div>
+<div className="section-hdr">{T.shSkafoid}</div>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Hipointens (T1)","Hiperintens (T2)","Heterojen"]} value={s.carpalProx.scaphoid_signal} onChange={v=>upd("carpalProx","scaphoid_signal",v)}/></F>
-<F label="Morfoloji"><Radio options={["Normal","Silinmiş bel","Humpback deformite","Fragmante"]} value={s.carpalProx.scaphoid_morph} onChange={v=>upd("carpalProx","scaphoid_morph",v)}/></F>
+<F label={T.lSignal}><Radio options={["Normal","Hipointens (T1)","Hiperintens (T2)","Heterojen"]} value={s.carpalProx.scaphoid_signal} onChange={v=>upd("carpalProx","scaphoid_signal",v)}/></F>
+<F label={T.lMorphology}><Radio options={["Normal","Silinmiş bel","Humpback deformite","Fragmante"]} value={s.carpalProx.scaphoid_morph} onChange={v=>upd("carpalProx","scaphoid_morph",v)}/></F>
 </div>
 <div className="row">
-<F label="Ödem"><Radio options={["Yok","Fokal","Diffüz","Proksimal pol"]} value={s.carpalProx.scaphoid_odem} onChange={v=>upd("carpalProx","scaphoid_odem",v)}/></F>
-<F label="Kırık"><Radio options={["Yok","Bel kırığı","Proksimal pol","Distal pol","Tüberositede","Okkült kırık"]} value={s.carpalProx.scaphoid_fx} onChange={v=>upd("carpalProx","scaphoid_fx",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Fokal","Diffüz","Proksimal pol"]} value={s.carpalProx.scaphoid_odem} onChange={v=>upd("carpalProx","scaphoid_odem",v)}/></F>
+<F label={T.lFracture}><Radio options={["Yok","Bel kırığı","Proksimal pol","Distal pol","Tüberositede","Okkült kırık"]} value={s.carpalProx.scaphoid_fx} onChange={v=>upd("carpalProx","scaphoid_fx",v)}/></F>
 </div>
-<F label="AVN Bulgusu"><Radio options={["Yok","Şüpheli","Kesin (T1 düşük + kontrastlanma yok)"]} value={s.carpalProx.scaphoid_avn} onChange={v=>upd("carpalProx","scaphoid_avn",v)}/></F>
+<F label={T.rrSkafoidAVN}><Radio options={["Yok","Şüpheli","Kesin (T1 düşük + kontrastlanma yok)"]} value={s.carpalProx.scaphoid_avn} onChange={v=>upd("carpalProx","scaphoid_avn",v)}/></F>
 
-<div className="section-hdr">Lunat</div>
+<div className="section-hdr">{T.shLunat}</div>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Hipointens (T1)","Hiperintens (T2)","Heterojen","Yaygın düşük sinyal"]} value={s.carpalProx.lunate_signal} onChange={v=>upd("carpalProx","lunate_signal",v)}/></F>
-<F label="Morfoloji"><Radio options={["Normal","Düzleşme","Parsiyel kollaps","Total kollaps"]} value={s.carpalProx.lunate_morph} onChange={v=>upd("carpalProx","lunate_morph",v)}/></F>
+<F label={T.lSignal}><Radio options={["Normal","Hipointens (T1)","Hiperintens (T2)","Heterojen","Yaygın düşük sinyal"]} value={s.carpalProx.lunate_signal} onChange={v=>upd("carpalProx","lunate_signal",v)}/></F>
+<F label={T.lMorphology}><Radio options={["Normal","Düzleşme","Parsiyel kollaps","Total kollaps"]} value={s.carpalProx.lunate_morph} onChange={v=>upd("carpalProx","lunate_morph",v)}/></F>
 </div>
 <div className="row">
-<F label="Ödem"><Radio options={["Yok","Fokal","Diffüz"]} value={s.carpalProx.lunate_odem} onChange={v=>upd("carpalProx","lunate_odem",v)}/></F>
-<F label="Kollaps"><Radio options={["Yok","Lichtman II","Lichtman IIIA","Lichtman IIIB","Lichtman IV"]} value={s.carpalProx.lunate_collapse} onChange={v=>upd("carpalProx","lunate_collapse",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Fokal","Diffüz"]} value={s.carpalProx.lunate_odem} onChange={v=>upd("carpalProx","lunate_odem",v)}/></F>
+<F label={T.rrLunatKollaps}><Radio options={["Yok","Lichtman II","Lichtman IIIA","Lichtman IIIB","Lichtman IV"]} value={s.carpalProx.lunate_collapse} onChange={v=>upd("carpalProx","lunate_collapse",v)}/></F>
 </div>
-<F label="Fragmantasyon"><Radio options={["Yok","Var"]} value={s.carpalProx.lunate_fragman} onChange={v=>upd("carpalProx","lunate_fragman",v)}/></F>
+<F label={T.rrLunatFragman}><Radio options={["Yok","Var"]} value={s.carpalProx.lunate_fragman} onChange={v=>upd("carpalProx","lunate_fragman",v)}/></F>
 
-<div className="section-hdr">Trikuetrum & Pisiform</div>
+<div className="section-hdr">{T.shTrikPis}</div>
 <div className="row">
-<F label="Trikuetrum Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalProx.triquetrum_signal} onChange={v=>upd("carpalProx","triquetrum_signal",v)}/></F>
-<F label="Trikuetrum Ödem"><Radio options={["Yok","Var"]} value={s.carpalProx.triquetrum_odem} onChange={v=>upd("carpalProx","triquetrum_odem",v)}/></F>
+<F label={T.rrTriqSig}><Radio options={["Normal","Anormal"]} value={s.carpalProx.triquetrum_signal} onChange={v=>upd("carpalProx","triquetrum_signal",v)}/></F>
+<F label={T.rrTriqOdem}><Radio options={["Yok","Var"]} value={s.carpalProx.triquetrum_odem} onChange={v=>upd("carpalProx","triquetrum_odem",v)}/></F>
 </div>
 <div className="row">
-<F label="Pisiform Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalProx.pisiform_signal} onChange={v=>upd("carpalProx","pisiform_signal",v)}/></F>
-<F label="Pisiform Ödem"><Radio options={["Yok","Var"]} value={s.carpalProx.pisiform_odem} onChange={v=>upd("carpalProx","pisiform_odem",v)}/></F>
+<F label={T.rrPisiSig}><Radio options={["Normal","Anormal"]} value={s.carpalProx.pisiform_signal} onChange={v=>upd("carpalProx","pisiform_signal",v)}/></F>
+<F label={T.rrPisiOdem}><Radio options={["Yok","Var"]} value={s.carpalProx.pisiform_odem} onChange={v=>upd("carpalProx","pisiform_odem",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.carpalProx.notes} onChange={v=>upd("carpalProx","notes",v)}/></F>
+<F label={T.lNotes}><Txt value={s.carpalProx.notes} onChange={v=>upd("carpalProx","notes",v)}/></F>
 </div>);
 
 case 4: return(<div>
-<div className="step-title">🦴 Karpal Kemikler — Distal Sıra</div>
-<div className="step-sub">Trapezium, Trapezoid, Kapitat, Hamat</div>
+<div className="step-title">{T.s4Title}</div>
+<div className="step-sub">{T.s4Sub}</div>
 <div className="row">
-<F label="Trapezium Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalDist.trapezium_signal} onChange={v=>upd("carpalDist","trapezium_signal",v)}/></F>
-<F label="Trapezium Ödem"><Radio options={["Yok","Var"]} value={s.carpalDist.trapezium_odem} onChange={v=>upd("carpalDist","trapezium_odem",v)}/></F>
+<F label={T.rrTrapezium}><Radio options={["Normal","Anormal"]} value={s.carpalDist.trapezium_signal} onChange={v=>upd("carpalDist","trapezium_signal",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Var"]} value={s.carpalDist.trapezium_odem} onChange={v=>upd("carpalDist","trapezium_odem",v)}/></F>
 </div>
 <div className="row">
-<F label="Trapezoid Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalDist.trapezoid_signal} onChange={v=>upd("carpalDist","trapezoid_signal",v)}/></F>
-<F label="Trapezoid Ödem"><Radio options={["Yok","Var"]} value={s.carpalDist.trapezoid_odem} onChange={v=>upd("carpalDist","trapezoid_odem",v)}/></F>
+<F label={T.rrTrapezoid}><Radio options={["Normal","Anormal"]} value={s.carpalDist.trapezoid_signal} onChange={v=>upd("carpalDist","trapezoid_signal",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Var"]} value={s.carpalDist.trapezoid_odem} onChange={v=>upd("carpalDist","trapezoid_odem",v)}/></F>
 </div>
 <div className="row">
-<F label="Kapitat Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalDist.capitate_signal} onChange={v=>upd("carpalDist","capitate_signal",v)}/></F>
-<F label="Kapitat Ödem"><Radio options={["Yok","Var"]} value={s.carpalDist.capitate_odem} onChange={v=>upd("carpalDist","capitate_odem",v)}/></F>
+<F label={T.rrKapitat}><Radio options={["Normal","Anormal"]} value={s.carpalDist.capitate_signal} onChange={v=>upd("carpalDist","capitate_signal",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Var"]} value={s.carpalDist.capitate_odem} onChange={v=>upd("carpalDist","capitate_odem",v)}/></F>
 </div>
-<div className="section-hdr">Hamat</div>
+<div className="section-hdr">{T.shHamat}</div>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Anormal"]} value={s.carpalDist.hamate_signal} onChange={v=>upd("carpalDist","hamate_signal",v)}/></F>
-<F label="Ödem"><Radio options={["Yok","Var"]} value={s.carpalDist.hamate_odem} onChange={v=>upd("carpalDist","hamate_odem",v)}/></F>
+<F label={T.lSignal}><Radio options={["Normal","Anormal"]} value={s.carpalDist.hamate_signal} onChange={v=>upd("carpalDist","hamate_signal",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Var"]} value={s.carpalDist.hamate_odem} onChange={v=>upd("carpalDist","hamate_odem",v)}/></F>
 </div>
 <div className="row">
-<F label="Hamatum Kancası"><Radio options={["Normal","İncelmiş","Fragmante","İzlenmiyor"]} value={s.carpalDist.hamate_hook} onChange={v=>upd("carpalDist","hamate_hook",v)}/></F>
-<F label="Kanca Kırığı"><Radio options={["Yok","Akut","Kronik/nonunion"]} value={s.carpalDist.hamate_hookFx} onChange={v=>upd("carpalDist","hamate_hookFx",v)}/></F>
+<F label={T.rrHamatKanca}><Radio options={["Normal","İncelmiş","Fragmante","İzlenmiyor"]} value={s.carpalDist.hamate_hook} onChange={v=>upd("carpalDist","hamate_hook",v)}/></F>
+<F label={T.rrKancaKirik}><Radio options={["Yok","Akut","Kronik/nonunion"]} value={s.carpalDist.hamate_hookFx} onChange={v=>upd("carpalDist","hamate_hookFx",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.carpalDist.notes} onChange={v=>upd("carpalDist","notes",v)}/></F>
+<F label={T.lNotes}><Txt value={s.carpalDist.notes} onChange={v=>upd("carpalDist","notes",v)}/></F>
 </div>);
 
 case 5: return(<div>
-<div className="step-title">🦴 Metakarp & Falankslar</div>
-<div className="step-sub">Metakarpal ve falanks kemik yapıları</div>
+<div className="step-title">{T.s5Title}</div>
+<div className="step-sub">{T.s5Sub}</div>
 <div className="row">
-<F label="Genel Sinyal"><Radio options={["Normal","Diffüz anormal","Fokal anormal"]} value={s.metacarp.signal} onChange={v=>upd("metacarp","signal",v)}/></F>
-<F label="Ödem"><Radio options={["Yok","Fokal","Multipl"]} value={s.metacarp.odem} onChange={v=>upd("metacarp","odem",v)}/></F>
+<F label={T.lBoneSig}><Radio options={["Normal","Diffüz anormal","Fokal anormal"]} value={s.metacarp.signal} onChange={v=>upd("metacarp","signal",v)}/></F>
+<F label={T.lEdema}><Radio options={["Yok","Fokal","Multipl"]} value={s.metacarp.odem} onChange={v=>upd("metacarp","odem",v)}/></F>
 </div>
 <div className="row">
-<F label="Kırık"><Radio options={["Yok","Metakarp kırığı","Falanks kırığı","Stres kırığı"]} value={s.metacarp.fracture} onChange={v=>upd("metacarp","fracture",v)}/></F>
-{s.metacarp.fracture!=="Yok"&&<F label="Lokalizasyon"><Inp value={s.metacarp.fractureLoc} onChange={v=>upd("metacarp","fractureLoc",v)} placeholder="Hangi metakarp/falanks"/></F>}
+<F label={T.lFracture}><Radio options={["Yok","Metakarp kırığı","Falanks kırığı","Stres kırığı"]} value={s.metacarp.fracture} onChange={v=>upd("metacarp","fracture",v)}/></F>
+{s.metacarp.fracture!=="Yok"&&<F label={T.lFxLoc}><Inp value={s.metacarp.fractureLoc} onChange={v=>upd("metacarp","fractureLoc",v)} placeholder={T.lFxLocPh}/></F>}
 </div>
-<F label="Falanks Değerlendirme"><Radio options={["Normal","Anormal sinyal","Erozyon","Periostal reaksiyon"]} value={s.metacarp.phalanx} onChange={v=>upd("metacarp","phalanx",v)}/></F>
-<F label="Not"><Txt value={s.metacarp.notes} onChange={v=>upd("metacarp","notes",v)}/></F>
+<F label={T.lPhalanxEval}><Radio options={["Normal","Anormal sinyal","Erozyon","Periostal reaksiyon"]} value={s.metacarp.phalanx} onChange={v=>upd("metacarp","phalanx",v)}/></F>
+<F label={T.lNotes}><Txt value={s.metacarp.notes} onChange={v=>upd("metacarp","notes",v)}/></F>
 </div>);
 
 case 6: return(<div>
-<div className="step-title">🔗 TFCC (Triangular Fibrokartilaj Kompleks)</div>
-<div className="step-sub">Disk, menisküs homoloğu, ligamentöz komponentler</div>
+<div className="step-title">{T.s6Title}</div>
+<div className="step-sub">{T.s6Sub}</div>
 <div className="row">
-<F label="Morfoloji"><Radio options={["Normal","İncelmiş","Kalınlaşmış","Düzensiz kontur","Perfore"]} value={s.tfcc.morph} onChange={v=>upd("tfcc","morph",v)}/></F>
-<F label="Sinyal"><Radio options={["Normal","Artmış (dejeneratif)","Lineer artış (yırtık)","Heterojen"]} value={s.tfcc.signal} onChange={v=>upd("tfcc","signal",v)}/></F>
+<F label={T.lTfccMorph}><Radio options={["Normal","İncelmiş","Kalınlaşmış","Düzensiz kontur","Perfore"]} value={s.tfcc.morph} onChange={v=>upd("tfcc","morph",v)}/></F>
+<F label={T.lTfccSig}><Radio options={["Normal","Artmış (dejeneratif)","Lineer artış (yırtık)","Heterojen"]} value={s.tfcc.signal} onChange={v=>upd("tfcc","signal",v)}/></F>
 </div>
-<F label="Yırtık"><Radio options={["Yok","Parsiyel","Komplet","Dejeneratif perforasyon"]} value={s.tfcc.tear} onChange={v=>upd("tfcc","tear",v)}/></F>
+<F label={T.lTfccTear}><Radio options={["Yok","Parsiyel","Komplet","Dejeneratif perforasyon"]} value={s.tfcc.tear} onChange={v=>upd("tfcc","tear",v)}/></F>
 {s.tfcc.tear!=="Yok"&&<>
 <div className="row">
-<F label="Yırtık Tipi"><Radio options={["Travmatik","Dejeneratif"]} value={s.tfcc.tearType} onChange={v=>upd("tfcc","tearType",v)}/></F>
-<F label="Yırtık Lokalizasyonu"><Radio options={["Radial yapışma","Santral disk","Ulnar yapışma","Periferal","Volar","Dorsal"]} value={s.tfcc.tearLoc} onChange={v=>upd("tfcc","tearLoc",v)}/></F>
+<F label={T.lTfccTearType}><Radio options={["Travmatik","Dejeneratif"]} value={s.tfcc.tearType} onChange={v=>upd("tfcc","tearType",v)}/></F>
+<F label={T.lTfccTearLoc}><Radio options={["Radial yapışma","Santral disk","Ulnar yapışma","Periferal","Volar","Dorsal"]} value={s.tfcc.tearLoc} onChange={v=>upd("tfcc","tearLoc",v)}/></F>
 </div>
-<F label="Palmer Sınıflaması"><Sel value={s.tfcc.palmerClass} onChange={v=>upd("tfcc","palmerClass",v)} options={["","1A - Santral perforasyon","1B - Ulnar avulsiyon","1C - Distal avulsiyon","1D - Radial avulsiyon","2A - TFCC aşınma","2B - +Lunat kondromalazi","2C - +TFCC perforasyon","2D - +LT lig perforasyon","2E - +Ulnokarpal artrozis"]}/></F>
+<F label={T.lTfccPalmer}><Sel value={s.tfcc.palmerClass} onChange={v=>upd("tfcc","palmerClass",v)} options={["","1A - Santral perforasyon","1B - Ulnar avulsiyon","1C - Distal avulsiyon","1D - Radial avulsiyon","2A - TFCC aşınma","2B - +Lunat kondromalazi","2C - +TFCC perforasyon","2D - +LT lig perforasyon","2E - +Ulnokarpal artrozis"]}/></F>
 </>}
-<F label="Artiküler Disk"><Radio options={["Normal","Dejeneratif","Ödemli","Kıkırdak kaybı"]} value={s.tfcc.disc} onChange={v=>upd("tfcc","disc",v)}/></F>
-<F label="Not"><Txt value={s.tfcc.notes} onChange={v=>upd("tfcc","notes",v)}/></F>
+<F label={T.lTfccDisc}><Radio options={["Normal","Dejeneratif","Ödemli","Kıkırdak kaybı"]} value={s.tfcc.disc} onChange={v=>upd("tfcc","disc",v)}/></F>
+<F label={T.lNotes}><Txt value={s.tfcc.notes} onChange={v=>upd("tfcc","notes",v)}/></F>
 </div>);
 
 case 7: return(<div>
-<div className="step-title">🔗 İntrinsik Ligamentler</div>
-<div className="step-sub">Skafolünat (SL) ve Lünotrikuetral (LT) ligamentler</div>
-<div className="section-hdr">Skafolünat (SL) Ligament</div>
-<F label="Bütünlük"><Radio options={["İntakt","Parsiyel yırtık (dorsal)","Parsiyel yırtık (volar)","Komplet yırtık","Elonge/gevşek"]} value={s.slLig.integrity} onChange={v=>upd("slLig","integrity",v)}/></F>
+<div className="step-title">{T.s7Title}</div>
+<div className="step-sub">{T.s7Sub}</div>
+<div className="section-hdr">{T.shSL}</div>
+<F label={T.lSlIntegrity}><Radio options={["İntakt","Parsiyel yırtık (dorsal)","Parsiyel yırtık (volar)","Komplet yırtık","Elonge/gevşek"]} value={s.slLig.integrity} onChange={v=>upd("slLig","integrity",v)}/></F>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Artmış","Heterojen"]} value={s.slLig.signal} onChange={v=>upd("slLig","signal",v)}/></F>
-<F label="SL Aralık"><Radio options={["Yok","Var (>3mm)"]} value={s.slLig.gap} onChange={v=>upd("slLig","gap",v)}/></F>
+<F label={T.lSlSignal}><Radio options={["Normal","Artmış","Heterojen"]} value={s.slLig.signal} onChange={v=>upd("slLig","signal",v)}/></F>
+<F label={T.lSlGap}><Radio options={["Yok","Var (>3mm)"]} value={s.slLig.gap} onChange={v=>upd("slLig","gap",v)}/></F>
 </div>
 {s.slLig.gap!=="Yok"&&<div className="row">
-<F label="Gap (mm)"><Inp value={s.slLig.gapMm} onChange={v=>upd("slLig","gapMm",v)} placeholder="mm"/></F>
-<F label="DISI Paterni"><Radio options={["Normal","Var","Şüpheli"]} value={s.slLig.dlsi} onChange={v=>upd("slLig","dlsi",v)}/></F>
+<F label={T.lGapMm}><Inp value={s.slLig.gapMm} onChange={v=>upd("slLig","gapMm",v)} placeholder={T.lGapMmPh}/></F>
+<F label={T.lDISI}><Radio options={["Normal","Var","Şüpheli"]} value={s.slLig.dlsi} onChange={v=>upd("slLig","dlsi",v)}/></F>
 </div>}
-<F label="Not"><Txt value={s.slLig.notes} onChange={v=>upd("slLig","notes",v)}/></F>
+<F label={T.lSLNote}><Txt value={s.slLig.notes} onChange={v=>upd("slLig","notes",v)}/></F>
 
-<div className="section-hdr">Lünotrikuetral (LT) Ligament</div>
-<F label="Bütünlük"><Radio options={["İntakt","Parsiyel yırtık","Komplet yırtık","Elonge"]} value={s.ltLig.integrity} onChange={v=>upd("ltLig","integrity",v)}/></F>
+<div className="section-hdr">{T.shLT}</div>
+<F label={T.lLtIntegrity}><Radio options={["İntakt","Parsiyel yırtık","Komplet yırtık","Elonge"]} value={s.ltLig.integrity} onChange={v=>upd("ltLig","integrity",v)}/></F>
 <div className="row">
-<F label="Sinyal"><Radio options={["Normal","Artmış","Heterojen"]} value={s.ltLig.signal} onChange={v=>upd("ltLig","signal",v)}/></F>
-<F label="LT Aralık"><Radio options={["Yok","Artmış"]} value={s.ltLig.gap} onChange={v=>upd("ltLig","gap",v)}/></F>
+<F label={T.lLtSignal}><Radio options={["Normal","Artmış","Heterojen"]} value={s.ltLig.signal} onChange={v=>upd("ltLig","signal",v)}/></F>
+<F label={T.lLtGap}><Radio options={["Yok","Artmış"]} value={s.ltLig.gap} onChange={v=>upd("ltLig","gap",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.ltLig.notes} onChange={v=>upd("ltLig","notes",v)}/></F>
+<F label={T.lLTNote}><Txt value={s.ltLig.notes} onChange={v=>upd("ltLig","notes",v)}/></F>
 </div>);
 
 case 8: return(<div>
-<div className="step-title">🔗 Ekstrinsik Ligamentler</div>
-<div className="step-sub">Dorsal ve volar ekstrinsik ligament kompleksleri</div>
-<F label="Dorsal Ligamentler (DRC, DIC)"><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","Parsiyel yırtık","Komplet yırtık"]} value={s.extrLig.dorsal} onChange={v=>upd("extrLig","dorsal",v)}/></F>
-<F label="Volar Ligamentler (RSC, RL, RSL)"><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","Parsiyel yırtık","Komplet yırtık"]} value={s.extrLig.volar} onChange={v=>upd("extrLig","volar",v)}/></F>
-<F label="Not"><Txt value={s.extrLig.notes} onChange={v=>upd("extrLig","notes",v)}/></F>
+<div className="step-title">{T.s8Title}</div>
+<div className="step-sub">{T.s8Sub}</div>
+<F label={T.lDorsal}><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","Parsiyel yırtık","Komplet yırtık"]} value={s.extrLig.dorsal} onChange={v=>upd("extrLig","dorsal",v)}/></F>
+<F label={T.lVolar}><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","Parsiyel yırtık","Komplet yırtık"]} value={s.extrLig.volar} onChange={v=>upd("extrLig","volar",v)}/></F>
+<F label={T.lNotes}><Txt value={s.extrLig.notes} onChange={v=>upd("extrLig","notes",v)}/></F>
 </div>);
 
 case 9: return(<div>
-<div className="step-title">🔄 DRUJ (Distal Radioulnar Eklem)</div>
-<div className="step-sub">Eklem kongrüitesi, stabilite, efüzyon</div>
-<F label="Kongrüite"><Radio options={["Normal","Hafif inkongrüite","Belirgin inkongrüite"]} value={s.druj.congruity} onChange={v=>upd("druj","congruity",v)}/></F>
-<F label="Subluksasyon"><Radio options={["Yok","Dorsal subluksasyon","Volar subluksasyon"]} value={s.druj.subluxation} onChange={v=>upd("druj","subluxation",v)}/></F>
+<div className="step-title">{T.s9Title}</div>
+<div className="step-sub">{T.s9Sub}</div>
+<F label={T.lCongruity}><Radio options={["Normal","Hafif inkongrüite","Belirgin inkongrüite"]} value={s.druj.congruity} onChange={v=>upd("druj","congruity",v)}/></F>
+<F label={T.lSubluxation}><Radio options={["Yok","Dorsal subluksasyon","Volar subluksasyon"]} value={s.druj.subluxation} onChange={v=>upd("druj","subluxation",v)}/></F>
 <div className="row">
-<F label="Efüzyon"><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.druj.effusion} onChange={v=>upd("druj","effusion",v)}/></F>
-<F label="Eklem Aralığı"><Radio options={["Yok","Genişlemiş","Daralmış"]} value={s.druj.widening} onChange={v=>upd("druj","widening",v)}/></F>
+<F label={T.lEffusion}><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.druj.effusion} onChange={v=>upd("druj","effusion",v)}/></F>
+<F label={T.lJointSpace}><Radio options={["Yok","Genişlemiş","Daralmış"]} value={s.druj.widening} onChange={v=>upd("druj","widening",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.druj.notes} onChange={v=>upd("druj","notes",v)}/></F>
+<F label={T.lNotes}><Txt value={s.druj.notes} onChange={v=>upd("druj","notes",v)}/></F>
 </div>);
 
 case 10: return(<div>
-<div className="step-title">💪 Fleksör Tendonlar & Karpal Tünel</div>
-<div className="step-sub">FDS, FDP, FPL, median sinir, transvers karpal ligament</div>
-<div className="section-hdr">Fleksör Tendonlar</div>
+<div className="step-title">{T.s10Title}</div>
+<div className="step-sub">{T.s10Sub}</div>
+<div className="section-hdr">{T.shFleksörTendon}</div>
 <div className="row">
-<F label="FDS"><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fds} onChange={v=>upd("flexor","fds",v)}/></F>
-<F label="FDP"><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fdp} onChange={v=>upd("flexor","fdp",v)}/></F>
-<F label="FPL"><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fpl} onChange={v=>upd("flexor","fpl",v)}/></F>
+<F label={T.lFDS}><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fds} onChange={v=>upd("flexor","fds",v)}/></F>
+<F label={T.lFDP}><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fdp} onChange={v=>upd("flexor","fdp",v)}/></F>
+<F label={T.lFPL}><Radio options={["Normal","Kalınlaşmış","Sinyal artışı","İncelmiş"]} value={s.flexor.fpl} onChange={v=>upd("flexor","fpl",v)}/></F>
 </div>
 <div className="row">
-<F label="Tenosinovit"><Radio options={["Yok","Hafif","Orta","Belirgin"]} value={s.flexor.teno} onChange={v=>upd("flexor","teno",v)}/></F>
-<F label="Peritendinöz Sıvı"><Radio options={["Yok","Minimal","Belirgin"]} value={s.flexor.fluid} onChange={v=>upd("flexor","fluid",v)}/></F>
+<F label={T.lTenosynovitis}><Radio options={["Yok","Hafif","Orta","Belirgin"]} value={s.flexor.teno} onChange={v=>upd("flexor","teno",v)}/></F>
+<F label={T.lPeritenFluid}><Radio options={["Yok","Minimal","Belirgin"]} value={s.flexor.fluid} onChange={v=>upd("flexor","fluid",v)}/></F>
 </div>
-<F label="Yırtık"><Radio options={["Yok","Parsiyel","Komplet"]} value={s.flexor.tear} onChange={v=>upd("flexor","tear",v)}/></F>
-{s.flexor.tear!=="Yok"&&<F label="Yırtık Detayı"><Inp value={s.flexor.tearDetail} onChange={v=>upd("flexor","tearDetail",v)} placeholder="Hangi tendon, seviye, derece"/></F>}
+<F label={T.lTear}><Radio options={["Yok","Parsiyel","Komplet"]} value={s.flexor.tear} onChange={v=>upd("flexor","tear",v)}/></F>
+{s.flexor.tear!=="Yok"&&<F label={T.lTearDetail}><Inp value={s.flexor.tearDetail} onChange={v=>upd("flexor","tearDetail",v)} placeholder={T.lTearDetailPh}/></F>}
 
-<div className="section-hdr">Karpal Tünel</div>
-<F label="Karpal Tünel Genel"><Radio options={["Normal","Daralmış","Sıvı artışı","Kitle etkisi"]} value={s.flexor.carpalTunnel} onChange={v=>upd("flexor","carpalTunnel",v)}/></F>
+<div className="section-hdr">{T.shKarpalTünel}</div>
+<F label={T.lCarpalTunnel}><Radio options={["Normal","Daralmış","Sıvı artışı","Kitle etkisi"]} value={s.flexor.carpalTunnel} onChange={v=>upd("flexor","carpalTunnel",v)}/></F>
 <div className="row">
-<F label="Median Sinir"><Radio options={["Normal","Genişlemiş","Belirgin genişlemiş","Kalibrasyon irregüler"]} value={s.flexor.medianNerve} onChange={v=>upd("flexor","medianNerve",v)}/></F>
-<F label="Median AP Çap (mm)"><Inp value={s.flexor.medianSize} onChange={v=>upd("flexor","medianSize",v)} placeholder="mm" type="number"/></F>
+<F label={T.lMedianNerve}><Radio options={["Normal","Genişlemiş","Belirgin genişlemiş","Kalibrasyon irregüler"]} value={s.flexor.medianNerve} onChange={v=>upd("flexor","medianNerve",v)}/></F>
+<F label={T.lMedianAP}><Inp value={s.flexor.medianSize} onChange={v=>upd("flexor","medianSize",v)} placeholder={T.lMedianAPPh} type="number"/></F>
 </div>
 <div className="row">
-<F label="Median Sinir Sinyali"><Radio options={["Normal","Artmış (T2)","Belirgin artmış"]} value={s.flexor.medianSignal} onChange={v=>upd("flexor","medianSignal",v)}/></F>
-<F label="Sinir Düzleşmesi"><Radio options={["Yok","Hamat seviyesinde","Retinakulum altında"]} value={s.flexor.medianFlat} onChange={v=>upd("flexor","medianFlat",v)}/></F>
+<F label={T.lMedianSignal}><Radio options={["Normal","Artmış (T2)","Belirgin artmış"]} value={s.flexor.medianSignal} onChange={v=>upd("flexor","medianSignal",v)}/></F>
+<F label={T.lMedianFlat}><Radio options={["Yok","Hamat seviyesinde","Retinakulum altında"]} value={s.flexor.medianFlat} onChange={v=>upd("flexor","medianFlat",v)}/></F>
 </div>
-<F label="Transvers Karpal Ligament"><Radio options={["Normal","Palmar kabarıklık (bowing)","Kalınlaşmış"]} value={s.flexor.retinac} onChange={v=>upd("flexor","retinac",v)}/></F>
-<F label="Not"><Txt value={s.flexor.notes} onChange={v=>upd("flexor","notes",v)}/></F>
+<F label={T.lRetinac}><Radio options={["Normal","Palmar kabarıklık (bowing)","Kalınlaşmış"]} value={s.flexor.retinac} onChange={v=>upd("flexor","retinac",v)}/></F>
+<F label={T.lNotes}><Txt value={s.flexor.notes} onChange={v=>upd("flexor","notes",v)}/></F>
 </div>);
 
 case 11: return(<div>
-<div className="step-title">💪 Ekstansör Tendonlar</div>
-<div className="step-sub">6 ekstansör kompartman değerlendirmesi</div>
+<div className="step-title">{T.s11Title}</div>
+<div className="step-sub">{T.s11Sub}</div>
 <div className="row">
-<F label="1. Komp (APL/EPB)"><Radio options={["Normal","Tenosinovit","Kalınlaşmış","Sublükse"]} value={s.extensor.comp1} onChange={v=>upd("extensor","comp1",v)}/></F>
-<F label="De Quervain?"><Radio options={["Yok","Şüpheli","Var"]} value={s.extensor.comp1Teno} onChange={v=>upd("extensor","comp1Teno",v)}/></F>
+<F label={T.lComp1}><Radio options={["Normal","Tenosinovit","Kalınlaşmış","Sublükse"]} value={s.extensor.comp1} onChange={v=>upd("extensor","comp1",v)}/></F>
+<F label={T.lDeQuervain}><Radio options={["Yok","Şüpheli","Var"]} value={s.extensor.comp1Teno} onChange={v=>upd("extensor","comp1Teno",v)}/></F>
 </div>
 <div className="row">
-<F label="2. Komp (ECRL/ECRB)"><Radio options={["Normal","Tenosinovit","Yırtık"]} value={s.extensor.comp2} onChange={v=>upd("extensor","comp2",v)}/></F>
-<F label="3. Komp (EPL)"><Radio options={["Normal","Tenosinovit","Yırtık","İzlenmiyor"]} value={s.extensor.comp3} onChange={v=>upd("extensor","comp3",v)}/></F>
+<F label={T.lComp2}><Radio options={["Normal","Tenosinovit","Yırtık"]} value={s.extensor.comp2} onChange={v=>upd("extensor","comp2",v)}/></F>
+<F label={T.lComp3}><Radio options={["Normal","Tenosinovit","Yırtık","İzlenmiyor"]} value={s.extensor.comp3} onChange={v=>upd("extensor","comp3",v)}/></F>
 </div>
 <div className="row">
-<F label="4. Komp (EDC/EIP)"><Radio options={["Normal","Tenosinovit","Yırtık"]} value={s.extensor.comp4} onChange={v=>upd("extensor","comp4",v)}/></F>
-<F label="5. Komp (EDM)"><Radio options={["Normal","Tenosinovit","Yırtık","Sublükse"]} value={s.extensor.comp5} onChange={v=>upd("extensor","comp5",v)}/></F>
+<F label={T.lComp4}><Radio options={["Normal","Tenosinovit","Yırtık"]} value={s.extensor.comp4} onChange={v=>upd("extensor","comp4",v)}/></F>
+<F label={T.lComp5}><Radio options={["Normal","Tenosinovit","Yırtık","Sublükse"]} value={s.extensor.comp5} onChange={v=>upd("extensor","comp5",v)}/></F>
 </div>
-<F label="6. Komp (ECU)"><Radio options={["Normal","Tenosinovit","Sublükse","Yırtık","İnstabil"]} value={s.extensor.comp6} onChange={v=>upd("extensor","comp6",v)}/></F>
+<F label={T.lComp6}><Radio options={["Normal","Tenosinovit","Sublükse","Yırtık","İnstabil"]} value={s.extensor.comp6} onChange={v=>upd("extensor","comp6",v)}/></F>
 <div className="row">
-<F label="Genel Tenosinovit"><Radio options={["Yok","Tek kompartman","Multipl kompartman"]} value={s.extensor.teno} onChange={v=>upd("extensor","teno",v)}/></F>
-<F label="Yırtık"><Radio options={["Yok","Parsiyel","Komplet"]} value={s.extensor.tear} onChange={v=>upd("extensor","tear",v)}/></F>
+<F label={T.lGenTeno}><Radio options={["Yok","Tek kompartman","Multipl kompartman"]} value={s.extensor.teno} onChange={v=>upd("extensor","teno",v)}/></F>
+<F label={T.lExtTear}><Radio options={["Yok","Parsiyel","Komplet"]} value={s.extensor.tear} onChange={v=>upd("extensor","tear",v)}/></F>
 </div>
-{s.extensor.tear!=="Yok"&&<F label="Yırtık Detayı"><Inp value={s.extensor.tearDetail} onChange={v=>upd("extensor","tearDetail",v)} placeholder="Hangi tendon, seviye"/></F>}
-<F label="Not"><Txt value={s.extensor.notes} onChange={v=>upd("extensor","notes",v)}/></F>
+{s.extensor.tear!=="Yok"&&<F label={T.lExtTearDetail}><Inp value={s.extensor.tearDetail} onChange={v=>upd("extensor","tearDetail",v)} placeholder={T.lExtTearDetailPh}/></F>}
+<F label={T.lNotes}><Txt value={s.extensor.notes} onChange={v=>upd("extensor","notes",v)}/></F>
 </div>);
 
 case 12: return(<div>
-<div className="step-title">🏥 Eklemler & Sinovya</div>
-<div className="step-sub">Radiokarpal, midkarpal, CMC, MCP, PIP, DIP eklemleri</div>
-<div className="section-hdr">Büyük Eklemler</div>
+<div className="step-title">{T.s12Title}</div>
+<div className="step-sub">{T.s12Sub}</div>
+<div className="section-hdr">{T.shBüyükEklemler}</div>
 <div className="row">
-<F label="Radiokarpal"><Radio options={["Normal","Dejeneratif","İnflamatuar","Efüzyon"]} value={s.joints.radiocarpal} onChange={v=>upd("joints","radiocarpal",v)}/></F>
-<F label="Efüzyon"><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.joints.radiocarpalEffusion} onChange={v=>upd("joints","radiocarpalEffusion",v)}/></F>
+<F label={T.lRadiocarpal}><Radio options={["Normal","Dejeneratif","İnflamatuar","Efüzyon"]} value={s.joints.radiocarpal} onChange={v=>upd("joints","radiocarpal",v)}/></F>
+<F label={T.lRCEffusion}><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.joints.radiocarpalEffusion} onChange={v=>upd("joints","radiocarpalEffusion",v)}/></F>
 </div>
 <div className="row">
-<F label="Midkarpal"><Radio options={["Normal","Dejeneratif","İnflamatuar"]} value={s.joints.midcarpal} onChange={v=>upd("joints","midcarpal",v)}/></F>
-<F label="Efüzyon"><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.joints.midcarpalEffusion} onChange={v=>upd("joints","midcarpalEffusion",v)}/></F>
+<F label={T.lMidcarpal}><Radio options={["Normal","Dejeneratif","İnflamatuar"]} value={s.joints.midcarpal} onChange={v=>upd("joints","midcarpal",v)}/></F>
+<F label={T.lMCEffusion}><Radio options={["Yok","Minimal","Orta","Belirgin"]} value={s.joints.midcarpalEffusion} onChange={v=>upd("joints","midcarpalEffusion",v)}/></F>
 </div>
 <div className="row">
-<F label="CMC-1 (Başparmak)"><Radio options={["Normal","Dejeneratif (Eaton I-IV)","Sublükse"]} value={s.joints.cmc1} onChange={v=>upd("joints","cmc1",v)}/></F>
-<F label="CMC Efüzyon"><Radio options={["Yok","Var"]} value={s.joints.cmc1Effusion} onChange={v=>upd("joints","cmc1Effusion",v)}/></F>
+<F label={T.lCMC1}><Radio options={["Normal","Dejeneratif (Eaton I-IV)","Sublükse"]} value={s.joints.cmc1} onChange={v=>upd("joints","cmc1",v)}/></F>
+<F label={T.lCMCEffusion}><Radio options={["Yok","Var"]} value={s.joints.cmc1Effusion} onChange={v=>upd("joints","cmc1Effusion",v)}/></F>
 </div>
-<div className="section-hdr">Küçük Eklemler</div>
+<div className="section-hdr">{T.shKuçükEklemler}</div>
 <div className="row">
-<F label="MCP Eklemler"><Radio options={["Normal","Sinovit","Erozyon","Dejeneratif"]} value={s.joints.mcpJoints} onChange={v=>upd("joints","mcpJoints",v)}/></F>
-<F label="PIP Eklemler"><Radio options={["Normal","Sinovit","Erozyon","Dejeneratif"]} value={s.joints.pipJoints} onChange={v=>upd("joints","pipJoints",v)}/></F>
-<F label="DIP Eklemler"><Radio options={["Normal","Dejeneratif","Erozyon","Mukoid kist"]} value={s.joints.dipJoints} onChange={v=>upd("joints","dipJoints",v)}/></F>
+<F label={T.lMCP}><Radio options={["Normal","Sinovit","Erozyon","Dejeneratif"]} value={s.joints.mcpJoints} onChange={v=>upd("joints","mcpJoints",v)}/></F>
+<F label={T.lPIP}><Radio options={["Normal","Sinovit","Erozyon","Dejeneratif"]} value={s.joints.pipJoints} onChange={v=>upd("joints","pipJoints",v)}/></F>
+<F label={T.lDIP}><Radio options={["Normal","Dejeneratif","Erozyon","Mukoid kist"]} value={s.joints.dipJoints} onChange={v=>upd("joints","dipJoints",v)}/></F>
 </div>
-<div className="section-hdr">Sinovyal Değerlendirme</div>
+<div className="section-hdr">{T.shSinovyal}</div>
 <div className="row">
-<F label="Sinovyum"><Radio options={["Normal","Kalınlaşmış","Nodüler"]} value={s.joints.synovium} onChange={v=>upd("joints","synovium",v)}/></F>
-<F label="Sinoviyal Kontrastlanma"><Radio options={["Yok","Hafif","Belirgin","Nodüler"]} value={s.joints.synovialEnhance} onChange={v=>upd("joints","synovialEnhance",v)}/></F>
+<F label={T.lSynovium}><Radio options={["Normal","Kalınlaşmış","Nodüler"]} value={s.joints.synovium} onChange={v=>upd("joints","synovium",v)}/></F>
+<F label={T.lSynovEnhance}><Radio options={["Yok","Hafif","Belirgin","Nodüler"]} value={s.joints.synovialEnhance} onChange={v=>upd("joints","synovialEnhance",v)}/></F>
 </div>
 <div className="row">
-<F label="Pannus"><Radio options={["Yok","Var"]} value={s.joints.pannus} onChange={v=>upd("joints","pannus",v)}/></F>
-<F label="Erozyon"><Radio options={["Yok","Tek","Multipl"]} value={s.joints.erosion} onChange={v=>upd("joints","erosion",v)}/></F>
+<F label={T.lPannus}><Radio options={["Yok","Var"]} value={s.joints.pannus} onChange={v=>upd("joints","pannus",v)}/></F>
+<F label={T.lErosion}><Radio options={["Yok","Tek","Multipl"]} value={s.joints.erosion} onChange={v=>upd("joints","erosion",v)}/></F>
 </div>
-{s.joints.erosion!=="Yok"&&<F label="Erozyon Lokalizasyonu"><Inp value={s.joints.erosionLoc} onChange={v=>upd("joints","erosionLoc",v)} placeholder="Etkilenen kemik/eklemler"/></F>}
+{s.joints.erosion!=="Yok"&&<F label={T.lErosionLoc}><Inp value={s.joints.erosionLoc} onChange={v=>upd("joints","erosionLoc",v)} placeholder={T.lErosionLocPh}/></F>}
 <div className="row">
-<F label="Serbest Cisim"><Radio options={["Yok","Var"]} value={s.joints.looseBodies} onChange={v=>upd("joints","looseBodies",v)}/></F>
-<F label="Kıkırdak"><Radio options={["Normal","İncelmiş","Fokal defekt","Yaygın kayıp"]} value={s.joints.cartilage} onChange={v=>upd("joints","cartilage",v)}/></F>
-<F label="Osteofit"><Radio options={["Yok","Minimal","Belirgin"]} value={s.joints.osteophyte} onChange={v=>upd("joints","osteophyte",v)}/></F>
+<F label={T.lLooseBodies}><Radio options={["Yok","Var"]} value={s.joints.looseBodies} onChange={v=>upd("joints","looseBodies",v)}/></F>
+<F label={T.lCartilage}><Radio options={["Normal","İncelmiş","Fokal defekt","Yaygın kayıp"]} value={s.joints.cartilage} onChange={v=>upd("joints","cartilage",v)}/></F>
+<F label={T.lOsteophyte}><Radio options={["Yok","Minimal","Belirgin"]} value={s.joints.osteophyte} onChange={v=>upd("joints","osteophyte",v)}/></F>
 </div>
-<F label="Not"><Txt value={s.joints.notes} onChange={v=>upd("joints","notes",v)}/></F>
+<F label={T.lNotes}><Txt value={s.joints.notes} onChange={v=>upd("joints","notes",v)}/></F>
 </div>);
 
 case 13: return(<div>
-<div className="step-title">🎯 Lezyon Döngüsü</div>
-<div className="step-sub">Kitle / fokal lezyon varsa ekleyin (çoklu lezyon desteklenir)</div>
+<div className="step-title">{T.s13Title}</div>
+<div className="step-sub">{T.s13Sub}</div>
 {s.lesions.length>0&&<div className="lesion-list">{s.lesions.map((l,i)=>(
 <div key={i} className="lesion-badge">
 <span>#{i+1} {l.loc} {l.size&&("("+l.size+")")}</span>
@@ -1045,88 +1981,88 @@ case 13: return(<div>
 ))}</div>}
 {currentLesionIdx===-1?
 <div style={{textAlign:"center",padding:20}}>
-<p style={{color:"var(--textDim)",marginBottom:12}}>Lezyon/kitle saptandıysa ekleyin:</p>
-<button className="btn btn-primary" onClick={addLesion}>+ Yeni Lezyon Ekle</button>
+<p style={{color:"var(--textDim)",marginBottom:12}}>{T.lzNoLesion}</p>
+<button className="btn btn-primary" onClick={addLesion}>{T.lzAddNew}</button>
 </div>
 :
 <div style={{border:"1px solid var(--accent)",borderRadius:8,padding:16,background:"rgba(0,180,216,.04)"}}>
-<div style={{fontWeight:700,color:"var(--accent)",marginBottom:12}}>Lezyon #{currentLesionIdx+1}</div>
-<F label="Lokalizasyon"><Inp value={currentLesion.loc} onChange={v=>updL("loc",v)} placeholder="Ör: Dorsal el bileği, Volar subkutan, İntraosseöz skafoid..."/></F>
-<F label="Boyut"><Inp value={currentLesion.size} onChange={v=>updL("size",v)} placeholder="Ör: 12x8x10 mm"/></F>
+<div style={{fontWeight:700,color:"var(--accent)",marginBottom:12}}>{T.lzHeader}{currentLesionIdx+1}</div>
+<F label={T.lLesionLoc}><Inp value={currentLesion.loc} onChange={v=>updL("loc",v)} placeholder={T.lLesionLocPh}/></F>
+<F label={T.lLesionSize}><Inp value={currentLesion.size} onChange={v=>updL("size",v)} placeholder={T.lLesionSizePh}/></F>
 <div className="row">
-<F label="T1W Sinyal"><Radio options={["Hipointens","İzointens","Hiperintens","Heterojen"]} value={currentLesion.t1} onChange={v=>updL("t1",v)}/></F>
-<F label="T2W Sinyal"><Radio options={["Hipointens","İzointens","Hiperintens","Heterojen"]} value={currentLesion.t2} onChange={v=>updL("t2",v)}/></F>
+<F label={T.lT1Sig}><Radio options={["Hipointens","İzointens","Hiperintens","Heterojen"]} value={currentLesion.t1} onChange={v=>updL("t1",v)}/></F>
+<F label={T.lT2Sig}><Radio options={["Hipointens","İzointens","Hiperintens","Heterojen"]} value={currentLesion.t2} onChange={v=>updL("t2",v)}/></F>
 </div>
 <div className="row">
-<F label="STIR"><Radio options={["Hipointens","Hiperintens","Heterojen"]} value={currentLesion.stir} onChange={v=>updL("stir",v)}/></F>
-<F label="DWI"><Radio options={["Normal","Kısıtlılık var","Kolaylaşmış difüzyon"]} value={currentLesion.dwi} onChange={v=>updL("dwi",v)}/></F>
+<F label={T.lSTIR}><Radio options={["Hipointens","Hiperintens","Heterojen"]} value={currentLesion.stir} onChange={v=>updL("stir",v)}/></F>
+<F label={T.lDWI}><Radio options={["Normal","Kısıtlılık var","Kolaylaşmış difüzyon"]} value={currentLesion.dwi} onChange={v=>updL("dwi",v)}/></F>
 </div>
 <div className="row">
-<F label="ADC"><Radio options={["Düşük","Normal","Yüksek"]} value={currentLesion.adc} onChange={v=>updL("adc",v)}/></F>
-<F label="Kontrast"><Radio options={["Yok","Minimal","Yoğun","Halkasal","Heterojen","Baskılanıyor"]} value={currentLesion.contrast} onChange={v=>updL("contrast",v)}/></F>
+<F label={T.lADC}><Radio options={["Düşük","Normal","Yüksek"]} value={currentLesion.adc} onChange={v=>updL("adc",v)}/></F>
+<F label={T.lContrastSig}><Radio options={["Yok","Minimal","Yoğun","Halkasal","Heterojen","Baskılanıyor"]} value={currentLesion.contrast} onChange={v=>updL("contrast",v)}/></F>
 </div>
 <div className="row">
-<F label="Sınır"><Radio options={["Düzgün","İrregüler","Lobüle","İnfiltratif"]} value={currentLesion.margin} onChange={v=>updL("margin",v)}/></F>
-<F label="İçerik"><Radio options={["Kistik","Solid","Mikst","Yağlı","Kalsifik","Hemorajik"]} value={currentLesion.content} onChange={v=>updL("content",v)}/></F>
+<F label={T.lMargin}><Radio options={["Düzgün","İrregüler","Lobüle","İnfiltratif"]} value={currentLesion.margin} onChange={v=>updL("margin",v)}/></F>
+<F label={T.lContent}><Radio options={["Kistik","Solid","Mikst","Yağlı","Kalsifik","Hemorajik"]} value={currentLesion.content} onChange={v=>updL("content",v)}/></F>
 </div>
-<F label="Not"><Txt value={currentLesion.notes} onChange={v=>updL("notes",v)} placeholder="Ek özellikler, hemosiderin, septasyon vb."/></F>
+<F label={T.lNotes}><Txt value={currentLesion.notes} onChange={v=>updL("notes",v)} placeholder={T.lLesionNotesPh}/></F>
 <div style={{display:"flex",gap:8,marginTop:10}}>
-<button className="btn btn-success" onClick={finalizeLesion}>Lezyonu Kaydet</button>
-<button className="btn btn-outline" onClick={()=>{setCurrentLesionIdx(-1);setCurrentLesion(mkL())}}>İptal</button>
+<button className="btn btn-success" onClick={finalizeLesion}>{T.lzSave}</button>
+<button className="btn btn-outline" onClick={()=>{setCurrentLesionIdx(-1);setCurrentLesion(mkL())}}>{T.lzCancel}</button>
 </div>
 </div>
 }
 </div>);
 
 case 14: return(<div>
-<div className="step-title">🩸 Vasküler & Nöral Yapılar</div>
-<div className="step-sub">Arterler, venler ve periferik sinirler</div>
-<div className="section-hdr">Vasküler</div>
+<div className="step-title">{T.s14Title}</div>
+<div className="step-sub">{T.s14Sub}</div>
+<div className="section-hdr">{T.shVasküler}</div>
 <div className="row">
-<F label="Radial Arter"><Radio options={["Normal","Tromboz","Anevrizma","Pseudoanevrizma"]} value={s.vascular.radialArt} onChange={v=>upd("vascular","radialArt",v)}/></F>
-<F label="Ulnar Arter"><Radio options={["Normal","Tromboz","Anevrizma","Hypothenar hammer"]} value={s.vascular.ulnarArt} onChange={v=>upd("vascular","ulnarArt",v)}/></F>
+<F label={T.lRadialArt}><Radio options={["Normal","Tromboz","Anevrizma","Pseudoanevrizma"]} value={s.vascular.radialArt} onChange={v=>upd("vascular","radialArt",v)}/></F>
+<F label={T.lUlnarArt}><Radio options={["Normal","Tromboz","Anevrizma","Hypothenar hammer"]} value={s.vascular.ulnarArt} onChange={v=>upd("vascular","ulnarArt",v)}/></F>
 </div>
 <div className="row">
-<F label="Palmar Arkus"><Radio options={["Normal","İnkomplet","Anormal"]} value={s.vascular.palmarArch} onChange={v=>upd("vascular","palmarArch",v)}/></F>
-<F label="Venöz Yapılar"><Radio options={["Normal","Dilate","Tromboz","Variköz"]} value={s.vascular.veins} onChange={v=>upd("vascular","veins",v)}/></F>
+<F label={T.lPalmarArch}><Radio options={["Normal","İnkomplet","Anormal"]} value={s.vascular.palmarArch} onChange={v=>upd("vascular","palmarArch",v)}/></F>
+<F label={T.lVeins}><Radio options={["Normal","Dilate","Tromboz","Variköz"]} value={s.vascular.veins} onChange={v=>upd("vascular","veins",v)}/></F>
 </div>
-<F label="Vasküler Not"><Txt value={s.vascular.notes} onChange={v=>upd("vascular","notes",v)}/></F>
+<F label={T.lVascNote}><Txt value={s.vascular.notes} onChange={v=>upd("vascular","notes",v)}/></F>
 
-<div className="section-hdr">Nöral</div>
+<div className="section-hdr">{T.shNöral}</div>
 <div className="row">
-<F label="Median Sinir (bilek)"><Radio options={["Normal","Genişlemiş","Sinyal artmış","Komprese"]} value={s.neural.medianNerve} onChange={v=>upd("neural","medianNerve",v)}/></F>
-<F label="Ulnar Sinir (bilek)"><Radio options={["Normal","Genişlemiş","Sinyal artmış"]} value={s.neural.ulnarNerve} onChange={v=>upd("neural","ulnarNerve",v)}/></F>
+<F label={T.lMedianNerveWrist}><Radio options={["Normal","Genişlemiş","Sinyal artmış","Komprese"]} value={s.neural.medianNerve} onChange={v=>upd("neural","medianNerve",v)}/></F>
+<F label={T.lUlnarNerveWrist}><Radio options={["Normal","Genişlemiş","Sinyal artmış"]} value={s.neural.ulnarNerve} onChange={v=>upd("neural","ulnarNerve",v)}/></F>
 </div>
 <div className="row">
-<F label="Ulnar Sinir (Guyon)"><Radio options={["Normal","Komprese","Kitle basısı","Ganglion basısı"]} value={s.neural.ulnarNerveGuyon} onChange={v=>upd("neural","ulnarNerveGuyon",v)}/></F>
-<F label="Radial Sinir"><Radio options={["Normal","Anormal"]} value={s.neural.radialNerve} onChange={v=>upd("neural","radialNerve",v)}/></F>
+<F label={T.lUlnarNerveGuyon}><Radio options={["Normal","Komprese","Kitle basısı","Ganglion basısı"]} value={s.neural.ulnarNerveGuyon} onChange={v=>upd("neural","ulnarNerveGuyon",v)}/></F>
+<F label={T.lRadialNerve}><Radio options={["Normal","Anormal"]} value={s.neural.radialNerve} onChange={v=>upd("neural","radialNerve",v)}/></F>
 </div>
-<F label="Nöral Not"><Txt value={s.neural.notes} onChange={v=>upd("neural","notes",v)}/></F>
+<F label={T.lNeuralNote}><Txt value={s.neural.notes} onChange={v=>upd("neural","notes",v)}/></F>
 </div>);
 
 case 15: return(<div>
-<div className="step-title">📋 Ek Bulgular</div>
-<div className="step-sub">Yumuşak doku, subkutan alan, palmar fasya, diğer</div>
+<div className="step-title">{T.s15Title}</div>
+<div className="step-sub">{T.s15Sub}</div>
 <div className="row">
-<F label="Cilt / Yumuşak Doku"><Radio options={["Normal","Ödem","Kalınlaşma","Kitle"]} value={s.extra.skinSoftTissue} onChange={v=>upd("extra","skinSoftTissue",v)}/></F>
-<F label="Subkutan Doku"><Radio options={["Normal","Ödem","Nodül","Kitle"]} value={s.extra.subcutaneous} onChange={v=>upd("extra","subcutaneous",v)}/></F>
+<F label={T.lSkin}><Radio options={["Normal","Ödem","Kalınlaşma","Kitle"]} value={s.extra.skinSoftTissue} onChange={v=>upd("extra","skinSoftTissue",v)}/></F>
+<F label={T.lSubcut}><Radio options={["Normal","Ödem","Nodül","Kitle"]} value={s.extra.subcutaneous} onChange={v=>upd("extra","subcutaneous",v)}/></F>
 </div>
 <div className="row">
-<F label="Palmar Fasya"><Radio options={["Normal","Kalınlaşmış","Nodüler","Kontraktür"]} value={s.extra.palmarFascia} onChange={v=>upd("extra","palmarFascia",v)}/></F>
-<F label="Dupuytren"><Radio options={["Yok","Erken evre","İleri evre"]} value={s.extra.dupuytren} onChange={v=>upd("extra","dupuytren",v)}/></F>
+<F label={T.lPalmarFascia}><Radio options={["Normal","Kalınlaşmış","Nodüler","Kontraktür"]} value={s.extra.palmarFascia} onChange={v=>upd("extra","palmarFascia",v)}/></F>
+<F label={T.lDupuytren}><Radio options={["Yok","Erken evre","İleri evre"]} value={s.extra.dupuytren} onChange={v=>upd("extra","dupuytren",v)}/></F>
 </div>
-<F label="Lenf Nodları"><Radio options={["Normal","Reaktif","Patolojik"]} value={s.extra.lymph} onChange={v=>upd("extra","lymph",v)}/></F>
-<F label="Diğer"><Txt value={s.extra.other} onChange={v=>upd("extra","other",v)} placeholder="Ek not veya bulgular"/></F>
+<F label={T.lLymph}><Radio options={["Normal","Reaktif","Patolojik"]} value={s.extra.lymph} onChange={v=>upd("extra","lymph",v)}/></F>
+<F label={T.lOther}><Txt value={s.extra.other} onChange={v=>upd("extra","other",v)} placeholder={T.lOtherPh}/></F>
 </div>);
 
 case 16: return(<div>
-<div className="step-title">📊 Ayırıcı Tanı & Rapor</div>
-<div className="step-sub">Ağırlıklı skorlama ile hesaplanmış olasılıklar ve kutulu zebra rapor</div>
-<div className="section-hdr">Ayırıcı Tanı Skorları</div>
-{dx.length===0?<div className="info-box">Belirgin patolojik bulgu saptanmadı — rapor normal olarak oluşturulacaktır.</div>:
+<div className="step-title">{T.s16Title}</div>
+<div className="step-sub">{T.s16Sub}</div>
+<div className="section-hdr">{T.shAyiriciTani}</div>
+{dx.length===0?<div className="info-box">{T.ddxNoFindings}</div>:
 dx.map((d,i)=>{
 const color=d.pct>=60?"var(--danger)":d.pct>=30?"var(--warn)":"var(--success)";
-const badge=d.pct>=60?"YÜK":d.pct>=30?"ORT":"DÜŞ";
+const badge=d.pct>=60?T.ddxHigh:d.pct>=30?T.ddxMid:T.ddxLow;
 const badgeCls=d.pct>=60?"badge-red":d.pct>=30?"badge-yellow":"badge-green";
 return(<div key={d.id} className="dx-row">
 <div className="dx-pct" style={{color}}> %{d.pct}</div>
@@ -1134,12 +2070,12 @@ return(<div key={d.id} className="dx-row">
 <div style={{width:120}}><div className="dx-bar" style={{width:`${d.pct}%`,background:color}}/></div>
 </div>);
 })}
-<div className="section-hdr">Yapılandırılmış Rapor — Kutulu Zebra Format</div>
+<div className="section-hdr">{T.shYapiRapor}</div>
 <div className="report-box">{genReportJSX()}</div>
 <div className="copy-actions">
-<button className="btn btn-primary" onClick={copyReport}>📋 Düz Metin Kopyala</button>
-<button className="btn btn-success" onClick={downloadReport}>💾 İndir (.txt)</button>
-<button className="btn btn-warn" onClick={()=>setShowOverlay(true)}>📄 Raporu Aç (Seç & Kopyala)</button>
+<button className="btn btn-primary" onClick={copyReport}>{T.btnCopyText}</button>
+<button className="btn btn-success" onClick={downloadReport}>{T.btnDownload}</button>
+<button className="btn btn-warn" onClick={()=>setShowOverlay(true)}>{T.btnOpenOverlay}</button>
 </div>
 </div>);
 
@@ -1153,10 +2089,10 @@ const r=genPlainReport();
 return(<div className="overlay-bg" onClick={e=>{if(e.target===e.currentTarget)setShowOverlay(false)}}>
 <div className="overlay-box">
 <div className="overlay-top">
-<span style={{fontWeight:700,color:"var(--accent)"}}>Düz Metin Rapor — Seç & Kopyala</span>
+<span style={{fontWeight:700,color:"var(--accent)"}}>{T.overlayTitle}</span>
 <div style={{display:"flex",gap:8}}>
-<button className="btn btn-primary" onClick={selectAllOverlay} style={{padding:"6px 14px",fontSize:12}}>Tümünü Seç</button>
-<button className="btn btn-outline" onClick={()=>setShowOverlay(false)} style={{padding:"6px 14px",fontSize:12}}>✕ Kapat</button>
+<button className="btn btn-primary" onClick={selectAllOverlay} style={{padding:"6px 14px",fontSize:12}}>{T.overlaySelectAll}</button>
+<button className="btn btn-outline" onClick={()=>setShowOverlay(false)} style={{padding:"6px 14px",fontSize:12}}>{T.overlayClose}</button>
 </div>
 </div>
 <div className="overlay-body" style={{padding:0}}>
@@ -1169,7 +2105,7 @@ return(<div className="overlay-bg" onClick={e=>{if(e.target===e.currentTarget)se
 return(<div>
 <div className="app-header">
 <div className="logo">EB</div>
-<div><h1>El & El Bileği MRI Değerlendirme</h1><div className="sub">Kemik • Ligament • Tendon • Eklem • Kitle • Sinir — 35 Patoloji Skorlama</div></div>
+<div><h1>{T.appTitle}</h1><div className="sub">{T.appSub}</div></div>
 </div>
 <div className="wizard-bar">
 {STEPS.map((label,i)=>(<React.Fragment key={i}>
@@ -1182,9 +2118,9 @@ onClick={()=>setStep(i)} title={label}>{i+1}</div>
 <div className="step-card">
 {renderStep()}
 <div className="nav-bar">
-<button className="btn btn-outline" onClick={goPrev} disabled={step===0}>← Geri</button>
+<button className="btn btn-outline" onClick={goPrev} disabled={step===0}>{T.back}</button>
 <span style={{fontSize:12,color:"var(--textDim)"}}>{step+1} / {STEPS.length} — {STEPS[step]}</span>
-<button className="btn btn-primary" onClick={goNext} disabled={step===STEPS.length-1}>İleri →</button>
+<button className="btn btn-primary" onClick={goNext} disabled={step===STEPS.length-1}>{T.forward}</button>
 </div>
 </div>
 </div>

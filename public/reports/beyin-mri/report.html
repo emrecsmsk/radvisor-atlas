@@ -165,6 +165,472 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
 <div id="app"></div>
 
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Beyin / İntrakranial MRI',
+    appSubtitle: 'Yapılandırılmış Raporlama & Ayırıcı Tanı Karar Destek Sistemi',
+    stepLabel: 'Adım',
+    of: '/',
+    back: '← Geri',
+    next: 'İleri →',
+    generateReport: 'Raporu Oluştur 📄',
+    stepBadgeKorteks: 'Adım 1',
+    stepTitleKorteks: 'Korteks Kalınlığı',
+    sectionBolgesel: 'Bölgesel Değerlendirme',
+    colBolge: 'Bölge',
+    colBulgu: 'Bulgu',
+    clinicalNoteKorteks: 'Kortikal incelme değerlendirmesi; Alzheimer başta olmak üzere nörodejeneratif hastalıklar, kronik kortikal displazi ve serebral atrofi takibinde kritik öneme sahiptir.',
+    stepBadgeVentrikul: 'Adım 2',
+    stepTitleVentrikul: 'Ventriküller',
+    sectionLateral: 'Lateral Ventriküller',
+    colYapi: 'Yapı',
+    colTransvers: 'Transvers Çap (mm)',
+    colEvans: 'Evans İndeksi',
+    colGorunum: 'Görünüm',
+    sagLateralVentrikul: 'Sağ Lateral Ventrikül',
+    solLateralVentrikul: 'Sol Lateral Ventrikül',
+    section34Ventrikul: '3. ve 4. Ventriküller',
+    colAP: 'AP Çap (mm)',
+    ventrikul3: '3. Ventrikül',
+    ventrikul4: '4. Ventrikül',
+    sectionAkuaduktus: 'Serebral Akuaduktus',
+    labelAkuaduktus: 'Akuaduktus Stenozu',
+    clinicalNoteVentrikul: 'Evans İndeksi = frontal boynuzlar genişliği / maksimal internal kranial çap. >0.3 hidrosefali için eşik değeri.',
+    stepBadgeKorpus: 'Adım 3',
+    stepTitleKorpus: 'Korpus Kallozum',
+    sectionSegment: 'Segment Çapları (mm)',
+    colSegment: 'Segment',
+    colCap: 'Çap (mm)',
+    colSinyal: 'Sinyal (T2)',
+    sectionGelesimsel: 'Gelişimsel Patoloji',
+    labelGelesimsel: 'Gelişimsel Hastalık',
+    stepBadgeHipokampus: 'Adım 4',
+    stepTitleHipokampus: 'Hipokampus',
+    colTaraf: 'Taraf',
+    colYukseklik: 'Yükseklik (mm)',
+    colHacim: 'Görüntüsel Hacim',
+    colT2Sinyal: 'T2 Sinyali',
+    colSimetri: 'Simetri',
+    clinicalNoteHipokampus: 'Hipokampal atrofi MTA skalası ile değerlendirilir. T2/FLAIR\'da hiperintensite + hacim kaybı hipokampal skleroza işaret eder.',
+    stepBadgeT2Flair: 'Adım 5',
+    stepTitleT2Flair: 'T2/FLAIR Bulguları',
+    labelWMH: 'Beyaz Cevher Hiperintensiteleri (WMH)',
+    labelDagitim: 'Dağılım Paterni',
+    labelEkBulgu: 'Ek T2/FLAIR Bulgusu',
+    labelLeptomenin: 'Leptomeningeal Sinyal',
+    stepBadgeHipofiz: 'Adım 6',
+    stepTitleHipofiz: 'Hipofiz',
+    colParametre: 'Parametre',
+    colDeger: 'Değer',
+    colDegerlendirme: 'Değerlendirme',
+    hipofizYukseklik: 'Hipofiz Yüksekliği',
+    infundibularKalinlik: 'İnfundibuler Kalınlık',
+    t1SinyalPosterior: 'T1 Sinyali (Posterior Lob)',
+    kitlEtkisi: 'Kitle Etkisi',
+    clinicalNoteHipofiz: 'Erişkin kadın hipofiz yüksekliği ≤10 mm normal (gebelikte 12 mm\'ye kadar). Erişkin erkek ≤8 mm. Parlak nokta kaybı santral diabetes insipidus ile ilişkilidir.',
+    stepBadgePatoloji: 'Adım 7',
+    stepTitlePatoloji: 'Patoloji Tipi',
+    patolojiSec: 'Değerlendirilen patoloji kategorisini seçin:',
+    patolojiTravmaDesc: 'Fraktür, kanama, kontüzyon',
+    patolojiTumorDesc: 'İntra/ekstraaksiyal lezyon',
+    patolojiVaskulerDesc: 'İnfarkt, kanama, AVM, kavernoma',
+    patolojiMSDesc: 'Demyelinizan plak değerlendirmesi',
+    patolojiYokDesc: 'Sadece anatomik bulgular raporlanacak',
+    stepBadgeTravma1: 'Travma 1/3',
+    stepTitleTravma1: 'Fraktür Değerlendirmesi',
+    labelFraktur: 'Fraktür Saptandı mı?',
+    labelFrakturKemik: 'Fraktür Saptanan Kemik',
+    labelFrakturTip: 'Fraktür Tipi (çoklu seçim)',
+    labelDisplasma: 'Displasma',
+    labelDisplasmaBoyu: 'Displasma Miktarı (mm)',
+    clinicalNoteTravma1: 'Temporal kemik fraktürü → mastoid hava hücrelerini içeriyorsa mastoidit riski. Deprese fraktür >5 mm displasma cerrahi eşiği aşabilir.',
+    stepBadgeTravma2: 'Travma 2/3',
+    stepTitleTravma2: 'Eşlik Eden Kanama',
+    labelKanama: 'Kanama Var mı?',
+    labelKanamaLok: 'Lokalizasyon (çoklu)',
+    labelKanamaTip: 'Kanama Tipi (çoklu)',
+    labelKanamaYas: 'Kanama Yaşı (çoklu)',
+    labelKanamaBoyu: 'En Kalın Yerde Boyut (mm)',
+    sectionIntensiteler: 'İntensiteler',
+    labelKarsilastirma: 'Önceki İnceleme ile Karşılaştırma',
+    stepBadgeTravma3: 'Travma 3/3',
+    stepTitleTravma3: 'Kitle Etkisi & Herniasyon',
+    labelKitlEtkisi: 'Kitle Etkisi',
+    labelBasilayanYapilar: 'Basılanan Yapılar',
+    labelOrtaHatShift: 'Orta Hat Shift',
+    labelHerniasyon: 'Herniasyon',
+    labelHerniasyonTip: 'Herniasyon Tipi (çoklu)',
+    labelHerniasyonBasilan: 'Herniasyona Bağlı Basılanan Yapı',
+    labelYumsatDoc: 'Eşlik Eden Yumuşak Doku Yaralanması (çoklu)',
+    stepBadgeTumor1: 'Tümör 1/5',
+    stepTitleTumor1: 'Lokasyon & Boyut',
+    labelLokasyon1: 'Lokasyon 1 (Eksen)',
+    labelLokasyon2: 'Lokasyon 2 (Bölge) - çoklu',
+    labelOdakSayisi: 'Odak Sayısı',
+    labelBoyut: 'En Büyük Odak Boyutu (mm)',
+    labelDagitimPat: 'Dağılım Paterni (çoklu)',
+    labelSekil: 'Şekil',
+    stepBadgeTumor2: 'Tümör 2/5',
+    stepTitleTumor2: 'Sinyal Karakteri',
+    sectionMRISinyalleri: 'MRI Sinyalleri',
+    labelDWI: 'DWI Kısıtlaması',
+    labelADC: 'ADC',
+    labelIcerik: 'İçerik',
+    stepBadgeTumor3: 'Tümör 3/5',
+    stepTitleTumor3: 'Kontrastlanma',
+    labelKontrastlanma: 'Kontrastlanma',
+    labelKontrastTip: 'Kontrastlanma Tipi (çoklu)',
+    labelDuralTail: 'Dural Tail İşareti',
+    labelDuralBase: 'Dural Base Tutulumu',
+    labelKomsuKemik: 'Komşu Kemik Değişikliği',
+    labelKomsuKemikTip: 'Kemik Değişiklik Tipi (çoklu)',
+    labelPerilezOdem: 'Perifokal Ödem',
+    stepBadgeTumor4: 'Tümör 4/5',
+    stepTitleTumor4: 'Eşlik Eden Bulgular',
+    labelKalsif: 'Kalsifikasyon',
+    labelKalsifTip: 'Kalsifikasyon Tipi (çoklu)',
+    labelEslikKanama: 'Eşlik Eden Kanama',
+    labelKitlEtkisiTumor: 'Kitle Etkisi',
+    labelOrtaHatShiftTumor: 'Orta Hat Shift',
+    labelPerinoralYayilim: 'Perinooral Yayılım',
+    labelIlgiliSinir: 'İlgili Sinir (çoklu)',
+    labelEkBulgular: 'Ek Bulgular (çoklu)',
+    stepBadgeTumor5: 'Tümör 5/5',
+    stepTitleTumor5: 'Ek Tanısal Özellikler',
+    tumorEkTanisalDesc: 'Bu sorular ayırıcı tanı olasılık hesaplamasında kullanılacaktır. Mevcut olan bulguları işaretleyiniz.',
+    sectionMorfolojik: 'Morfolojik Özellikler',
+    labelInfiltratif: 'İnfiltratif Büyüme Paterni',
+    labelSeptasyon: 'Septasyon (internal bölmelenmesi)',
+    sectionSinyalOzellikleri: 'Sinyal Özellikleri',
+    labelCSFSignal: 'CSF ile İzointens Sinyal (BOS sinyali)',
+    labelYagSinyali: 'Yağ Sinyali (T1 hiperintens, yağ baskılamada düşen)',
+    labelHemosiderin: 'Hemosiderin Halkası / Depositi (T2* / SWI hipointensite)',
+    labelPopcorn: 'Popcorn Paterni (heterojen "popcorn" görünüm)',
+    labelFlowVoid: 'Flow Void (akım boşluğu)',
+    tanisal_ipuclariTitle: 'Tanısal İpuçları',
+    tanisal_ipuclariContent: '<strong>Hemosiderin halkası:</strong> Kavernoma, kronik hematom patognomonik bulgusu.<br/><strong>Popcorn paterni:</strong> Kavernoma için tipik T2 heterojenliği.<br/><strong>CSF sinyali:</strong> Araknoid kist, porensefalik kist, ensefalomalazi.<br/><strong>Yağ sinyali:</strong> Dermoid kist, lipom, teratom.<br/><strong>Flow void:</strong> AVM, hemangioblastom, yüksek akımlı vasküler malformasyon.<br/><strong>Septasyon:</strong> Beyin absesi, kistik neoplazm ayırıcı tanısında önemli.',
+    stepBadgeVasc1: 'Vasküler 1/4',
+    stepTitleVasc1: 'Lokasyon & Lezyon Tipi',
+    labelVascTip: 'Vasküler Lezyon Tipi',
+    labelVascLokasyon: 'Lokasyon (çoklu)',
+    labelVascTerritory: 'Vasküler Territory (çoklu)',
+    labelVascOdak: 'Odak Sayısı',
+    sectionAVM: 'AVM Özellikleri',
+    labelNidus: 'Nidus Varlığı',
+    labelNidusBoyut: 'Maks Nidus Boyutu (mm)',
+    labelBesleyiciArter: 'Besleyici Arter (çoklu)',
+    labelDreneVen: 'Drene Eden Ven',
+    stepBadgeVasc2: 'Vasküler 2/4',
+    stepTitleVasc2: 'Sinyal Karakteri & DWI',
+    labelVascDWI: 'DWI Kısıtlaması',
+    labelRimSign: 'Rim Sign (FLAIR)',
+    labelVascKanamaYas: 'Kanama Yaşı (çoklu)',
+    stepBadgeVasc3: 'Vasküler 3/4',
+    stepTitleVasc3: 'Kontrastlanma & Eşlik Eden Bulgular',
+    labelVascKontrast: 'Kontrastlanma',
+    labelVascKontrastTip: 'Kontrast Tipi (çoklu)',
+    labelVascOdem: 'Perifokal Ödem',
+    labelVascOrtaHat: 'Orta Hat Shift',
+    labelVascKanama: 'Eşlik Eden Kanama',
+    labelVascKitl: 'Kitle Etkisi',
+    labelVascKomsuKemik: 'Komşu Kemik Değişikliği',
+    stepBadgeVasc4: 'Vasküler 4/4',
+    stepTitleVasc4: 'Ek Tanısal Özellikler',
+    vascEkTanisalDesc: 'Ayırıcı tanı olasılık hesaplaması için ek bulgular:',
+    labelVascHemosiderin: 'Hemosiderin Halkası / Depositi (T2* / SWI)',
+    labelVascPopcorn: 'Popcorn Paterni (heterojen "popcorn" görünüm)',
+    labelVascFlowVoid: 'Flow Void (akım boşluğu)',
+    vascTanisalIpuclariContent: '<strong>Hemosiderin:</strong> Kavernoma ve kronik hematom için tipik.<br/><strong>Popcorn:</strong> Kavernoma patognomonik T2 bulgusu.<br/><strong>Flow void:</strong> AVM, dural AV fistül, hipervasküler lezyon.',
+    stepBadgeMS1: 'MS 1/2',
+    stepTitleMS1: 'Plak Dağılımı & Lokalizasyonu',
+    labelPlakDagilim: 'Plak Dağılımı (çoklu)',
+    labelPlakLok: 'Plak Lokalizasyonu (çoklu) - McDonald Kriterleri',
+    labelPlakSayisi: 'Tahmini Plak Sayısı',
+    labelEnBuyuk: 'En Büyük Plak Çapı (mm)',
+    mcDonaldTitle: 'McDonald Kriterleri 2017',
+    mcDonaldContent: 'Zamansal yayılım: ≥1 kontrast tutan + ≥1 kontrast tutmayan lezyon. Mekansal yayılım: ≥2 bölge (periventriküler, kortikal/juxtakortikal, infratentoryal, spinal kord).',
+    stepBadgeMS2: 'MS 2/2',
+    stepTitleMS2: 'Sinyal Karakteri & Kontrastlanma',
+    sectionMS_Intensiteler: 'İntensiteler',
+    labelBlackHole: 'T1 Siyah Delik (Black Hole)',
+    labelMSDWI: 'DWI',
+    labelMSKontrast: 'Kontrastlanma',
+    labelMSKontrastPat: 'Kontrast Paterni',
+    reportTitle: '📋 Yapılandırılmış MRI Raporu',
+    sectionAnatomik: 'ANATOMİK DEĞERLENDİRME',
+    sectionTravma: 'TRAVMA BULGULARI',
+    sectionTumor: 'TÜMÖR / KİTLE BULGULARI',
+    sectionVasc: 'VASKÜLER LEZYON BULGULARI',
+    sectionMS: 'MULTİPL SKLEROZ BULGULARI',
+    diffTitle: '🎯 Ayırıcı Tanı Olasılıkları',
+    diffDesc: 'Girilen MRI sinyal özellikleri ve bulgulara göre hesaplanan uyumluluk yüzdeleri. Bu değerler klinik korelasyon gerektiren yönlendirici bilgidir.',
+    diffKategori: 'Kategori',
+    diffTumor: 'Tümör/Kitle',
+    diffVasc: 'Vasküler',
+    diffMS: 'Demyelinizan',
+    diffTravma: 'Travma',
+    warningTitle: 'Uyarı',
+    warningContent: 'Bu olasılık skorları, girilen MRI bulguları ile bilinen patoloji profillerinin sinyal/morfolojik eşleştirmesine dayalıdır. Kesin tanı için klinik değerlendirme, ileri tetkik ve histopatolojik doğrulama gereklidir. Bu uygulama tanı koyma aracı değildir.',
+    btnBack: '← Geri Dön',
+    btnCopy: '📋 Kopyala',
+    btnPrint: '🖨️ Yazdır',
+    btnNew: '🔄 Yeni',
+    clinicalCommentTitle: 'Klinik Yorum',
+    clinicalCommentDural: 'Dural tail işareti ve geniş dural bazis; meningiom ile birincil uyumludur. Komşu kemik değişikliği mevcutsa hipervasküler tutulum veya invazif davranış düşünülmelidir.',
+    clinicalCommentDWI: 'Belirgin DWI kısıtlaması ve düşük ADC; PCNSL, medulloblastom veya abse ile uyumlu olabilir. Klinik bağlam ve kontrast paterni ayırıcı tanıda kritiktir.',
+    clinicalCommentDefault: 'İntrakranial kitle değerlendirmesi tamamlandı. Histopatolojik doğrulama ve klinik-laboratuvar korelasyon önerilir.',
+    acuteIschemiaTitle: 'Klinik Yorum - Akut İskemi',
+    acuteIschemiaContent: 'DWI kısıtlaması akut/subakut iskemik infarktı destekler. İlgili vasküler territory değerlendirildiğinde',
+    acuteIschemiaContent2: 'alanında enfarkt mevcuttur. Acil klinik değerlendirme önerilir.',
+    mcDonaldMatchTitle: 'McDonald 2017 Kriterleri Uyumu',
+    spatialMatch: 'Mekansal yayılım için ≥2 tutulum bölgesi',
+    spatialNoMatch: 'Mekansal yayılım kriterleri için ≥2 farklı bölge tutulumu gereklidir.',
+    temporalMatch: ' Aktif lezyon (kontrast tutan) ile birlikte kontrast tutmayan lezyon mevcutsa zamansal yayılım kriteri karşılanmış sayılır.',
+    temporalNoMatch: ' Aktif kontrast tutan lezyon izlenmedi; zamansal yayılım için takip MRI önerilir.',
+    copyReportHeader: 'BEYİN / İNTRAKRANİAL MRI RAPORU\n\n',
+    diffSectionHeader: 'AYIRICI TANI OLASILIKLARI\n',
+    copiedAlert: 'Rapor panoya kopyalandı.',
+    inProgressNote: 'Bu adım için içerik hazırlanıyor...',
+    probBadgeHigh: 'YÜKSEK',
+    probBadgeMedHigh: 'ORTA-YÜKSEK',
+    probBadgeMed: 'ORTA',
+    probBadgeLow: 'DÜŞÜK',
+    probBadgeVeryLow: 'ÇOK DÜŞÜK',
+  },
+  en: {
+    appTitle: 'Brain / Intracranial MRI',
+    appSubtitle: 'Structured Reporting & Differential Diagnosis Decision Support System',
+    stepLabel: 'Step',
+    of: '/',
+    back: '← Back',
+    next: 'Next →',
+    generateReport: 'Generate Report 📄',
+    stepBadgeKorteks: 'Step 1',
+    stepTitleKorteks: 'Cortical Thickness',
+    sectionBolgesel: 'Regional Assessment',
+    colBolge: 'Region',
+    colBulgu: 'Finding',
+    clinicalNoteKorteks: 'Cortical thinning assessment is critical in neurodegenerative diseases, primarily Alzheimer\'s, chronic cortical dysplasia, and cerebral atrophy follow-up.',
+    stepBadgeVentrikul: 'Step 2',
+    stepTitleVentrikul: 'Ventricles',
+    sectionLateral: 'Lateral Ventricles',
+    colYapi: 'Structure',
+    colTransvers: 'Transverse Diameter (mm)',
+    colEvans: 'Evans Index',
+    colGorunum: 'Appearance',
+    sagLateralVentrikul: 'Right Lateral Ventricle',
+    solLateralVentrikul: 'Left Lateral Ventricle',
+    section34Ventrikul: '3rd and 4th Ventricles',
+    colAP: 'AP Diameter (mm)',
+    ventrikul3: '3rd Ventricle',
+    ventrikul4: '4th Ventricle',
+    sectionAkuaduktus: 'Cerebral Aqueduct',
+    labelAkuaduktus: 'Aqueduct Stenosis',
+    clinicalNoteVentrikul: 'Evans Index = frontal horn width / maximal internal cranial diameter. >0.3 is the threshold for hydrocephalus.',
+    stepBadgeKorpus: 'Step 3',
+    stepTitleKorpus: 'Corpus Callosum',
+    sectionSegment: 'Segment Diameters (mm)',
+    colSegment: 'Segment',
+    colCap: 'Diameter (mm)',
+    colSinyal: 'Signal (T2)',
+    sectionGelesimsel: 'Developmental Pathology',
+    labelGelesimsel: 'Developmental Disorder',
+    stepBadgeHipokampus: 'Step 4',
+    stepTitleHipokampus: 'Hippocampus',
+    colTaraf: 'Side',
+    colYukseklik: 'Height (mm)',
+    colHacim: 'Visual Volume',
+    colT2Sinyal: 'T2 Signal',
+    colSimetri: 'Symmetry',
+    clinicalNoteHipokampus: 'Hippocampal atrophy is assessed with the MTA scale. Hyperintensity on T2/FLAIR + volume loss indicates hippocampal sclerosis.',
+    stepBadgeT2Flair: 'Step 5',
+    stepTitleT2Flair: 'T2/FLAIR Findings',
+    labelWMH: 'White Matter Hyperintensities (WMH)',
+    labelDagitim: 'Distribution Pattern',
+    labelEkBulgu: 'Additional T2/FLAIR Finding',
+    labelLeptomenin: 'Leptomeningeal Signal',
+    stepBadgeHipofiz: 'Step 6',
+    stepTitleHipofiz: 'Pituitary',
+    colParametre: 'Parameter',
+    colDeger: 'Value',
+    colDegerlendirme: 'Assessment',
+    hipofizYukseklik: 'Pituitary Height',
+    infundibularKalinlik: 'Infundibular Thickness',
+    t1SinyalPosterior: 'T1 Signal (Posterior Lobe)',
+    kitlEtkisi: 'Mass Effect',
+    clinicalNoteHipofiz: 'Normal pituitary height ≤10 mm in adult women (up to 12 mm during pregnancy). ≤8 mm in adult men. Absence of bright spot is associated with central diabetes insipidus.',
+    stepBadgePatoloji: 'Step 7',
+    stepTitlePatoloji: 'Pathology Type',
+    patolojiSec: 'Select the pathology category to evaluate:',
+    patolojiTravmaDesc: 'Fracture, hemorrhage, contusion',
+    patolojiTumorDesc: 'Intra/extraaxial lesion',
+    patolojiVaskulerDesc: 'Infarct, hemorrhage, AVM, cavernoma',
+    patolojiMSDesc: 'Demyelinating plaque assessment',
+    patolojiYokDesc: 'Only anatomical findings will be reported',
+    stepBadgeTravma1: 'Trauma 1/3',
+    stepTitleTravma1: 'Fracture Assessment',
+    labelFraktur: 'Fracture Detected?',
+    labelFrakturKemik: 'Fractured Bone',
+    labelFrakturTip: 'Fracture Type (multiple)',
+    labelDisplasma: 'Displacement',
+    labelDisplasmaBoyu: 'Displacement Amount (mm)',
+    clinicalNoteTravma1: 'Temporal bone fracture → risk of mastoiditis if mastoid air cells are involved. Depressed fracture >5 mm displacement may exceed surgical threshold.',
+    stepBadgeTravma2: 'Trauma 2/3',
+    stepTitleTravma2: 'Associated Hemorrhage',
+    labelKanama: 'Hemorrhage Present?',
+    labelKanamaLok: 'Localization (multiple)',
+    labelKanamaTip: 'Hemorrhage Type (multiple)',
+    labelKanamaYas: 'Hemorrhage Age (multiple)',
+    labelKanamaBoyu: 'Thickness at Thickest Point (mm)',
+    sectionIntensiteler: 'Signal Intensities',
+    labelKarsilastirma: 'Comparison with Previous Study',
+    stepBadgeTravma3: 'Trauma 3/3',
+    stepTitleTravma3: 'Mass Effect & Herniation',
+    labelKitlEtkisi: 'Mass Effect',
+    labelBasilayanYapilar: 'Compressed Structures',
+    labelOrtaHatShift: 'Midline Shift',
+    labelHerniasyon: 'Herniation',
+    labelHerniasyonTip: 'Herniation Type (multiple)',
+    labelHerniasyonBasilan: 'Compressed Structure due to Herniation',
+    labelYumsatDoc: 'Associated Soft Tissue Injury (multiple)',
+    stepBadgeTumor1: 'Tumor 1/5',
+    stepTitleTumor1: 'Location & Size',
+    labelLokasyon1: 'Location 1 (Axis)',
+    labelLokasyon2: 'Location 2 (Region) - multiple',
+    labelOdakSayisi: 'Number of Foci',
+    labelBoyut: 'Largest Focus Size (mm)',
+    labelDagitimPat: 'Distribution Pattern (multiple)',
+    labelSekil: 'Shape',
+    stepBadgeTumor2: 'Tumor 2/5',
+    stepTitleTumor2: 'Signal Characteristics',
+    sectionMRISinyalleri: 'MRI Signals',
+    labelDWI: 'DWI Restriction',
+    labelADC: 'ADC',
+    labelIcerik: 'Content',
+    stepBadgeTumor3: 'Tumor 3/5',
+    stepTitleTumor3: 'Enhancement',
+    labelKontrastlanma: 'Enhancement',
+    labelKontrastTip: 'Enhancement Type (multiple)',
+    labelDuralTail: 'Dural Tail Sign',
+    labelDuralBase: 'Dural Base Involvement',
+    labelKomsuKemik: 'Adjacent Bone Change',
+    labelKomsuKemikTip: 'Bone Change Type (multiple)',
+    labelPerilezOdem: 'Perifocal Edema',
+    stepBadgeTumor4: 'Tumor 4/5',
+    stepTitleTumor4: 'Associated Findings',
+    labelKalsif: 'Calcification',
+    labelKalsifTip: 'Calcification Type (multiple)',
+    labelEslikKanama: 'Associated Hemorrhage',
+    labelKitlEtkisiTumor: 'Mass Effect',
+    labelOrtaHatShiftTumor: 'Midline Shift',
+    labelPerinoralYayilim: 'Perineural Spread',
+    labelIlgiliSinir: 'Involved Nerve (multiple)',
+    labelEkBulgular: 'Additional Findings (multiple)',
+    stepBadgeTumor5: 'Tumor 5/5',
+    stepTitleTumor5: 'Additional Diagnostic Features',
+    tumorEkTanisalDesc: 'These questions will be used in the differential diagnosis probability calculation. Mark all present findings.',
+    sectionMorfolojik: 'Morphological Features',
+    labelInfiltratif: 'Infiltrative Growth Pattern',
+    labelSeptasyon: 'Septation (internal compartmentalization)',
+    sectionSinyalOzellikleri: 'Signal Features',
+    labelCSFSignal: 'CSF-Isointense Signal (CSF signal)',
+    labelYagSinyali: 'Fat Signal (T1 hyperintense, drops on fat saturation)',
+    labelHemosiderin: 'Hemosiderin Ring / Deposit (T2* / SWI hypointensity)',
+    labelPopcorn: 'Popcorn Pattern (heterogeneous "popcorn" appearance)',
+    labelFlowVoid: 'Flow Void',
+    tanisal_ipuclariTitle: 'Diagnostic Clues',
+    tanisal_ipuclariContent: '<strong>Hemosiderin ring:</strong> Pathognomonic finding for cavernoma, chronic hematoma.<br/><strong>Popcorn pattern:</strong> Typical T2 heterogeneity for cavernoma.<br/><strong>CSF signal:</strong> Arachnoid cyst, porencephalic cyst, encephalomalacia.<br/><strong>Fat signal:</strong> Dermoid cyst, lipoma, teratoma.<br/><strong>Flow void:</strong> AVM, hemangioblastoma, high-flow vascular malformation.<br/><strong>Septation:</strong> Important in differential diagnosis of brain abscess, cystic neoplasm.',
+    stepBadgeVasc1: 'Vascular 1/4',
+    stepTitleVasc1: 'Location & Lesion Type',
+    labelVascTip: 'Vascular Lesion Type',
+    labelVascLokasyon: 'Location (multiple)',
+    labelVascTerritory: 'Vascular Territory (multiple)',
+    labelVascOdak: 'Number of Foci',
+    sectionAVM: 'AVM Features',
+    labelNidus: 'Nidus Presence',
+    labelNidusBoyut: 'Max Nidus Size (mm)',
+    labelBesleyiciArter: 'Feeding Artery (multiple)',
+    labelDreneVen: 'Draining Vein',
+    stepBadgeVasc2: 'Vascular 2/4',
+    stepTitleVasc2: 'Signal Characteristics & DWI',
+    labelVascDWI: 'DWI Restriction',
+    labelRimSign: 'Rim Sign (FLAIR)',
+    labelVascKanamaYas: 'Hemorrhage Age (multiple)',
+    stepBadgeVasc3: 'Vascular 3/4',
+    stepTitleVasc3: 'Enhancement & Associated Findings',
+    labelVascKontrast: 'Enhancement',
+    labelVascKontrastTip: 'Enhancement Type (multiple)',
+    labelVascOdem: 'Perifocal Edema',
+    labelVascOrtaHat: 'Midline Shift',
+    labelVascKanama: 'Associated Hemorrhage',
+    labelVascKitl: 'Mass Effect',
+    labelVascKomsuKemik: 'Adjacent Bone Change',
+    stepBadgeVasc4: 'Vascular 4/4',
+    stepTitleVasc4: 'Additional Diagnostic Features',
+    vascEkTanisalDesc: 'Additional findings for differential diagnosis probability calculation:',
+    labelVascHemosiderin: 'Hemosiderin Ring / Deposit (T2* / SWI)',
+    labelVascPopcorn: 'Popcorn Pattern (heterogeneous "popcorn" appearance)',
+    labelVascFlowVoid: 'Flow Void',
+    vascTanisalIpuclariContent: '<strong>Hemosiderin:</strong> Typical for cavernoma and chronic hematoma.<br/><strong>Popcorn:</strong> Pathognomonic T2 finding for cavernoma.<br/><strong>Flow void:</strong> AVM, dural AV fistula, hypervasular lesion.',
+    stepBadgeMS1: 'MS 1/2',
+    stepTitleMS1: 'Plaque Distribution & Localization',
+    labelPlakDagilim: 'Plaque Distribution (multiple)',
+    labelPlakLok: 'Plaque Localization (multiple) - McDonald Criteria',
+    labelPlakSayisi: 'Estimated Plaque Count',
+    labelEnBuyuk: 'Largest Plaque Diameter (mm)',
+    mcDonaldTitle: 'McDonald Criteria 2017',
+    mcDonaldContent: 'Temporal dissemination: ≥1 enhancing + ≥1 non-enhancing lesion. Spatial dissemination: ≥2 regions (periventricular, cortical/juxtacortical, infratentorial, spinal cord).',
+    stepBadgeMS2: 'MS 2/2',
+    stepTitleMS2: 'Signal Characteristics & Enhancement',
+    sectionMS_Intensiteler: 'Signal Intensities',
+    labelBlackHole: 'T1 Black Hole',
+    labelMSDWI: 'DWI',
+    labelMSKontrast: 'Enhancement',
+    labelMSKontrastPat: 'Enhancement Pattern',
+    reportTitle: '📋 Structured MRI Report',
+    sectionAnatomik: 'ANATOMICAL ASSESSMENT',
+    sectionTravma: 'TRAUMA FINDINGS',
+    sectionTumor: 'TUMOR / MASS FINDINGS',
+    sectionVasc: 'VASCULAR LESION FINDINGS',
+    sectionMS: 'MULTIPLE SCLEROSIS FINDINGS',
+    diffTitle: '🎯 Differential Diagnosis Probabilities',
+    diffDesc: 'Compatibility percentages calculated based on the entered MRI signal characteristics and findings. These values are guiding information requiring clinical correlation.',
+    diffKategori: 'Category',
+    diffTumor: 'Tumor/Mass',
+    diffVasc: 'Vascular',
+    diffMS: 'Demyelinating',
+    diffTravma: 'Trauma',
+    warningTitle: 'Warning',
+    warningContent: 'These probability scores are based on the signal/morphological matching of entered MRI findings with known pathology profiles. Clinical evaluation, further workup, and histopathological confirmation are required for definitive diagnosis. This application is not a diagnostic tool.',
+    btnBack: '← Go Back',
+    btnCopy: '📋 Copy',
+    btnPrint: '🖨️ Print',
+    btnNew: '🔄 New',
+    clinicalCommentTitle: 'Clinical Comment',
+    clinicalCommentDural: 'Dural tail sign and broad dural base are primarily consistent with meningioma. If adjacent bone changes are present, hypervascular involvement or invasive behavior should be considered.',
+    clinicalCommentDWI: 'Marked DWI restriction and low ADC may be consistent with PCNSL, medulloblastoma, or abscess. Clinical context and enhancement pattern are critical in differential diagnosis.',
+    clinicalCommentDefault: 'Intracranial mass evaluation completed. Histopathological confirmation and clinical-laboratory correlation are recommended.',
+    acuteIschemiaTitle: 'Clinical Comment - Acute Ischemia',
+    acuteIschemiaContent: 'DWI restriction supports acute/subacute ischemic infarction. In the evaluated vascular territory,',
+    acuteIschemiaContent2: 'infarction is present. Urgent clinical evaluation is recommended.',
+    mcDonaldMatchTitle: 'McDonald 2017 Criteria Compliance',
+    spatialMatch: 'Spatial dissemination: ≥2 involvement regions detected',
+    spatialNoMatch: 'Spatial dissemination criteria require ≥2 different region involvement.',
+    temporalMatch: ' Temporal dissemination criterion is met if an active (enhancing) lesion is present alongside a non-enhancing lesion.',
+    temporalNoMatch: ' No active enhancing lesion observed; follow-up MRI recommended for temporal dissemination.',
+    copyReportHeader: 'BRAIN / INTRACRANIAL MRI REPORT\n\n',
+    diffSectionHeader: 'DIFFERENTIAL DIAGNOSIS PROBABILITIES\n',
+    copiedAlert: 'Report copied to clipboard.',
+    inProgressNote: 'Content for this step is being prepared...',
+    probBadgeHigh: 'HIGH',
+    probBadgeMedHigh: 'MED-HIGH',
+    probBadgeMed: 'MEDIUM',
+    probBadgeLow: 'LOW',
+    probBadgeVeryLow: 'VERY LOW',
+  },
+})[RV_LOCALE];
+
 const { useState, useCallback, useMemo } = React;
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -784,13 +1250,23 @@ const initState = () => ({
 });
 
 // ─── STEP CONFIG ─────────────────────────────────────────────────────────────
-const STEPS_ANT = ['ANATOMİK - Korteks', 'ANATOMİK - Ventriküller', 'ANATOMİK - Korpus Kallozum', 'ANATOMİK - Hipokampus', 'ANATOMİK - T2/FLAIR', 'ANATOMİK - Hipofiz'];
-const STEPS_PAT = ['Patoloji Seçimi'];
-const STEPS_TRAVMA = ['Travma - Fraktür', 'Travma - Kanama', 'Travma - Kitle Etkisi/Herniasyon'];
-const STEPS_TUMOR = ['Tümör - Lokasyon & Boyut', 'Tümör - Sinyal Karakteri', 'Tümör - Kontrastlanma', 'Tümör - Eşlik Eden Bulgular', 'Tümör - Ek Tanısal Özellikler'];
-const STEPS_VASC = ['Vasküler - Lokasyon & Tip', 'Vasküler - Sinyal & DWI', 'Vasküler - Kontrastlanma & Ek Bulgular', 'Vasküler - Ek Tanısal Özellikler'];
-const STEPS_MS = ['MS - Plak Karakteri', 'MS - Sinyal & Kontrast'];
-const STEP_RAPOR = ['RAPOR'];
+const STEPS_ANT = RV_LOCALE === 'tr'
+  ? ['ANATOMİK - Korteks', 'ANATOMİK - Ventriküller', 'ANATOMİK - Korpus Kallozum', 'ANATOMİK - Hipokampus', 'ANATOMİK - T2/FLAIR', 'ANATOMİK - Hipofiz']
+  : ['ANATOMICAL - Cortex', 'ANATOMICAL - Ventricles', 'ANATOMICAL - Corpus Callosum', 'ANATOMICAL - Hippocampus', 'ANATOMICAL - T2/FLAIR', 'ANATOMICAL - Pituitary'];
+const STEPS_PAT = RV_LOCALE === 'tr' ? ['Patoloji Seçimi'] : ['Pathology Selection'];
+const STEPS_TRAVMA = RV_LOCALE === 'tr'
+  ? ['Travma - Fraktür', 'Travma - Kanama', 'Travma - Kitle Etkisi/Herniasyon']
+  : ['Trauma - Fracture', 'Trauma - Hemorrhage', 'Trauma - Mass Effect/Herniation'];
+const STEPS_TUMOR = RV_LOCALE === 'tr'
+  ? ['Tümör - Lokasyon & Boyut', 'Tümör - Sinyal Karakteri', 'Tümör - Kontrastlanma', 'Tümör - Eşlik Eden Bulgular', 'Tümör - Ek Tanısal Özellikler']
+  : ['Tumor - Location & Size', 'Tumor - Signal Characteristics', 'Tumor - Enhancement', 'Tumor - Associated Findings', 'Tumor - Additional Diagnostic Features'];
+const STEPS_VASC = RV_LOCALE === 'tr'
+  ? ['Vasküler - Lokasyon & Tip', 'Vasküler - Sinyal & DWI', 'Vasküler - Kontrastlanma & Ek Bulgular', 'Vasküler - Ek Tanısal Özellikler']
+  : ['Vascular - Location & Type', 'Vascular - Signal & DWI', 'Vascular - Enhancement & Findings', 'Vascular - Additional Diagnostic Features'];
+const STEPS_MS = RV_LOCALE === 'tr'
+  ? ['MS - Plak Karakteri', 'MS - Sinyal & Kontrast']
+  : ['MS - Plaque Characteristics', 'MS - Signal & Enhancement'];
+const STEP_RAPOR = RV_LOCALE === 'tr' ? ['RAPOR'] : ['REPORT'];
 
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 function App() {
@@ -835,14 +1311,14 @@ function App() {
   return (
     <div id="app-root">
       <div className="header">
-        <h1>🧠 Beyin / İntrakranial MRI</h1>
-        <p>Yapılandırılmış Raporlama & Ayırıcı Tanı Karar Destek Sistemi</p>
+        <h1>🧠 {T.appTitle}</h1>
+        <p>{T.appSubtitle}</p>
       </div>
 
       <div className="progress-wrap no-print">
         <div className="progress-label">
           <span>{stepLabel}</span>
-          <span>Adım {s.step + 1} / {totalSteps}</span>
+          <span>{T.stepLabel} {s.step + 1} {T.of} {totalSteps}</span>
         </div>
         <div className="progress-bar"><div className="progress-fill" style={{ width: pct + '%' }} /></div>
       </div>
@@ -853,10 +1329,10 @@ function App() {
       {!isReport && (
         <div className="nav-row no-print">
           {s.step > 0
-            ? <button className="btn btn-secondary" onClick={goPrev}>← Geri</button>
+            ? <button className="btn btn-secondary" onClick={goPrev}>{T.back}</button>
             : <span />}
           <button className="btn btn-primary" onClick={goNext}>
-            {s.step < totalSteps - 2 ? 'İleri →' : 'Raporu Oluştur 📄'}
+            {s.step < totalSteps - 2 ? T.next : T.generateReport}
           </button>
         </div>
       )}
@@ -898,7 +1374,7 @@ function StepContent({ step, s, update, patolojiTip }) {
     if (step === base) return <StepMSPlak s={s} update={update} />;
     if (step === base + 1) return <StepMSSinyal s={s} update={update} />;
   }
-  return <div className="card"><p style={{color:'var(--text2)'}}>Bu adım için içerik hazırlanıyor...</p></div>;
+  return <div className="card"><p style={{color:'var(--text2)'}}>{T.inProgressNote}</p></div>;
 }
 
 // ─── ANATOMIC STEPS ──────────────────────────────────────────────────────────
@@ -907,10 +1383,10 @@ function StepKorteks({ s, update }) {
   const KORTEKS_OPT = ['NORMAL', 'İNCELMİŞ', 'KALINLAŞMIŞ'];
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 1</span> Korteks Kalınlığı</div>
-      <div className="section-header">Bölgesel Değerlendirme</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeKorteks}</span> {T.stepTitleKorteks}</div>
+      <div className="section-header">{T.sectionBolgesel}</div>
       <table className="val-table">
-        <thead><tr><th>Bölge</th><th>Bulgu</th></tr></thead>
+        <thead><tr><th>{T.colBolge}</th><th>{T.colBulgu}</th></tr></thead>
         <tbody>
           {['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'İNSULA'].map(lobe => (
             <tr key={lobe}>
@@ -921,8 +1397,8 @@ function StepKorteks({ s, update }) {
         </tbody>
       </table>
       <div className="yorum-block">
-        <div className="yorum-title">Klinik Not</div>
-        Kortikal incelme değerlendirmesi; Alzheimer başta olmak üzere nörodejeneratif hastalıklar, kronik kortikal displazi ve serebral atrofi takibinde kritik öneme sahiptir.
+        <div className="yorum-title">{RV_LOCALE === 'tr' ? 'Klinik Not' : 'Clinical Note'}</div>
+        {T.clinicalNoteKorteks}
       </div>
     </div>
   );
@@ -933,50 +1409,50 @@ function StepVentrikul({ s, update }) {
   const set = (k, val) => update('ventrikul', { ...v, [k]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 2</span> Ventriküller</div>
-      <div className="section-header">Lateral Ventriküller</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeVentrikul}</span> {T.stepTitleVentrikul}</div>
+      <div className="section-header">{T.sectionLateral}</div>
       <table className="val-table" style={{ marginBottom: 16 }}>
-        <thead><tr><th>Yapı</th><th>Transvers Çap (mm)</th><th>Evans İndeksi</th><th>Görünüm</th></tr></thead>
+        <thead><tr><th>{T.colYapi}</th><th>{T.colTransvers}</th><th>{T.colEvans}</th><th>{T.colGorunum}</th></tr></thead>
         <tbody>
           <tr>
-            <td>Sağ Lateral Ventrikül</td>
+            <td>{T.sagLateralVentrikul}</td>
             <td><NumInput value={v.sagLateral} onChange={val => set('sagLateral', val)} /></td>
             <td><NumInput value={v.sagLateralEvans} onChange={val => set('sagLateralEvans', val)} placeholder="oran" /></td>
             <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.sagGor || ''} onChange={val => set('sagGor', val)} /></td>
           </tr>
           <tr>
-            <td>Sol Lateral Ventrikül</td>
+            <td>{T.solLateralVentrikul}</td>
             <td><NumInput value={v.solLateral} onChange={val => set('solLateral', val)} /></td>
             <td><NumInput value={v.solLateralEvans} onChange={val => set('solLateralEvans', val)} placeholder="oran" /></td>
             <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.solGor || ''} onChange={val => set('solGor', val)} /></td>
           </tr>
         </tbody>
       </table>
-      <div className="section-header">3. ve 4. Ventriküller</div>
+      <div className="section-header">{T.section34Ventrikul}</div>
       <table className="val-table" style={{ marginBottom: 16 }}>
-        <thead><tr><th>Yapı</th><th>Transvers Çap (mm)</th><th>AP Çap (mm)</th><th>Görünüm</th></tr></thead>
+        <thead><tr><th>{T.colYapi}</th><th>{T.colTransvers}</th><th>{T.colAP}</th><th>{T.colGorunum}</th></tr></thead>
         <tbody>
           <tr>
-            <td>3. Ventrikül</td>
+            <td>{T.ventrikul3}</td>
             <td><NumInput value={v.v3} onChange={val => set('v3', val)} /></td>
             <td>—</td>
             <td><Radio options={['NORMAL', 'GENİŞLEMİŞ']} value={v.v3Gor || ''} onChange={val => set('v3Gor', val)} /></td>
           </tr>
           <tr>
-            <td>4. Ventrikül</td>
+            <td>{T.ventrikul4}</td>
             <td><NumInput value={v.v4Trans} onChange={val => set('v4Trans', val)} /></td>
             <td><NumInput value={v.v4AP} onChange={val => set('v4AP', val)} /></td>
             <td><Radio options={['NORMAL', 'GENİŞLEMİŞ', 'DARALMIŞ']} value={v.v4Gor || ''} onChange={val => set('v4Gor', val)} /></td>
           </tr>
         </tbody>
       </table>
-      <div className="section-header">Serebral Akuaduktus</div>
-      <Field label="Akuaduktus Stenozu">
+      <div className="section-header">{T.sectionAkuaduktus}</div>
+      <Field label={T.labelAkuaduktus}>
         <Radio options={['PATENT', 'OBSTRÜKTE', 'DARALMIS']} value={v.akuaduktus} onChange={val => set('akuaduktus', val)} />
       </Field>
       <div className="yorum-block">
-        <div className="yorum-title">Klinik Not</div>
-        Evans İndeksi = frontal boynuzlar genişliği / maksimal internal kranial çap. &gt;0.3 hidrosefali için eşik değeri.
+        <div className="yorum-title">{RV_LOCALE === 'tr' ? 'Klinik Not' : 'Clinical Note'}</div>
+        {T.clinicalNoteVentrikul}
       </div>
     </div>
   );
@@ -987,10 +1463,10 @@ function StepKorpus({ s, update }) {
   const set = (key, val) => update('korpus', { ...k, [key]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 3</span> Korpus Kallozum</div>
-      <div className="section-header">Segment Çapları (mm)</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeKorpus}</span> {T.stepTitleKorpus}</div>
+      <div className="section-header">{T.sectionSegment}</div>
       <table className="val-table" style={{ marginBottom: 16 }}>
-        <thead><tr><th>Segment</th><th>Çap (mm)</th><th>Sinyal (T2)</th></tr></thead>
+        <thead><tr><th>{T.colSegment}</th><th>{T.colCap}</th><th>{T.colSinyal}</th></tr></thead>
         <tbody>
           {[['ROSTRUM', 'rostrum', 'rostrumSig'], ['GENU', 'genu', 'genuSig'], ['BODY', 'body', 'bodySig'], ['SPLENIUM', 'splenium', 'spleniumSig']].map(([lbl, key, sigKey]) => (
             <tr key={key}>
@@ -1001,8 +1477,8 @@ function StepKorpus({ s, update }) {
           ))}
         </tbody>
       </table>
-      <div className="section-header">Gelişimsel Patoloji</div>
-      <Field label="Gelişimsel Hastalık">
+      <div className="section-header">{T.sectionGelesimsel}</div>
+      <Field label={T.labelGelesimsel}>
         <Radio options={['YOK', 'AGENESİS', 'DİSGENESİS', 'HİPOPLAZİ', 'KALINLEŞMASı']} value={k.gelesimsel} onChange={v => set('gelesimsel', v)} />
       </Field>
     </div>
@@ -1014,9 +1490,9 @@ function StepHipokampus({ s, update }) {
   const set = (k, v) => update('hipokampus', { ...h, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 4</span> Hipokampus</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeHipokampus}</span> {T.stepTitleHipokampus}</div>
       <table className="val-table">
-        <thead><tr><th>Taraf</th><th>Yükseklik (mm)</th><th>Görüntüsel Hacim</th><th>T2 Sinyali</th><th>Simetri</th></tr></thead>
+        <thead><tr><th>{T.colTaraf}</th><th>{T.colYukseklik}</th><th>{T.colHacim}</th><th>{T.colT2Sinyal}</th><th>{T.colSimetri}</th></tr></thead>
         <tbody>
           <tr>
             <td>SAĞ</td>
@@ -1036,8 +1512,8 @@ function StepHipokampus({ s, update }) {
         </tbody>
       </table>
       <div className="yorum-block">
-        <div className="yorum-title">Klinik Not</div>
-        Hipokampal atrofi MTA skalası ile değerlendirilir. T2/FLAIR'da hiperintensite + hacim kaybı hipokampal skleroza işaret eder.
+        <div className="yorum-title">{RV_LOCALE === 'tr' ? 'Klinik Not' : 'Clinical Note'}</div>
+        {T.clinicalNoteHipokampus}
       </div>
     </div>
   );
@@ -1048,17 +1524,17 @@ function StepT2Flair({ s, update }) {
   const set = (k, v) => update('t2flair', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 5</span> T2/FLAIR Bulguları</div>
-      <Field label="Beyaz Cevher Hiperintensiteleri (WMH)">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeT2Flair}</span> {T.stepTitleT2Flair}</div>
+      <Field label={T.labelWMH}>
         <Radio options={['YOK', 'HAFİF', 'ORTA', 'BELİRGİN', 'YAYGIN']} value={t.wmh || ''} onChange={v => set('wmh', v)} />
       </Field>
-      <Field label="Dağılım Paterni">
+      <Field label={T.labelDagitim}>
         <Radio options={['PERİVENTRİKÜLER', 'DERİN BEYAZ CEVHER', 'JUKSTAKORTİKAL', 'KARMA']} value={t.dagitim || ''} onChange={v => set('dagitim', v)} />
       </Field>
-      <Field label="Ek T2/FLAIR Bulgusu">
+      <Field label={T.labelEkBulgu}>
         <Radio options={['YOK', 'HİPOİNTENS ODAK', 'ÖDEM', 'KANAT İŞARETİ', 'SİFON KAPATMA']} value={t.ekBulgu || ''} onChange={v => set('ekBulgu', v)} />
       </Field>
-      <Field label="Leptomeningeal Sinyal">
+      <Field label={T.labelLeptomenin}>
         <Radio options={['NORMAL', 'HİPERİNTENS (FLAIR)']} value={t.leptomenin || ''} onChange={v => set('leptomenin', v)} />
       </Field>
     </div>
@@ -1070,33 +1546,33 @@ function StepHipofiz({ s, update }) {
   const set = (k, v) => update('hipofiz', { ...h, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 6</span> Hipofiz</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeHipofiz}</span> {T.stepTitleHipofiz}</div>
       <table className="val-table">
-        <thead><tr><th>Parametre</th><th>Değer</th><th>Değerlendirme</th></tr></thead>
+        <thead><tr><th>{T.colParametre}</th><th>{T.colDeger}</th><th>{T.colDegerlendirme}</th></tr></thead>
         <tbody>
           <tr>
-            <td>Hipofiz Yüksekliği</td>
+            <td>{T.hipofizYukseklik}</td>
             <td><div className="inline-group"><NumInput value={h.yukseklik} onChange={v => set('yukseklik', v)} /><span className="unit-label">mm</span></div></td>
             <td><Radio options={['NORMAL', 'ARTMIŞ', 'AZALMIŞ']} value={h.yuksekDeg || ''} onChange={v => set('yuksekDeg', v)} /></td>
           </tr>
           <tr>
-            <td>İnfundibuler Kalınlık</td>
+            <td>{T.infundibularKalinlik}</td>
             <td><div className="inline-group"><NumInput value={h.infundibular} onChange={v => set('infundibular', v)} /><span className="unit-label">mm</span></div></td>
             <td><Radio options={['NORMAL', 'KALINLAŞMIŞ', 'KALINLAŞMIŞ+DEVİYE']} value={h.infDeg || ''} onChange={v => set('infDeg', v)} /></td>
           </tr>
           <tr>
-            <td>T1 Sinyali (Posterior Lob)</td>
+            <td>{T.t1SinyalPosterior}</td>
             <td colSpan={2}><Radio options={['PARLAK NOKTA MEVCUT', 'PARLAK NOKTA YOK (EKTOPIK)', 'HETEROJEN']} value={h.t1sig || ''} onChange={v => set('t1sig', v)} /></td>
           </tr>
           <tr>
-            <td>Kitle Etkisi</td>
+            <td>{T.kitlEtkisi}</td>
             <td colSpan={2}><Radio options={['YOK', 'OPTİK KİAZMA BASILMASI', 'KAVERNÖSİNUS İNVAZYONU', 'SFENOID UZANM.']} value={h.kitlEtkisi || ''} onChange={v => set('kitlEtkisi', v)} /></td>
           </tr>
         </tbody>
       </table>
       <div className="yorum-block">
-        <div className="yorum-title">Klinik Not</div>
-        Erişkin kadın hipofiz yüksekliği ≤10 mm normal (gebelikte 12 mm'ye kadar). Erişkin erkek ≤8 mm. Parlak nokta kaybı santral diabetes insipidus ile ilişkilidir.
+        <div className="yorum-title">{RV_LOCALE === 'tr' ? 'Klinik Not' : 'Clinical Note'}</div>
+        {T.clinicalNoteHipofiz}
       </div>
     </div>
   );
@@ -1105,16 +1581,16 @@ function StepHipofiz({ s, update }) {
 // ─── PATOLOJI SELECTION ───────────────────────────────────────────────────────
 function StepPatolojiSec({ s, update }) {
   const opts = [
-    { key: 'TRAVMA', icon: '🦴', name: 'TRAVMA', desc: 'Fraktür, kanama, kontüzyon' },
-    { key: 'TÜMÖR', icon: '🔬', name: 'TÜMÖR / KİTLE', desc: 'İntra/ekstraaksiyal lezyon' },
-    { key: 'VASKÜLER LEZYON', icon: '🩸', name: 'VASKÜLER LEZYON', desc: 'İnfarkt, kanama, AVM, kavernoma' },
-    { key: 'MULTIPLE SCLEROSIS', icon: '⚡', name: 'MULTIPLE SCLEROSIS', desc: 'Demyelinizan plak değerlendirmesi' },
-    { key: 'YOK', icon: '✅', name: 'PATOLOJİ YOK', desc: 'Sadece anatomik bulgular raporlanacak' },
+    { key: 'TRAVMA', icon: '🦴', name: 'TRAVMA', desc: T.patolojiTravmaDesc },
+    { key: 'TÜMÖR', icon: '🔬', name: 'TÜMÖR / KİTLE', desc: T.patolojiTumorDesc },
+    { key: 'VASKÜLER LEZYON', icon: '🩸', name: 'VASKÜLER LEZYON', desc: T.patolojiVaskulerDesc },
+    { key: 'MULTIPLE SCLEROSIS', icon: '⚡', name: 'MULTIPLE SCLEROSIS', desc: T.patolojiMSDesc },
+    { key: 'YOK', icon: '✅', name: RV_LOCALE === 'tr' ? 'PATOLOJİ YOK' : 'NO PATHOLOGY', desc: T.patolojiYokDesc },
   ];
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Adım 7</span> Patoloji Tipi</div>
-      <p style={{ fontSize: '0.83rem', color: 'var(--text2)', marginBottom: 16 }}>Değerlendirilen patoloji kategorisini seçin:</p>
+      <div className="card-title"><span className="step-badge">{T.stepBadgePatoloji}</span> {T.stepTitlePatoloji}</div>
+      <p style={{ fontSize: '0.83rem', color: 'var(--text2)', marginBottom: 16 }}>{T.patolojiSec}</p>
       <div className="patoloji-grid">
         {opts.map(o => (
           <div key={o.key} className={`patoloji-card ${s.patolojiTip === o.key ? 'active' : ''}`}
@@ -1135,24 +1611,24 @@ function StepTravmaFraktur({ s, update }) {
   const set = (k, v) => update('travma', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Travma 1/3</span> Fraktür Değerlendirmesi</div>
-      <Field label="Fraktür Saptandı mı?">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTravma1}</span> {T.stepTitleTravma1}</div>
+      <Field label={T.labelFraktur}>
         <Radio options={YOK_VAR} value={t.fraktur} onChange={v => set('fraktur', v)} />
       </Field>
       {t.fraktur === 'VAR' && (
         <>
-          <Field label="Fraktür Saptanan Kemik">
+          <Field label={T.labelFrakturKemik}>
             <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SFENOID', 'ETMOİD', 'ORBITA', 'MANDIBULA']}
               value={t.frakturKemik} onChange={v => set('frakturKemik', v)} />
           </Field>
-          <Field label="Fraktür Tipi (çoklu seçim)">
+          <Field label={T.labelFrakturTip}>
             <Radio options={FRAKTÜR_TIPI} value={t.frakturTip} onChange={v => set('frakturTip', v)} multi={true} />
           </Field>
-          <Field label="Displasma">
+          <Field label={T.labelDisplasma}>
             <Radio options={YOK_VAR} value={t.displasma} onChange={v => set('displasma', v)} />
           </Field>
           {t.displasma === 'VAR' && (
-            <Field label="Displasma Miktarı (mm)">
+            <Field label={T.labelDisplasmaBoyu}>
               <div className="inline-group">
                 <NumInput value={t.displasmaBoyu} onChange={v => set('displasmaBoyu', v)} />
                 <span className="unit-label">mm</span>
@@ -1162,8 +1638,8 @@ function StepTravmaFraktur({ s, update }) {
         </>
       )}
       <div className="yorum-block">
-        <div className="yorum-title">Klinik Not</div>
-        Temporal kemik fraktürü → mastoid hava hücrelerini içeriyorsa mastoidit riski. Deprese fraktür &gt;5 mm displasma cerrahi eşiği aşabilir.
+        <div className="yorum-title">{RV_LOCALE === 'tr' ? 'Klinik Not' : 'Clinical Note'}</div>
+        {T.clinicalNoteTravma1}
       </div>
     </div>
   );
@@ -1174,30 +1650,30 @@ function StepTravmaKanama({ s, update }) {
   const set = (k, v) => update('travma', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Travma 2/3</span> Eşlik Eden Kanama</div>
-      <Field label="Kanama Var mı?">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTravma2}</span> {T.stepTitleTravma2}</div>
+      <Field label={T.labelKanama}>
         <Radio options={YOK_VAR} value={t.kanama} onChange={v => set('kanama', v)} />
       </Field>
       {t.kanama === 'VAR' && (
         <>
-          <Field label="Lokalizasyon (çoklu)">
+          <Field label={T.labelKanamaLok}>
             <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SEREBELLAR', 'FRONTAL FOSSA', 'POSTERIOR FOSSA']}
               value={t.kanamaLok} onChange={v => set('kanamaLok', v)} multi={true} />
           </Field>
-          <Field label="Kanama Tipi (çoklu)">
+          <Field label={T.labelKanamaTip}>
             <Radio options={KANAMA_TIPI} value={t.kanamaTipi} onChange={v => set('kanamaTipi', v)} multi={true} />
           </Field>
-          <Field label="Kanama Yaşı (çoklu)">
+          <Field label={T.labelKanamaYas}>
             <Radio options={KANAMA_YASI} value={t.kanamaYasi} onChange={v => set('kanamaYasi', v)} multi={true} />
           </Field>
-          <Field label="En Kalın Yerde Boyut (mm)">
+          <Field label={T.labelKanamaBoyu}>
             <div className="inline-group">
               <NumInput value={t.kanamaBoyu} onChange={v => set('kanamaBoyu', v)} />
               <span className="unit-label">mm</span>
             </div>
           </Field>
           <hr className="hline" />
-          <div className="section-header">İntensiteler</div>
+          <div className="section-header">{T.sectionIntensiteler}</div>
           <div className="signal-group">
             <SignalPanel label="T1" value={t.t1sig} onChange={v => set('t1sig', v)} />
             <SignalPanel label="T2" value={t.t2sig} onChange={v => set('t2sig', v)} />
@@ -1205,7 +1681,7 @@ function StepTravmaKanama({ s, update }) {
             <SignalPanel label="SWI" value={t.swiSig} onChange={v => set('swiSig', v)} />
           </div>
           <hr className="hline" />
-          <Field label="Önceki İnceleme ile Karşılaştırma">
+          <Field label={T.labelKarsilastirma}>
             <Radio options={['KARŞILAŞTIRMA YOK', 'ARTMIŞ', 'STABİL', 'AZALMIŞ', 'REZORBE OLMUŞ']}
               value={t.karsilastirma} onChange={v => set('karsilastirma', v)} />
           </Field>
@@ -1220,18 +1696,18 @@ function StepTravmaKitle({ s, update }) {
   const set = (k, v) => update('travma', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Travma 3/3</span> Kitle Etkisi & Herniasyon</div>
-      <Field label="Kitle Etkisi">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTravma3}</span> {T.stepTitleTravma3}</div>
+      <Field label={T.labelKitlEtkisi}>
         <Radio options={YOK_VAR} value={t.kitlEtkisi} onChange={v => set('kitlEtkisi', v)} />
       </Field>
       {t.kitlEtkisi === 'VAR' && (
-        <Field label="Basılanan Yapılar">
+        <Field label={T.labelBasilayanYapilar}>
           <Radio options={['VENTRİKÜL', 'SİSTERN', 'SULKUS', 'BEYIN SAP']}
             value={t.basilananYapilar} onChange={v => set('basilananYapilar', v)} />
         </Field>
       )}
       <hr className="hline" />
-      <Field label="Orta Hat Shift">
+      <Field label={T.labelOrtaHatShift}>
         <Radio options={YOK_VAR} value={t.ortaHatShift} onChange={v => set('ortaHatShift', v)} />
       </Field>
       {t.ortaHatShift === 'VAR' && (
@@ -1242,22 +1718,22 @@ function StepTravmaKitle({ s, update }) {
         </div>
       )}
       <hr className="hline" />
-      <Field label="Herniasyon">
+      <Field label={T.labelHerniasyon}>
         <Radio options={YOK_VAR} value={t.herniasyon} onChange={v => set('herniasyon', v)} />
       </Field>
       {t.herniasyon === 'VAR' && (
         <>
-          <Field label="Herniasyon Tipi (çoklu)">
+          <Field label={T.labelHerniasyonTip}>
             <Radio options={HERNIASYON_TIPI} value={t.herniasyonTip} onChange={v => set('herniasyonTip', v)} multi={true} />
           </Field>
-          <Field label="Herniasyona Bağlı Basılanan Yapı">
+          <Field label={T.labelHerniasyonBasilan}>
             <Radio options={['YOK', 'BEYIN SAPI', 'MEZENSEFALON', 'SEREBELLUM', 'POSTERİOR SEREBRAL ARTER']}
               value={t.herniasyonBasilan} onChange={v => set('herniasyonBasilan', v)} />
           </Field>
         </>
       )}
       <hr className="hline" />
-      <Field label="Eşlik Eden Yumuşak Doku Yaralanması (çoklu)">
+      <Field label={T.labelYumsatDoc}>
         <Radio options={['ÖDEM', 'HEMATOM', 'ENFEKSİYON', 'GAZ', 'YABANCI CİSİM']}
           value={t.yumsatDoc} onChange={v => set('yumsatDoc', v)} multi={true} />
       </Field>
@@ -1271,28 +1747,28 @@ function StepTumorLok({ s, update }) {
   const set = (k, v) => update('tumor', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Tümör 1/5</span> Lokasyon & Boyut</div>
-      <Field label="Lokasyon 1 (Eksen)">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTumor1}</span> {T.stepTitleTumor1}</div>
+      <Field label={T.labelLokasyon1}>
         <Radio options={['İNTRAAKSİAL', 'EKSTRAAKSİAL', 'İNTRAVENTRİKÜLER', 'KARMA']}
           value={t.lokasyon1} onChange={v => set('lokasyon1', v)} />
       </Field>
-      <Field label="Lokasyon 2 (Bölge) - çoklu">
+      <Field label={T.labelLokasyon2}>
         <Radio options={LOKASYON_LIST} value={t.lokasyon2} onChange={v => set('lokasyon2', v)} multi={true} />
       </Field>
-      <Field label="Odak Sayısı">
+      <Field label={T.labelOdakSayisi}>
         <Radio options={['TEK', 'BİRKAÇ (2-5)', 'MULTIPLE (>5)']} value={t.odakSayisi} onChange={v => set('odakSayisi', v)} />
       </Field>
-      <Field label="En Büyük Odak Boyutu (mm)">
+      <Field label={T.labelBoyut}>
         <div className="inline-group">
           <NumInput value={t.boyut} onChange={v => set('boyut', v)} />
           <span className="unit-label">mm</span>
         </div>
       </Field>
-      <Field label="Dağılım Paterni (çoklu)">
+      <Field label={T.labelDagitimPat}>
         <Radio options={['TEK LOB', 'MULTİLOBÜLER', 'PERİVENTRİKÜLER', 'EPENDİMAL', 'LEPTOMENİNGEAL']}
           value={t.dagitim} onChange={v => set('dagitim', v)} multi={true} />
       </Field>
-      <Field label="Şekil">
+      <Field label={T.labelSekil}>
         <Radio options={['OVAL/YUVARLAK', 'LOBULE', 'IRREGÜLERİ', 'DÜZENSİZ İNFİLTRATİF']}
           value={t.sekil || ''} onChange={v => set('sekil', v)} />
       </Field>
@@ -1305,21 +1781,21 @@ function StepTumorSinyal({ s, update }) {
   const set = (k, v) => update('tumor', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Tümör 2/5</span> Sinyal Karakteri</div>
-      <div className="section-header">MRI Sinyalleri</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTumor2}</span> {T.stepTitleTumor2}</div>
+      <div className="section-header">{T.sectionMRISinyalleri}</div>
       <div className="signal-group">
         <SignalPanel label="T1" value={t.t1} onChange={v => set('t1', v)} />
         <SignalPanel label="T2" value={t.t2} onChange={v => set('t2', v)} />
         <SignalPanel label="FLAIR" value={t.flair} onChange={v => set('flair', v)} />
       </div>
       <hr className="hline" />
-      <Field label="DWI Kısıtlaması">
+      <Field label={T.labelDWI}>
         <Radio options={['KISITLIYOR', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={t.dwi} onChange={v => set('dwi', v)} />
       </Field>
-      <Field label="ADC">
+      <Field label={T.labelADC}>
         <Radio options={['DÜŞÜK', 'NORMAL', 'YÜKSEK', 'HETEROJEN']} value={t.adc} onChange={v => set('adc', v)} />
       </Field>
-      <Field label="İçerik">
+      <Field label={T.labelIcerik}>
         <Radio options={['SOLID', 'KİSTİK', 'SOLID+KİSTİK', 'NEKROTIK', 'KALSIFIKE']}
           value={t.icerik || ''} onChange={v => set('icerik', v)} />
       </Field>
@@ -1332,31 +1808,31 @@ function StepTumorKontrast({ s, update }) {
   const set = (k, v) => update('tumor', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Tümör 3/5</span> Kontrastlanma</div>
-      <Field label="Kontrastlanma">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTumor3}</span> {T.stepTitleTumor3}</div>
+      <Field label={T.labelKontrastlanma}>
         <Radio options={['YOK', 'VAR']} value={t.kontrast} onChange={v => set('kontrast', v)} />
       </Field>
       {t.kontrast === 'VAR' && (
-        <Field label="Kontrastlanma Tipi (çoklu)">
+        <Field label={T.labelKontrastTip}>
           <Radio options={KONTRASTLANMA_TIPI} value={t.kontrastTip} onChange={v => set('kontrastTip', v)} multi={true} />
         </Field>
       )}
       <hr className="hline" />
-      <Field label="Dural Tail İşareti">
+      <Field label={T.labelDuralTail}>
         <Radio options={YOK_VAR} value={t.dural_tail} onChange={v => set('dural_tail', v)} />
       </Field>
-      <Field label="Dural Base Tutulumu">
+      <Field label={T.labelDuralBase}>
         <Radio options={YOK_VAR} value={t.dural_base} onChange={v => set('dural_base', v)} />
       </Field>
-      <Field label="Komşu Kemik Değişikliği">
+      <Field label={T.labelKomsuKemik}>
         <Radio options={['YOK', ...KEMIK_DEGISIK]} value={t.komsuKemik} onChange={v => set('komsuKemik', v)} />
       </Field>
       {t.komsuKemik && t.komsuKemik !== 'YOK' && (
-        <Field label="Kemik Değişiklik Tipi (çoklu)">
+        <Field label={T.labelKomsuKemikTip}>
           <Radio options={KEMIK_DEGISIK} value={t.komsuKemikTip} onChange={v => set('komsuKemikTip', v)} multi={true} />
         </Field>
       )}
-      <Field label="Perifokal Ödem">
+      <Field label={T.labelPerilezOdem}>
         <Radio options={['YOK', 'HAFİF', 'ORTA', 'CİDDİ', 'YAYGIN']} value={t.perilezOdem} onChange={v => set('perilezOdem', v)} />
       </Field>
     </div>
@@ -1368,24 +1844,24 @@ function StepTumorEslik({ s, update }) {
   const set = (k, v) => update('tumor', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Tümör 4/5</span> Eşlik Eden Bulgular</div>
-      <Field label="Kalsifikasyon">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTumor4}</span> {T.stepTitleTumor4}</div>
+      <Field label={T.labelKalsif}>
         <Radio options={YOK_VAR} value={t.kalsif} onChange={v => set('kalsif', v)} />
       </Field>
       {t.kalsif === 'VAR' && (
-        <Field label="Kalsifikasyon Tipi (çoklu)">
+        <Field label={T.labelKalsifTip}>
           <Radio options={['LİNEER', 'PUNKTAT', 'KABA']} value={t.kalsifTip} onChange={v => set('kalsifTip', v)} multi={true} />
         </Field>
       )}
-      <Field label="Eşlik Eden Kanama">
+      <Field label={T.labelEslikKanama}>
         <Radio options={YOK_VAR} value={t.kanama} onChange={v => set('kanama', v)} />
       </Field>
-      <Field label="Kitle Etkisi">
+      <Field label={T.labelKitlEtkisiTumor}>
         <Radio options={YOK_VAR} value={t.kitlEtkisi} onChange={v => set('kitlEtkisi', v)} />
       </Field>
       {t.kitlEtkisi === 'VAR' && (
         <>
-          <Field label="Orta Hat Shift">
+          <Field label={T.labelOrtaHatShiftTumor}>
             <Radio options={YOK_VAR} value={t.ortaHatShift} onChange={v => set('ortaHatShift', v)} />
           </Field>
           {t.ortaHatShift === 'VAR' && (
@@ -1397,16 +1873,16 @@ function StepTumorEslik({ s, update }) {
           )}
         </>
       )}
-      <Field label="Perinooral Yayılım">
+      <Field label={T.labelPerinoralYayilim}>
         <Radio options={YOK_VAR} value={t.perinoral} onChange={v => set('perinoral', v)} />
       </Field>
       {t.perinoral === 'VAR' && (
-        <Field label="İlgili Sinir (çoklu)">
+        <Field label={T.labelIlgiliSinir}>
           <Radio options={['OLFAKTÖR', 'MAKSİLLAR (V2)', 'OPTİK', 'OKÜLOMOTORLİK', 'FASIYAL']}
             value={t.perinoralTip} onChange={v => set('perinoralTip', v)} multi={true} />
         </Field>
       )}
-      <Field label="Ek Bulgular (çoklu)">
+      <Field label={T.labelEkBulgular}>
         <Radio options={['KİST İÇİNDE NODÜL', 'KONTRASTLANAN NODÜL', 'SIVI-SIVI SEVİYESİ', 'KANAMALI NODÜL']}
           value={t.ekstBulgular} onChange={v => set('ekstBulgular', v)} multi={true} />
       </Field>
@@ -1420,47 +1896,40 @@ function StepTumorEkTanisal({ s, update }) {
   const set = (k, v) => update('tumor', { ...t, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Tümör 5/5</span> Ek Tanısal Özellikler</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeTumor5}</span> {T.stepTitleTumor5}</div>
       <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>
-        Bu sorular ayırıcı tanı olasılık hesaplamasında kullanılacaktır. Mevcut olan bulguları işaretleyiniz.
+        {T.tumorEkTanisalDesc}
       </p>
 
-      <div className="section-header">Morfolojik Özellikler</div>
-      <Field label="İnfiltratif Büyüme Paterni">
+      <div className="section-header">{T.sectionMorfolojik}</div>
+      <Field label={T.labelInfiltratif}>
         <Radio options={YOK_VAR} value={t.infiltratif || ''} onChange={v => set('infiltratif', v)} />
       </Field>
-      <Field label="Septasyon (internal bölmelenmesi)">
+      <Field label={T.labelSeptasyon}>
         <Radio options={YOK_VAR} value={t.septasyon || ''} onChange={v => set('septasyon', v)} />
       </Field>
 
       <hr className="hline" />
-      <div className="section-header">Sinyal Özellikleri</div>
-      <Field label="CSF ile İzointens Sinyal (BOS sinyali)">
+      <div className="section-header">{T.sectionSinyalOzellikleri}</div>
+      <Field label={T.labelCSFSignal}>
         <Radio options={YOK_VAR} value={t.csfSignal || ''} onChange={v => set('csfSignal', v)} />
       </Field>
-      <Field label="Yağ Sinyali (T1 hiperintens, yağ baskılamada düşen)">
+      <Field label={T.labelYagSinyali}>
         <Radio options={YOK_VAR} value={t.yagSinyali || ''} onChange={v => set('yagSinyali', v)} />
       </Field>
-      <Field label="Hemosiderin Halkası / Depositi (T2* / SWI hipointensite)">
+      <Field label={T.labelHemosiderin}>
         <Radio options={YOK_VAR} value={t.hemosiderin || ''} onChange={v => set('hemosiderin', v)} />
       </Field>
-      <Field label='Popcorn Paterni (heterojen "popcorn" görünüm)'>
+      <Field label={T.labelPopcorn}>
         <Radio options={YOK_VAR} value={t.popcorn || ''} onChange={v => set('popcorn', v)} />
       </Field>
-      <Field label="Flow Void (akım boşluğu)">
+      <Field label={T.labelFlowVoid}>
         <Radio options={YOK_VAR} value={t.flowVoid || ''} onChange={v => set('flowVoid', v)} />
       </Field>
 
       <div className="yorum-block">
-        <div className="yorum-title">Tanısal İpuçları</div>
-        <div style={{ lineHeight: 1.7 }}>
-          <strong>Hemosiderin halkası:</strong> Kavernoma, kronik hematom patognomonik bulgusu.<br/>
-          <strong>Popcorn paterni:</strong> Kavernoma için tipik T2 heterojenliği.<br/>
-          <strong>CSF sinyali:</strong> Araknoid kist, porensefalik kist, ensefalomalazi.<br/>
-          <strong>Yağ sinyali:</strong> Dermoid kist, lipom, teratom.<br/>
-          <strong>Flow void:</strong> AVM, hemangioblastom, yüksek akımlı vasküler malformasyon.<br/>
-          <strong>Septasyon:</strong> Beyin absesi, kistik neoplazm ayırıcı tanısında önemli.
-        </div>
+        <div className="yorum-title">{T.tanisal_ipuclariTitle}</div>
+        <div style={{ lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: T.tanisal_ipuclariContent }} />
       </div>
     </div>
   );
@@ -1472,39 +1941,39 @@ function StepVascLok({ s, update }) {
   const set = (k, val) => update('vaskuler', { ...v, [k]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Vasküler 1/4</span> Lokasyon & Lezyon Tipi</div>
-      <Field label="Vasküler Lezyon Tipi">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeVasc1}</span> {T.stepTitleVasc1}</div>
+      <Field label={T.labelVascTip}>
         <Radio options={['İSKEMİK İNFARKT', 'PARANKIMAL KANAMA', 'AVM', 'KAVERNOMA', 'VENÖZ TROMBOZ', 'HİPEROKSİK HASAR']}
           value={v.tip} onChange={val => set('tip', val)} />
       </Field>
-      <Field label="Lokasyon (çoklu)">
+      <Field label={T.labelVascLokasyon}>
         <Radio options={LOKASYON_LIST} value={v.lokasyon} onChange={val => set('lokasyon', val)} multi={true} />
       </Field>
-      <Field label="Vasküler Territory (çoklu)">
+      <Field label={T.labelVascTerritory}>
         <Radio options={TERRITORY_LIST} value={v.territory} onChange={val => set('territory', val)} multi={true} />
       </Field>
-      <Field label="Odak Sayısı">
+      <Field label={T.labelVascOdak}>
         <Radio options={['TEK', 'BİRKAÇ (2-5)', 'MULTIPLE (>5)']} value={v.odakSayisi} onChange={val => set('odakSayisi', val)} />
       </Field>
       {v.tip === 'AVM' && (
         <>
           <hr className="hline" />
-          <div className="section-header">AVM Özellikleri</div>
-          <Field label="Nidus Varlığı">
+          <div className="section-header">{T.sectionAVM}</div>
+          <Field label={T.labelNidus}>
             <Radio options={YOK_VAR} value={v.nidus} onChange={val => set('nidus', val)} />
           </Field>
           {v.nidus === 'VAR' && (
-            <Field label="Maks Nidus Boyutu (mm)">
+            <Field label={T.labelNidusBoyut}>
               <div className="inline-group">
                 <NumInput value={v.nidusBoyut} onChange={val => set('nidusBoyut', val)} />
                 <span className="unit-label">mm</span>
               </div>
             </Field>
           )}
-          <Field label="Besleyici Arter (çoklu)">
+          <Field label={T.labelBesleyiciArter}>
             <Radio options={TERRITORY_LIST} value={v.feedingArter} onChange={val => set('feedingArter', val)} multi={true} />
           </Field>
-          <Field label="Drene Eden Ven">
+          <Field label={T.labelDreneVen}>
             <Radio options={['DERIN VENÖZ SİSTEM', 'SUPERFİSİYEL VENÖZ SİSTEM', 'KARMA']}
               value={v.dreneVen} onChange={val => set('dreneVen', val)} multi={true} />
           </Field>
@@ -1519,8 +1988,8 @@ function StepVascSinyal({ s, update }) {
   const set = (k, val) => update('vaskuler', { ...v, [k]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Vasküler 2/4</span> Sinyal Karakteri & DWI</div>
-      <div className="section-header">MRI Sinyalleri</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeVasc2}</span> {T.stepTitleVasc2}</div>
+      <div className="section-header">{T.sectionMRISinyalleri}</div>
       <div className="signal-group">
         <SignalPanel label="T1" value={v.t1} onChange={val => set('t1', val)} />
         <SignalPanel label="T2" value={v.t2} onChange={val => set('t2', val)} />
@@ -1529,13 +1998,13 @@ function StepVascSinyal({ s, update }) {
         <SignalPanel label="FLAIR" value={v.flair} onChange={val => set('flair', val)} />
       </div>
       <hr className="hline" />
-      <Field label="DWI Kısıtlaması">
+      <Field label={T.labelVascDWI}>
         <Radio options={['KISITLIYOR', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={v.dwi} onChange={val => set('dwi', val)} />
       </Field>
-      <Field label="Rim Sign (FLAIR)">
+      <Field label={T.labelRimSign}>
         <Radio options={YOK_VAR} value={v.rimSign} onChange={val => set('rimSign', val)} />
       </Field>
-      <Field label="Kanama Yaşı (çoklu)">
+      <Field label={T.labelVascKanamaYas}>
         <Radio options={KANAMA_YASI} value={v.kanamaYasi} onChange={val => set('kanamaYasi', val)} multi={true} />
       </Field>
     </div>
@@ -1547,20 +2016,20 @@ function StepVascKontrast({ s, update }) {
   const set = (k, val) => update('vaskuler', { ...v, [k]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Vasküler 3/4</span> Kontrastlanma & Eşlik Eden Bulgular</div>
-      <Field label="Kontrastlanma">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeVasc3}</span> {T.stepTitleVasc3}</div>
+      <Field label={T.labelVascKontrast}>
         <Radio options={YOK_VAR} value={v.kontrast} onChange={val => set('kontrast', val)} />
       </Field>
       {v.kontrast === 'VAR' && (
-        <Field label="Kontrast Tipi (çoklu)">
+        <Field label={T.labelVascKontrastTip}>
           <Radio options={KONTRASTLANMA_TIPI} value={v.kontrastTip} onChange={val => set('kontrastTip', val)} multi={true} />
         </Field>
       )}
       <hr className="hline" />
-      <Field label="Perifokal Ödem">
+      <Field label={T.labelVascOdem}>
         <Radio options={['YOK', 'HAFİF', 'ORTA', 'CİDDİ']} value={v.perilezOdem} onChange={val => set('perilezOdem', val)} />
       </Field>
-      <Field label="Orta Hat Shift">
+      <Field label={T.labelVascOrtaHat}>
         <Radio options={YOK_VAR} value={v.ortaHatShift} onChange={val => set('ortaHatShift', val)} />
       </Field>
       {v.ortaHatShift === 'VAR' && (
@@ -1569,13 +2038,13 @@ function StepVascKontrast({ s, update }) {
           <span className="unit-label">mm</span>
         </div>
       )}
-      <Field label="Eşlik Eden Kanama">
+      <Field label={T.labelVascKanama}>
         <Radio options={YOK_VAR} value={v.kanama} onChange={val => set('kanama', val)} />
       </Field>
-      <Field label="Kitle Etkisi">
+      <Field label={T.labelVascKitl}>
         <Radio options={YOK_VAR} value={v.kitlEtkisi} onChange={val => set('kitlEtkisi', val)} />
       </Field>
-      <Field label="Komşu Kemik Değişikliği">
+      <Field label={T.labelVascKomsuKemik}>
         <Radio options={['YOK', ...KEMIK_DEGISIK]} value={v.komsuKemik} onChange={val => set('komsuKemik', val)} />
       </Field>
     </div>
@@ -1588,25 +2057,23 @@ function StepVascEkTanisal({ s, update }) {
   const set = (k, val) => update('vaskuler', { ...v, [k]: val });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">Vasküler 4/4</span> Ek Tanısal Özellikler</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeVasc4}</span> {T.stepTitleVasc4}</div>
       <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>
-        Ayırıcı tanı olasılık hesaplaması için ek bulgular:
+        {T.vascEkTanisalDesc}
       </p>
-      <Field label="Hemosiderin Halkası / Depositi (T2* / SWI)">
+      <Field label={T.labelVascHemosiderin}>
         <Radio options={YOK_VAR} value={v.hemosiderin || ''} onChange={val => set('hemosiderin', val)} />
       </Field>
-      <Field label='Popcorn Paterni (heterojen "popcorn" görünüm)'>
+      <Field label={T.labelVascPopcorn}>
         <Radio options={YOK_VAR} value={v.popcorn || ''} onChange={val => set('popcorn', val)} />
       </Field>
-      <Field label="Flow Void (akım boşluğu)">
+      <Field label={T.labelVascFlowVoid}>
         <Radio options={YOK_VAR} value={v.flowVoid || ''} onChange={val => set('flowVoid', val)} />
       </Field>
 
       <div className="yorum-block">
-        <div className="yorum-title">Tanısal İpuçları</div>
-        <strong>Hemosiderin:</strong> Kavernoma ve kronik hematom için tipik.<br/>
-        <strong>Popcorn:</strong> Kavernoma patognomonik T2 bulgusu.<br/>
-        <strong>Flow void:</strong> AVM, dural AV fistül, hipervasküler lezyon.
+        <div className="yorum-title">{T.tanisal_ipuclariTitle}</div>
+        <div dangerouslySetInnerHTML={{ __html: T.vascTanisalIpuclariContent }} />
       </div>
     </div>
   );
@@ -1618,26 +2085,26 @@ function StepMSPlak({ s, update }) {
   const set = (k, v) => update('ms', { ...m, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">MS 1/2</span> Plak Dağılımı & Lokalizasyonu</div>
-      <Field label="Plak Dağılımı (çoklu)">
+      <div className="card-title"><span className="step-badge">{T.stepBadgeMS1}</span> {T.stepTitleMS1}</div>
+      <Field label={T.labelPlakDagilim}>
         <Radio options={['FRONTAL', 'PARİETAL', 'TEMPORAL', 'OKSİPİTAL', 'SEREBELLAR', 'SPİNAL KORD', 'BRAİN STEM']}
           value={m.plakDagilim} onChange={v => set('plakDagilim', v)} multi={true} />
       </Field>
-      <Field label="Plak Lokalizasyonu (çoklu) - McDonald Kriterleri">
+      <Field label={T.labelPlakLok}>
         <Radio options={MS_LOK} value={m.plakLok} onChange={v => set('plakLok', v)} multi={true} />
       </Field>
-      <Field label="Tahmini Plak Sayısı">
+      <Field label={T.labelPlakSayisi}>
         <Radio options={['1-3', '4-9', '≥10 (çok sayıda)']} value={m.plakSayisi} onChange={v => set('plakSayisi', v)} />
       </Field>
-      <Field label="En Büyük Plak Çapı (mm)">
+      <Field label={T.labelEnBuyuk}>
         <div className="inline-group">
           <NumInput value={m.enBuyuk} onChange={v => set('enBuyuk', v)} />
           <span className="unit-label">mm</span>
         </div>
       </Field>
       <div className="yorum-block">
-        <div className="yorum-title">McDonald Kriterleri 2017</div>
-        Zamansal yayılım: ≥1 kontrast tutan + ≥1 kontrast tutmayan lezyon. Mekansal yayılım: ≥2 bölge (periventriküler, kortikal/juxtakortikal, infratentoryal, spinal kord).
+        <div className="yorum-title">{T.mcDonaldTitle}</div>
+        {T.mcDonaldContent}
       </div>
     </div>
   );
@@ -1648,26 +2115,26 @@ function StepMSSinyal({ s, update }) {
   const set = (k, v) => update('ms', { ...m, [k]: v });
   return (
     <div className="card">
-      <div className="card-title"><span className="step-badge">MS 2/2</span> Sinyal Karakteri & Kontrastlanma</div>
-      <div className="section-header">İntensiteler</div>
+      <div className="card-title"><span className="step-badge">{T.stepBadgeMS2}</span> {T.stepTitleMS2}</div>
+      <div className="section-header">{T.sectionMS_Intensiteler}</div>
       <div className="signal-group">
         <SignalPanel label="T1" value={m.t1} onChange={v => set('t1', v)} />
         <SignalPanel label="T2" value={m.t2} onChange={v => set('t2', v)} />
         <SignalPanel label="FLAIR" value={m.flair} onChange={v => set('flair', v)} />
       </div>
       <hr className="hline" />
-      <Field label="T1 Siyah Delik (Black Hole)">
+      <Field label={T.labelBlackHole}>
         <Radio options={['YOK', 'VAR - Persistan', 'VAR - Geçici']} value={m.blackHole || ''} onChange={v => set('blackHole', v)} />
       </Field>
-      <Field label="DWI">
+      <Field label={T.labelMSDWI}>
         <Radio options={['KISITLIYOR (aktif)', 'KISITLAMIYOR', 'T2 SHINE-THROUGH']} value={m.dwi} onChange={v => set('dwi', v)} />
       </Field>
       <hr className="hline" />
-      <Field label="Kontrastlanma">
+      <Field label={T.labelMSKontrast}>
         <Radio options={['YOK (inaktif)', 'VAR (aktif lezyon)']} value={m.kontrast} onChange={v => set('kontrast', v)} />
       </Field>
       {m.kontrast && m.kontrast !== 'YOK (inaktif)' && (
-        <Field label="Kontrast Paterni">
+        <Field label={T.labelMSKontrastPat}>
           <Radio options={['NODULAR', 'PERİFERAL (açık halka)', 'ZAYIF/HOMOJENİK']} value={m.kontrastTip} onChange={v => set('kontrastTip', v)} />
         </Field>
       )}
@@ -1685,11 +2152,11 @@ function getProbColor(pct) {
 }
 
 function getProbBadge(pct) {
-  if (pct >= 70) return { cls: 'badge-red', txt: 'YÜKSEK' };
-  if (pct >= 50) return { cls: 'badge-yellow', txt: 'ORTA-YÜKSEK' };
-  if (pct >= 30) return { cls: 'badge-blue', txt: 'ORTA' };
-  if (pct >= 15) return { cls: 'badge-purple', txt: 'DÜŞÜK' };
-  return { cls: 'badge-purple', txt: 'ÇOK DÜŞÜK' };
+  if (pct >= 70) return { cls: 'badge-red', txt: T.probBadgeHigh };
+  if (pct >= 50) return { cls: 'badge-yellow', txt: T.probBadgeMedHigh };
+  if (pct >= 30) return { cls: 'badge-blue', txt: T.probBadgeMed };
+  if (pct >= 15) return { cls: 'badge-purple', txt: T.probBadgeLow };
+  return { cls: 'badge-purple', txt: T.probBadgeVeryLow };
 }
 
 // ─── REPORT ───────────────────────────────────────────────────────────────────
@@ -1700,7 +2167,7 @@ function Report({ s, reset, goPrev }) {
 
   // ANATOMIC
   const korteksBulgulari = Object.entries(korteks).filter(([,v]) => v && v !== 'NORMAL').map(([k, v]) => `${k} ${v}`);
-  lines.push(['ANATOMİK DEĞERLENDİRME', [
+  lines.push([T.sectionAnatomik, [
     korteksBulgulari.length > 0 ? `Korteks kalınlığı: ${korteksBulgulari.join(', ')}` : 'Korteks kalınlığı normal',
     ventrikul.sagGor === 'GENİŞLEMİŞ' || ventrikul.solGor === 'GENİŞLEMİŞ' ? `Lateral ventriküller genişlemiş (Sağ trans.çap: ${ventrikul.sagLateral || '?'} mm, Sağ Evans: ${ventrikul.sagLateralEvans || '?'}, Sol trans.çap: ${ventrikul.solLateral || '?'} mm, Sol Evans: ${ventrikul.solLateralEvans || '?'})` : (ventrikul.sagLateral ? `Lateral ventriküller normal. Sağ: ${ventrikul.sagLateral} mm, Sol: ${ventrikul.solLateral || '?'} mm` : 'Lateral ventriküller değerlendirilmedi'),
     ventrikul.v3 ? `3. ventrikül transvers çap: ${ventrikul.v3} mm` : '',
@@ -1735,7 +2202,7 @@ function Report({ s, reset, goPrev }) {
     if (travma.ortaHatShift === 'VAR') trvLines.push(`Orta hat şift: ${travma.ortaHatYon || '?'} yönde ${travma.ortaHatMM || '?'} mm.`);
     if (travma.herniasyon === 'VAR') trvLines.push(`Serebral herniasyon: ${(travma.herniasyonTip || []).join(', ')}.${travma.herniasyonBasilan && travma.herniasyonBasilan !== 'YOK' ? ' Basılan yapı: ' + travma.herniasyonBasilan + '.' : ''}`);
     if ((travma.yumsatDoc || []).length > 0) trvLines.push(`Eşlik eden yumuşak doku bulguları: ${travma.yumsatDoc.join(', ')}.`);
-    lines.push(['TRAVMA BULGULARI', trvLines]);
+    lines.push([T.sectionTravma, trvLines]);
   }
 
   if (patolojiTip === 'TÜMÖR') {
@@ -1769,7 +2236,7 @@ function Report({ s, reset, goPrev }) {
     if (tumor.popcorn === 'VAR') ekBulgular.push('popcorn paterni');
     if (tumor.flowVoid === 'VAR') ekBulgular.push('flow void');
     if (ekBulgular.length > 0) tumLines.push(`Ek tanısal bulgular: ${ekBulgular.join(', ')}.`);
-    lines.push(['TÜMÖR / KİTLE BULGULARI', tumLines]);
+    lines.push([T.sectionTumor, tumLines]);
   }
 
   if (patolojiTip === 'VASKÜLER LEZYON') {
@@ -1792,7 +2259,7 @@ function Report({ s, reset, goPrev }) {
     if (vaskuler.popcorn === 'VAR') ekV.push('popcorn paterni');
     if (vaskuler.flowVoid === 'VAR') ekV.push('flow void');
     if (ekV.length > 0) vscLines.push(`Ek tanısal bulgular: ${ekV.join(', ')}.`);
-    lines.push(['VASKÜLER LEZYON BULGULARI', vscLines]);
+    lines.push([T.sectionVasc, vscLines]);
   }
 
   if (patolojiTip === 'MULTIPLE SCLEROSIS') {
@@ -1804,19 +2271,19 @@ function Report({ s, reset, goPrev }) {
     if (ms.blackHole && ms.blackHole !== 'YOK') msLines.push(`T1 siyah delik: ${ms.blackHole}.`);
     if (ms.dwi) msLines.push(`DWI: ${ms.dwi}.`);
     if (ms.kontrast) msLines.push(`Kontrastlanma: ${ms.kontrast}${ms.kontrastTip ? ' (' + ms.kontrastTip + ')' : ''}.`);
-    lines.push(['MULTİPL SKLEROZ BULGULARI', msLines]);
+    lines.push([T.sectionMS, msLines]);
   }
 
   // Differential hesapla
   const diffResults = (patolojiTip && patolojiTip !== 'YOK') ? calculateDifferential(s) : [];
 
   const copyReport = () => {
-    let txt = 'BEYİN / İNTRAKRANİAL MRI RAPORU\n\n';
+    let txt = T.copyReportHeader;
     lines.forEach(([sec, lns]) => {
       txt += sec + '\n' + lns.map(l => '- ' + l).join('\n') + '\n\n';
     });
     if (diffResults.length > 0) {
-      txt += 'AYIRICI TANI OLASILIKLARI\n';
+      txt += T.diffSectionHeader;
       diffResults.forEach((r, i) => {
         txt += `${i + 1}. ${r.name}: %${r.pct}\n`;
       });
@@ -1828,14 +2295,14 @@ function Report({ s, reset, goPrev }) {
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    alert('Rapor panoya kopyalandı.');
+    alert(T.copiedAlert);
   };
 
   return (
     <div>
       {/* Report card */}
       <div className="card report-wrap">
-        <div className="card-title">📋 Yapılandırılmış MRI Raporu</div>
+        <div className="card-title">{T.reportTitle}</div>
         {lines.map(([sec, lns]) => (
           <div key={sec} className="report-section">
             <h3>{sec}</h3>
@@ -1848,27 +2315,27 @@ function Report({ s, reset, goPrev }) {
         {/* YORUM */}
         {patolojiTip === 'TÜMÖR' && (
           <div className="yorum-block">
-            <div className="yorum-title">Klinik Yorum</div>
+            <div className="yorum-title">{T.clinicalCommentTitle}</div>
             {tumor.dural_tail === 'VAR' && tumor.dural_base === 'VAR'
-              ? 'Dural tail işareti ve geniş dural bazis; meningiom ile birincil uyumludur. Komşu kemik değişikliği mevcutsa hipervasküler tutulum veya invazif davranış düşünülmelidir.'
+              ? T.clinicalCommentDural
               : tumor.dwi === 'KISITLIYOR' && tumor.adc === 'DÜŞÜK'
-              ? 'Belirgin DWI kısıtlaması ve düşük ADC; PCNSL, medulloblastom veya abse ile uyumlu olabilir. Klinik bağlam ve kontrast paterni ayırıcı tanıda kritiktir.'
-              : 'İntrakranial kitle değerlendirmesi tamamlandı. Histopatolojik doğrulama ve klinik-laboratuvar korelasyon önerilir.'}
+              ? T.clinicalCommentDWI
+              : T.clinicalCommentDefault}
           </div>
         )}
         {patolojiTip === 'VASKÜLER LEZYON' && vaskuler.dwi === 'KISITLIYOR' && (
           <div className="yorum-block">
-            <div className="yorum-title">Klinik Yorum - Akut İskemi</div>
-            DWI kısıtlaması akut/subakut iskemik infarktı destekler. İlgili vasküler territory değerlendirildiğinde {(vaskuler.territory || []).join(', ') || '?'} alanında enfarkt mevcuttur. Acil klinik değerlendirme önerilir.
+            <div className="yorum-title">{T.acuteIschemiaTitle}</div>
+            {T.acuteIschemiaContent} {(vaskuler.territory || []).join(', ') || '?'} {T.acuteIschemiaContent2}
           </div>
         )}
         {patolojiTip === 'MULTIPLE SCLEROSIS' && (
           <div className="yorum-block">
-            <div className="yorum-title">McDonald 2017 Kriterleri Uyumu</div>
+            <div className="yorum-title">{T.mcDonaldMatchTitle}</div>
             {(ms.plakLok || []).length >= 2
-              ? `Mekansal yayılım için ≥2 tutulum bölgesi (${(ms.plakLok || []).join(', ')}) saptandı.`
-              : 'Mekansal yayılım kriterleri için ≥2 farklı bölge tutulumu gereklidir.'}
-            {ms.kontrast && ms.kontrast !== 'YOK (inaktif)' ? ' Aktif lezyon (kontrast tutan) ile birlikte kontrast tutmayan lezyon mevcutsa zamansal yayılım kriteri karşılanmış sayılır.' : ' Aktif kontrast tutan lezyon izlenmedi; zamansal yayılım için takip MRI önerilir.'}
+              ? `${T.spatialMatch} (${(ms.plakLok || []).join(', ')})${RV_LOCALE === 'tr' ? ' saptandı.' : ' detected.'}`
+              : T.spatialNoMatch}
+            {ms.kontrast && ms.kontrast !== 'YOK (inaktif)' ? T.temporalMatch : T.temporalNoMatch}
           </div>
         )}
       </div>
@@ -1876,9 +2343,9 @@ function Report({ s, reset, goPrev }) {
       {/* AYIRICI TANI OLASILIKLARI */}
       {diffResults.length > 0 && (
         <div className="card" style={{ marginTop: 16 }}>
-          <div className="card-title">🎯 Ayırıcı Tanı Olasılıkları</div>
+          <div className="card-title">{T.diffTitle}</div>
           <p style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.5 }}>
-            Girilen MRI sinyal özellikleri ve bulgulara göre hesaplanan uyumluluk yüzdeleri. Bu değerler klinik korelasyon gerektiren yönlendirici bilgidir.
+            {T.diffDesc}
           </p>
           {diffResults.map((r, i) => {
             const badge = getProbBadge(r.pct);
@@ -1894,7 +2361,7 @@ function Report({ s, reset, goPrev }) {
                     <div className="prob-bar-fill" style={{ width: r.pct + '%', background: getProbColor(r.pct) }} />
                   </div>
                   <div className="prob-detail">
-                    Kategori: {r.category === 'TÜMÖR' ? 'Tümör/Kitle' : r.category === 'VASKÜLER' ? 'Vasküler' : r.category === 'MS' ? 'Demyelinizan' : 'Travma'}
+                    {T.diffKategori}: {r.category === 'TÜMÖR' ? T.diffTumor : r.category === 'VASKÜLER' ? T.diffVasc : r.category === 'MS' ? T.diffMS : T.diffTravma}
                   </div>
                 </div>
                 <div className="prob-pct" style={{ color: getProbColor(r.pct) }}>%{r.pct}</div>
@@ -1903,19 +2370,19 @@ function Report({ s, reset, goPrev }) {
           })}
 
           <div className="yorum-block" style={{ marginTop: 16 }}>
-            <div className="yorum-title">Uyarı</div>
-            Bu olasılık skorları, girilen MRI bulguları ile bilinen patoloji profillerinin sinyal/morfolojik eşleştirmesine dayalıdır. Kesin tanı için klinik değerlendirme, ileri tetkik ve histopatolojik doğrulama gereklidir. Bu uygulama tanı koyma aracı değildir.
+            <div className="yorum-title">{T.warningTitle}</div>
+            {T.warningContent}
           </div>
         </div>
       )}
 
       {/* Action buttons */}
       <div className="nav-row no-print">
-        <button className="btn btn-secondary" onClick={goPrev}>← Geri Dön</button>
+        <button className="btn btn-secondary" onClick={goPrev}>{T.btnBack}</button>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-green" onClick={copyReport}>📋 Kopyala</button>
-          <button className="btn btn-primary" onClick={() => window.print()}>🖨️ Yazdır</button>
-          <button className="btn btn-danger" onClick={reset}>🔄 Yeni</button>
+          <button className="btn btn-green" onClick={copyReport}>{T.btnCopy}</button>
+          <button className="btn btn-primary" onClick={() => window.print()}>{T.btnPrint}</button>
+          <button className="btn btn-danger" onClick={reset}>{T.btnNew}</button>
         </div>
       </div>
     </div>

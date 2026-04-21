@@ -154,51 +154,51 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a2e;color:#e0e0e0;m
 <body>
 <div class="app">
   <div class="header">
-    <h1>T2* Relaksometri — Demir Konsantrasyon Hesaplama</h1>
-    <p>Multi-eko GRE Sinyal İntensitelerinden T2* Curve Fitting ile Karaciğer / Kardiyak Demir Kantitasyonu</p>
+    <h1 data-i18n-tr="T2* Relaksometri — Demir Konsantrasyon Hesaplama" data-i18n-en="T2* Relaxometry — Iron Concentration Calculation"></h1>
+    <p data-i18n-tr="Multi-eko GRE Sinyal İntensitelerinden T2* Curve Fitting ile Karaciğer / Kardiyak Demir Kantitasyonu" data-i18n-en="Liver / Cardiac Iron Quantification via T2* Curve Fitting from Multi-echo GRE Signal Intensities"></p>
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('liver')">Karaciğer (Liver)</div>
-    <div class="tab" onclick="switchTab('cardiac')">Kalp (Cardiac)</div>
+    <div class="tab active" onclick="switchTab('liver')" data-i18n-tr="Karaciğer (Liver)" data-i18n-en="Liver"></div>
+    <div class="tab" onclick="switchTab('cardiac')" data-i18n-tr="Kalp (Cardiac)" data-i18n-en="Cardiac (Heart)"></div>
   </div>
 
   <!-- ═══ LIVER ═══ -->
   <div class="panel active" id="panelLiver">
-    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px">KARACİĞER DEMİR KONSANTRASYONU</div>
+    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px" data-i18n-tr="KARACİĞER DEMİR KONSANTRASYONU" data-i18n-en="LIVER IRON CONCENTRATION"></div>
     <div class="form-group">
-      <label>Alan Gücü</label>
+      <label data-i18n-tr="Alan Gücü" data-i18n-en="Field Strength"></label>
       <div class="toggle-row">
         <button class="toggle-btn active" onclick="setOpt('liver','fs','1.5',this)">1.5 T</button>
         <button class="toggle-btn" onclick="setOpt('liver','fs','3',this)">3 T</button>
       </div>
     </div>
     <div class="form-group" id="liverMethodGroup">
-      <label>LIC Kalibrasyon</label>
+      <label data-i18n-tr="LIC Kalibrasyon" data-i18n-en="LIC Calibration"></label>
       <div class="toggle-row">
         <button class="toggle-btn active" onclick="setOpt('liver','method','garbowski',this)">Garbowski 2014</button>
         <button class="toggle-btn" onclick="setOpt('liver','method','wood',this)">Wood 2005</button>
       </div>
     </div>
-    <label class="section-label">TE ve Sinyal İntensitesi (SI) Değerleri</label>
+    <label class="section-label" data-i18n-tr="TE ve Sinyal İntensitesi (SI) Değerleri" data-i18n-en="TE and Signal Intensity (SI) Values"></label>
     <table class="data-table" id="liverTable">
       <thead><tr><th style="width:30px">#</th><th>TE (ms)</th><th>SI</th><th style="width:36px"></th></tr></thead>
       <tbody id="liverTbody"></tbody>
     </table>
     <div class="table-actions">
-      <button onclick="addRow('liver')">+ Satır Ekle</button>
-      <button onclick="addMultiRows('liver')">+ 4 Satır</button>
-      <button onclick="fillSample('liver')">Örnek Veri</button>
+      <button onclick="addRow('liver')" data-i18n-tr="+ Satır Ekle" data-i18n-en="+ Add Row"></button>
+      <button onclick="addMultiRows('liver')" data-i18n-tr="+ 4 Satır" data-i18n-en="+ 4 Rows"></button>
+      <button onclick="fillSample('liver')" data-i18n-tr="Örnek Veri" data-i18n-en="Sample Data"></button>
     </div>
     <div class="btn-group" style="margin-top:12px">
-      <button class="btn btn-calc" onclick="calculate('liver')">Hesapla</button>
-      <button class="btn btn-reset" onclick="resetAll('liver')">Sıfırla</button>
+      <button class="btn btn-calc" onclick="calculate('liver')" data-i18n-tr="Hesapla" data-i18n-en="Calculate"></button>
+      <button class="btn btn-reset" onclick="resetAll('liver')" data-i18n-tr="Sıfırla" data-i18n-en="Reset"></button>
     </div>
     <div id="liverError" class="error-msg hidden"></div>
     <div id="liverOutput" class="hidden">
-      <div class="chart-wrap"><h4>T2* Sinyal Bozunma Eğrisi</h4><svg id="chartLiver" viewBox="0 0 560 320"></svg></div>
+      <div class="chart-wrap"><h4 data-i18n-tr="T2* Sinyal Bozunma Eğrisi" data-i18n-en="T2* Signal Decay Curve"></h4><svg id="chartLiver" viewBox="0 0 560 320"></svg></div>
       <div class="result-box">
-        <div class="section-label">Hesaplama Sonuçları</div>
+        <div class="section-label" data-i18n-tr="Hesaplama Sonuçları" data-i18n-en="Calculation Results"></div>
         <div class="result-grid">
           <div class="result-card"><div class="rc-label">T2*</div><div class="rc-value" id="liverT2s">—</div><div class="rc-unit">ms</div></div>
           <div class="result-card"><div class="rc-label">R2*</div><div class="rc-value" id="liverR2s">—</div><div class="rc-unit">Hz (s⁻¹)</div></div>
@@ -208,21 +208,21 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a2e;color:#e0e0e0;m
         <div id="liverSevWrap" style="text-align:center;margin-top:10px"></div>
         <div class="fit-info" id="liverFitInfo"></div>
       </div>
-      <div class="yorum-box"><h4>YORUM</h4><p id="liverYorum"></p></div>
+      <div class="yorum-box"><h4 data-i18n-tr="YORUM" data-i18n-en="INTERPRETATION"></h4><p id="liverYorum"></p></div>
     </div>
     <div class="info-box" style="margin-top:16px">
-      <strong>Fitting Modeli:</strong> SI(TE) = S₀ × exp(−TE / T2*) — Mono-eksponansiyel<br>
-      <strong>Auto-Truncation:</strong> R² &lt; 0.995 ise son veri noktaları otomatik çıkarılır (He et al. algoritması)<br>
+      <strong data-i18n-tr="Fitting Modeli:" data-i18n-en="Fitting Model:"></strong> SI(TE) = S₀ × exp(−TE / T2*) — <span data-i18n-tr="Mono-eksponansiyel" data-i18n-en="Mono-exponential"></span><br>
+      <strong data-i18n-tr="Auto-Truncation:" data-i18n-en="Auto-Truncation:"></strong> <span data-i18n-tr="R² &lt; 0.995 ise son veri noktaları otomatik çıkarılır (He et al. algoritması)" data-i18n-en="If R² &lt; 0.995, trailing data points are automatically removed (He et al. algorithm)"></span><br>
       <strong>LIC Garbowski 2014:</strong> LIC = 31.94 × (T2*)<sup>−1.014</sup> · <strong>Wood 2005:</strong> LIC = 0.0254 × R2* + 0.202<br>
-      <strong>Şiddet:</strong> Normal &lt;1.8 · Sınırda 1.8–3.2 · Hafif 3.2–7.0 · Orta 7.0–15.0 · Ağır ≥15.0 mg/g dw
+      <strong data-i18n-tr="Şiddet:" data-i18n-en="Severity:"></strong> <span data-i18n-tr="Normal &lt;1.8 · Sınırda 1.8–3.2 · Hafif 3.2–7.0 · Orta 7.0–15.0 · Ağır ≥15.0 mg/g dw" data-i18n-en="Normal &lt;1.8 · Borderline 1.8–3.2 · Mild 3.2–7.0 · Moderate 7.0–15.0 · Severe ≥15.0 mg/g dw"></span>
     </div>
     <div class="btn-group">
-      <button class="btn btn-print" onclick="printReport('liver')">Yazdır / PDF</button>
-      <button class="btn btn-copy" onclick="copyReport('panelLiver')">Kopyala</button>
+      <button class="btn btn-print" onclick="printReport('liver')" data-i18n-tr="Yazdır / PDF" data-i18n-en="Print / PDF"></button>
+      <button class="btn btn-copy" onclick="copyReport('panelLiver')" data-i18n-tr="Kopyala" data-i18n-en="Copy"></button>
     </div>
     <div class="refs">
-      <h3>Referanslar</h3>
-      <p>1. Garbowski MW, et al. Biopsy-based calibration of T2* MR for estimation of LIC. <em>J Cardiovasc Magn Reson</em> 2014;16:40.</p>
+      <h3 data-i18n-tr="Referanslar" data-i18n-en="References"></h3>
+      <p>1. Garbowski MW, et al. Biopsy-based calibration of T2* MRI for estimation of LIC. <em>J Cardiovasc Magn Reson</em> 2014;16:40.</p>
       <p>2. Wood JC, et al. MRI R2 and R2* mapping accurately estimates hepatic iron concentration. <em>Blood</em> 2005;106(4):1460-5.</p>
       <p>3. He T, et al. Automated truncation method for myocardial T2* measurement. <em>J Magn Reson Imaging</em> 2008;28(4):921-7.</p>
       <p>4. Storey P, et al. R2* imaging at 3T and comparison with 1.5T. <em>JMRI</em> 2007;25(3):540-7.</p>
@@ -232,57 +232,57 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a2e;color:#e0e0e0;m
 
   <!-- ═══ CARDIAC ═══ -->
   <div class="panel" id="panelCardiac">
-    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px">KARDİYAK DEMİR KONSANTRASYONU</div>
-    <label class="section-label">TE ve Sinyal İntensitesi (SI) Değerleri</label>
+    <div class="print-only" style="text-align:center;font-weight:700;font-size:1.1rem;color:#333;margin-bottom:10px" data-i18n-tr="KARDİYAK DEMİR KONSANTRASYONU" data-i18n-en="CARDIAC IRON CONCENTRATION"></div>
+    <label class="section-label" data-i18n-tr="TE ve Sinyal İntensitesi (SI) Değerleri" data-i18n-en="TE and Signal Intensity (SI) Values"></label>
     <table class="data-table" id="cardiacTable">
       <thead><tr><th style="width:30px">#</th><th>TE (ms)</th><th>SI</th><th style="width:36px"></th></tr></thead>
       <tbody id="cardiacTbody"></tbody>
     </table>
     <div class="table-actions">
-      <button onclick="addRow('cardiac')">+ Satır Ekle</button>
-      <button onclick="addMultiRows('cardiac')">+ 4 Satır</button>
-      <button onclick="fillSample('cardiac')">Örnek Veri</button>
+      <button onclick="addRow('cardiac')" data-i18n-tr="+ Satır Ekle" data-i18n-en="+ Add Row"></button>
+      <button onclick="addMultiRows('cardiac')" data-i18n-tr="+ 4 Satır" data-i18n-en="+ 4 Rows"></button>
+      <button onclick="fillSample('cardiac')" data-i18n-tr="Örnek Veri" data-i18n-en="Sample Data"></button>
     </div>
     <div class="btn-group" style="margin-top:12px">
-      <button class="btn btn-calc" onclick="calculate('cardiac')">Hesapla</button>
-      <button class="btn btn-reset" onclick="resetAll('cardiac')">Sıfırla</button>
+      <button class="btn btn-calc" onclick="calculate('cardiac')" data-i18n-tr="Hesapla" data-i18n-en="Calculate"></button>
+      <button class="btn btn-reset" onclick="resetAll('cardiac')" data-i18n-tr="Sıfırla" data-i18n-en="Reset"></button>
     </div>
     <div id="cardiacError" class="error-msg hidden"></div>
     <div id="cardiacOutput" class="hidden">
-      <div class="chart-wrap"><h4>T2* Sinyal Bozunma Eğrisi</h4><svg id="chartCardiac" viewBox="0 0 560 320"></svg></div>
+      <div class="chart-wrap"><h4 data-i18n-tr="T2* Sinyal Bozunma Eğrisi" data-i18n-en="T2* Signal Decay Curve"></h4><svg id="chartCardiac" viewBox="0 0 560 320"></svg></div>
       <div class="result-box">
-        <div class="section-label">Hesaplama Sonuçları</div>
+        <div class="section-label" data-i18n-tr="Hesaplama Sonuçları" data-i18n-en="Calculation Results"></div>
         <div class="result-grid">
           <div class="result-card"><div class="rc-label">T2*</div><div class="rc-value" id="cardiacT2s">—</div><div class="rc-unit">ms</div></div>
           <div class="result-card"><div class="rc-label">R2*</div><div class="rc-value" id="cardiacR2s">—</div><div class="rc-unit">Hz (s⁻¹)</div></div>
-          <div class="result-card"><div class="rc-label">[Fe] Miyokard</div><div class="rc-value" id="cardiacFe">—</div><div class="rc-unit">mg/g dw</div></div>
+          <div class="result-card"><div class="rc-label" data-i18n-tr="[Fe] Miyokard" data-i18n-en="[Fe] Myocardium"></div><div class="rc-value" id="cardiacFe">—</div><div class="rc-unit">mg/g dw</div></div>
           <div class="result-card"><div class="rc-label">S₀</div><div class="rc-value" id="cardiacS0">—</div><div class="rc-unit">a.u.</div></div>
         </div>
         <div id="cardiacSevWrap" style="text-align:center;margin-top:10px"></div>
         <div style="margin-top:12px">
-          <div class="section-label" style="margin-bottom:6px">T2* Risk Sınıflaması (Pennell 2013 AHA)</div>
+          <div class="section-label" style="margin-bottom:6px" data-i18n-tr="T2* Risk Sınıflaması (Pennell 2013 AHA)" data-i18n-en="T2* Risk Classification (Pennell 2013 AHA)"></div>
           <div class="risk-visual">
-            <div class="risk-zone" id="crz1" style="background:#064e3b;color:#6ee7b7">&gt;20 ms<br>Normal</div>
-            <div class="risk-zone" id="crz2" style="background:#4a3000;color:#fbbf24">10–20 ms<br>Orta Risk</div>
-            <div class="risk-zone" id="crz3" style="background:#6b0000;color:#fca5a5">&lt;10 ms<br>Yüksek Risk</div>
+            <div class="risk-zone" id="crz1" style="background:#064e3b;color:#6ee7b7" data-i18n-tr="&gt;20 ms<br>Normal" data-i18n-en="&gt;20 ms<br>Normal"></div>
+            <div class="risk-zone" id="crz2" style="background:#4a3000;color:#fbbf24" data-i18n-tr="10–20 ms<br>Orta Risk" data-i18n-en="10–20 ms<br>Moderate Risk"></div>
+            <div class="risk-zone" id="crz3" style="background:#6b0000;color:#fca5a5" data-i18n-tr="&lt;10 ms<br>Yüksek Risk" data-i18n-en="&lt;10 ms<br>High Risk"></div>
           </div>
         </div>
         <div class="fit-info" id="cardiacFitInfo"></div>
       </div>
-      <div class="yorum-box"><h4>YORUM</h4><p id="cardiacYorum"></p></div>
+      <div class="yorum-box"><h4 data-i18n-tr="YORUM" data-i18n-en="INTERPRETATION"></h4><p id="cardiacYorum"></p></div>
     </div>
     <div class="info-box" style="margin-top:16px">
-      <strong>Fitting:</strong> SI(TE) = S₀ × exp(−TE / T2*) — Auto-truncation (R² &gt; 0.995)<br>
-      <strong>Formül (Carpenter 2011):</strong> [Fe] = 45.0 × (T2*)<sup>−1.22</sup> mg/g dw<br>
-      <strong>Risk (Pennell 2013 AHA):</strong> &gt;20 ms Normal · 10–20 ms Orta · &lt;10 ms Yüksek Risk
+      <strong data-i18n-tr="Fitting:" data-i18n-en="Fitting:"></strong> SI(TE) = S₀ × exp(−TE / T2*) — <span data-i18n-tr="Auto-truncation (R² &gt; 0.995)" data-i18n-en="Auto-truncation (R² &gt; 0.995)"></span><br>
+      <strong data-i18n-tr="Formül (Carpenter 2011):" data-i18n-en="Formula (Carpenter 2011):"></strong> [Fe] = 45.0 × (T2*)<sup>−1.22</sup> mg/g dw<br>
+      <strong data-i18n-tr="Risk (Pennell 2013 AHA):" data-i18n-en="Risk (Pennell 2013 AHA):"></strong> <span data-i18n-tr="&gt;20 ms Normal · 10–20 ms Orta · &lt;10 ms Yüksek Risk" data-i18n-en="&gt;20 ms Normal · 10–20 ms Moderate · &lt;10 ms High Risk"></span>
     </div>
     <div class="btn-group">
-      <button class="btn btn-print" onclick="printReport('cardiac')">Yazdır / PDF</button>
-      <button class="btn btn-copy" onclick="copyReport('panelCardiac')">Kopyala</button>
+      <button class="btn btn-print" onclick="printReport('cardiac')" data-i18n-tr="Yazdır / PDF" data-i18n-en="Print / PDF"></button>
+      <button class="btn btn-copy" onclick="copyReport('panelCardiac')" data-i18n-tr="Kopyala" data-i18n-en="Copy"></button>
     </div>
     <div class="refs">
-      <h3>Referanslar</h3>
-      <p>1. Carpenter JP, et al. On T2* MR and cardiac iron. <em>Circulation</em> 2011;123:1519-28.</p>
+      <h3 data-i18n-tr="Referanslar" data-i18n-en="References"></h3>
+      <p>1. Carpenter JP, et al. On T2* MRI and cardiac iron. <em>Circulation</em> 2011;123:1519-28.</p>
       <p>2. Pennell DJ, et al. AHA Scientific Statement on β-thalassemia major. <em>Circulation</em> 2013;128:281-308.</p>
       <p>3. Anderson LJ. Assessment of iron overload with T2* MRI. <em>Prog Cardiovasc Dis</em> 2011;54:287-94.</p>
       <p>4. He T, et al. Automated truncation method for myocardial T2*. <em>JMRI</em> 2008;28:921-7.</p>
@@ -291,6 +291,194 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a2e;color:#e0e0e0;m
 </div>
 
 <script>
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    /* errors / alerts */
+    errMinPoints: 'En az 3 geçerli TE/SI çifti gereklidir.',
+    errFitFailed: 'Eksponansiyel fitting başarısız. Verileri kontrol ediniz.',
+    alertEnterData: 'Önce veri girip Hesapla butonuna basınız.',
+    alertCalcFirst: 'Önce Hesapla butonuna basınız.',
+    alertCopied: 'Rapor panoya kopyalandı. Word/Google Docs\'a yapıştırabilirsiniz.',
+    alertCopiedText: 'Rapor (metin) panoya kopyalandı.',
+    alertCopyFail: 'Kopyalama başarısız.',
+    alertCopiedPlain: 'Rapor panoya kopyalandı.',
+
+    /* del-btn title */
+    delTitle: 'Sil',
+
+    /* chart legend */
+    legendUsed: 'Kullanılan',
+
+    /* severity labels */
+    sevNormal: 'Normal',
+    sevBorderline: 'Sınırda',
+    sevMild: 'Hafif',
+    sevModerate: 'Orta',
+    sevSevere: 'Ağır',
+    sevCardiacNormalLow: 'Normal (Düşük Risk)',
+    sevCardiacModerate: 'Orta Risk',
+    sevCardiacHigh: 'Yüksek Risk',
+
+    /* fit info fragments */
+    fitTruncated: function(n){ return 'Auto-truncation: son ' + n + ' veri noktası çıkarıldı. '; },
+    fitAllUsed: 'Tüm veri noktaları kullanıldı. ',
+    fitUsedPoints: function(used, total){ return 'Kullanılan: ' + used + '/' + total + ' nokta'; },
+
+    /* print overlay section headers */
+    rpInputData: 'Giriş Verileri (TE / SI)',
+    rpDecayCurve: 'T2* Sinyal Bozunma Eğrisi',
+    rpCalcResults: 'Hesaplama Sonuçları',
+    rpPrint: '🖨 Yazdır',
+    rpCopy: '📋 Kopyala',
+    rpClose: '✕ Kapat',
+    rpFooter: 'T2* Relaksometri Demir Konsantrasyon Hesaplama',
+    rpInterpretation: 'YORUM',
+
+    /* report titles */
+    titleLiver: 'KARACİĞER DEMİR KONSANTRASYONU RAPORU',
+    titleCardiac: 'KARDİYAK DEMİR KONSANTRASYONU RAPORU',
+
+    /* cardiac result label */
+    cardiacFeLabel: '[Fe] Miyokard',
+
+    /* locale for date */
+    dateLocale: 'tr-TR',
+
+    /* YORUM — liver */
+    liverYorumHeader: function(fsStr){
+      return fsStr + ' MRI multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ';
+    },
+    liverYorumTruncated: function(n, r2){
+      return 'Otomatik truncation ile son ' + n + ' veri noktası gürültü düzeltmesi amacıyla çıkarılmıştır (R² = ' + r2 + '). ';
+    },
+    liverYorumAllUsed: function(r2){
+      return 'Tüm veri noktaları fitting\'e dahil edilmiştir (R² = ' + r2 + '). ';
+    },
+    liverYorumResult: function(t2s, r2s){
+      return 'Hesaplanan T2* = ' + t2s + ' ms (R2* = ' + r2s + ' Hz). ';
+    },
+    liverYorumLIC: function(method, lic){
+      return method + ' kalibrasyon yöntemi ile karaciğer demir konsantrasyonu (LIC) ' + lic + ' mg/g kuru ağırlık olarak hesaplanmıştır. ';
+    },
+    liverYorumSevNormal: 'Bu değer normal sınırlar içindedir.',
+    liverYorumSevBorderline: 'Bu değer sınırda yüksek aralıktadır. Klinik takip önerilir.',
+    liverYorumSevMild: 'Bu değer hafif demir birikimine karşılık gelmektedir. Şelasyon tedavisi değerlendirilebilir.',
+    liverYorumSevModerate: 'Bu değer orta düzeyde demir yüklenmesine karşılık gelmektedir. Şelasyon tedavisi endikedir.',
+    liverYorumSevSevere: 'Bu değer ağır demir yüklenmesine karşılık gelmektedir. Acil şelasyon tedavisi gereklidir.',
+
+    /* YORUM — cardiac */
+    cardiacYorumHeader: 'Kardiyak multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ',
+    cardiacYorumTruncated: function(n, r2){
+      return 'Otomatik truncation ile son ' + n + ' veri noktası çıkarılmıştır (R² = ' + r2 + '). ';
+    },
+    cardiacYorumAllUsed: function(r2){
+      return 'Tüm veri noktaları kullanılmıştır (R² = ' + r2 + '). ';
+    },
+    cardiacYorumResult: function(t2s, r2s){
+      return 'Hesaplanan T2* = ' + t2s + ' ms (R2* = ' + r2s + ' Hz). ';
+    },
+    cardiacYorumFe: function(fe){
+      return 'Carpenter 2011 denklemi ile miyokardiyal demir konsantrasyonu ' + fe + ' mg/g kuru ağırlıktır. ';
+    },
+    cardiacYorumNormal: 'T2* > 20 ms olup normal kategoridedir. Klinik olarak anlamlı miyokardiyal demir birikimi saptanmamıştır.',
+    cardiacYorumModerate: 'T2* 10–20 ms aralığında olup orta risk kategorisindedir. Şelasyon tedavisi optimizasyonu ve kardiyak takip önerilir.',
+    cardiacYorumHigh: 'T2* < 10 ms olup yüksek risk kategorisindedir. Kalp yetmezliği ve aritmi riski artmıştır. Agresif şelasyon ve yakın kardiyolojik takip gereklidir.'
+  },
+  en: {
+    /* errors / alerts */
+    errMinPoints: 'At least 3 valid TE/SI pairs are required.',
+    errFitFailed: 'Exponential fitting failed. Please check your data.',
+    alertEnterData: 'Please enter data and press Calculate first.',
+    alertCalcFirst: 'Please press Calculate first.',
+    alertCopied: 'Report copied to clipboard. You can paste it into Word/Google Docs.',
+    alertCopiedText: 'Report (plain text) copied to clipboard.',
+    alertCopyFail: 'Copy failed.',
+    alertCopiedPlain: 'Report copied to clipboard.',
+
+    /* del-btn title */
+    delTitle: 'Delete',
+
+    /* chart legend */
+    legendUsed: 'Used',
+
+    /* severity labels */
+    sevNormal: 'Normal',
+    sevBorderline: 'Borderline',
+    sevMild: 'Mild',
+    sevModerate: 'Moderate',
+    sevSevere: 'Severe',
+    sevCardiacNormalLow: 'Normal (Low Risk)',
+    sevCardiacModerate: 'Moderate Risk',
+    sevCardiacHigh: 'High Risk',
+
+    /* fit info fragments */
+    fitTruncated: function(n){ return 'Auto-truncation: ' + n + ' trailing data point(s) removed. '; },
+    fitAllUsed: 'All data points used. ',
+    fitUsedPoints: function(used, total){ return 'Used: ' + used + '/' + total + ' points'; },
+
+    /* print overlay section headers */
+    rpInputData: 'Input Data (TE / SI)',
+    rpDecayCurve: 'T2* Signal Decay Curve',
+    rpCalcResults: 'Calculation Results',
+    rpPrint: '🖨 Print',
+    rpCopy: '📋 Copy',
+    rpClose: '✕ Close',
+    rpFooter: 'T2* Relaxometry Iron Concentration Calculation',
+    rpInterpretation: 'INTERPRETATION',
+
+    /* report titles */
+    titleLiver: 'LIVER IRON CONCENTRATION REPORT',
+    titleCardiac: 'CARDIAC IRON CONCENTRATION REPORT',
+
+    /* cardiac result label */
+    cardiacFeLabel: '[Fe] Myocardium',
+
+    /* locale for date */
+    dateLocale: 'en-US',
+
+    /* YORUM — liver */
+    liverYorumHeader: function(fsStr){
+      return fsStr + ' MRI multi-echo GRE data were fitted with a mono-exponential curve fitting model. ';
+    },
+    liverYorumTruncated: function(n, r2){
+      return 'Auto-truncation removed the last ' + n + ' data point(s) for noise correction (R² = ' + r2 + '). ';
+    },
+    liverYorumAllUsed: function(r2){
+      return 'All data points were included in the fit (R² = ' + r2 + '). ';
+    },
+    liverYorumResult: function(t2s, r2s){
+      return 'Calculated T2* = ' + t2s + ' ms (R2* = ' + r2s + ' Hz). ';
+    },
+    liverYorumLIC: function(method, lic){
+      return 'Using the ' + method + ' calibration method, liver iron concentration (LIC) was calculated as ' + lic + ' mg/g dry weight. ';
+    },
+    liverYorumSevNormal: 'This value is within normal limits.',
+    liverYorumSevBorderline: 'This value is in the borderline-elevated range. Clinical follow-up is recommended.',
+    liverYorumSevMild: 'This value corresponds to mild iron deposition. Chelation therapy may be considered.',
+    liverYorumSevModerate: 'This value corresponds to moderate iron overload. Chelation therapy is indicated.',
+    liverYorumSevSevere: 'This value corresponds to severe iron overload. Urgent chelation therapy is required.',
+
+    /* YORUM — cardiac */
+    cardiacYorumHeader: 'Cardiac multi-echo GRE data were fitted with a mono-exponential curve fitting model. ',
+    cardiacYorumTruncated: function(n, r2){
+      return 'Auto-truncation removed the last ' + n + ' data point(s) (R² = ' + r2 + '). ';
+    },
+    cardiacYorumAllUsed: function(r2){
+      return 'All data points were used (R² = ' + r2 + '). ';
+    },
+    cardiacYorumResult: function(t2s, r2s){
+      return 'Calculated T2* = ' + t2s + ' ms (R2* = ' + r2s + ' Hz). ';
+    },
+    cardiacYorumFe: function(fe){
+      return 'Using the Carpenter 2011 equation, myocardial iron concentration is ' + fe + ' mg/g dry weight. ';
+    },
+    cardiacYorumNormal: 'T2* > 20 ms, which is in the normal category. No clinically significant myocardial iron deposition detected.',
+    cardiacYorumModerate: 'T2* is in the 10–20 ms range, indicating moderate risk. Chelation therapy optimization and cardiac follow-up are recommended.',
+    cardiacYorumHigh: 'T2* < 10 ms, indicating high risk. Risk of heart failure and arrhythmia is increased. Aggressive chelation and close cardiological follow-up are required.'
+  }
+})[RV_LOCALE];
+
 /* ══════════════════════════════════════════
    STATE
    ══════════════════════════════════════════ */
@@ -338,7 +526,7 @@ function addRow(organ){
   tr.innerHTML='<td class="row-num">'+rowCount[organ]+'</td>'+
     '<td><input type="number" step="any" min="0" placeholder="TE"></td>'+
     '<td><input type="number" step="any" min="0" placeholder="SI"></td>'+
-    '<td><button class="del-btn" onclick="delRow(this,\''+organ+'\')" title="Sil">×</button></td>';
+    '<td><button class="del-btn" onclick="delRow(this,\''+organ+'\')" title="'+T.delTitle+'">×</button></td>';
   tbody.appendChild(tr);
 }
 
@@ -490,17 +678,17 @@ function calcLIC(T2s, R2s, fs, method){
 function calcCardiacFe(T2s){ return 45.0*Math.pow(T2s,-1.22); }
 
 function licSeverity(v){
-  if(v<1.8) return {l:'Normal',cls:'sev-normal',c:'#6ee7b7'};
-  if(v<3.2) return {l:'Sınırda',cls:'sev-borderline',c:'#fcd34d'};
-  if(v<7.0) return {l:'Hafif',cls:'sev-mild',c:'#fbbf24'};
-  if(v<15) return {l:'Orta',cls:'sev-moderate',c:'#fb923c'};
-  return {l:'Ağır',cls:'sev-severe',c:'#fca5a5'};
+  if(v<1.8) return {l:T.sevNormal,cls:'sev-normal',c:'#6ee7b7'};
+  if(v<3.2) return {l:T.sevBorderline,cls:'sev-borderline',c:'#fcd34d'};
+  if(v<7.0) return {l:T.sevMild,cls:'sev-mild',c:'#fbbf24'};
+  if(v<15) return {l:T.sevModerate,cls:'sev-moderate',c:'#fb923c'};
+  return {l:T.sevSevere,cls:'sev-severe',c:'#fca5a5'};
 }
 
 function cardiacSev(t2){
-  if(t2>20) return {l:'Normal (Düşük Risk)',cls:'sev-normal',c:'#6ee7b7'};
-  if(t2>=10) return {l:'Orta Risk',cls:'sev-moderate',c:'#fb923c'};
-  return {l:'Yüksek Risk',cls:'sev-severe',c:'#fca5a5'};
+  if(t2>20) return {l:T.sevCardiacNormalLow,cls:'sev-normal',c:'#6ee7b7'};
+  if(t2>=10) return {l:T.sevCardiacModerate,cls:'sev-moderate',c:'#fb923c'};
+  return {l:T.sevCardiacHigh,cls:'sev-severe',c:'#fca5a5'};
 }
 
 /* ══════════════════════════════════════════
@@ -571,7 +759,7 @@ function drawChart(svgId, allData, usedData, fit){
 
   // Legend
   html+='<circle cx="'+(W-pad.r-120)+'" cy="'+(pad.t+10)+'" r="4" fill="#34d399"/>';
-  html+='<text x="'+(W-pad.r-112)+'" y="'+(pad.t+14)+'" fill="#888" font-size="9">Kullanılan</text>';
+  html+='<text x="'+(W-pad.r-112)+'" y="'+(pad.t+14)+'" fill="#888" font-size="9">'+T.legendUsed+'</text>';
   html+='<line x1="'+(W-pad.r-60)+'" y1="'+(pad.t+10)+'" x2="'+(W-pad.r-45)+'" y2="'+(pad.t+10)+'" stroke="#7c3aed" stroke-width="2"/>';
   html+='<text x="'+(W-pad.r-42)+'" y="'+(pad.t+14)+'" fill="#888" font-size="9">Fit</text>';
 
@@ -583,12 +771,12 @@ function drawChart(svgId, allData, usedData, fit){
    ══════════════════════════════════════════ */
 function calculate(organ){
   var data=getData(organ);
-  if(data.length<3){ showError(organ, 'En az 3 geçerli TE/SI çifti gereklidir.'); return; }
+  if(data.length<3){ showError(organ, T.errMinPoints); return; }
 
   document.getElementById(organ+'Error').classList.add('hidden');
 
   var result=fitWithTruncation(data);
-  if(!result.fit){ showError(organ, 'Eksponansiyel fitting başarısız. Verileri kontrol ediniz.'); return; }
+  if(!result.fit){ showError(organ, T.errFitFailed); return; }
 
   var fit=result.fit;
   var T2s=fit.T2s;
@@ -612,24 +800,24 @@ function calculate(organ){
       document.getElementById('liverSevWrap').innerHTML='';
     }
 
-    var trInfo=result.truncated>0?('Auto-truncation: son '+result.truncated+' veri noktası çıkarıldı. '):'Tüm veri noktaları kullanıldı. ';
+    var trInfo=result.truncated>0?T.fitTruncated(result.truncated):T.fitAllUsed;
     var methStr=opts.liver.method==='garbowski'?'Garbowski 2014':'Wood 2005';
     var fsStr=opts.liver.fs==='1.5'?'1.5T':'3T';
-    document.getElementById('liverFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>Kullanılan: '+fit.nPoints+'/'+data.length+' nokta</span> · <span>'+fsStr+' · '+methStr+'</span>';
+    document.getElementById('liverFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>'+T.fitUsedPoints(fit.nPoints,data.length)+'</span> · <span>'+fsStr+' · '+methStr+'</span>';
 
     // YORUM
-    var y=fsStr+" MRG multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ";
-    if(result.truncated>0) y+="Otomatik truncation ile son "+result.truncated+" veri noktası gürültü düzeltmesi amacıyla çıkarılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
-    else y+="Tüm veri noktaları fitting'e dahil edilmiştir (R² = "+fit.R2.toFixed(4)+"). ";
-    y+="Hesaplanan T2* = "+T2s.toFixed(2)+" ms (R2* = "+R2s.toFixed(1)+" Hz). ";
+    var y=T.liverYorumHeader(fsStr);
+    if(result.truncated>0) y+=T.liverYorumTruncated(result.truncated, fit.R2.toFixed(4));
+    else y+=T.liverYorumAllUsed(fit.R2.toFixed(4));
+    y+=T.liverYorumResult(T2s.toFixed(2), R2s.toFixed(1));
     if(lic!==null){
-      y+=methStr+" kalibrasyon yöntemi ile karaciğer demir konsantrasyonu (LIC) "+lic.toFixed(2)+" mg/g kuru ağırlık olarak hesaplanmıştır. ";
+      y+=T.liverYorumLIC(methStr, lic.toFixed(2));
       var sv=licSeverity(lic);
-      if(sv.cls==='sev-normal') y+='Bu değer normal sınırlar içindedir.';
-      else if(sv.cls==='sev-borderline') y+='Bu değer sınırda yüksek aralıktadır. Klinik takip önerilir.';
-      else if(sv.cls==='sev-mild') y+='Bu değer hafif demir birikimine karşılık gelmektedir. Şelasyon tedavisi değerlendirilebilir.';
-      else if(sv.cls==='sev-moderate') y+='Bu değer orta düzeyde demir yüklenmesine karşılık gelmektedir. Şelasyon tedavisi endikedir.';
-      else y+='Bu değer ağır demir yüklenmesine karşılık gelmektedir. Acil şelasyon tedavisi gereklidir.';
+      if(sv.cls==='sev-normal') y+=T.liverYorumSevNormal;
+      else if(sv.cls==='sev-borderline') y+=T.liverYorumSevBorderline;
+      else if(sv.cls==='sev-mild') y+=T.liverYorumSevMild;
+      else if(sv.cls==='sev-moderate') y+=T.liverYorumSevModerate;
+      else y+=T.liverYorumSevSevere;
     }
     document.getElementById('liverYorum').textContent=y;
 
@@ -647,17 +835,17 @@ function calculate(organ){
     document.getElementById('crz2').style.outline=(T2s>=10&&T2s<=20)?'2px solid #fff':'none';
     document.getElementById('crz3').style.outline=T2s<10?'2px solid #fff':'none';
 
-    var trInfo=result.truncated>0?('Auto-truncation: son '+result.truncated+' veri noktası çıkarıldı. '):'Tüm veri noktaları kullanıldı. ';
-    document.getElementById('cardiacFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>Kullanılan: '+fit.nPoints+'/'+data.length+' nokta</span>';
+    var trInfo=result.truncated>0?T.fitTruncated(result.truncated):T.fitAllUsed;
+    document.getElementById('cardiacFitInfo').innerHTML=trInfo+'<span>R² = '+fit.R2.toFixed(5)+'</span> · <span>'+T.fitUsedPoints(fit.nPoints,data.length)+'</span>';
 
-    var y="Kardiyak multi-eko GRE verileri üzerinden mono-eksponansiyel curve fitting uygulanmıştır. ";
-    if(result.truncated>0) y+="Otomatik truncation ile son "+result.truncated+" veri noktası çıkarılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
-    else y+="Tüm veri noktaları kullanılmıştır (R² = "+fit.R2.toFixed(4)+"). ";
-    y+="Hesaplanan T2* = "+T2s.toFixed(2)+" ms (R2* = "+R2s.toFixed(1)+" Hz). ";
-    y+="Carpenter 2011 denklemi ile miyokardiyal demir konsantrasyonu "+fe.toFixed(2)+" mg/g kuru ağırlıktır. ";
-    if(T2s>20) y+='T2* > 20 ms olup normal kategoridedir. Klinik olarak anlamlı miyokardiyal demir birikimi saptanmamıştır.';
-    else if(T2s>=10) y+='T2* 10–20 ms aralığında olup orta risk kategorisindedir. Şelasyon tedavisi optimizasyonu ve kardiyak takip önerilir.';
-    else y+='T2* < 10 ms olup yüksek risk kategorisindedir. Kalp yetmezliği ve aritmi riski artmıştır. Agresif şelasyon ve yakın kardiyolojik takip gereklidir.';
+    var y=T.cardiacYorumHeader;
+    if(result.truncated>0) y+=T.cardiacYorumTruncated(result.truncated, fit.R2.toFixed(4));
+    else y+=T.cardiacYorumAllUsed(fit.R2.toFixed(4));
+    y+=T.cardiacYorumResult(T2s.toFixed(2), R2s.toFixed(1));
+    y+=T.cardiacYorumFe(fe.toFixed(2));
+    if(T2s>20) y+=T.cardiacYorumNormal;
+    else if(T2s>=10) y+=T.cardiacYorumModerate;
+    else y+=T.cardiacYorumHigh;
     document.getElementById('cardiacYorum').textContent=y;
   }
 
@@ -669,11 +857,11 @@ function calculate(organ){
    ══════════════════════════════════════════ */
 function printReport(organ){
   var data=getData(organ);
-  if(data.length<3){alert('Önce veri girip Hesapla butonuna basınız.');return;}
+  if(data.length<3){alert(T.alertEnterData);return;}
   var outEl=document.getElementById(organ+'Output');
-  if(outEl.classList.contains('hidden')){alert('Önce Hesapla butonuna basınız.');return;}
+  if(outEl.classList.contains('hidden')){alert(T.alertCalcFirst);return;}
 
-  var title=organ==='liver'?'KARACİĞER DEMİR KONSANTRASYONU RAPORU':'KARDİYAK DEMİR KONSANTRASYONU RAPORU';
+  var title=organ==='liver'?T.titleLiver:T.titleCardiac;
 
   // TE/SI table
   var tbl='<table class="rp-tbl"><tr><th>TE (ms)</th><th>SI</th></tr>';
@@ -697,14 +885,14 @@ function printReport(organ){
   } else {
     res='<table class="rp-res"><tr><td class="rp-k">T2*</td><td>'+gT('cardiacT2s')+' ms</td></tr>';
     res+='<tr><td class="rp-k">R2*</td><td>'+gT('cardiacR2s')+' Hz</td></tr>';
-    res+='<tr><td class="rp-k">[Fe] Miyokard</td><td><strong>'+gT('cardiacFe')+' mg/g dw</strong></td></tr>';
+    res+='<tr><td class="rp-k">'+T.cardiacFeLabel+'</td><td><strong>'+gT('cardiacFe')+' mg/g dw</strong></td></tr>';
     res+='<tr><td class="rp-k">S₀</td><td>'+gT('cardiacS0')+'</td></tr></table>';
     res+=document.getElementById('cardiacSevWrap').innerHTML;
   }
 
   var fitInfo=document.getElementById(organ+'FitInfo').textContent;
   var yorum=document.getElementById(organ+'Yorum').textContent;
-  var tarih=new Date().toLocaleDateString('tr-TR');
+  var tarih=new Date().toLocaleDateString(T.dateLocale);
 
   // Build overlay
   var ov=document.getElementById('reportOverlay');
@@ -717,20 +905,20 @@ function printReport(organ){
     '<div class="rp-backdrop" onclick="closeReport()"></div>'+
     '<div class="rp-sheet">'+
       '<div class="rp-toolbar">'+
-        '<button class="rp-tbtn" onclick="tryPrint()">🖨 Yazdır</button>'+
-        '<button class="rp-tbtn" onclick="copyReportHTML()">📋 Kopyala</button>'+
-        '<button class="rp-tbtn rp-close" onclick="closeReport()">✕ Kapat</button>'+
+        '<button class="rp-tbtn" onclick="tryPrint()">'+T.rpPrint+'</button>'+
+        '<button class="rp-tbtn" onclick="copyReportHTML()">'+T.rpCopy+'</button>'+
+        '<button class="rp-tbtn rp-close" onclick="closeReport()">'+T.rpClose+'</button>'+
       '</div>'+
       '<div class="rp-body" id="rpBody">'+
         '<h1 class="rp-title">'+title+'</h1>'+
         '<p class="rp-date">'+tarih+'</p>'+
-        '<h2 class="rp-h2">Giriş Verileri (TE / SI)</h2>'+tbl+
-        '<h2 class="rp-h2">T2* Sinyal Bozunma Eğrisi</h2>'+
+        '<h2 class="rp-h2">'+T.rpInputData+'</h2>'+tbl+
+        '<h2 class="rp-h2">'+T.rpDecayCurve+'</h2>'+
         '<div class="rp-chart">'+chartSVG+'</div>'+
-        '<h2 class="rp-h2">Hesaplama Sonuçları</h2>'+res+
+        '<h2 class="rp-h2">'+T.rpCalcResults+'</h2>'+res+
         '<p class="rp-fit">'+fitInfo+'</p>'+
-        '<div class="rp-yorum"><strong>YORUM</strong><br>'+yorum+'</div>'+
-        '<p class="rp-footer">T2* Relaksometri Demir Konsantrasyon Hesaplama</p>'+
+        '<div class="rp-yorum"><strong>'+T.rpInterpretation+'</strong><br>'+yorum+'</div>'+
+        '<p class="rp-footer">'+T.rpFooter+'</p>'+
       '</div>'+
     '</div>';
   ov.style.display='flex';
@@ -760,7 +948,7 @@ function copyReportHTML(){
     sel.addRange(range);
     document.execCommand('copy');
     sel.removeAllRanges();
-    alert('Rapor panoya kopyalandı. Word/Google Docs\'a yapıştırabilirsiniz.');
+    alert(T.alertCopied);
   }catch(e){
     // Fallback: plain text
     var txt=el.innerText;
@@ -768,7 +956,7 @@ function copyReportHTML(){
     ta.value=txt;document.body.appendChild(ta);
     ta.select();document.execCommand('copy');
     document.body.removeChild(ta);
-    alert('Rapor (metin) panoya kopyalandı.');
+    alert(T.alertCopiedText);
   }
 }
 
@@ -779,13 +967,13 @@ function copyReport(pid){
   var t=document.getElementById(pid).innerText;
   try{
     if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(t).then(function(){alert('Rapor panoya kopyalandı.');});
+      navigator.clipboard.writeText(t).then(function(){alert(T.alertCopiedPlain);});
     } else {
       var a=document.createElement('textarea');a.value=t;
       document.body.appendChild(a);a.select();document.execCommand('copy');
-      document.body.removeChild(a);alert('Rapor panoya kopyalandı.');
+      document.body.removeChild(a);alert(T.alertCopiedPlain);
     }
-  }catch(e){alert('Kopyalama başarısız.');}
+  }catch(e){alert(T.alertCopyFail);}
 }
 </script>
 </body>

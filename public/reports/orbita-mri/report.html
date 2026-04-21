@@ -131,6 +131,635 @@
 const {useState, useMemo, useEffect, useRef} = React;
 
 /* ============================================================
+   LOCALE
+============================================================ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: '👁 Orbita MR Karar Destek Sistemi',
+    appBadge: 'Bulbus · Proptoz · EOM · Yağ · Optik Sinir',
+    appSub: 'Kompartman bazlı orbita MRI sorgulaması · multilezyon tanı · weighted DDx · zebra + YORUM kutulu rapor',
+    // STEPS
+    stPatient: 'Hasta/Klinik',
+    stProtokol: 'Protokol',
+    stBulbus: 'Bulbus Oculi',
+    stProptoz: 'Proptoz',
+    stEom: 'EOM Kalınlıkları',
+    stFat: 'Retroorbital Yağ',
+    stOnerve: 'Optik Sinir',
+    stLacrimal: 'Lakrimal Bez',
+    stKemik: 'Kemik/Duvarlar',
+    stVasc: 'Vasküler',
+    stSinus: 'Paranazal Sinüsler',
+    stLezyonPre: 'Lezyon Kontrolü',
+    stLezyon: 'Lezyon Detayı',
+    stDdx: 'DDx Motoru',
+    stEk: 'Ek Bulgular',
+    stReport: 'Rapor',
+    // Nav
+    prev: '« Önceki',
+    next: 'Sonraki »',
+    stepOf: 'Adım',
+    stepTotal: ' / ',
+    // EyeBulbus inline labels
+    ebLength: 'Aksiyel uzunluk (mm)',
+    ebSize: 'Boyut',
+    ebShape: 'Şekil',
+    ebVitreous: 'Vitreus sinyali',
+    ebLens: 'Lens',
+    ebRetina: 'Retina',
+    ebUvea: 'Uvea/Koroid',
+    ebCalcif: 'İntraoküler kalsifikasyon',
+    ebRightTitle: 'SAĞ BULBUS',
+    ebLeftTitle: 'SOL BULBUS',
+    // EomRow
+    eomThickWarn: '⚠ kalınlaşmış',
+    // renderPatient
+    patTitle: 'Hasta ve Klinik Bilgiler',
+    patHint: 'Orbita MR incelemesi için demografik bilgiler ve klinik öykü.',
+    patAdSoyad: 'Ad Soyad',
+    patYas: 'Yaş',
+    patCinsiyet: 'Cinsiyet',
+    patTaraf: 'Taraf',
+    patProtNo: 'Protokol No',
+    patSemptom: 'Klinik Semptom (çoklu)',
+    patKronisite: 'Kronisite',
+    patVision: 'Görme durumu',
+    patSistemik: 'Sistemik / komorbid (çoklu)',
+    patNot: 'Klinik notlar',
+    patNotPh: 'Başvuru şikayeti, muayene bulguları...',
+    // renderProtokol
+    proTitle: 'MR Protokolü',
+    proSekans: 'Sekanslar (çoklu)',
+    proKontrast: 'IV kontrast',
+    proKontrastMadde: 'Kontrast madde',
+    proKontrastPh: 'ör. gadobutrol 0.1 mmol/kg',
+    // renderBulbus
+    bulbusTitle: 'Bulbus Oculi',
+    bulbusHint: 'Sağ ve sol göz küresi ayrı ayrı: boyut, şekil, vitreus, lens, retina, uvea. Normal aksiyel uzunluk ~22–24.5 mm.',
+    // renderProptoz
+    proptozTitle: 'Proptoz Ölçümü',
+    proptozHint: 'İnterzigomatik hat ile anterior korneal yüz arasındaki mesafe. Normal: ≤21 mm, 21–23 mm sınır, >23 mm anlamlı proptoz. İki göz arası >2 mm fark anlamlıdır.',
+    proptozR: 'SAĞ',
+    proptozL: 'SOL',
+    proptozField: 'Proptoz (mm)',
+    proptozBelirgin: '⚠ Belirgin proptoz',
+    proptozSinir: '⚠ Sınırda',
+    proptozNot: 'Proptoz notları',
+    proptozNotPh: 'Asimetri derecesi, açıklama...',
+    // renderEom
+    eomTitle: 'Ekstraoküler Kas Kalınlıkları',
+    eomHint: '>4.5 mm değerler otomatik işaretlenir.',
+    eomSectionTitle: 'Kalınlık (mm) — Sağ / Sol',
+    eomHeaderR: 'SAĞ',
+    eomHeaderM: 'KAS',
+    eomHeaderL: 'SOL',
+    eomPattern: 'Kalınlaşma paterni',
+    eomTendon: 'Tendon tutulumu',
+    eomSignal: 'Kas sinyal özelliği',
+    eomEnhancement: 'Kontrastlanma',
+    // renderFat
+    fatTitle: 'Retroorbital Yağ Dokusu',
+    fatHint: 'Yağ hacmi (artma Graves\'te tipiktir), infiltrasyon (selülit/inflamasyon), kitle varlığı.',
+    fatHacim: 'Yağ hacmi',
+    fatInfilt: 'İnfiltrasyon paterni',
+    fatMass: 'Yağ içinde kitle?',
+    // renderONerve
+    onerveTitle: 'Optik Sinir ve Kılıfı',
+    onerveHint: 'Normal optik sinir çapı ~3–5 mm (kılıfı ile birlikte ~5–6 mm). Tram-track patern meningioma için tipiktir.',
+    onerveRTitle: 'SAĞ OPTİK SİNİR',
+    onerveLTitle: 'SOL OPTİK SİNİR',
+    onerveMorf: 'Morfoloji',
+    onerveThick: 'Maksimum çap (mm)',
+    onerveSignal: 'Sinyal',
+    onerveEnhancement: 'Kontrastlanma',
+    onerveSheath: 'Kılıf (CSF)',
+    onerveCourse: 'Seyir',
+    // renderLacrimal
+    lacTitle: 'Lakrimal Bez',
+    lacHint: 'Superolateral yerleşimli. Unilateral vs bilateral büyüme önemli ayırıcıdır.',
+    lacRTitle: 'SAĞ LAKRİMAL BEZ',
+    lacLTitle: 'SOL LAKRİMAL BEZ',
+    lacSize: 'Boyut',
+    lacSignal: 'Sinyal',
+    lacEnhancement: 'Kontrastlanma',
+    lacBilateral: 'Bilateral/spesifik bulgu',
+    // renderKemik
+    kemikTitle: 'Kemik Duvarlar ve Fraktür',
+    kemikHint: 'Medial lamina papyracea ve inferior floor en sık fraktür alanları. Hiperostoz meningiomu, ground-glass fibröz displaziyi düşündürür.',
+    kemikMedial: 'Medial duvar',
+    kemikLateral: 'Lateral duvar',
+    kemikTavan: 'Tavan (roof)',
+    kemikTaban: 'Taban (floor)',
+    kemikFraktur: 'Genel fraktür durumu',
+    kemikFrakturDuvar: 'Fraktür duvarı (çoklu)',
+    kemikHernia: 'Herniasyon',
+    kemikLezyon: 'Kemik lezyonu',
+    // renderVasc
+    vascTitle: 'Vasküler Yapılar',
+    vascHint: 'Süperior oftalmik ven ve kavernöz sinüs değerlendirmesi. CCF\'de SOV dilate, kavernöz sinüs genişlemiş olur.',
+    vascSOVR: 'SAĞ',
+    vascSOVL: 'SOL',
+    vascSOVLabel: 'Süperior oftalmik ven',
+    vascCav: 'Kavernöz sinüs',
+    vascNot: 'Vasküler ek notlar',
+    vascNotPh: 'Flow void varlığı, varis, fistül, anevrizma...',
+    // renderSinus
+    sinusTitle: 'Paranazal Sinüsler',
+    sinusHint: 'Orbita patolojilerinin yaklaşık %60\'ı paranazal sinüs kökenlidir (özellikle etmoidal ve frontal). Komşu sinüs mutlaka değerlendirilmelidir.',
+    sinusLabel: 'Sinüs durumu',
+    // renderLezyonPre
+    lzPreTitle: 'Lezyon Kontrolü',
+    lzPreLabel: 'Diskret lezyon / kitle var mı?',
+    lzPreAlert: '"Hayır" seçerseniz lezyon detay adımı atlanır ve doğrudan DDx motoruna geçilir.',
+    // renderLezyon
+    lzTitle: 'Lezyon #',
+    lzTitleSuffix: ' Detayı',
+    lzHint: 'Her lezyonu ayrıntılı karakterize edin.',
+    lzNotFound: 'Lezyon bulunamadı.',
+    lzAd: 'Lezyon adı/etiketi',
+    lzAdPh: 'örn. L1 – intrakonal kitle',
+    lzKoken: 'Köken doku',
+    lzKompartman: 'Kompartman',
+    lzLok: 'Lokalizasyon (saat yönü)',
+    lzTaraf: 'Taraf',
+    lzBoyutLabel: 'BOYUT (mm)',
+    lzAP: 'AP',
+    lzML: 'Transvers',
+    lzCC: 'Kraniokaudal',
+    lzSinyal: 'SİNYAL',
+    lzT1: 'T1',
+    lzT2: 'T2',
+    lzDWI: 'DWI (b1000)',
+    lzADC: 'ADC',
+    lzADCValue: 'ADC değeri (×10⁻³ mm²/sn)',
+    lzADCPh: 'örn. 0.75',
+    lzKontrastLabel: 'KONTRAST',
+    lzKontrastDerece: 'Tutulum derecesi',
+    lzKontrastPat: 'Patern',
+    lzMorfLabel: 'MORFOLOJİ & EK ÖZELLİKLER',
+    lzMorf: 'Morfoloji',
+    lzMargins: 'Sınırlar',
+    lzEkOzellik: 'Ek özellikler (çoklu)',
+    lzNot: 'Lezyon notları',
+    lzDefinedLabel: 'Tanımlı lezyonlar:',
+    lzUnnamed: '(isimsiz)',
+    lzAddNew: '+ Yeni lezyon',
+    lzDelete: 'Bu lezyonu sil',
+    lzPrev: '« Önceki lezyon',
+    lzNext: 'Sonraki lezyon »',
+    lzFinish: 'Lezyonları bitir → DDx',
+    lzOpen: 'Aç',
+    // renderDDx
+    ddxTitle: 'Weighted DDx Motoru',
+    ddxHint: 'Klinik + anatomik kompartman bulguları + EOM paternleri + optik sinir + lezyon özellikleri ağırlıklı skorlanır.',
+    ddxEmpty: 'Henüz ayırıcı tanıyı şekillendirecek anlamlı bulgu yok.',
+    ddxMatched: 'Eşleşen özellikler',
+    ddxScore: 'puan · %',
+    // renderEk
+    ekTitle: 'Ek Bulgular ve Öneriler',
+    ekBulgular: 'Ek bulgular',
+    ekBulgularPh: 'İntrakranyal uzanım, komşu yapılarda patoloji...',
+    ekOneri: 'Öneri / Ek inceleme',
+    ekOneriPh: 'Orbital BT, MR anjiyografi, oftalmoloji konsültasyonu, biyopsi...',
+    // renderReport
+    rptTitle: 'Rapor',
+    rptHint: 'Yazdır, PDF yap, panoya kopyala veya HTML olarak indir.',
+    rptPrint: '🖨 Yazdır / PDF',
+    rptCopyRich: '📋 Panoya kopyala (zengin metin)',
+    rptDownload: '⬇ HTML indir',
+    rptCopyText: 'Düz metin',
+    rptH1: 'ORBİTA MR İNCELEMESİ',
+    rptKlinik: 'KLİNİK',
+    rptSemptom: 'Semptomlar',
+    rptSure: 'Süre',
+    rptVision: 'Görme',
+    rptSistemik: 'Sistemik',
+    rptNot: 'Not',
+    rptBulbus: 'BULBUS OCULI',
+    rptProptoz: 'PROPTOZ',
+    rptEom: 'EKSTRAOKÜLER KAS KALINLIKLARI (mm)',
+    rptEomKas: 'Kas',
+    rptEomSag: 'Sağ',
+    rptEomSol: 'Sol',
+    rptEomDeg: 'Değerlendirme',
+    rptEomBilat: 'Bilateral kalınlaşmış',
+    rptEomSagKalin: 'Sağ kalınlaşmış',
+    rptEomSolKalin: 'Sol kalınlaşmış',
+    rptEomNormal: 'Normal',
+    rptEomKalinPat: 'Kalınlaşma paterni',
+    rptEomTendon: 'Tendon',
+    rptEomSinyal: 'Sinyal',
+    rptEomKontrast: 'Kontrastlanma',
+    rptFat: 'RETROORBİTAL YAĞ DOKUSU',
+    rptOnerve: 'OPTİK SİNİR',
+    rptLacrimal: 'LAKRİMAL BEZ',
+    rptKemik: 'KEMİK DUVARLAR',
+    rptVaskuler: 'VASKÜLER YAPILAR',
+    rptSinus: 'KOMŞU PARANAZAL SİNÜSLER',
+    rptLezyon: 'LEZYON LİSTESİ',
+    rptLzNo: '#',
+    rptLzAd: 'Ad / Köken',
+    rptLzYer: 'Yerleşim',
+    rptLzBoyut: 'Boyut',
+    rptLzSinyal: 'Sinyal (T1/T2)',
+    rptLzDWI: 'DWI · ADC',
+    rptLzKontrast: 'Kontrast',
+    rptLzMorf: 'Morfoloji',
+    rptAyirici: 'AYIRICI TANI (WEIGHTED)',
+    rptAyNo: '#',
+    rptAyPatoloji: 'Patoloji',
+    rptAyKat: 'Kategori',
+    rptAyPuan: 'Puan',
+    rptAyOlasilik: 'Olasılık',
+    rptYorum: 'YORUM',
+    rptOneri: 'Öneri',
+    rptEkBulgular: 'Ek bulgular',
+    rptTarih: 'Rapor tarihi: ',
+    rptTarihSuffix: ' — Orbita MR Karar Destek Sistemi',
+    rptYorumPrefix: 'Bulgular ağırlıklı skorlama modelinde ',
+    rptYorumSuffix: 'lehine değerlendirilmiştir (%',
+    rptYorumSuffix2: ').',
+    rptYorumIkincil: ' İkincil ayırıcı tanıda ',
+    rptYorumIkincil2: ' yer almaktadır.',
+    rptYorumNormal: 'Orbita MR incelemesinde patolojik bulgu saptanmamıştır.',
+    // Report header inline
+    rrHasta: 'Hasta',
+    rrTaraf: 'Taraf',
+    rrInceleme: 'Orbita MR',
+    rrSekans: 'Sekanslar',
+    rrIVKontrast: 'IV Kontrast',
+    rrKontrastVerildi: 'Verildi (',
+    rrKontrastYok: 'Verilmedi',
+    rrGdBazli: 'Gd-bazlı',
+    // bdesc inline
+    bdescLength: 'aksiyel uzunluk',
+    bdescShape: 'şekil',
+    bdescVitreous: 'vitreus',
+    bdescLens: 'lens',
+    bdescRetina: 'retina',
+    bdescUvea: 'uvea',
+    bdescCalcif: 'intraoküler kalsifikasyon (+)',
+    bdescRSide: 'Sağ',
+    bdescLSide: 'Sol',
+    bdescNormal: 'bulbus olağan boyut, şekil, sinyal özelliğindedir.',
+    // proptoz inline
+    proptozBelirginInline: ' (belirgin proptoz)',
+    proptozSinirInline: ' (sınırda)',
+    proptozNormText: 'Bilateral proptoz ölçümleri normal sınırlardadır (≤21 mm).',
+    // ondesc inline
+    ondescChap: 'çap',
+    ondescSag: 'Sağ',
+    ondescSol: 'Sol',
+    ondescON: 'optik sinir',
+    ondescNorm: 'Bilateral optik sinirler olağan kaliber, sinyal ve seyir özelliğindedir; kılıfları doğaldır.',
+    // fat items inline
+    rptFatSag: 'Sağ retroorbital yağ',
+    rptFatSol: 'Sol retroorbital yağ',
+    rptFatInfilt: 'İnfiltrasyon',
+    rptFatMass: 'Yağ içinde kitle',
+    rptFatNorm: 'Retroorbital yağ dokusu olağan sinyal ve volümdedir.',
+    // on items inline
+    rptOnSignal: 'Sinyal',
+    rptOnEnhancement: 'Kontrastlanma',
+    rptOnSheath: 'Kılıf',
+    rptOnCourse: 'Seyir',
+    // lac items inline
+    rptLacSag: 'Sağ lakrimal bez',
+    rptLacSol: 'Sol lakrimal bez',
+    rptLacSignal: 'Sinyal',
+    rptLacEnhancement: 'Kontrastlanma',
+    rptLacNorm: 'Bilateral lakrimal bezler normal boyut ve sinyal özelliğindedir.',
+    // kemik items inline
+    rptKemikMedial: 'Medial duvar',
+    rptKemikLateral: 'Lateral duvar',
+    rptKemikTavan: 'Tavan',
+    rptKemikTaban: 'Taban',
+    rptKemikFraktur: 'Fraktür (+)',
+    rptKemikHernia: 'Herniasyon',
+    rptKemikLezyon: 'Kemik lezyonu',
+    rptKemikNorm: 'Orbital duvarlar intakttır; kemik lezyonu saptanmadı.',
+    // vasc items inline
+    rptVascSag: 'Sağ süperior oftalmik ven',
+    rptVascSol: 'Sol süperior oftalmik ven',
+    rptVascCav: 'Kavernöz sinüs',
+    rptVascNorm: 'İzlenen vasküler yapılar olağandır.',
+    // sinus inline
+    rptSinusNorm: 'Paranazal sinüslerde patolojik bulgu saptanmadı.',
+    rptSinusBulgu: 'Paranazal sinüs bulgusu',
+    rptSinusDeg: 'Paranazal sinüsler değerlendirilmedi.',
+    // eomNotes inline
+    rptEomPaternLabel: 'Kalınlaşma paterni',
+    rptEomTendonLabel: 'Tendon',
+    rptEomSinyalLabel: 'Sinyal',
+    rptEomKontrastLabel: 'Kontrastlanma',
+    // Export
+    printClose: 'Kapat',
+    copyTextOk: 'Düz metin panoya kopyalandı.',
+    copyRichOk: 'Zengin metin panoya kopyalandı.',
+    copyRichOkFallback: 'Zengin metin panoya kopyalandı (fallback).',
+    copyFail: 'Hata: ',
+    downloadTitle: 'Orbita MR Rapor',
+    downloadFilename: 'orbita_mr_rapor_',
+  },
+  en: {
+    appTitle: '👁 Orbital MRI Decision Support System',
+    appBadge: 'Globe · Proptosis · EOM · Fat · Optic Nerve',
+    appSub: 'Compartment-based orbital MRI query · multi-lesion diagnosis · weighted DDx · zebra + IMPRESSION report',
+    stPatient: 'Patient/Clinical',
+    stProtokol: 'Protocol',
+    stBulbus: 'Bulbus Oculi',
+    stProptoz: 'Proptosis',
+    stEom: 'EOM Thickness',
+    stFat: 'Retroorbital Fat',
+    stOnerve: 'Optic Nerve',
+    stLacrimal: 'Lacrimal Gland',
+    stKemik: 'Bone/Walls',
+    stVasc: 'Vascular',
+    stSinus: 'Paranasal Sinuses',
+    stLezyonPre: 'Lesion Check',
+    stLezyon: 'Lesion Detail',
+    stDdx: 'DDx Engine',
+    stEk: 'Additional Findings',
+    stReport: 'Report',
+    prev: '« Previous',
+    next: 'Next »',
+    stepOf: 'Step',
+    stepTotal: ' / ',
+    ebLength: 'Axial length (mm)',
+    ebSize: 'Size',
+    ebShape: 'Shape',
+    ebVitreous: 'Vitreous signal',
+    ebLens: 'Lens',
+    ebRetina: 'Retina',
+    ebUvea: 'Uvea/Choroid',
+    ebCalcif: 'Intraocular calcification',
+    ebRightTitle: 'RIGHT GLOBE',
+    ebLeftTitle: 'LEFT GLOBE',
+    eomThickWarn: '⚠ thickened',
+    patTitle: 'Patient and Clinical Information',
+    patHint: 'Demographic information and clinical history for orbital MRI examination.',
+    patAdSoyad: 'Name Surname',
+    patYas: 'Age',
+    patCinsiyet: 'Sex',
+    patTaraf: 'Side',
+    patProtNo: 'Protocol No',
+    patSemptom: 'Clinical Symptom (multiple)',
+    patKronisite: 'Chronicity',
+    patVision: 'Visual status',
+    patSistemik: 'Systemic / comorbid (multiple)',
+    patNot: 'Clinical notes',
+    patNotPh: 'Chief complaint, examination findings...',
+    proTitle: 'MRI Protocol',
+    proSekans: 'Sequences (multiple)',
+    proKontrast: 'IV contrast',
+    proKontrastMadde: 'Contrast agent',
+    proKontrastPh: 'e.g. gadobutrol 0.1 mmol/kg',
+    bulbusTitle: 'Bulbus Oculi',
+    bulbusHint: 'Right and left globes separately: size, shape, vitreous, lens, retina, uvea. Normal axial length ~22–24.5 mm.',
+    proptozTitle: 'Proptosis Measurement',
+    proptozHint: 'Distance between interzygomaticline and anterior corneal surface. Normal: ≤21 mm, 21–23 mm borderline, >23 mm significant proptosis. >2 mm asymmetry is significant.',
+    proptozR: 'RIGHT',
+    proptozL: 'LEFT',
+    proptozField: 'Proptosis (mm)',
+    proptozBelirgin: '⚠ Significant proptosis',
+    proptozSinir: '⚠ Borderline',
+    proptozNot: 'Proptosis notes',
+    proptozNotPh: 'Degree of asymmetry, description...',
+    eomTitle: 'Extraocular Muscle Thickness',
+    eomHint: 'Values >4.5 mm are automatically flagged.',
+    eomSectionTitle: 'Thickness (mm) — Right / Left',
+    eomHeaderR: 'RIGHT',
+    eomHeaderM: 'MUSCLE',
+    eomHeaderL: 'LEFT',
+    eomPattern: 'Thickening pattern',
+    eomTendon: 'Tendon involvement',
+    eomSignal: 'Muscle signal characteristics',
+    eomEnhancement: 'Enhancement',
+    fatTitle: 'Retroorbital Fat Tissue',
+    fatHint: 'Fat volume (increase typical in Graves\'), infiltration (cellulitis/inflammation), mass presence.',
+    fatHacim: 'Fat volume',
+    fatInfilt: 'Infiltration pattern',
+    fatMass: 'Mass within fat?',
+    onerveTitle: 'Optic Nerve and Sheath',
+    onerveHint: 'Normal optic nerve diameter ~3–5 mm (with sheath ~5–6 mm). Tram-track pattern is typical of meningioma.',
+    onerveRTitle: 'RIGHT OPTIC NERVE',
+    onerveLTitle: 'LEFT OPTIC NERVE',
+    onerveMorf: 'Morphology',
+    onerveThick: 'Maximum diameter (mm)',
+    onerveSignal: 'Signal',
+    onerveEnhancement: 'Enhancement',
+    onerveSheath: 'Sheath (CSF)',
+    onerveCourse: 'Course',
+    lacTitle: 'Lacrimal Gland',
+    lacHint: 'Superolateral location. Unilateral vs. bilateral enlargement is an important differentiator.',
+    lacRTitle: 'RIGHT LACRIMAL GLAND',
+    lacLTitle: 'LEFT LACRIMAL GLAND',
+    lacSize: 'Size',
+    lacSignal: 'Signal',
+    lacEnhancement: 'Enhancement',
+    lacBilateral: 'Bilateral/specific finding',
+    kemikTitle: 'Bony Walls and Fracture',
+    kemikHint: 'Medial lamina papyracea and inferior floor are the most common fracture sites. Hyperostosis suggests meningioma, ground-glass suggests fibrous dysplasia.',
+    kemikMedial: 'Medial wall',
+    kemikLateral: 'Lateral wall',
+    kemikTavan: 'Roof',
+    kemikTaban: 'Floor',
+    kemikFraktur: 'Overall fracture status',
+    kemikFrakturDuvar: 'Fractured wall (multiple)',
+    kemikHernia: 'Herniation',
+    kemikLezyon: 'Bone lesion',
+    vascTitle: 'Vascular Structures',
+    vascHint: 'Superior ophthalmic vein and cavernous sinus assessment. In CCF, SOV is dilated, cavernous sinus is enlarged.',
+    vascSOVR: 'RIGHT',
+    vascSOVL: 'LEFT',
+    vascSOVLabel: 'Superior ophthalmic vein',
+    vascCav: 'Cavernous sinus',
+    vascNot: 'Vascular additional notes',
+    vascNotPh: 'Flow void presence, varix, fistula, aneurysm...',
+    sinusTitle: 'Paranasal Sinuses',
+    sinusHint: 'Approximately 60% of orbital pathologies originate from paranasal sinuses (especially ethmoidal and frontal). Adjacent sinuses must always be evaluated.',
+    sinusLabel: 'Sinus status',
+    lzPreTitle: 'Lesion Check',
+    lzPreLabel: 'Is there a discrete lesion / mass?',
+    lzPreAlert: 'If you select "No", the lesion detail step is skipped and you proceed directly to the DDx engine.',
+    lzTitle: 'Lesion #',
+    lzTitleSuffix: ' Detail',
+    lzHint: 'Characterize each lesion in detail.',
+    lzNotFound: 'Lesion not found.',
+    lzAd: 'Lesion name/label',
+    lzAdPh: 'e.g. L1 – intraconal mass',
+    lzKoken: 'Tissue of origin',
+    lzKompartman: 'Compartment',
+    lzLok: 'Localization (clock position)',
+    lzTaraf: 'Side',
+    lzBoyutLabel: 'SIZE (mm)',
+    lzAP: 'AP',
+    lzML: 'Transverse',
+    lzCC: 'Craniocaudal',
+    lzSinyal: 'SIGNAL',
+    lzT1: 'T1',
+    lzT2: 'T2',
+    lzDWI: 'DWI (b1000)',
+    lzADC: 'ADC',
+    lzADCValue: 'ADC value (×10⁻³ mm²/s)',
+    lzADCPh: 'e.g. 0.75',
+    lzKontrastLabel: 'CONTRAST',
+    lzKontrastDerece: 'Enhancement degree',
+    lzKontrastPat: 'Pattern',
+    lzMorfLabel: 'MORPHOLOGY & ADDITIONAL FEATURES',
+    lzMorf: 'Morphology',
+    lzMargins: 'Margins',
+    lzEkOzellik: 'Additional features (multiple)',
+    lzNot: 'Lesion notes',
+    lzDefinedLabel: 'Defined lesions:',
+    lzUnnamed: '(unnamed)',
+    lzAddNew: '+ New lesion',
+    lzDelete: 'Delete this lesion',
+    lzPrev: '« Previous lesion',
+    lzNext: 'Next lesion »',
+    lzFinish: 'Finish lesions → DDx',
+    lzOpen: 'Open',
+    ddxTitle: 'Weighted DDx Engine',
+    ddxHint: 'Clinical + anatomical compartment findings + EOM patterns + optic nerve + lesion features are weighted scored.',
+    ddxEmpty: 'No significant findings yet to shape the differential diagnosis.',
+    ddxMatched: 'Matched features',
+    ddxScore: 'points · %',
+    ekTitle: 'Additional Findings and Recommendations',
+    ekBulgular: 'Additional findings',
+    ekBulgularPh: 'Intracranial extension, pathology in adjacent structures...',
+    ekOneri: 'Recommendation / Additional examination',
+    ekOneriPh: 'Orbital CT, MR angiography, ophthalmology consultation, biopsy...',
+    rptTitle: 'Report',
+    rptHint: 'Print, save as PDF, copy to clipboard, or download as HTML.',
+    rptPrint: '🖨 Print / PDF',
+    rptCopyRich: '📋 Copy to clipboard (rich text)',
+    rptDownload: '⬇ Download HTML',
+    rptCopyText: 'Plain text',
+    rptH1: 'ORBITAL MRI EXAMINATION',
+    rptKlinik: 'CLINICAL',
+    rptSemptom: 'Symptoms',
+    rptSure: 'Duration',
+    rptVision: 'Vision',
+    rptSistemik: 'Systemic',
+    rptNot: 'Note',
+    rptBulbus: 'BULBUS OCULI',
+    rptProptoz: 'PROPTOSIS',
+    rptEom: 'EXTRAOCULAR MUSCLE THICKNESS (mm)',
+    rptEomKas: 'Muscle',
+    rptEomSag: 'Right',
+    rptEomSol: 'Left',
+    rptEomDeg: 'Assessment',
+    rptEomBilat: 'Bilateral thickened',
+    rptEomSagKalin: 'Right thickened',
+    rptEomSolKalin: 'Left thickened',
+    rptEomNormal: 'Normal',
+    rptEomKalinPat: 'Thickening pattern',
+    rptEomTendon: 'Tendon',
+    rptEomSinyal: 'Signal',
+    rptEomKontrast: 'Enhancement',
+    rptFat: 'RETROORBITAL FAT TISSUE',
+    rptOnerve: 'OPTIC NERVE',
+    rptLacrimal: 'LACRIMAL GLAND',
+    rptKemik: 'BONY WALLS',
+    rptVaskuler: 'VASCULAR STRUCTURES',
+    rptSinus: 'ADJACENT PARANASAL SINUSES',
+    rptLezyon: 'LESION LIST',
+    rptLzNo: '#',
+    rptLzAd: 'Name / Origin',
+    rptLzYer: 'Location',
+    rptLzBoyut: 'Size',
+    rptLzSinyal: 'Signal (T1/T2)',
+    rptLzDWI: 'DWI · ADC',
+    rptLzKontrast: 'Contrast',
+    rptLzMorf: 'Morphology',
+    rptAyirici: 'DIFFERENTIAL DIAGNOSIS (WEIGHTED)',
+    rptAyNo: '#',
+    rptAyPatoloji: 'Pathology',
+    rptAyKat: 'Category',
+    rptAyPuan: 'Score',
+    rptAyOlasilik: 'Probability',
+    rptYorum: 'IMPRESSION',
+    rptOneri: 'Recommendation',
+    rptEkBulgular: 'Additional findings',
+    rptTarih: 'Report date: ',
+    rptTarihSuffix: ' — Orbital MRI Decision Support System',
+    rptYorumPrefix: 'Based on weighted scoring model, ',
+    rptYorumSuffix: 'is most favored (%',
+    rptYorumSuffix2: ').',
+    rptYorumIkincil: ' As a secondary differential, ',
+    rptYorumIkincil2: ' is included.',
+    rptYorumNormal: 'No pathological finding was detected on orbital MRI examination.',
+    rrHasta: 'Patient',
+    rrTaraf: 'Side',
+    rrInceleme: 'Orbital MRI',
+    rrSekans: 'Sequences',
+    rrIVKontrast: 'IV Contrast',
+    rrKontrastVerildi: 'Administered (',
+    rrKontrastYok: 'Not administered',
+    rrGdBazli: 'Gd-based',
+    bdescLength: 'axial length',
+    bdescShape: 'shape',
+    bdescVitreous: 'vitreous',
+    bdescLens: 'lens',
+    bdescRetina: 'retina',
+    bdescUvea: 'uvea',
+    bdescCalcif: 'intraocular calcification (+)',
+    bdescRSide: 'Right',
+    bdescLSide: 'Left',
+    bdescNormal: 'globe is unremarkable in size, shape, and signal.',
+    proptozBelirginInline: ' (significant proptosis)',
+    proptozSinirInline: ' (borderline)',
+    proptozNormText: 'Bilateral proptosis measurements are within normal limits (≤21 mm).',
+    ondescChap: 'diameter',
+    ondescSag: 'Right',
+    ondescSol: 'Left',
+    ondescON: 'optic nerve',
+    ondescNorm: 'Bilateral optic nerves show normal caliber, signal, and course; sheaths are unremarkable.',
+    rptFatSag: 'Right retroorbital fat',
+    rptFatSol: 'Left retroorbital fat',
+    rptFatInfilt: 'Infiltration',
+    rptFatMass: 'Mass within fat',
+    rptFatNorm: 'Retroorbital fat tissue shows normal signal and volume.',
+    rptOnSignal: 'Signal',
+    rptOnEnhancement: 'Enhancement',
+    rptOnSheath: 'Sheath',
+    rptOnCourse: 'Course',
+    rptLacSag: 'Right lacrimal gland',
+    rptLacSol: 'Left lacrimal gland',
+    rptLacSignal: 'Signal',
+    rptLacEnhancement: 'Enhancement',
+    rptLacNorm: 'Bilateral lacrimal glands show normal size and signal.',
+    rptKemikMedial: 'Medial wall',
+    rptKemikLateral: 'Lateral wall',
+    rptKemikTavan: 'Roof',
+    rptKemikTaban: 'Floor',
+    rptKemikFraktur: 'Fracture (+)',
+    rptKemikHernia: 'Herniation',
+    rptKemikLezyon: 'Bone lesion',
+    rptKemikNorm: 'Orbital walls are intact; no bone lesion detected.',
+    rptVascSag: 'Right superior ophthalmic vein',
+    rptVascSol: 'Left superior ophthalmic vein',
+    rptVascCav: 'Cavernous sinus',
+    rptVascNorm: 'Visualized vascular structures are unremarkable.',
+    rptSinusNorm: 'No pathological finding in the paranasal sinuses.',
+    rptSinusBulgu: 'Paranasal sinus finding',
+    rptSinusDeg: 'Paranasal sinuses were not assessed.',
+    rptEomPaternLabel: 'Thickening pattern',
+    rptEomTendonLabel: 'Tendon',
+    rptEomSinyalLabel: 'Signal',
+    rptEomKontrastLabel: 'Enhancement',
+    printClose: 'Close',
+    copyTextOk: 'Copied as plain text to clipboard.',
+    copyRichOk: 'Rich text copied to clipboard.',
+    copyRichOkFallback: 'Rich text copied to clipboard (fallback).',
+    copyFail: 'Error: ',
+    downloadTitle: 'Orbital MRI Report',
+    downloadFilename: 'orbital_mri_report_',
+  },
+})[RV_LOCALE];
+
+/* ============================================================
    ORBITA PATOLOJİ VERİTABANI — weighted DDx
    Ağırlık: DWI×18, ADC×16, Kontrast×14, T2×12, T1×10, Lokasyon×10, Klinik×10
 ============================================================ */
@@ -329,23 +958,23 @@ const Field = ({label, children})=>(
 /* Bulbus - bir göz için değerlendirme */
 const EyeBulbus = ({side, data, setData})=>(
   <div className={`eye-box ${side==='R'?'right':'left'}`}>
-    <div className="eye-title">{side==='R'?'SAĞ BULBUS':'SOL BULBUS'}</div>
+    <div className="eye-title">{side==='R'?T.ebRightTitle:T.ebLeftTitle}</div>
     <div className="fieldgrid">
-      <div className="k muted">Aksiyel uzunluk (mm)</div>
+      <div className="k muted">{T.ebLength}</div>
       <input type="number" step="0.1" value={data.length} onChange={e=>setData({...data, length:e.target.value})} placeholder="22–24.5 (ortalama)"/>
-      <div className="k muted">Boyut</div>
+      <div className="k muted">{T.ebSize}</div>
       <ChipGroup value={data.size} options={['Normal','Küçük (mikroftalmi/phthisis)','Büyük (miyopik, buftalmi)']} onChange={v=>setData({...data, size:v})}/>
-      <div className="k muted">Şekil</div>
+      <div className="k muted">{T.ebShape}</div>
       <ChipGroup value={data.shape} options={['Normal','Stafilom (fokal dışa çıkıntı)','Koloboma','Deforme (rüptür)']} onChange={v=>setData({...data, shape:v})}/>
-      <div className="k muted">Vitreus sinyali</div>
+      <div className="k muted">{T.ebVitreous}</div>
       <ChipGroup value={data.vitreous} options={['Homojen sıvı','T1 hiperintens (hemoraji)','T2 düşük (retinoblastoma/endoftalmi)','Heterojen','Yabancı cisim/artefakt']} onChange={v=>setData({...data, vitreous:v})}/>
-      <div className="k muted">Lens</div>
+      <div className="k muted">{T.ebLens}</div>
       <ChipGroup value={data.lens} options={['Normal','Dislokasyon','Katarakt/hipointens','Aphakia','Yoklinik (psödofakik)']} onChange={v=>setData({...data, lens:v})}/>
-      <div className="k muted">Retina</div>
+      <div className="k muted">{T.ebRetina}</div>
       <ChipGroup value={data.retina} options={['Normal','V-şekli dekolman','Lineer membran','Subretinal sıvı','Kalınlaşma/tümör']} onChange={v=>setData({...data, retina:v})}/>
-      <div className="k muted">Uvea/Koroid</div>
+      <div className="k muted">{T.ebUvea}</div>
       <ChipGroup value={data.uvea} options={['Normal','Kalınlaşma','Kitle (T1 hiper / T2 hipo – melanin)','Efüzyon']} onChange={v=>setData({...data, uvea:v})}/>
-      <div className="k muted">İntraoküler kalsifikasyon</div>
+      <div className="k muted">{T.ebCalcif}</div>
       <ChipGroup value={data.calcif} options={['Yok','Var']} onChange={v=>setData({...data, calcif:v})}/>
     </div>
   </div>
@@ -359,12 +988,12 @@ const EomRow = ({name, sideR, sideL, onR, onL})=>{
     <div className="muscle-row">
       <div>
         <input type="number" step="0.1" value={sideR} onChange={e=>onR(e.target.value)} placeholder="mm"/>
-        {rThick && <div className="thickness-warn">⚠ kalınlaşmış</div>}
+        {rThick && <div className="thickness-warn">{T.eomThickWarn}</div>}
       </div>
       <div className="lbl" style={{textAlign:'center',fontWeight:600,color:'var(--orbita)'}}>{name}</div>
       <div>
         <input type="number" step="0.1" value={sideL} onChange={e=>onL(e.target.value)} placeholder="mm"/>
-        {lThick && <div className="thickness-warn">⚠ kalınlaşmış</div>}
+        {lThick && <div className="thickness-warn">{T.eomThickWarn}</div>}
       </div>
     </div>
   );
@@ -430,22 +1059,22 @@ const initState = () => ({
    STEPS
 ============================================================ */
 const STEPS = [
-  {key:'patient', label:'Hasta/Klinik'},
-  {key:'protokol', label:'Protokol'},
-  {key:'bulbus', label:'Bulbus Oculi'},
-  {key:'proptoz', label:'Proptoz'},
-  {key:'eom', label:'EOM Kalınlıkları'},
-  {key:'fat', label:'Retroorbital Yağ'},
-  {key:'onerve', label:'Optik Sinir'},
-  {key:'lacrimal', label:'Lakrimal Bez'},
-  {key:'kemik', label:'Kemik/Duvarlar'},
-  {key:'vasc', label:'Vasküler'},
-  {key:'sinus', label:'Paranazal Sinüsler'},
-  {key:'lezyonPre', label:'Lezyon Kontrolü'},
-  {key:'lezyon', label:'Lezyon Detayı'},
-  {key:'ddx', label:'DDx Motoru'},
-  {key:'ek', label:'Ek Bulgular'},
-  {key:'report', label:'Rapor'},
+  {key:'patient', label:T.stPatient},
+  {key:'protokol', label:T.stProtokol},
+  {key:'bulbus', label:T.stBulbus},
+  {key:'proptoz', label:T.stProptoz},
+  {key:'eom', label:T.stEom},
+  {key:'fat', label:T.stFat},
+  {key:'onerve', label:T.stOnerve},
+  {key:'lacrimal', label:T.stLacrimal},
+  {key:'kemik', label:T.stKemik},
+  {key:'vasc', label:T.stVasc},
+  {key:'sinus', label:T.stSinus},
+  {key:'lezyonPre', label:T.stLezyonPre},
+  {key:'lezyon', label:T.stLezyon},
+  {key:'ddx', label:T.stDdx},
+  {key:'ek', label:T.stEk},
+  {key:'report', label:T.stReport},
 ];
 
 /* ============================================================
@@ -716,17 +1345,17 @@ function App(){
   /* ============ ADIMLAR ============ */
   const renderPatient = ()=>(
     <div className="card">
-      <h2>Hasta ve Klinik Bilgiler</h2>
-      <div className="hint">Orbita MR incelemesi için demografik bilgiler ve klinik öykü.</div>
+      <h2>{T.patTitle}</h2>
+      <div className="hint">{T.patHint}</div>
       <div className="grid">
-        <Field label="Ad Soyad"><input type="text" value={s.ad_soyad} onChange={e=>upd({ad_soyad:e.target.value})}/></Field>
-        <Field label="Yaş"><input type="number" value={s.yas} onChange={e=>upd({yas:e.target.value})}/></Field>
-        <Field label="Cinsiyet"><ChipGroup value={s.cinsiyet} options={['Kadın','Erkek']} onChange={v=>upd({cinsiyet:v})}/></Field>
-        <Field label="Taraf"><ChipGroup value={s.taraf} options={['Sağ','Sol','Bilateral']} onChange={v=>upd({taraf:v})}/></Field>
-        <Field label="Protokol No"><input type="text" value={s.protokol_no} onChange={e=>upd({protokol_no:e.target.value})}/></Field>
+        <Field label={T.patAdSoyad}><input type="text" value={s.ad_soyad} onChange={e=>upd({ad_soyad:e.target.value})}/></Field>
+        <Field label={T.patYas}><input type="number" value={s.yas} onChange={e=>upd({yas:e.target.value})}/></Field>
+        <Field label={T.patCinsiyet}><ChipGroup value={s.cinsiyet} options={['Kadın','Erkek']} onChange={v=>upd({cinsiyet:v})}/></Field>
+        <Field label={T.patTaraf}><ChipGroup value={s.taraf} options={['Sağ','Sol','Bilateral']} onChange={v=>upd({taraf:v})}/></Field>
+        <Field label={T.patProtNo}><input type="text" value={s.protokol_no} onChange={e=>upd({protokol_no:e.target.value})}/></Field>
       </div>
       <hr className="sep"/>
-      <Field label="Klinik Semptom (çoklu)">
+      <Field label={T.patSemptom}>
         <ChipGroup multi value={s.klinik_semptom} options={[
           'Proptoz','Ağrı','Ateş','Görme kaybı','Akut görme kaybı','Diplopi','Lökokori','Kemozis',
           'Künt travma','Penetran travma','Sinüzit öyküsü','Eyelid şişliği','Epifora','Kısıtlı göz hareketi',
@@ -734,23 +1363,23 @@ function App(){
         ]} onChange={v=>upd({klinik_semptom:v})}/>
       </Field>
       <div className="grid" style={{marginTop:10}}>
-        <Field label="Kronisite"><ChipGroup value={s.kronisite} options={['Akut (<72 sa)','Subakut (3 gün–3 hafta)','Kronik (>3 hafta)','Konjenital']} onChange={v=>upd({kronisite:v})}/></Field>
-        <Field label="Görme durumu"><ChipGroup value={s.vision_status} options={['Normal','Kronik azalmış','Akut kaybı var']} onChange={v=>upd({vision_status:v})}/></Field>
+        <Field label={T.patKronisite}><ChipGroup value={s.kronisite} options={['Akut (<72 sa)','Subakut (3 gün–3 hafta)','Kronik (>3 hafta)','Konjenital']} onChange={v=>upd({kronisite:v})}/></Field>
+        <Field label={T.patVision}><ChipGroup value={s.vision_status} options={['Normal','Kronik azalmış','Akut kaybı var']} onChange={v=>upd({vision_status:v})}/></Field>
       </div>
-      <Field label="Sistemik / komorbid (çoklu)">
+      <Field label={T.patSistemik}>
         <ChipGroup multi value={s.sistemik} options={[
           'Hipertiroidi/Graves','NF1','MS/demyelinizan','Bilinen malignite','IgG4 hastalığı',
           'Sarkoidoz','Diabetes Mellitus','İmmünosupresyon','Koagülopati'
         ]} onChange={v=>upd({sistemik:v})}/>
       </Field>
-      <Field label="Klinik notlar"><textarea value={s.klinik_not} onChange={e=>upd({klinik_not:e.target.value})} placeholder="Başvuru şikayeti, muayene bulguları..."/></Field>
+      <Field label={T.patNot}><textarea value={s.klinik_not} onChange={e=>upd({klinik_not:e.target.value})} placeholder={T.patNotPh}/></Field>
     </div>
   );
 
   const renderProtokol = ()=>(
     <div className="card">
-      <h2>MR Protokolü</h2>
-      <Field label="Sekanslar (çoklu)">
+      <h2>{T.proTitle}</h2>
+      <Field label={T.proSekans}>
         <ChipGroup multi value={s.sekanslar} options={[
           'Aksiyel T1','Aksiyel T2 FS','Aksiyel STIR','Koronal T1','Koronal T2 FS','Koronal STIR',
           'Sagital T1','Sagital T2 FS','DWI / ADC','Aksiyel T1 post-kontrast (yağ baskılı)',
@@ -758,16 +1387,16 @@ function App(){
         ]} onChange={v=>upd({sekanslar:v})}/>
       </Field>
       <div className="grid" style={{marginTop:10}}>
-        <Field label="IV kontrast"><ChipGroup value={s.kontrast_var} options={['Evet','Hayır']} onChange={v=>upd({kontrast_var:v})}/></Field>
-        {s.kontrast_var==='Evet' && <Field label="Kontrast madde"><input type="text" value={s.kontrast_madde} onChange={e=>upd({kontrast_madde:e.target.value})} placeholder="ör. gadobutrol 0.1 mmol/kg"/></Field>}
+        <Field label={T.proKontrast}><ChipGroup value={s.kontrast_var} options={['Evet','Hayır']} onChange={v=>upd({kontrast_var:v})}/></Field>
+        {s.kontrast_var==='Evet' && <Field label={T.proKontrastMadde}><input type="text" value={s.kontrast_madde} onChange={e=>upd({kontrast_madde:e.target.value})} placeholder={T.proKontrastPh}/></Field>}
       </div>
     </div>
   );
   
   const renderBulbus = ()=>(
     <div className="card">
-      <h2>Bulbus Oculi</h2>
-      <div className="hint">Sağ ve sol göz küresi ayrı ayrı: boyut, şekil, vitreus, lens, retina, uvea. Normal aksiyel uzunluk ~22–24.5 mm.</div>
+      <h2>{T.bulbusTitle}</h2>
+      <div className="hint">{T.bulbusHint}</div>
       <div className="bilat">
         <EyeBulbus side="R" data={s.bulbus_R} setData={d=>upd({bulbus_R:d})}/>
         <EyeBulbus side="L" data={s.bulbus_L} setData={d=>upd({bulbus_L:d})}/>
@@ -777,36 +1406,36 @@ function App(){
   
   const renderProptoz = ()=>(
     <div className="card">
-      <h2>Proptoz Ölçümü</h2>
-      <div className="hint">İnterzigomatik hat ile anterior korneal yüz arasındaki mesafe. Normal: ≤21 mm, 21–23 mm sınır, {'>'}23 mm anlamlı proptoz. İki göz arası {'>'}2 mm fark anlamlıdır.</div>
+      <h2>{T.proptozTitle}</h2>
+      <div className="hint">{T.proptozHint}</div>
       <div className="bilat">
         <div className="eye-box right">
-          <div className="eye-title">SAĞ</div>
-          <Field label="Proptoz (mm)"><input type="number" step="0.1" value={s.proptoz_R} onChange={e=>upd({proptoz_R:e.target.value})}/></Field>
-          {parseFloat(s.proptoz_R)>23 && <div className="thickness-warn" style={{color:'var(--bad)'}}>⚠ Belirgin proptoz</div>}
-          {parseFloat(s.proptoz_R)>21 && parseFloat(s.proptoz_R)<=23 && <div className="thickness-warn">⚠ Sınırda</div>}
+          <div className="eye-title">{T.proptozR}</div>
+          <Field label={T.proptozField}><input type="number" step="0.1" value={s.proptoz_R} onChange={e=>upd({proptoz_R:e.target.value})}/></Field>
+          {parseFloat(s.proptoz_R)>23 && <div className="thickness-warn" style={{color:'var(--bad)'}}>{T.proptozBelirgin}</div>}
+          {parseFloat(s.proptoz_R)>21 && parseFloat(s.proptoz_R)<=23 && <div className="thickness-warn">{T.proptozSinir}</div>}
         </div>
         <div className="eye-box left">
-          <div className="eye-title">SOL</div>
-          <Field label="Proptoz (mm)"><input type="number" step="0.1" value={s.proptoz_L} onChange={e=>upd({proptoz_L:e.target.value})}/></Field>
-          {parseFloat(s.proptoz_L)>23 && <div className="thickness-warn" style={{color:'var(--bad)'}}>⚠ Belirgin proptoz</div>}
-          {parseFloat(s.proptoz_L)>21 && parseFloat(s.proptoz_L)<=23 && <div className="thickness-warn">⚠ Sınırda</div>}
+          <div className="eye-title">{T.proptozL}</div>
+          <Field label={T.proptozField}><input type="number" step="0.1" value={s.proptoz_L} onChange={e=>upd({proptoz_L:e.target.value})}/></Field>
+          {parseFloat(s.proptoz_L)>23 && <div className="thickness-warn" style={{color:'var(--bad)'}}>{T.proptozBelirgin}</div>}
+          {parseFloat(s.proptoz_L)>21 && parseFloat(s.proptoz_L)<=23 && <div className="thickness-warn">{T.proptozSinir}</div>}
         </div>
       </div>
-      <Field label="Proptoz notları"><textarea value={s.proptoz_note} onChange={e=>upd({proptoz_note:e.target.value})} placeholder="Asimetri derecesi, açıklama..."/></Field>
+      <Field label={T.proptozNot}><textarea value={s.proptoz_note} onChange={e=>upd({proptoz_note:e.target.value})} placeholder={T.proptozNotPh}/></Field>
     </div>
   );
   
   const renderEom = ()=>(
     <div className="card">
-      <h2>Ekstraoküler Kas Kalınlıkları</h2>
-      <div className="hint">Belly (karın) orta 1/3'ünde ölçüm. Normal değer genel olarak {'<'}4.5 mm. Graves'te tipik olarak: <b>IR {'>'} MR {'>'} SR {'>'} LR</b>. {'>'}4.5 mm değerler otomatik işaretlenir.</div>
+      <h2>{T.eomTitle}</h2>
+      <div className="hint">{T.eomHint}</div>
       <div className="section">
-        <h3>Kalınlık (mm) — Sağ / Sol</h3>
+        <h3>{T.eomSectionTitle}</h3>
         <div className="muscle-row">
-          <div className="lbl" style={{textAlign:'right'}}>SAĞ</div>
-          <div className="lbl" style={{textAlign:'center',fontWeight:700}}>KAS</div>
-          <div className="lbl">SOL</div>
+          <div className="lbl" style={{textAlign:'right'}}>{T.eomHeaderR}</div>
+          <div className="lbl" style={{textAlign:'center',fontWeight:700}}>{T.eomHeaderM}</div>
+          <div className="lbl">{T.eomHeaderL}</div>
         </div>
         <EomRow name="Inferior rectus (IR)" sideR={s.ir_R} sideL={s.ir_L} onR={v=>upd({ir_R:v})} onL={v=>upd({ir_L:v})}/>
         <EomRow name="Medial rectus (MR)" sideR={s.mr_R} sideL={s.mr_L} onR={v=>upd({mr_R:v})} onL={v=>upd({mr_L:v})}/>
@@ -816,16 +1445,16 @@ function App(){
         <EomRow name="Levator palpebrae (LPS)" sideR={s.lps_R} sideL={s.lps_L} onR={v=>upd({lps_R:v})} onL={v=>upd({lps_L:v})}/>
       </div>
       <div className="grid">
-        <Field label="Kalınlaşma paterni"><ChipGroup value={s.eom_pattern} options={[
+        <Field label={T.eomPattern}><ChipGroup value={s.eom_pattern} options={[
           'Yok','Fuziform belly kalınlaşması','Kitle gibi kas infiltrasyonu','Diffüz infiltrasyon','İzole tek kas'
         ]} onChange={v=>upd({eom_pattern:v})}/></Field>
-        <Field label="Tendon tutulumu"><ChipGroup value={s.eom_tendon} options={[
+        <Field label={T.eomTendon}><ChipGroup value={s.eom_tendon} options={[
           'Değerlendirilemedi','Tendon korunmuş (belly involvement)','Tendon tutulumu (+)'
         ]} onChange={v=>upd({eom_tendon:v})}/></Field>
-        <Field label="Kas sinyal özelliği"><ChipGroup value={s.eom_signal} options={[
+        <Field label={T.eomSignal}><ChipGroup value={s.eom_signal} options={[
           'Normal','T2 hiperintens (aktif inflamasyon/ödem)','T2 düşük (fibrozis)','Heterojen','Hemoraji'
         ]} onChange={v=>upd({eom_signal:v})}/></Field>
-        <Field label="Kontrastlanma"><ChipGroup value={s.eom_enhancement} options={[
+        <Field label={T.eomEnhancement}><ChipGroup value={s.eom_enhancement} options={[
           'Yok/minimal','Hafif','Belirgin tutulum','Heterojen'
         ]} onChange={v=>upd({eom_enhancement:v})}/></Field>
       </div>
@@ -834,120 +1463,120 @@ function App(){
   
   const renderFat = ()=>(
     <div className="card">
-      <h2>Retroorbital Yağ Dokusu</h2>
-      <div className="hint">Yağ hacmi (artma Graves'te tipiktir), infiltrasyon (selülit/inflamasyon), kitle varlığı.</div>
+      <h2>{T.fatTitle}</h2>
+      <div className="hint">{T.fatHint}</div>
       <div className="bilat">
         <div className="eye-box right">
-          <div className="eye-title">SAĞ</div>
-          <Field label="Yağ hacmi"><ChipGroup value={s.fat_R} options={['Normal','Artmış','Azalmış','İnfiltrasyon']} onChange={v=>upd({fat_R:v})}/></Field>
+          <div className="eye-title">{T.vascSOVR}</div>
+          <Field label={T.fatHacim}><ChipGroup value={s.fat_R} options={['Normal','Artmış','Azalmış','İnfiltrasyon']} onChange={v=>upd({fat_R:v})}/></Field>
         </div>
         <div className="eye-box left">
-          <div className="eye-title">SOL</div>
-          <Field label="Yağ hacmi"><ChipGroup value={s.fat_L} options={['Normal','Artmış','Azalmış','İnfiltrasyon']} onChange={v=>upd({fat_L:v})}/></Field>
+          <div className="eye-title">{T.vascSOVL}</div>
+          <Field label={T.fatHacim}><ChipGroup value={s.fat_L} options={['Normal','Artmış','Azalmış','İnfiltrasyon']} onChange={v=>upd({fat_L:v})}/></Field>
         </div>
       </div>
       <div className="grid">
-        <Field label="İnfiltrasyon paterni"><ChipGroup value={s.fat_infiltration} options={[
+        <Field label={T.fatInfilt}><ChipGroup value={s.fat_infiltration} options={[
           'Yok','Preseptal yumuşak doku ödemi','Postseptal yağ strandingi','Diffüz kontrastlanma','Fokal kitle/lezyon'
         ]} onChange={v=>upd({fat_infiltration:v})}/></Field>
-        <Field label="Yağ içinde kitle?"><ChipGroup value={s.fat_mass} options={['Yok','İntrakonal','Ekstrakonal','Hem intra hem ekstrakonal']} onChange={v=>upd({fat_mass:v})}/></Field>
+        <Field label={T.fatMass}><ChipGroup value={s.fat_mass} options={['Yok','İntrakonal','Ekstrakonal','Hem intra hem ekstrakonal']} onChange={v=>upd({fat_mass:v})}/></Field>
       </div>
     </div>
   );
   
   const renderONerve = ()=>(
     <div className="card">
-      <h2>Optik Sinir ve Kılıfı</h2>
-      <div className="hint">Normal optik sinir çapı ~3–5 mm (kılıfı ile birlikte ~5–6 mm). Tram-track patern meningioma için tipiktir.</div>
+      <h2>{T.onerveTitle}</h2>
+      <div className="hint">{T.onerveHint}</div>
       <div className="bilat">
         <div className="eye-box right">
-          <div className="eye-title">SAĞ OPTİK SİNİR</div>
-          <Field label="Morfoloji"><ChipGroup value={s.on_R} options={['Normal','Fuziform kalınlaşma','Tübüler kalınlaşma','Atrofik/ince','Kitlevi lezyon']} onChange={v=>upd({on_R:v})}/></Field>
-          <Field label="Maksimum çap (mm)"><input type="number" step="0.1" value={s.on_thickness_R} onChange={e=>upd({on_thickness_R:e.target.value})}/></Field>
+          <div className="eye-title">{T.onerveRTitle}</div>
+          <Field label={T.onerveMorf}><ChipGroup value={s.on_R} options={['Normal','Fuziform kalınlaşma','Tübüler kalınlaşma','Atrofik/ince','Kitlevi lezyon']} onChange={v=>upd({on_R:v})}/></Field>
+          <Field label={T.onerveThick}><input type="number" step="0.1" value={s.on_thickness_R} onChange={e=>upd({on_thickness_R:e.target.value})}/></Field>
         </div>
         <div className="eye-box left">
-          <div className="eye-title">SOL OPTİK SİNİR</div>
-          <Field label="Morfoloji"><ChipGroup value={s.on_L} options={['Normal','Fuziform kalınlaşma','Tübüler kalınlaşma','Atrofik/ince','Kitlevi lezyon']} onChange={v=>upd({on_L:v})}/></Field>
-          <Field label="Maksimum çap (mm)"><input type="number" step="0.1" value={s.on_thickness_L} onChange={e=>upd({on_thickness_L:e.target.value})}/></Field>
+          <div className="eye-title">{T.onerveLTitle}</div>
+          <Field label={T.onerveMorf}><ChipGroup value={s.on_L} options={['Normal','Fuziform kalınlaşma','Tübüler kalınlaşma','Atrofik/ince','Kitlevi lezyon']} onChange={v=>upd({on_L:v})}/></Field>
+          <Field label={T.onerveThick}><input type="number" step="0.1" value={s.on_thickness_L} onChange={e=>upd({on_thickness_L:e.target.value})}/></Field>
         </div>
       </div>
       <div className="grid">
-        <Field label="Sinyal"><ChipGroup value={s.on_signal} options={['Normal','T2 hiperintens','Heterojen','Nekrotik','Hemoraji']} onChange={v=>upd({on_signal:v})}/></Field>
-        <Field label="Kontrastlanma"><ChipGroup value={s.on_enhancement} options={['Yok','Tutulum (+)','Tram-track paterni','Fuziform diffüz']} onChange={v=>upd({on_enhancement:v})}/></Field>
-        <Field label="Kılıf (CSF)"><ChipGroup value={s.on_sheath} options={['Normal','Genişlemiş','Tramtrack enhancement','Kitle ile çevrili']} onChange={v=>upd({on_sheath:v})}/></Field>
-        <Field label="Seyir"><ChipGroup value={s.on_course} options={['Düz','Kink/ektazi','Gergin (proptoz paterni)']} onChange={v=>upd({on_course:v})}/></Field>
+        <Field label={T.onerveSignal}><ChipGroup value={s.on_signal} options={['Normal','T2 hiperintens','Heterojen','Nekrotik','Hemoraji']} onChange={v=>upd({on_signal:v})}/></Field>
+        <Field label={T.onerveEnhancement}><ChipGroup value={s.on_enhancement} options={['Yok','Tutulum (+)','Tram-track paterni','Fuziform diffüz']} onChange={v=>upd({on_enhancement:v})}/></Field>
+        <Field label={T.onerveSheath}><ChipGroup value={s.on_sheath} options={['Normal','Genişlemiş','Tramtrack enhancement','Kitle ile çevrili']} onChange={v=>upd({on_sheath:v})}/></Field>
+        <Field label={T.onerveCourse}><ChipGroup value={s.on_course} options={['Düz','Kink/ektazi','Gergin (proptoz paterni)']} onChange={v=>upd({on_course:v})}/></Field>
       </div>
     </div>
   );
   
   const renderLacrimal = ()=>(
     <div className="card">
-      <h2>Lakrimal Bez</h2>
-      <div className="hint">Superolateral yerleşimli. Unilateral vs bilateral büyüme önemli ayırıcıdır.</div>
+      <h2>{T.lacTitle}</h2>
+      <div className="hint">{T.lacHint}</div>
       <div className="bilat">
         <div className="eye-box right">
-          <div className="eye-title">SAĞ LAKRİMAL BEZ</div>
-          <Field label="Boyut"><ChipGroup value={s.lac_R} options={['Normal','Hafif büyük','Büyük (kitle)','Atrofik']} onChange={v=>upd({lac_R:v})}/></Field>
+          <div className="eye-title">{T.lacRTitle}</div>
+          <Field label={T.lacSize}><ChipGroup value={s.lac_R} options={['Normal','Hafif büyük','Büyük (kitle)','Atrofik']} onChange={v=>upd({lac_R:v})}/></Field>
         </div>
         <div className="eye-box left">
-          <div className="eye-title">SOL LAKRİMAL BEZ</div>
-          <Field label="Boyut"><ChipGroup value={s.lac_L} options={['Normal','Hafif büyük','Büyük (kitle)','Atrofik']} onChange={v=>upd({lac_L:v})}/></Field>
+          <div className="eye-title">{T.lacLTitle}</div>
+          <Field label={T.lacSize}><ChipGroup value={s.lac_L} options={['Normal','Hafif büyük','Büyük (kitle)','Atrofik']} onChange={v=>upd({lac_L:v})}/></Field>
         </div>
       </div>
       <div className="grid">
-        <Field label="Sinyal"><ChipGroup value={s.lac_signal} options={['Normal','Homojen T2 hiperintens','Heterojen','T2 düşük (fibröz)']} onChange={v=>upd({lac_signal:v})}/></Field>
-        <Field label="Kontrastlanma"><ChipGroup value={s.lac_enhancement} options={['Normal','Homojen','Heterojen','Periferik rim']} onChange={v=>upd({lac_enhancement:v})}/></Field>
-        <Field label="Bilateral/spesifik bulgu"><ChipGroup value={s.lac_bilateral_finding} options={['Yok','Bilateral büyüme','Tek taraflı kitle','Kemik destrüksiyonu (+)']} onChange={v=>upd({lac_bilateral_finding:v})}/></Field>
+        <Field label={T.lacSignal}><ChipGroup value={s.lac_signal} options={['Normal','Homojen T2 hiperintens','Heterojen','T2 düşük (fibröz)']} onChange={v=>upd({lac_signal:v})}/></Field>
+        <Field label={T.lacEnhancement}><ChipGroup value={s.lac_enhancement} options={['Normal','Homojen','Heterojen','Periferik rim']} onChange={v=>upd({lac_enhancement:v})}/></Field>
+        <Field label={T.lacBilateral}><ChipGroup value={s.lac_bilateral_finding} options={['Yok','Bilateral büyüme','Tek taraflı kitle','Kemik destrüksiyonu (+)']} onChange={v=>upd({lac_bilateral_finding:v})}/></Field>
       </div>
     </div>
   );
   
   const renderKemik = ()=>(
     <div className="card">
-      <h2>Kemik Duvarlar ve Fraktür</h2>
-      <div className="hint">Medial lamina papyracea ve inferior floor en sık fraktür alanları. Hiperostoz meningiomu, ground-glass fibröz displaziyi düşündürür.</div>
+      <h2>{T.kemikTitle}</h2>
+      <div className="hint">{T.kemikHint}</div>
       <div className="grid">
-        <Field label="Medial duvar"><ChipGroup value={s.wall_medial} options={['İntakt','Fraktür','İnflamasyon','Mukosel basısı']} onChange={v=>upd({wall_medial:v})}/></Field>
-        <Field label="Lateral duvar"><ChipGroup value={s.wall_lateral} options={['İntakt','Fraktür','Hiperostoz','Erozyon']} onChange={v=>upd({wall_lateral:v})}/></Field>
-        <Field label="Tavan (roof)"><ChipGroup value={s.wall_roof} options={['İntakt','Fraktür','Defekt (konjenital)','Kitle basısı']} onChange={v=>upd({wall_roof:v})}/></Field>
-        <Field label="Taban (floor)"><ChipGroup value={s.wall_floor} options={['İntakt','Fraktür','Blow-out','Maksiller sinüs kaynaklı itilme']} onChange={v=>upd({wall_floor:v})}/></Field>
+        <Field label={T.kemikMedial}><ChipGroup value={s.wall_medial} options={['İntakt','Fraktür','İnflamasyon','Mukosel basısı']} onChange={v=>upd({wall_medial:v})}/></Field>
+        <Field label={T.kemikLateral}><ChipGroup value={s.wall_lateral} options={['İntakt','Fraktür','Hiperostoz','Erozyon']} onChange={v=>upd({wall_lateral:v})}/></Field>
+        <Field label={T.kemikTavan}><ChipGroup value={s.wall_roof} options={['İntakt','Fraktür','Defekt (konjenital)','Kitle basısı']} onChange={v=>upd({wall_roof:v})}/></Field>
+        <Field label={T.kemikTaban}><ChipGroup value={s.wall_floor} options={['İntakt','Fraktür','Blow-out','Maksiller sinüs kaynaklı itilme']} onChange={v=>upd({wall_floor:v})}/></Field>
       </div>
       <hr className="sep"/>
       <div className="grid-2">
-        <Field label="Genel fraktür durumu"><ChipGroup value={s.fracture} options={['Yok','Var','Multi-duvar fraktür']} onChange={v=>upd({fracture:v})}/></Field>
+        <Field label={T.kemikFraktur}><ChipGroup value={s.fracture} options={['Yok','Var','Multi-duvar fraktür']} onChange={v=>upd({fracture:v})}/></Field>
         {s.fracture!=='Yok' && s.fracture &&
-          <Field label="Fraktür duvarı (çoklu)"><ChipGroup multi value={s.fracture_wall} options={['Medial (lamina papyracea)','İnferior (floor)','Lateral','Tavan (roof)']} onChange={v=>upd({fracture_wall:v})}/></Field>
+          <Field label={T.kemikFrakturDuvar}><ChipGroup multi value={s.fracture_wall} options={['Medial (lamina papyracea)','İnferior (floor)','Lateral','Tavan (roof)']} onChange={v=>upd({fracture_wall:v})}/></Field>
         }
-        <Field label="Herniasyon"><ChipGroup value={s.herniation} options={['Yok','Var (yağ)','Var (kas/EOM tuzaklanması)']} onChange={v=>upd({herniation:v})}/></Field>
-        <Field label="Kemik lezyonu"><ChipGroup value={s.bone_lesion} options={['Yok','Hiperostoz','Ground-glass','Litik/destrüktif','Erozyon + kitle']} onChange={v=>upd({bone_lesion:v})}/></Field>
+        <Field label={T.kemikHernia}><ChipGroup value={s.herniation} options={['Yok','Var (yağ)','Var (kas/EOM tuzaklanması)']} onChange={v=>upd({herniation:v})}/></Field>
+        <Field label={T.kemikLezyon}><ChipGroup value={s.bone_lesion} options={['Yok','Hiperostoz','Ground-glass','Litik/destrüktif','Erozyon + kitle']} onChange={v=>upd({bone_lesion:v})}/></Field>
       </div>
     </div>
   );
   
   const renderVasc = ()=>(
     <div className="card">
-      <h2>Vasküler Yapılar</h2>
-      <div className="hint">Süperior oftalmik ven ve kavernöz sinüs değerlendirmesi. CCF'de SOV dilate, kavernöz sinüs genişlemiş olur.</div>
+      <h2>{T.vascTitle}</h2>
+      <div className="hint">{T.vascHint}</div>
       <div className="bilat">
         <div className="eye-box right">
-          <div className="eye-title">SAĞ</div>
-          <Field label="Süperior oftalmik ven"><ChipGroup value={s.soph_vein_R} options={['Normal','Dilate','Tromboze']} onChange={v=>upd({soph_vein_R:v})}/></Field>
+          <div className="eye-title">{T.vascSOVR}</div>
+          <Field label={T.vascSOVLabel}><ChipGroup value={s.soph_vein_R} options={['Normal','Dilate','Tromboze']} onChange={v=>upd({soph_vein_R:v})}/></Field>
         </div>
         <div className="eye-box left">
-          <div className="eye-title">SOL</div>
-          <Field label="Süperior oftalmik ven"><ChipGroup value={s.soph_vein_L} options={['Normal','Dilate','Tromboze']} onChange={v=>upd({soph_vein_L:v})}/></Field>
+          <div className="eye-title">{T.vascSOVL}</div>
+          <Field label={T.vascSOVLabel}><ChipGroup value={s.soph_vein_L} options={['Normal','Dilate','Tromboze']} onChange={v=>upd({soph_vein_L:v})}/></Field>
         </div>
       </div>
-      <Field label="Kavernöz sinüs"><ChipGroup value={s.cav_sinus} options={['Normal','Genişlemiş','Flow void (+)','Tromboz şüphesi']} onChange={v=>upd({cav_sinus:v})}/></Field>
-      <Field label="Vasküler ek notlar"><textarea value={s.vascular_note} onChange={e=>upd({vascular_note:e.target.value})} placeholder="Flow void varlığı, varis, fistül, anevrizma..."/></Field>
+      <Field label={T.vascCav}><ChipGroup value={s.cav_sinus} options={['Normal','Genişlemiş','Flow void (+)','Tromboz şüphesi']} onChange={v=>upd({cav_sinus:v})}/></Field>
+      <Field label={T.vascNot}><textarea value={s.vascular_note} onChange={e=>upd({vascular_note:e.target.value})} placeholder={T.vascNotPh}/></Field>
     </div>
   );
   
   const renderSinus = ()=>(
     <div className="card">
-      <h2>Paranazal Sinüsler</h2>
-      <div className="hint">Orbita patolojilerinin yaklaşık %60'ı paranazal sinüs kökenlidir (özellikle etmoidal ve frontal). Komşu sinüs mutlaka değerlendirilmelidir.</div>
-      <Field label="Sinüs durumu"><ChipGroup value={s.sinus_status} options={[
+      <h2>{T.sinusTitle}</h2>
+      <div className="hint">{T.sinusHint}</div>
+      <Field label={T.sinusLabel}><ChipGroup value={s.sinus_status} options={[
         'Normal','Hafif mukozal kalınlaşma','Komşu sinüzit','Sinüs kitle/mukosel','Sinonasal tümör','Polipozis'
       ]} onChange={v=>upd({sinus_status:v})}/></Field>
     </div>
@@ -955,85 +1584,85 @@ function App(){
   
   const renderLezyonPre = ()=>(
     <div className="card">
-      <h2>Lezyon Kontrolü</h2>
-      <Field label="Diskret lezyon / kitle var mı?">
+      <h2>{T.lzPreTitle}</h2>
+      <Field label={T.lzPreLabel}>
         <ChipGroup value={s.lezyon_var} options={['Evet','Hayır']} onChange={v=>upd({lezyon_var:v})}/>
       </Field>
-      <div className="alert info">"Hayır" seçerseniz lezyon detay adımı atlanır ve doğrudan DDx motoruna geçilir.</div>
+      <div className="alert info">{T.lzPreAlert}</div>
     </div>
   );
   
   const renderLezyon = ()=>{
     const idx = s.currentIdx;
-    if(idx<0 || !s.lesions[idx]) return <div className="card"><div className="alert bad">Lezyon bulunamadı.</div></div>;
+    if(idx<0 || !s.lesions[idx]) return <div className="card"><div className="alert bad">{T.lzNotFound}</div></div>;
     const L = s.lesions[idx];
     return (
       <div className="card">
-        <h2>Lezyon #{idx+1} Detayı</h2>
-        <div className="hint">Her lezyonu ayrıntılı karakterize edin.</div>
+        <h2>{T.lzTitle}{idx+1}{T.lzTitleSuffix}</h2>
+        <div className="hint">{T.lzHint}</div>
         <div className="grid-2">
-          <Field label="Lezyon adı/etiketi"><input type="text" value={L.ad} onChange={e=>updateCurrentLesion({ad:e.target.value})} placeholder="örn. L1 – intrakonal kitle"/></Field>
-          <Field label="Köken doku"><ChipGroup value={L.origin} options={['Kas','Sinir','Damar','Lakrimal bez','Yağ dokusu','Bulbus/intraoküler','Kemik','Subkutan','Kitle (spesifik değil)']} onChange={v=>updateCurrentLesion({origin:v})}/></Field>
-          <Field label="Kompartman"><ChipGroup value={L.compartment} options={['İntrakonal','Ekstrakonal','Konikal','Preseptal','Lakrimal fossa','İntraoküler','Kemik/duvar']} onChange={v=>updateCurrentLesion({compartment:v})}/></Field>
-          <Field label="Lokalizasyon (saat yönü)"><ChipGroup value={L.localization} options={['Superior','İnferior','Medial','Lateral','Superomedial','Superolateral','İnferomedial','İnferolateral','Santral']} onChange={v=>updateCurrentLesion({localization:v})}/></Field>
-          <Field label="Taraf"><ChipGroup value={L.side} options={['Sağ','Sol','Bilateral']} onChange={v=>updateCurrentLesion({side:v})}/></Field>
+          <Field label={T.lzAd}><input type="text" value={L.ad} onChange={e=>updateCurrentLesion({ad:e.target.value})} placeholder={T.lzAdPh}/></Field>
+          <Field label={T.lzKoken}><ChipGroup value={L.origin} options={['Kas','Sinir','Damar','Lakrimal bez','Yağ dokusu','Bulbus/intraoküler','Kemik','Subkutan','Kitle (spesifik değil)']} onChange={v=>updateCurrentLesion({origin:v})}/></Field>
+          <Field label={T.lzKompartman}><ChipGroup value={L.compartment} options={['İntrakonal','Ekstrakonal','Konikal','Preseptal','Lakrimal fossa','İntraoküler','Kemik/duvar']} onChange={v=>updateCurrentLesion({compartment:v})}/></Field>
+          <Field label={T.lzLok}><ChipGroup value={L.localization} options={['Superior','İnferior','Medial','Lateral','Superomedial','Superolateral','İnferomedial','İnferolateral','Santral']} onChange={v=>updateCurrentLesion({localization:v})}/></Field>
+          <Field label={T.lzTaraf}><ChipGroup value={L.side} options={['Sağ','Sol','Bilateral']} onChange={v=>updateCurrentLesion({side:v})}/></Field>
         </div>
         <hr className="sep"/>
-        <h4 style={{color:'var(--orbita)'}}>BOYUT (mm)</h4>
+        <h4 style={{color:'var(--orbita)'}}>{T.lzBoyutLabel}</h4>
         <div className="grid-3">
-          <Field label="AP"><input type="number" value={L.boyut_ap} onChange={e=>updateCurrentLesion({boyut_ap:e.target.value})}/></Field>
-          <Field label="Transvers"><input type="number" value={L.boyut_ml} onChange={e=>updateCurrentLesion({boyut_ml:e.target.value})}/></Field>
-          <Field label="Kraniokaudal"><input type="number" value={L.boyut_cc} onChange={e=>updateCurrentLesion({boyut_cc:e.target.value})}/></Field>
+          <Field label={T.lzAP}><input type="number" value={L.boyut_ap} onChange={e=>updateCurrentLesion({boyut_ap:e.target.value})}/></Field>
+          <Field label={T.lzML}><input type="number" value={L.boyut_ml} onChange={e=>updateCurrentLesion({boyut_ml:e.target.value})}/></Field>
+          <Field label={T.lzCC}><input type="number" value={L.boyut_cc} onChange={e=>updateCurrentLesion({boyut_cc:e.target.value})}/></Field>
         </div>
         <hr className="sep"/>
-        <h4 style={{color:'var(--orbita)'}}>SİNYAL</h4>
+        <h4 style={{color:'var(--orbita)'}}>{T.lzSinyal}</h4>
         <div className="grid-2">
-          <Field label="T1"><ChipGroup value={L.t1} options={['Hipointens','İzointens','Hiperintens (yağ)','Hiperintens (melanin/hemoraji)','Heterojen']} onChange={v=>updateCurrentLesion({t1:v})}/></Field>
-          <Field label="T2"><ChipGroup value={L.t2} options={['Hipointens','İzointens','Hiperintens','Çok hiperintens (su)','Düşük (melanin/fibröz)','Heterojen','Target sign']} onChange={v=>updateCurrentLesion({t2:v})}/></Field>
-          <Field label="DWI (b1000)"><ChipGroup value={L.dwi} options={['Kısıtlanma yok','Kısıtlanma var','Değerlendirilemedi']} onChange={v=>updateCurrentLesion({dwi:v})}/></Field>
-          <Field label="ADC"><ChipGroup value={L.adc} options={['Yüksek','Orta','Düşük','Değerlendirilemedi']} onChange={v=>updateCurrentLesion({adc:v})}/></Field>
-          <Field label="ADC değeri (×10⁻³ mm²/sn)"><input type="text" value={L.adc_value} onChange={e=>updateCurrentLesion({adc_value:e.target.value})} placeholder="örn. 0.75"/></Field>
+          <Field label={T.lzT1}><ChipGroup value={L.t1} options={['Hipointens','İzointens','Hiperintens (yağ)','Hiperintens (melanin/hemoraji)','Heterojen']} onChange={v=>updateCurrentLesion({t1:v})}/></Field>
+          <Field label={T.lzT2}><ChipGroup value={L.t2} options={['Hipointens','İzointens','Hiperintens','Çok hiperintens (su)','Düşük (melanin/fibröz)','Heterojen','Target sign']} onChange={v=>updateCurrentLesion({t2:v})}/></Field>
+          <Field label={T.lzDWI}><ChipGroup value={L.dwi} options={['Kısıtlanma yok','Kısıtlanma var','Değerlendirilemedi']} onChange={v=>updateCurrentLesion({dwi:v})}/></Field>
+          <Field label={T.lzADC}><ChipGroup value={L.adc} options={['Yüksek','Orta','Düşük','Değerlendirilemedi']} onChange={v=>updateCurrentLesion({adc:v})}/></Field>
+          <Field label={T.lzADCValue}><input type="text" value={L.adc_value} onChange={e=>updateCurrentLesion({adc_value:e.target.value})} placeholder={T.lzADCPh}/></Field>
         </div>
         <hr className="sep"/>
-        <h4 style={{color:'var(--orbita)'}}>KONTRAST</h4>
+        <h4 style={{color:'var(--orbita)'}}>{T.lzKontrastLabel}</h4>
         <div className="grid-2">
-          <Field label="Tutulum derecesi"><ChipGroup value={L.kontrast} options={['Yok/minimal','Hafif','Orta','Belirgin','Progresif dolum','Hızlı yoğun']} onChange={v=>updateCurrentLesion({kontrast:v})}/></Field>
-          <Field label="Patern"><ChipGroup value={L.kontrast_patern} options={['Homojen','Heterojen','Rim/halka','Nodüler periferik','Septa tutulumu','Tram-track']} onChange={v=>updateCurrentLesion({kontrast_patern:v})}/></Field>
+          <Field label={T.lzKontrastDerece}><ChipGroup value={L.kontrast} options={['Yok/minimal','Hafif','Orta','Belirgin','Progresif dolum','Hızlı yoğun']} onChange={v=>updateCurrentLesion({kontrast:v})}/></Field>
+          <Field label={T.lzKontrastPat}><ChipGroup value={L.kontrast_patern} options={['Homojen','Heterojen','Rim/halka','Nodüler periferik','Septa tutulumu','Tram-track']} onChange={v=>updateCurrentLesion({kontrast_patern:v})}/></Field>
         </div>
         <hr className="sep"/>
-        <h4 style={{color:'var(--orbita)'}}>MORFOLOJİ &amp; EK ÖZELLİKLER</h4>
+        <h4 style={{color:'var(--orbita)'}}>{T.lzMorfLabel}</h4>
         <div className="grid-2">
-          <Field label="Morfoloji"><ChipGroup value={L.morphology} options={['Yuvarlak/oval','Lobüle','Fuziform (sinir boyunca)','İnfiltratif','İrregüler','Mushroom']} onChange={v=>updateCurrentLesion({morphology:v})}/></Field>
-          <Field label="Sınırlar"><ChipGroup value={L.margins} options={['Keskin/iyi sınırlı','Düzensiz','İnfiltratif','Kapsüllü']} onChange={v=>updateCurrentLesion({margins:v})}/></Field>
+          <Field label={T.lzMorf}><ChipGroup value={L.morphology} options={['Yuvarlak/oval','Lobüle','Fuziform (sinir boyunca)','İnfiltratif','İrregüler','Mushroom']} onChange={v=>updateCurrentLesion({morphology:v})}/></Field>
+          <Field label={T.lzMargins}><ChipGroup value={L.margins} options={['Keskin/iyi sınırlı','Düzensiz','İnfiltratif','Kapsüllü']} onChange={v=>updateCurrentLesion({margins:v})}/></Field>
         </div>
-        <Field label="Ek özellikler (çoklu)">
+        <Field label={T.lzEkOzellik}>
           <ChipGroup multi value={L.features} options={[
             'Flow void','Flebolit','Sıvı-sıvı seviyesi','Kalsifikasyon','Hemoraji','Nekroz',
             'Yapıları gibi şekillenen (molding)','Hızlı büyüme','Kemik invazyonu/destrüksiyon',
             'İnfraorbital sinir büyümesi','Perinöral yayılım','Çoklu bağ dokusu/septalı','İntrakranyal uzanım'
           ]} onChange={v=>updateCurrentLesion({features:v})}/>
         </Field>
-        <Field label="Lezyon notları"><textarea value={L.notes} onChange={e=>updateCurrentLesion({notes:e.target.value})}/></Field>
+        <Field label={T.lzNot}><textarea value={L.notes} onChange={e=>updateCurrentLesion({notes:e.target.value})}/></Field>
         <div className="btnbar">
           <div className="row">
-            <button className="btn small" onClick={addLesion}>+ Yeni lezyon</button>
-            {s.lesions.length>1 && <button className="btn small danger" onClick={()=>removeLesion(idx)}>Bu lezyonu sil</button>}
+            <button className="btn small" onClick={addLesion}>{T.lzAddNew}</button>
+            {s.lesions.length>1 && <button className="btn small danger" onClick={()=>removeLesion(idx)}>{T.lzDelete}</button>}
           </div>
           <div className="row">
-            {idx>0 && <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:idx-1}))}>« Önceki lezyon</button>}
-            {idx<s.lesions.length-1 && <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:idx+1}))}>Sonraki lezyon »</button>}
-            <button className="btn primary" onClick={finalizeLesionStep}>Lezyonları bitir → DDx</button>
+            {idx>0 && <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:idx-1}))}>{T.lzPrev}</button>}
+            {idx<s.lesions.length-1 && <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:idx+1}))}>{T.lzNext}</button>}
+            <button className="btn primary" onClick={finalizeLesionStep}>{T.lzFinish}</button>
           </div>
         </div>
         {s.lesions.length>0 && (
           <>
             <hr className="sep"/>
-            <div className="muted" style={{marginBottom:6}}>Tanımlı lezyonlar:</div>
+            <div className="muted" style={{marginBottom:6}}>{T.lzDefinedLabel}</div>
             <div className="lesionlist">
               {s.lesions.map((L2,i)=>(
                 <div key={L2.id} className="lesioncard" style={i===idx?{borderColor:'var(--orbita)'}:{}}>
-                  <div><span className="ltag">#{i+1}</span> <b style={{marginLeft:8}}>{L2.ad||'(isimsiz)'}</b> <span className="muted">— {L2.compartment||'?'}, {L2.localization||'?'}</span></div>
-                  <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:i}))}>Aç</button>
+                  <div><span className="ltag">#{i+1}</span> <b style={{marginLeft:8}}>{L2.ad||T.lzUnnamed}</b> <span className="muted">— {L2.compartment||'?'}, {L2.localization||'?'}</span></div>
+                  <button className="btn small" onClick={()=>setS(prev=>({...prev, currentIdx:i}))}>{T.lzOpen}</button>
                 </div>
               ))}
             </div>
@@ -1045,18 +1674,18 @@ function App(){
   
   const renderDDx = ()=>(
     <div className="card">
-      <h2>Weighted DDx Motoru</h2>
-      <div className="hint">Klinik + anatomik kompartman bulguları + EOM paternleri + optik sinir + lezyon özellikleri ağırlıklı skorlanır.</div>
-      {ddx.length===0 ? <div className="alert info">Henüz ayırıcı tanıyı şekillendirecek anlamlı bulgu yok.</div> :
+      <h2>{T.ddxTitle}</h2>
+      <div className="hint">{T.ddxHint}</div>
+      {ddx.length===0 ? <div className="alert info">{T.ddxEmpty}</div> :
         <div className="ddx">
           {ddx.map((d,i)=>(
             <div key={d.id} className="ddxrow">
               <div className="head">
                 <div><b style={{color:i===0?'var(--orbita)':'var(--text)'}}>#{i+1} {d.name}</b> <span className="muted">— {d.category}</span></div>
-                <div className="prob">{d.score} puan · %{d.pct}</div>
+                <div className="prob">{d.score} {T.ddxScore}{d.pct}</div>
               </div>
               <div className="bar"><span style={{width:`${Math.min(100,d.pct)}%`}}/></div>
-              <details><summary>Eşleşen özellikler ({d.matched.length})</summary>
+              <details><summary>{T.ddxMatched} ({d.matched.length})</summary>
                 <div className="muted" style={{marginTop:6,fontSize:11.5}}>{d.matched.join(', ')}</div>
               </details>
             </div>
@@ -1068,9 +1697,9 @@ function App(){
   
   const renderEk = ()=>(
     <div className="card">
-      <h2>Ek Bulgular ve Öneriler</h2>
-      <Field label="Ek bulgular"><textarea value={s.ek_bulgular} onChange={e=>upd({ek_bulgular:e.target.value})} placeholder="İntrakranyal uzanım, komşu yapılarda patoloji..."/></Field>
-      <Field label="Öneri / Ek inceleme"><textarea value={s.oneri} onChange={e=>upd({oneri:e.target.value})} placeholder="Orbital BT, MR anjiyografi, oftalmoloji konsültasyonu, biyopsi..."/></Field>
+      <h2>{T.ekTitle}</h2>
+      <Field label={T.ekBulgular}><textarea value={s.ek_bulgular} onChange={e=>upd({ek_bulgular:e.target.value})} placeholder={T.ekBulgularPh}/></Field>
+      <Field label={T.ekOneri}><textarea value={s.oneri} onChange={e=>upd({oneri:e.target.value})} placeholder={T.ekOneriPh}/></Field>
     </div>
   );
   
@@ -1078,37 +1707,37 @@ function App(){
   const renderReport = ()=>{
     // Başlık
     const header = [];
-    header.push({k:'Hasta', v:`${s.ad_soyad||'-'} (${s.yas||'-'} / ${s.cinsiyet||'-'})`});
-    header.push({k:'Taraf', v:s.taraf||'-'});
-    header.push({k:'İnceleme', v:'Orbita MR'});
-    header.push({k:'Sekanslar', v:(s.sekanslar||[]).join(', ')});
-    header.push({k:'IV Kontrast', v:s.kontrast_var==='Evet'?`Verildi (${s.kontrast_madde||'Gd-bazlı'})`:'Verilmedi'});
-    
+    header.push({k:T.rrHasta, v:`${s.ad_soyad||'-'} (${s.yas||'-'} / ${s.cinsiyet||'-'})`});
+    header.push({k:T.rrTaraf, v:s.taraf||'-'});
+    header.push({k:RV_LOCALE==='en'?'Examination':'İnceleme', v:T.rrInceleme});
+    header.push({k:T.rrSekans, v:(s.sekanslar||[]).join(', ')});
+    header.push({k:T.rrIVKontrast, v:s.kontrast_var==='Evet'?`${T.rrKontrastVerildi}${s.kontrast_madde||T.rrGdBazli})`:T.rrKontrastYok});
+
     // Bulbus
     const bulbus = [];
     const bdesc = (b, sd)=>{
       const parts=[];
-      if(b.length) parts.push(`aksiyel uzunluk ${b.length} mm`);
+      if(b.length) parts.push(`${T.bdescLength} ${b.length} mm`);
       if(b.size && b.size!=='Normal') parts.push(b.size);
-      if(b.shape && b.shape!=='Normal') parts.push(`şekil: ${b.shape}`);
-      if(b.vitreous && b.vitreous!=='Homojen sıvı') parts.push(`vitreus: ${b.vitreous}`);
-      if(b.lens && b.lens!=='Normal') parts.push(`lens: ${b.lens}`);
-      if(b.retina && b.retina!=='Normal') parts.push(`retina: ${b.retina}`);
-      if(b.uvea && b.uvea!=='Normal') parts.push(`uvea: ${b.uvea}`);
-      if(b.calcif==='Var') parts.push('intraoküler kalsifikasyon (+)');
+      if(b.shape && b.shape!=='Normal') parts.push(`${T.bdescShape}: ${b.shape}`);
+      if(b.vitreous && b.vitreous!=='Homojen sıvı') parts.push(`${T.bdescVitreous}: ${b.vitreous}`);
+      if(b.lens && b.lens!=='Normal') parts.push(`${T.bdescLens}: ${b.lens}`);
+      if(b.retina && b.retina!=='Normal') parts.push(`${T.bdescRetina}: ${b.retina}`);
+      if(b.uvea && b.uvea!=='Normal') parts.push(`${T.bdescUvea}: ${b.uvea}`);
+      if(b.calcif==='Var') parts.push(T.bdescCalcif);
       if(parts.length) return `${sd} bulbus: ${parts.join('; ')}.`;
-      return `${sd} bulbus olağan boyut, şekil, sinyal özelliğindedir.`;
+      return `${sd} ${T.bdescNormal}`;
     };
-    bulbus.push(bdesc(s.bulbus_R, 'Sağ'));
-    bulbus.push(bdesc(s.bulbus_L, 'Sol'));
-    
+    bulbus.push(bdesc(s.bulbus_R, T.bdescRSide));
+    bulbus.push(bdesc(s.bulbus_L, T.bdescLSide));
+
     // Proptoz
     const proptoz = [];
-    if(s.proptoz_R) proptoz.push(`Sağ: ${s.proptoz_R} mm${parseFloat(s.proptoz_R)>23?' (belirgin proptoz)':parseFloat(s.proptoz_R)>21?' (sınırda)':''}`);
-    if(s.proptoz_L) proptoz.push(`Sol: ${s.proptoz_L} mm${parseFloat(s.proptoz_L)>23?' (belirgin proptoz)':parseFloat(s.proptoz_L)>21?' (sınırda)':''}`);
+    if(s.proptoz_R) proptoz.push(`${T.proptozR}: ${s.proptoz_R} mm${parseFloat(s.proptoz_R)>23?T.proptozBelirginInline:parseFloat(s.proptoz_R)>21?T.proptozSinirInline:''}`);
+    if(s.proptoz_L) proptoz.push(`${T.proptozL}: ${s.proptoz_L} mm${parseFloat(s.proptoz_L)>23?T.proptozBelirginInline:parseFloat(s.proptoz_L)>21?T.proptozSinirInline:''}`);
     if(s.proptoz_note) proptoz.push(s.proptoz_note);
-    if(proptoz.length===0) proptoz.push('Bilateral proptoz ölçümleri normal sınırlardadır (≤21 mm).');
-    
+    if(proptoz.length===0) proptoz.push(T.proptozNormText);
+
     // EOM tablosu
     const eomRows = [
       ['Inferior rectus', s.ir_R, s.ir_L],
@@ -1119,74 +1748,74 @@ function App(){
       ['Levator palpebrae', s.lps_R, s.lps_L],
     ];
     const eomNotes = [];
-    if(s.eom_pattern && s.eom_pattern!=='Yok') eomNotes.push(`Kalınlaşma paterni: ${s.eom_pattern}`);
-    if(s.eom_tendon) eomNotes.push(`Tendon: ${s.eom_tendon}`);
-    if(s.eom_signal && s.eom_signal!=='Normal') eomNotes.push(`Sinyal: ${s.eom_signal}`);
-    if(s.eom_enhancement && s.eom_enhancement!=='Yok/minimal') eomNotes.push(`Kontrastlanma: ${s.eom_enhancement}`);
-    
+    if(s.eom_pattern && s.eom_pattern!=='Yok') eomNotes.push(`${T.rptEomPaternLabel}: ${s.eom_pattern}`);
+    if(s.eom_tendon) eomNotes.push(`${T.rptEomTendonLabel}: ${s.eom_tendon}`);
+    if(s.eom_signal && s.eom_signal!=='Normal') eomNotes.push(`${T.rptEomSinyalLabel}: ${s.eom_signal}`);
+    if(s.eom_enhancement && s.eom_enhancement!=='Yok/minimal') eomNotes.push(`${T.rptEomKontrastLabel}: ${s.eom_enhancement}`);
+
     // Retroorbital yağ
     const fatItems = [];
-    if(s.fat_R && s.fat_R!=='Normal') fatItems.push(`Sağ retroorbital yağ: ${s.fat_R}.`);
-    if(s.fat_L && s.fat_L!=='Normal') fatItems.push(`Sol retroorbital yağ: ${s.fat_L}.`);
-    if(s.fat_infiltration && s.fat_infiltration!=='Yok') fatItems.push(`İnfiltrasyon: ${s.fat_infiltration}.`);
-    if(s.fat_mass && s.fat_mass!=='Yok') fatItems.push(`Yağ içinde kitle: ${s.fat_mass}.`);
-    if(fatItems.length===0) fatItems.push('Retroorbital yağ dokusu olağan sinyal ve volümdedir.');
-    
+    if(s.fat_R && s.fat_R!=='Normal') fatItems.push(`${T.rptFatSag}: ${s.fat_R}.`);
+    if(s.fat_L && s.fat_L!=='Normal') fatItems.push(`${T.rptFatSol}: ${s.fat_L}.`);
+    if(s.fat_infiltration && s.fat_infiltration!=='Yok') fatItems.push(`${T.rptFatInfilt}: ${s.fat_infiltration}.`);
+    if(s.fat_mass && s.fat_mass!=='Yok') fatItems.push(`${T.rptFatMass}: ${s.fat_mass}.`);
+    if(fatItems.length===0) fatItems.push(T.rptFatNorm);
+
     // Optik sinir
     const onItems = [];
     const ondesc = (a, thk, sd)=>{
       const parts=[];
       if(a && a!=='Normal') parts.push(a);
-      if(thk) parts.push(`çap ${thk} mm`);
-      if(parts.length) return `${sd} optik sinir: ${parts.join(', ')}.`;
+      if(thk) parts.push(`${T.ondescChap} ${thk} mm`);
+      if(parts.length) return `${sd} ${T.ondescON}: ${parts.join(', ')}.`;
       return null;
     };
-    const onR = ondesc(s.on_R, s.on_thickness_R, 'Sağ'); if(onR) onItems.push(onR);
-    const onL = ondesc(s.on_L, s.on_thickness_L, 'Sol'); if(onL) onItems.push(onL);
-    if(s.on_signal && s.on_signal!=='Normal') onItems.push(`Sinyal: ${s.on_signal}.`);
-    if(s.on_enhancement && s.on_enhancement!=='Yok') onItems.push(`Kontrastlanma: ${s.on_enhancement}.`);
-    if(s.on_sheath && s.on_sheath!=='Normal') onItems.push(`Kılıf: ${s.on_sheath}.`);
-    if(s.on_course && s.on_course!=='Düz') onItems.push(`Seyir: ${s.on_course}.`);
-    if(onItems.length===0) onItems.push('Bilateral optik sinirler olağan kaliber, sinyal ve seyir özelliğindedir; kılıfları doğaldır.');
-    
+    const onR = ondesc(s.on_R, s.on_thickness_R, T.ondescSag); if(onR) onItems.push(onR);
+    const onL = ondesc(s.on_L, s.on_thickness_L, T.ondescSol); if(onL) onItems.push(onL);
+    if(s.on_signal && s.on_signal!=='Normal') onItems.push(`${T.rptOnSignal}: ${s.on_signal}.`);
+    if(s.on_enhancement && s.on_enhancement!=='Yok') onItems.push(`${T.rptOnEnhancement}: ${s.on_enhancement}.`);
+    if(s.on_sheath && s.on_sheath!=='Normal') onItems.push(`${T.rptOnSheath}: ${s.on_sheath}.`);
+    if(s.on_course && s.on_course!=='Düz') onItems.push(`${T.rptOnCourse}: ${s.on_course}.`);
+    if(onItems.length===0) onItems.push(T.ondescNorm);
+
     // Lakrimal bez
     const lacItems = [];
-    if(s.lac_R && s.lac_R!=='Normal') lacItems.push(`Sağ lakrimal bez: ${s.lac_R}.`);
-    if(s.lac_L && s.lac_L!=='Normal') lacItems.push(`Sol lakrimal bez: ${s.lac_L}.`);
-    if(s.lac_signal && s.lac_signal!=='Normal') lacItems.push(`Sinyal: ${s.lac_signal}.`);
-    if(s.lac_enhancement && s.lac_enhancement!=='Normal') lacItems.push(`Kontrastlanma: ${s.lac_enhancement}.`);
+    if(s.lac_R && s.lac_R!=='Normal') lacItems.push(`${T.rptLacSag}: ${s.lac_R}.`);
+    if(s.lac_L && s.lac_L!=='Normal') lacItems.push(`${T.rptLacSol}: ${s.lac_L}.`);
+    if(s.lac_signal && s.lac_signal!=='Normal') lacItems.push(`${T.rptLacSignal}: ${s.lac_signal}.`);
+    if(s.lac_enhancement && s.lac_enhancement!=='Normal') lacItems.push(`${T.rptLacEnhancement}: ${s.lac_enhancement}.`);
     if(s.lac_bilateral_finding && s.lac_bilateral_finding!=='Yok') lacItems.push(s.lac_bilateral_finding);
-    if(lacItems.length===0) lacItems.push('Bilateral lakrimal bezler normal boyut ve sinyal özelliğindedir.');
-    
+    if(lacItems.length===0) lacItems.push(T.rptLacNorm);
+
     // Kemik
     const kItems = [];
-    if(s.wall_medial && s.wall_medial!=='İntakt') kItems.push(`Medial duvar: ${s.wall_medial}.`);
-    if(s.wall_lateral && s.wall_lateral!=='İntakt') kItems.push(`Lateral duvar: ${s.wall_lateral}.`);
-    if(s.wall_roof && s.wall_roof!=='İntakt') kItems.push(`Tavan: ${s.wall_roof}.`);
-    if(s.wall_floor && s.wall_floor!=='İntakt') kItems.push(`Taban: ${s.wall_floor}.`);
-    if(s.fracture==='Var') kItems.push(`Fraktür (+): ${(s.fracture_wall||[]).join(', ')}.`);
-    if(s.herniation && s.herniation!=='Yok') kItems.push(`Herniasyon: ${s.herniation}.`);
-    if(s.bone_lesion && s.bone_lesion!=='Yok') kItems.push(`Kemik lezyonu: ${s.bone_lesion}.`);
-    if(kItems.length===0) kItems.push('Orbital duvarlar intakttır; kemik lezyonu saptanmadı.');
-    
+    if(s.wall_medial && s.wall_medial!=='İntakt') kItems.push(`${T.rptKemikMedial}: ${s.wall_medial}.`);
+    if(s.wall_lateral && s.wall_lateral!=='İntakt') kItems.push(`${T.rptKemikLateral}: ${s.wall_lateral}.`);
+    if(s.wall_roof && s.wall_roof!=='İntakt') kItems.push(`${T.rptKemikTavan}: ${s.wall_roof}.`);
+    if(s.wall_floor && s.wall_floor!=='İntakt') kItems.push(`${T.rptKemikTaban}: ${s.wall_floor}.`);
+    if(s.fracture==='Var') kItems.push(`${T.rptKemikFraktur}: ${(s.fracture_wall||[]).join(', ')}.`);
+    if(s.herniation && s.herniation!=='Yok') kItems.push(`${T.rptKemikHernia}: ${s.herniation}.`);
+    if(s.bone_lesion && s.bone_lesion!=='Yok') kItems.push(`${T.rptKemikLezyon}: ${s.bone_lesion}.`);
+    if(kItems.length===0) kItems.push(T.rptKemikNorm);
+
     // Vasküler
     const vItems = [];
-    if(s.soph_vein_R && s.soph_vein_R!=='Normal') vItems.push(`Sağ süperior oftalmik ven: ${s.soph_vein_R}.`);
-    if(s.soph_vein_L && s.soph_vein_L!=='Normal') vItems.push(`Sol süperior oftalmik ven: ${s.soph_vein_L}.`);
-    if(s.cav_sinus && s.cav_sinus!=='Normal') vItems.push(`Kavernöz sinüs: ${s.cav_sinus}.`);
+    if(s.soph_vein_R && s.soph_vein_R!=='Normal') vItems.push(`${T.rptVascSag}: ${s.soph_vein_R}.`);
+    if(s.soph_vein_L && s.soph_vein_L!=='Normal') vItems.push(`${T.rptVascSol}: ${s.soph_vein_L}.`);
+    if(s.cav_sinus && s.cav_sinus!=='Normal') vItems.push(`${T.rptVascCav}: ${s.cav_sinus}.`);
     if(s.vascular_note) vItems.push(s.vascular_note);
-    if(vItems.length===0) vItems.push('İzlenen vasküler yapılar olağandır.');
-    
+    if(vItems.length===0) vItems.push(T.rptVascNorm);
+
     // Sinüsler
-    const sinusItem = s.sinus_status==='Normal'?'Paranazal sinüslerde patolojik bulgu saptanmadı.':
-                      s.sinus_status?`Paranazal sinüs bulgusu: ${s.sinus_status}.`:'Paranazal sinüsler değerlendirilmedi.';
+    const sinusItem = s.sinus_status==='Normal'?T.rptSinusNorm:
+                      s.sinus_status?`${T.rptSinusBulgu}: ${s.sinus_status}.`:T.rptSinusDeg;
     
     // Lezyonlar
     const lesionRows = (s.lesions||[]).map((L,i)=>{
       const sz = [L.boyut_ap,L.boyut_ml,L.boyut_cc].filter(x=>x).join(' × ');
       return {
         no:i+1,
-        ad:L.ad||`Lezyon ${i+1}`,
+        ad:L.ad||`${T.lzTitle}${i+1}`,
         loc:`${L.compartment||'?'}/${L.localization||'?'}${L.side?` (${L.side})`:''}`,
         origin:L.origin||'-',
         boyut:sz?`${sz} mm`:'-',
@@ -1198,77 +1827,77 @@ function App(){
     });
     
     const top = ddx[0];
-    const yorum = top ? 
-      `Bulgular ağırlıklı skorlama modelinde ${top.name.toUpperCase()} lehine değerlendirilmiştir (%${top.pct}).${ddx[1]?` İkincil ayırıcı tanıda ${ddx[1].name} yer almaktadır.`:''}`
-      : 'Orbita MR incelemesinde patolojik bulgu saptanmamıştır.';
-    
+    const yorum = top ?
+      `${T.rptYorumPrefix}${top.name.toUpperCase()} ${T.rptYorumSuffix}${top.pct}${T.rptYorumSuffix2}${ddx[1]?`${T.rptYorumIkincil}${ddx[1].name}${T.rptYorumIkincil2}`:''}`
+      : T.rptYorumNormal;
+
     return (
       <div className="card">
-        <h2>Rapor</h2>
-        <div className="hint">Yazdır, PDF yap, panoya kopyala veya HTML olarak indir.</div>
+        <h2>{T.rptTitle}</h2>
+        <div className="hint">{T.rptHint}</div>
         <div className="row noprint" style={{marginBottom:14,flexWrap:'wrap'}}>
-          <button className="btn" onClick={doPrint}>🖨 Yazdır / PDF</button>
-          <button className="btn" onClick={doCopyRich}>📋 Panoya kopyala (zengin metin)</button>
-          <button className="btn" onClick={doDownloadHtml}>⬇ HTML indir</button>
-          <button className="btn" onClick={doCopyText}>Düz metin</button>
+          <button className="btn" onClick={doPrint}>{T.rptPrint}</button>
+          <button className="btn" onClick={doCopyRich}>{T.rptCopyRich}</button>
+          <button className="btn" onClick={doDownloadHtml}>{T.rptDownload}</button>
+          <button className="btn" onClick={doCopyText}>{T.rptCopyText}</button>
         </div>
-        
+
         <div className="report" ref={reportRef}>
-          <h1>ORBİTA MR İNCELEMESİ</h1>
+          <h1>{T.rptH1}</h1>
           <table><tbody>{header.map((r,i)=><tr key={i}><th style={{width:180}}>{r.k}</th><td>{r.v}</td></tr>)}</tbody></table>
-          
-          <h2>KLİNİK</h2>
+
+          <h2>{T.rptKlinik}</h2>
           <div className="kutu">
-            {(s.klinik_semptom||[]).length>0 && <div><b>Semptomlar:</b> {s.klinik_semptom.join(', ')}.</div>}
-            {s.kronisite && <div><b>Süre:</b> {s.kronisite}.</div>}
-            {s.vision_status && <div><b>Görme:</b> {s.vision_status}.</div>}
-            {(s.sistemik||[]).length>0 && <div><b>Sistemik:</b> {s.sistemik.join(', ')}.</div>}
-            {s.klinik_not && <div><b>Not:</b> {s.klinik_not}</div>}
+            {(s.klinik_semptom||[]).length>0 && <div><b>{T.rptSemptom}:</b> {s.klinik_semptom.join(', ')}.</div>}
+            {s.kronisite && <div><b>{T.rptSure}:</b> {s.kronisite}.</div>}
+            {s.vision_status && <div><b>{T.rptVision}:</b> {s.vision_status}.</div>}
+            {(s.sistemik||[]).length>0 && <div><b>{T.rptSistemik}:</b> {s.sistemik.join(', ')}.</div>}
+            {s.klinik_not && <div><b>{T.rptNot}:</b> {s.klinik_not}</div>}
           </div>
-          
-          <h2>BULBUS OCULI</h2>
+
+          <h2>{T.rptBulbus}</h2>
           <table><tbody>{bulbus.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>PROPTOZ</h2>
+
+          <h2>{T.rptProptoz}</h2>
           <table><tbody>{proptoz.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>EKSTRAOKÜLER KAS KALINLIKLARI (mm)</h2>
+
+          <h2>{T.rptEom}</h2>
           <table>
-            <thead><tr><th>Kas</th><th>Sağ</th><th>Sol</th><th>Değerlendirme</th></tr></thead>
+            <thead><tr><th>{T.rptEomKas}</th><th>{T.rptEomSag}</th><th>{T.rptEomSol}</th><th>{T.rptEomDeg}</th></tr></thead>
             <tbody>
               {eomRows.map((r,i)=>{
                 const R=parseFloat(r[1]), L=parseFloat(r[2]);
-                const note = (R>4.5||L>4.5)?(R>4.5&&L>4.5?'Bilateral kalınlaşmış':R>4.5?'Sağ kalınlaşmış':'Sol kalınlaşmış'):'Normal';
+                const note = (R>4.5||L>4.5)?(R>4.5&&L>4.5?T.rptEomBilat:R>4.5?T.rptEomSagKalin:T.rptEomSolKalin):T.rptEomNormal;
                 return <tr key={i}><td>{r[0]}</td><td>{r[1]||'-'}</td><td>{r[2]||'-'}</td><td>{note}</td></tr>;
               })}
             </tbody>
           </table>
           {eomNotes.length>0 && <div className="kutu">{eomNotes.map((n,i)=><div key={i}>{n}</div>)}</div>}
-          
-          <h2>RETROORBİTAL YAĞ DOKUSU</h2>
+
+          <h2>{T.rptFat}</h2>
           <table><tbody>{fatItems.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>OPTİK SİNİR</h2>
+
+          <h2>{T.rptOnerve}</h2>
           <table><tbody>{onItems.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>LAKRİMAL BEZ</h2>
+
+          <h2>{T.rptLacrimal}</h2>
           <table><tbody>{lacItems.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>KEMİK DUVARLAR</h2>
+
+          <h2>{T.rptKemik}</h2>
           <table><tbody>{kItems.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>VASKÜLER YAPILAR</h2>
+
+          <h2>{T.rptVaskuler}</h2>
           <table><tbody>{vItems.map((x,i)=><tr key={i}><td>{x}</td></tr>)}</tbody></table>
-          
-          <h2>KOMŞU PARANAZAL SİNÜSLER</h2>
+
+          <h2>{T.rptSinus}</h2>
           <table><tbody><tr><td>{sinusItem}</td></tr></tbody></table>
-          
+
           {lesionRows.length>0 && <>
-            <h2>LEZYON LİSTESİ</h2>
+            <h2>{T.rptLezyon}</h2>
             <table>
               <thead><tr>
-                <th>#</th><th>Ad / Köken</th><th>Yerleşim</th><th>Boyut</th>
-                <th>Sinyal (T1/T2)</th><th>DWI · ADC</th><th>Kontrast</th><th>Morfoloji</th>
+                <th>{T.rptLzNo}</th><th>{T.rptLzAd}</th><th>{T.rptLzYer}</th><th>{T.rptLzBoyut}</th>
+                <th>{T.rptLzSinyal}</th><th>{T.rptLzDWI}</th><th>{T.rptLzKontrast}</th><th>{T.rptLzMorf}</th>
               </tr></thead>
               <tbody>
                 {lesionRows.map(r=>(
@@ -1286,11 +1915,11 @@ function App(){
               </tbody>
             </table>
           </>}
-          
+
           {ddx.length>0 && <>
-            <h2>AYIRICI TANI (WEIGHTED)</h2>
+            <h2>{T.rptAyirici}</h2>
             <table>
-              <thead><tr><th>#</th><th>Patoloji</th><th>Kategori</th><th>Puan</th><th>Olasılık</th></tr></thead>
+              <thead><tr><th>{T.rptAyNo}</th><th>{T.rptAyPatoloji}</th><th>{T.rptAyKat}</th><th>{T.rptAyPuan}</th><th>{T.rptAyOlasilik}</th></tr></thead>
               <tbody>
                 {ddx.slice(0,5).map((d,i)=>(
                   <tr key={d.id}><td>{i+1}</td><td><b>{d.name}</b></td><td>{d.category}</td><td>{d.score}</td><td>%{d.pct}</td></tr>
@@ -1298,14 +1927,14 @@ function App(){
               </tbody>
             </table>
           </>}
-          
+
           <div className="yorum">
-            <b>YORUM:</b> {yorum}
-            {s.oneri && <div style={{marginTop:6}}><b>Öneri:</b> {s.oneri}</div>}
-            {s.ek_bulgular && <div style={{marginTop:6}}><b>Ek bulgular:</b> {s.ek_bulgular}</div>}
+            <b>{T.rptYorum}:</b> {yorum}
+            {s.oneri && <div style={{marginTop:6}}><b>{T.rptOneri}:</b> {s.oneri}</div>}
+            {s.ek_bulgular && <div style={{marginTop:6}}><b>{T.rptEkBulgular}:</b> {s.ek_bulgular}</div>}
           </div>
-          
-          <div className="meta">Rapor tarihi: {new Date().toLocaleDateString('tr-TR')} — Orbita MR Karar Destek Sistemi</div>
+
+          <div className="meta">{T.rptTarih}{new Date().toLocaleDateString(RV_LOCALE==='en'?'en-GB':'tr-TR')}{T.rptTarihSuffix}</div>
         </div>
       </div>
     );
@@ -1317,7 +1946,7 @@ function App(){
     const overlay = document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#fff;z-index:99999;overflow:auto;padding:24px';
     const close=document.createElement('button');
-    close.textContent='Kapat'; close.className='noprint';
+    close.textContent=T.printClose; close.className='noprint';
     close.style.cssText='position:fixed;top:12px;right:12px;padding:8px 14px;background:#ef4444;color:#fff;border:0;border-radius:6px;cursor:pointer;z-index:100000';
     close.onclick=()=>document.body.removeChild(overlay);
     overlay.appendChild(close);
@@ -1327,13 +1956,13 @@ function App(){
     document.body.appendChild(overlay);
     setTimeout(()=>{window.print();},300);
   };
-  
+
   const doCopyText = async ()=>{
     const rep=reportRef.current; if(!rep) return;
-    try{ await navigator.clipboard.writeText(rep.innerText); alert('Düz metin panoya kopyalandı.'); }
-    catch(e){ alert('Hata: '+e.message); }
+    try{ await navigator.clipboard.writeText(rep.innerText); alert(T.copyTextOk); }
+    catch(e){ alert(T.copyFail+e.message); }
   };
-  
+
   const doCopyRich = async ()=>{
     const rep=reportRef.current; if(!rep) return;
     try{
@@ -1341,25 +1970,25 @@ function App(){
       const blob=new Blob([html],{type:'text/html'});
       const tblob=new Blob([rep.innerText],{type:'text/plain'});
       await navigator.clipboard.write([new ClipboardItem({'text/html':blob,'text/plain':tblob})]);
-      alert('Zengin metin panoya kopyalandı.');
+      alert(T.copyRichOk);
     }catch(e){
       try{
         const sel=window.getSelection(); sel.removeAllRanges();
         const rng=document.createRange(); rng.selectNodeContents(rep); sel.addRange(rng);
         document.execCommand('copy'); sel.removeAllRanges();
-        alert('Zengin metin panoya kopyalandı (fallback).');
-      }catch(e2){ alert('Hata: '+e2.message); }
+        alert(T.copyRichOkFallback);
+      }catch(e2){ alert(T.copyFail+e2.message); }
     }
   };
-  
+
   const doDownloadHtml = ()=>{
     const rep=reportRef.current; if(!rep) return;
     const css=document.querySelector('style').innerHTML;
-    const content=`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Orbita MR Rapor</title><style>body{background:#fff;font-family:'Times New Roman',serif;margin:24px}${css}</style></head><body>${rep.outerHTML}</body></html>`;
+    const content=`<!DOCTYPE html><html lang="${RV_LOCALE}"><head><meta charset="UTF-8"><title>${T.downloadTitle}</title><style>body{background:#fff;font-family:'Times New Roman',serif;margin:24px}${css}</style></head><body>${rep.outerHTML}</body></html>`;
     const blob=new Blob([content],{type:'text/html'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download=`orbita_mr_rapor_${Date.now()}.html`;
+    a.href=url; a.download=`${T.downloadFilename}${Date.now()}.html`;
     document.body.appendChild(a); a.click();
     setTimeout(()=>{document.body.removeChild(a); URL.revokeObjectURL(url);},200);
   };
@@ -1389,10 +2018,10 @@ function App(){
   return (
     <div className="wrap">
       <div className="title">
-        <h1>👁 Orbita MR Karar Destek Sistemi</h1>
-        <span className="badge">Bulbus · Proptoz · EOM · Yağ · Optik Sinir</span>
+        <h1>{T.appTitle}</h1>
+        <span className="badge">{T.appBadge}</span>
       </div>
-      <div className="subtitle">Kompartman bazlı orbita MRI sorgulaması · multilezyon tanı · weighted DDx · zebra + YORUM kutulu rapor</div>
+      <div className="subtitle">{T.appSub}</div>
       <div className="progress noprint"><span style={{width:`${progress}%`}}/></div>
       <div className="stepper noprint">
         {STEPS.map((st,i)=>(
@@ -1403,10 +2032,10 @@ function App(){
       </div>
       {body}
       <div className="btnbar noprint">
-        <button className="btn ghost" onClick={goPrev} disabled={stepIdx===0}>« Önceki</button>
+        <button className="btn ghost" onClick={goPrev} disabled={stepIdx===0}>{T.prev}</button>
         <div className="row">
-          <span className="muted">Adım {stepIdx+1} / {STEPS.length}</span>
-          {step!=='report' && <button className="btn primary" onClick={goNext}>Sonraki »</button>}
+          <span className="muted">{T.stepOf} {stepIdx+1}{T.stepTotal}{STEPS.length}</span>
+          {step!=='report' && <button className="btn primary" onClick={goNext}>{T.next}</button>}
         </div>
       </div>
     </div>

@@ -87,14 +87,14 @@ textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;p
 </head>
 <body>
 <div class="header">
-<h1>🦴 SPİNAL MR KARAR DESTEK SİSTEMİ</h1>
+<h1 data-i18n-tr="🦴 SPİNAL MR KARAR DESTEK SİSTEMİ" data-i18n-en="🦴 SPINAL MRI DECISION SUPPORT SYSTEM"></h1>
 </div>
 <div class="container" id="app"></div>
 <div class="report-overlay" id="reportOverlay">
 <div class="toolbar">
-<button class="btn btn-print" onclick="window.print()">🖨️ Yazdır</button>
-<button class="btn btn-copy" onclick="copyReport()">📋 Kopyala</button>
-<button class="btn btn-close" onclick="closeReport()">✕ Kapat</button>
+<button class="btn btn-print" onclick="window.print()" data-i18n-tr="🖨️ Yazdır" data-i18n-en="🖨️ Print"></button>
+<button class="btn btn-copy" onclick="copyReport()" data-i18n-tr="📋 Kopyala" data-i18n-en="📋 Copy"></button>
+<button class="btn btn-close" onclick="closeReport()" data-i18n-tr="✕ Kapat" data-i18n-en="✕ Close"></button>
 </div>
 <div class="report-sheet" id="reportSheet"></div>
 </div>
@@ -103,9 +103,467 @@ textarea{background:var(--bg);border:1px solid var(--border);border-radius:6px;p
 "use strict";
 
 /* ═══════════════════════════════════════════
+   LOCALE
+   ═══════════════════════════════════════════ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+
+/* ═══════════════════════════════════════════
+   TRANSLATIONS
+   ═══════════════════════════════════════════ */
+const T = ({
+  tr: {
+    // UI chrome
+    header: '🦴 SPİNAL MR KARAR DESTEK SİSTEMİ',
+    btnPrint: '🖨️ Yazdır',
+    btnCopy: '📋 Kopyala',
+    btnClose: '✕ Kapat',
+    btnBack: '← Geri',
+    btnNext: 'İleri →',
+    btnSave: '💾 Kaydet',
+    btnCancel: 'İptal',
+    btnAdd: '+ Ekle',
+    btnReport: '📄 Rapor Oluştur',
+    btnAddVert: '+ Vertebra Bulgusu Ekle',
+    btnAddDisc: '+ Disk Bulgusu Ekle',
+    btnAddLez: '+ Lezyon Ekle',
+    copyAlert: 'Rapor panoya kopyalandı!',
+    // Step titles
+    stepSegment: 'İnceleme Bölgesi',
+    stepAlignment: 'Sagittal Alignment',
+    stepVertList: 'Vertebra Bulguları',
+    stepDiscList: 'Disk Bulguları',
+    stepKanalKord: 'Spinal Kanal & Kord',
+    stepDejenEk: 'Dejeneratif Ek Bulgular',
+    stepLezyonList: 'Lezyon / Patoloji',
+    stepEkNotlar: 'Ek Notlar',
+    stepRapor: 'Rapor Oluştur',
+    // Notes / placeholders
+    noteSegment: 'İncelenen spinal segmentleri seçiniz:',
+    noteRapor: 'Tüm veriler girildi. Rapor oluşturmak için aşağıdaki butona tıklayın.',
+    noteLezyon: 'Travma, tümör, enfeksiyon, konjenital veya metabolik lezyonları ekleyiniz.',
+    placeholderAlignNot: 'Opsiyonel detay...',
+    placeholderLezIsim: 'Ör: Clear cell RCC metastazı...',
+    placeholderEkNot: 'Ek bulgular, klinik korelasyon notları...',
+    // Form labels
+    labelNot: 'Not:',
+    labelLevel: 'Seviye',
+    labelHeightLoss: 'Yükseklik Kaybı',
+    labelFraktur: 'Fraktür',
+    labelFrakturTip: 'Fraktür Tipi',
+    labelModic: 'Modic Değişiklik',
+    labelSignal: 'Sinyal Değişikliği',
+    labelPfirrmann: 'Pfirrmann Grade',
+    labelHerniTip: 'Herniasyon Tipi',
+    labelAnnuler: 'Annüler Yırtık (HIZ)',
+    labelSantalKanal: 'Santral Kanal Stenozu',
+    labelForaminalR: 'Foraminal Stenoz — Sağ',
+    labelForaminalL: 'Foraminal Stenoz — Sol',
+    labelNerveRootR: 'Sinir kökü basısı Sağ:',
+    labelNerveRootL: 'Sinir kökü basısı Sol:',
+    labelBoyut: 'Boyut (mm):',
+    labelSignalChar: 'Sinyal Özellikleri',
+    labelIVKM: 'IVKM (Kontrastlanma)',
+    labelKategori: 'Kategori',
+    labelIsim: 'İsim / Tanım',
+    labelLokasyon: 'Lokasyon',
+    labelFasetArtroz: 'Faset Artroz',
+    labelLigFlavum: 'Lig. Flavum Hipertrofisi',
+    labelSpondilolistezis: 'Spondilolistezis',
+    labelMiyelopatiSev: 'Miyelopati seviyesi:',
+    labelKordNot: 'Kord notu:',
+    labelSpinalKord: 'Spinal Kord',
+    labelMiyelopatiSeviye: 'Miyelopati Seviyesi',
+    labelKordNotRp: 'Kord Notu',
+    // Signal panel headers
+    sigSeq: 'Sekans',
+    sigHipo: 'Hipo',
+    sigHiper: 'Hiper',
+    sigIzo: 'İzo',
+    // Signal labels (short)
+    sigHipoFull: 'Hipointens',
+    sigHiperFull: 'Hiperintens',
+    sigIzoFull: 'İzointens',
+    // Signal abbrevs in report
+    sigHipoAbbr: 'hipo',
+    sigHiperAbbr: 'hiper',
+    sigIzoAbbr: 'izo',
+    // Segment names
+    segServikal: 'Servikal',
+    segTorakal: 'Torakal',
+    segLomber: 'Lomber',
+    segSakral: 'Sakral',
+    // Alignment
+    alignNormal: 'Normal',
+    alignKifozArtmis: 'Kifoz artmış',
+    alignLordozAzalmis: 'Lordoz azalmış/düzleşmiş',
+    alignSkolyoz: 'Skolyoz',
+    alignKifoskolyoz: 'Kifoskolyoz',
+    // Height loss
+    ykYok: 'Yok',
+    ykHafif: 'Hafif (<25%)',
+    ykOrta: 'Orta (25-50%)',
+    ykSiddetli: 'Şiddetli (>50%)',
+    // Present / absent
+    var: 'Var',
+    yok: 'Yok',
+    normal: 'Normal',
+    // Stenosis degrees
+    stenozYok: 'Yok',
+    stenozHafif: 'Hafif',
+    stenozOrta: 'Orta',
+    stenozSiddetli: 'Şiddetli',
+    // Modic
+    modicYok: 'Modic değişiklik yok',
+    modicTip1: 'Modic Tip I (Ödem/inflamasyon)',
+    modicTip2: 'Modic Tip II (Yağlı dejenerasyon)',
+    modicTip3: 'Modic Tip III (Skleroz)',
+    // Pfirrmann
+    pf1: 'Grade I — Normal',
+    pf2: 'Grade II — Hafif dejenerasyon',
+    pf3: 'Grade III — Orta dejenerasyon',
+    pf4: 'Grade IV — İleri dejenerasyon',
+    pf5: 'Grade V — Kollaps',
+    // Herniation types
+    hBulging: 'Bulging (Diffüz)',
+    hProtSantral: 'Protrüzyon — Santral',
+    hProtParaSag: 'Protrüzyon — Parasantral Sağ',
+    hProtParaSol: 'Protrüzyon — Parasantral Sol',
+    hProtForSag: 'Protrüzyon — Foraminal Sağ',
+    hProtForSol: 'Protrüzyon — Foraminal Sol',
+    hExtSantral: 'Ekstrüzyon — Santral',
+    hExtParaSag: 'Ekstrüzyon — Parasantral Sağ',
+    hExtParaSol: 'Ekstrüzyon — Parasantral Sol',
+    hSekestrasyon: 'Sekestrasyon',
+    hYokNormal: 'Yok / Normal',
+    // Fracture types
+    fxKompresyon: 'Kompresyon fraktürü',
+    fxBurst: 'Burst (Patlama) fraktürü',
+    fxChance: 'Chance fraktürü',
+    fxDislokasyon: 'Fraktür-dislokasyon',
+    fxOdontoid: 'Odontoid fraktür',
+    fxPatolojik: 'Patolojik fraktür',
+    // Tumor locations
+    lokIntramedüller: 'İntramedüller',
+    lokIntradural: 'İntradural-Ekstramedüller',
+    lokExtradural: 'Ekstradural',
+    lokVertebral: 'Vertebral (Kemik)',
+    // Lesion categories
+    katTravma: 'Travma',
+    katDejeneratif: 'Dejeneratif Hastalık',
+    katTumor: 'Primer Tümör / Metastaz',
+    katEnfeksiyon: 'Enfeksiyon',
+    katKonjenital: 'Konjenital / Metabolik',
+    // IVKM pattern
+    ivkmHomojen: 'Homojen',
+    ivkmHeterojen: 'Heterojen',
+    ivkmRim: 'Rim/Periferal',
+    // IVKM strength
+    ivkmGuclu: 'Güçlü',
+    ivkmOrta: 'Orta',
+    ivkmZayif: 'Zayıf',
+    ivkmMinimal: 'Minimal',
+    ivkmYok: 'Yok',
+    // Kord
+    kordNormal: 'Normal',
+    kordMiyelopati: 'Miyelopati sinyal değişikliği',
+    kordLezyon: 'İntramedüller lezyon (Lezyon bölümünde detaylandırılacak)',
+    // Degenerative extra
+    fasetSagHeader: 'Faset Artroz',
+    ligFlavumHeader: 'Ligamentum Flavum Hipertrofisi',
+    spondHeader: 'Spondilolistezis',
+    dirBilateral: 'Bilateral',
+    dirSag: 'Sağ',
+    dirSol: 'Sol',
+    spondDej: 'Dejeneratif',
+    spondIstmik: 'İstmik',
+    spondTravmatik: 'Travmatik',
+    spondPatolojik: 'Patolojik',
+    // Spinal canal section
+    kanalStenozSuffix: ' — Spinal Kanal Stenozu',
+    // Report headings
+    rpTitle: 'SPİNAL MRI — YAPILANDIRILMIŞ RAPOR',
+    rpGenel: 'GENEL',
+    rpInceleme: 'İnceleme Bölgesi',
+    rpAlignment: 'Alignment',
+    rpVertBulgu: 'VERTEBRA BULGULARI',
+    rpVertSev: 'Seviye',
+    rpVertYK: 'Yükseklik Kaybı',
+    rpVertFx: 'Fraktür',
+    rpVertModic: 'Modic',
+    rpVertSig: 'Sinyal',
+    rpVertNot: 'Not',
+    rpDiscBulgu: 'DİSK BULGULARI',
+    rpDiscSev: 'Seviye',
+    rpDiscPf: 'Pfirrmann',
+    rpDiscHerni: 'Herniasyon',
+    rpDiscAnnul: 'Annüler Yırtık',
+    rpDiscSanSten: 'Santral Stenoz',
+    rpDiscForSten: 'Foraminal St.',
+    rpDiscNerve: 'Sinir Kökü',
+    rpKanalKord: 'SPİNAL KANAL & KORD',
+    rpKanalStenozSuffix: ' Kanal Stenozu',
+    rpDejenEk: 'DEJENERATİF EK BULGULAR',
+    rpLezyonlar: 'LEZYONLAR / PATOLOJİLER',
+    rpLezyonDefault: 'Lezyon',
+    rpLezSev: 'Seviye',
+    rpLezLok: 'Lokasyon',
+    rpLezBoyut: 'Boyut',
+    rpLezSig: 'Sinyal',
+    rpLezIVKM: 'IVKM',
+    rpLezNot: 'Not',
+    rpYorum: 'YORUM — Ayırıcı Tanı:',
+    rpDxRehber: 'SPİNAL MRI AYIRICI TANI REHBERİ',
+    rpDxContent: '<b>Vertebral Sinyal:</b> T1 hipo + STIR hiper → Akut patoloji (kırık, enfeksiyon, tümör) | T1 hiper → Yağlı dejenerasyon, hemanjiom, subakut kanama<br><b>Disk vs Endplate:</b> Endplate destrüksiyonu + disk tutulumu → Enfeksiyon | Endplate intakt + yükseklik kaybı → Osteoporotik Kırık<br><b>İntramedüller:</b> Santral + homojen kontrast → Ependimom | Eksantrik + heterojen → Astrositom | Güçlü nodüler + flow void → Hemanjioblastom<br><b>İntradural-Ekstramedüller:</b> İzointens + güçlü homojen + dural tail → Meningiom | T2 çok hiper + dumbbell → Schwannom<br><b>Vertebral Çökme:</b> Konveks posterior + pedikül tutulumu → Malign | Retropulsiyon yok + posterior intakt → Benign<br><b>Enfeksiyon:</b> Spondilodiskit → Komşu 2 vertebra + disk | TB → Skip lezyon + paravertebral abse + disk korunabilir',
+    rpEkNotlar: 'EK NOTLAR',
+    rpModicTip: 'Tip ',
+    rpKordNormal: 'Normal',
+    rpKordMiyelopati: 'Miyelopati sinyal değişikliği',
+    rpKordLezyon: 'İntramedüller lezyon',
+    rpAlignMap_normal: 'Normal',
+    rpAlignMap_kifoz_artmis: 'Kifoz artmış',
+    rpAlignMap_lordoz_azalmis: 'Lordoz azalmış/düzleşmiş',
+    rpAlignMap_skolyoz: 'Skolyoz',
+    rpAlignMap_kifoskolyoz: 'Kifoskolyoz',
+    rpYKMap_yok: 'Yok',
+    rpYKMap_hafif: 'Hafif (<25%)',
+    rpYKMap_orta: 'Orta (25-50%)',
+    rpYKMap_siddetli: 'Şiddetli (>50%)',
+    rpIVKMHomojen: 'Homojen',
+    rpIVKMRim: 'Rim/Periferal',
+    rpIVKMHeterojen: 'Heterojen',
+  },
+  en: {
+    // UI chrome
+    header: '🦴 SPINAL MRI DECISION SUPPORT SYSTEM',
+    btnPrint: '🖨️ Print',
+    btnCopy: '📋 Copy',
+    btnClose: '✕ Close',
+    btnBack: '← Back',
+    btnNext: 'Next →',
+    btnSave: '💾 Save',
+    btnCancel: 'Cancel',
+    btnAdd: '+ Add',
+    btnReport: '📄 Generate Report',
+    btnAddVert: '+ Add Vertebra Finding',
+    btnAddDisc: '+ Add Disc Finding',
+    btnAddLez: '+ Add Lesion',
+    copyAlert: 'Report copied to clipboard!',
+    // Step titles
+    stepSegment: 'Examination Region',
+    stepAlignment: 'Sagittal Alignment',
+    stepVertList: 'Vertebral Findings',
+    stepDiscList: 'Disc Findings',
+    stepKanalKord: 'Spinal Canal & Cord',
+    stepDejenEk: 'Additional Degenerative Findings',
+    stepLezyonList: 'Lesion / Pathology',
+    stepEkNotlar: 'Additional Notes',
+    stepRapor: 'Generate Report',
+    // Notes / placeholders
+    noteSegment: 'Select the examined spinal segments:',
+    noteRapor: 'All data entered. Click the button below to generate the report.',
+    noteLezyon: 'Add trauma, tumor, infection, congenital or metabolic lesions.',
+    placeholderAlignNot: 'Optional detail...',
+    placeholderLezIsim: 'e.g. Clear cell RCC metastasis...',
+    placeholderEkNot: 'Additional findings, clinical correlation notes...',
+    // Form labels
+    labelNot: 'Note:',
+    labelLevel: 'Level',
+    labelHeightLoss: 'Height Loss',
+    labelFraktur: 'Fracture',
+    labelFrakturTip: 'Fracture Type',
+    labelModic: 'Modic Changes',
+    labelSignal: 'Signal Change',
+    labelPfirrmann: 'Pfirrmann Grade',
+    labelHerniTip: 'Herniation Type',
+    labelAnnuler: 'Annular Tear (HIZ)',
+    labelSantalKanal: 'Central Canal Stenosis',
+    labelForaminalR: 'Foraminal Stenosis — Right',
+    labelForaminalL: 'Foraminal Stenosis — Left',
+    labelNerveRootR: 'Nerve root compression Right:',
+    labelNerveRootL: 'Nerve root compression Left:',
+    labelBoyut: 'Size (mm):',
+    labelSignalChar: 'Signal Characteristics',
+    labelIVKM: 'Enhancement (Contrast)',
+    labelKategori: 'Category',
+    labelIsim: 'Name / Definition',
+    labelLokasyon: 'Location',
+    labelFasetArtroz: 'Facet Arthrosis',
+    labelLigFlavum: 'Ligamentum Flavum Hypertrophy',
+    labelSpondilolistezis: 'Spondylolisthesis',
+    labelMiyelopatiSev: 'Myelopathy level:',
+    labelKordNot: 'Cord note:',
+    labelSpinalKord: 'Spinal Cord',
+    labelMiyelopatiSeviye: 'Myelopathy Level',
+    labelKordNotRp: 'Cord Note',
+    // Signal panel headers
+    sigSeq: 'Sequence',
+    sigHipo: 'Hypo',
+    sigHiper: 'Hyper',
+    sigIzo: 'Iso',
+    // Signal labels (short)
+    sigHipoFull: 'Hypointense',
+    sigHiperFull: 'Hyperintense',
+    sigIzoFull: 'Isointense',
+    // Signal abbrevs in report
+    sigHipoAbbr: 'hypo',
+    sigHiperAbbr: 'hyper',
+    sigIzoAbbr: 'iso',
+    // Segment names
+    segServikal: 'Cervical',
+    segTorakal: 'Thoracic',
+    segLomber: 'Lumbar',
+    segSakral: 'Sacral',
+    // Alignment
+    alignNormal: 'Normal',
+    alignKifozArtmis: 'Increased kyphosis',
+    alignLordozAzalmis: 'Reduced/straightened lordosis',
+    alignSkolyoz: 'Scoliosis',
+    alignKifoskolyoz: 'Kyphoscoliosis',
+    // Height loss
+    ykYok: 'None',
+    ykHafif: 'Mild (<25%)',
+    ykOrta: 'Moderate (25-50%)',
+    ykSiddetli: 'Severe (>50%)',
+    // Present / absent
+    var: 'Present',
+    yok: 'None',
+    normal: 'Normal',
+    // Stenosis degrees
+    stenozYok: 'None',
+    stenozHafif: 'Mild',
+    stenozOrta: 'Moderate',
+    stenozSiddetli: 'Severe',
+    // Modic
+    modicYok: 'No Modic changes',
+    modicTip1: 'Modic Type I (Edema/inflammation)',
+    modicTip2: 'Modic Type II (Fatty degeneration)',
+    modicTip3: 'Modic Type III (Sclerosis)',
+    // Pfirrmann
+    pf1: 'Grade I — Normal',
+    pf2: 'Grade II — Mild degeneration',
+    pf3: 'Grade III — Moderate degeneration',
+    pf4: 'Grade IV — Advanced degeneration',
+    pf5: 'Grade V — Collapse',
+    // Herniation types
+    hBulging: 'Disc Bulge (Diffuse)',
+    hProtSantral: 'Protrusion — Central',
+    hProtParaSag: 'Protrusion — Paracentral Right',
+    hProtParaSol: 'Protrusion — Paracentral Left',
+    hProtForSag: 'Protrusion — Foraminal Right',
+    hProtForSol: 'Protrusion — Foraminal Left',
+    hExtSantral: 'Extrusion — Central',
+    hExtParaSag: 'Extrusion — Paracentral Right',
+    hExtParaSol: 'Extrusion — Paracentral Left',
+    hSekestrasyon: 'Sequestration',
+    hYokNormal: 'None / Normal',
+    // Fracture types
+    fxKompresyon: 'Compression fracture',
+    fxBurst: 'Burst fracture',
+    fxChance: 'Chance fracture',
+    fxDislokasyon: 'Fracture-dislocation',
+    fxOdontoid: 'Odontoid/Dens fracture',
+    fxPatolojik: 'Pathologic fracture',
+    // Tumor locations
+    lokIntramedüller: 'Intramedullary',
+    lokIntradural: 'Intradural-Extramedullary',
+    lokExtradural: 'Extradural',
+    lokVertebral: 'Vertebral (Bone)',
+    // Lesion categories
+    katTravma: 'Trauma',
+    katDejeneratif: 'Degenerative Disease',
+    katTumor: 'Primary Tumor / Metastasis',
+    katEnfeksiyon: 'Infection',
+    katKonjenital: 'Congenital / Metabolic',
+    // IVKM pattern
+    ivkmHomojen: 'Homogeneous',
+    ivkmHeterojen: 'Heterogeneous',
+    ivkmRim: 'Rim/Peripheral',
+    // IVKM strength
+    ivkmGuclu: 'Strong',
+    ivkmOrta: 'Moderate',
+    ivkmZayif: 'Weak',
+    ivkmMinimal: 'Minimal',
+    ivkmYok: 'None',
+    // Kord
+    kordNormal: 'Normal',
+    kordMiyelopati: 'Myelopathy signal change',
+    kordLezyon: 'Intramedullary lesion (to be detailed in Lesion section)',
+    // Degenerative extra
+    fasetSagHeader: 'Facet Arthrosis',
+    ligFlavumHeader: 'Ligamentum Flavum Hypertrophy',
+    spondHeader: 'Spondylolisthesis',
+    dirBilateral: 'Bilateral',
+    dirSag: 'Right',
+    dirSol: 'Left',
+    spondDej: 'Degenerative',
+    spondIstmik: 'Isthmic',
+    spondTravmatik: 'Traumatic',
+    spondPatolojik: 'Pathologic',
+    // Spinal canal section
+    kanalStenozSuffix: ' — Spinal Canal Stenosis',
+    // Report headings
+    rpTitle: 'SPINAL MRI — STRUCTURED REPORT',
+    rpGenel: 'GENERAL',
+    rpInceleme: 'Examination Region',
+    rpAlignment: 'Alignment',
+    rpVertBulgu: 'VERTEBRAL FINDINGS',
+    rpVertSev: 'Level',
+    rpVertYK: 'Height Loss',
+    rpVertFx: 'Fracture',
+    rpVertModic: 'Modic',
+    rpVertSig: 'Signal',
+    rpVertNot: 'Note',
+    rpDiscBulgu: 'DISC FINDINGS',
+    rpDiscSev: 'Level',
+    rpDiscPf: 'Pfirrmann',
+    rpDiscHerni: 'Herniation',
+    rpDiscAnnul: 'Annular Tear',
+    rpDiscSanSten: 'Central Stenosis',
+    rpDiscForSten: 'Foraminal St.',
+    rpDiscNerve: 'Nerve Root',
+    rpKanalKord: 'SPINAL CANAL & CORD',
+    rpKanalStenozSuffix: ' Canal Stenosis',
+    rpDejenEk: 'ADDITIONAL DEGENERATIVE FINDINGS',
+    rpLezyonlar: 'LESIONS / PATHOLOGIES',
+    rpLezyonDefault: 'Lesion',
+    rpLezSev: 'Level',
+    rpLezLok: 'Location',
+    rpLezBoyut: 'Size',
+    rpLezSig: 'Signal',
+    rpLezIVKM: 'Enhancement',
+    rpLezNot: 'Note',
+    rpYorum: 'INTERPRETATION — Differential Diagnosis:',
+    rpDxRehber: 'SPINAL MRI DIFFERENTIAL DIAGNOSIS GUIDE',
+    rpDxContent: '<b>Vertebral Signal:</b> T1 hypo + STIR hyper → Acute pathology (fracture, infection, tumor) | T1 hyper → Fatty degeneration, hemangioma, subacute hemorrhage<br><b>Disc vs Endplate:</b> Endplate destruction + disc involvement → Infection | Endplate intact + height loss → Osteoporotic fracture<br><b>Intramedullary:</b> Central + homogeneous enhancement → Ependymoma | Eccentric + heterogeneous → Astrocytoma | Strong nodular + flow void → Hemangioblastoma<br><b>Intradural-Extramedullary:</b> Isointense + strong homogeneous + dural tail → Meningioma | T2 very hyperintense + dumbbell → Schwannoma<br><b>Vertebral Collapse:</b> Convex posterior + pedicle involvement → Malignant | No retropulsion + posterior wall intact → Benign<br><b>Infection:</b> Spondylodiscitis → Adjacent 2 vertebrae + disc | TB → Skip lesion + paraspinal abscess + disc may be preserved',
+    rpEkNotlar: 'ADDITIONAL NOTES',
+    rpModicTip: 'Type ',
+    rpKordNormal: 'Normal',
+    rpKordMiyelopati: 'Myelopathy signal change',
+    rpKordLezyon: 'Intramedullary lesion',
+    rpAlignMap_normal: 'Normal',
+    rpAlignMap_kifoz_artmis: 'Increased kyphosis',
+    rpAlignMap_lordoz_azalmis: 'Reduced/straightened lordosis',
+    rpAlignMap_skolyoz: 'Scoliosis',
+    rpAlignMap_kifoskolyoz: 'Kyphoscoliosis',
+    rpYKMap_yok: 'None',
+    rpYKMap_hafif: 'Mild (<25%)',
+    rpYKMap_orta: 'Moderate (25-50%)',
+    rpYKMap_siddetli: 'Severe (>50%)',
+    rpIVKMHomojen: 'Homogeneous',
+    rpIVKMRim: 'Rim/Peripheral',
+    rpIVKMHeterojen: 'Heterogeneous',
+  }
+})[RV_LOCALE];
+
+/* ═══════════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════════ */
-const SEGMENTS = {servikal:'Servikal',torakal:'Torakal',lomber:'Lomber',sakral:'Sakral'};
+const SEGMENTS = {
+  servikal: T.segServikal,
+  torakal: T.segTorakal,
+  lomber: T.segLomber,
+  sakral: T.segSakral
+};
 const VERT_LEVELS = {
   servikal:['C1','C2','C3','C4','C5','C6','C7'],
   torakal:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
@@ -119,51 +577,56 @@ const DISC_LEVELS = {
   sakral:[]
 };
 const HERNI_TIPLERI = [
-  {v:'bulging',l:'Bulging (Diffüz)'},
-  {v:'protruzyonSantral',l:'Protrüzyon — Santral'},
-  {v:'protruzyonParasantralSag',l:'Protrüzyon — Parasantral Sağ'},
-  {v:'protruzyonParasantralSol',l:'Protrüzyon — Parasantral Sol'},
-  {v:'protruzyonForaminalSag',l:'Protrüzyon — Foraminal Sağ'},
-  {v:'protruzyonForaminalSol',l:'Protrüzyon — Foraminal Sol'},
-  {v:'ekstruzyonSantral',l:'Ekstrüzyon — Santral'},
-  {v:'ekstruzyonParasantralSag',l:'Ekstrüzyon — Parasantral Sağ'},
-  {v:'ekstruzyonParasantralSol',l:'Ekstrüzyon — Parasantral Sol'},
-  {v:'sekestrasyon',l:'Sekestrasyon'}
+  {v:'bulging',l:T.hBulging},
+  {v:'protruzyonSantral',l:T.hProtSantral},
+  {v:'protruzyonParasantralSag',l:T.hProtParaSag},
+  {v:'protruzyonParasantralSol',l:T.hProtParaSol},
+  {v:'protruzyonForaminalSag',l:T.hProtForSag},
+  {v:'protruzyonForaminalSol',l:T.hProtForSol},
+  {v:'ekstruzyonSantral',l:T.hExtSantral},
+  {v:'ekstruzyonParasantralSag',l:T.hExtParaSag},
+  {v:'ekstruzyonParasantralSol',l:T.hExtParaSol},
+  {v:'sekestrasyon',l:T.hSekestrasyon}
 ];
 const PFIRRMANN = [
-  {v:'1',l:'Grade I — Normal'},
-  {v:'2',l:'Grade II — Hafif dejenerasyon'},
-  {v:'3',l:'Grade III — Orta dejenerasyon'},
-  {v:'4',l:'Grade IV — İleri dejenerasyon'},
-  {v:'5',l:'Grade V — Kollaps'}
+  {v:'1',l:T.pf1},
+  {v:'2',l:T.pf2},
+  {v:'3',l:T.pf3},
+  {v:'4',l:T.pf4},
+  {v:'5',l:T.pf5}
 ];
 const MODIC = [
-  {v:'0',l:'Modic değişiklik yok'},
-  {v:'1',l:'Modic Tip I (Ödem/inflamasyon)'},
-  {v:'2',l:'Modic Tip II (Yağlı dejenerasyon)'},
-  {v:'3',l:'Modic Tip III (Skleroz)'}
+  {v:'0',l:T.modicYok},
+  {v:'1',l:T.modicTip1},
+  {v:'2',l:T.modicTip2},
+  {v:'3',l:T.modicTip3}
 ];
-const STENOZ_DERECE = [{v:'yok',l:'Yok'},{v:'hafif',l:'Hafif'},{v:'orta',l:'Orta'},{v:'siddetli',l:'Şiddetli'}];
+const STENOZ_DERECE = [
+  {v:'yok',l:T.stenozYok},
+  {v:'hafif',l:T.stenozHafif},
+  {v:'orta',l:T.stenozOrta},
+  {v:'siddetli',l:T.stenozSiddetli}
+];
 const FRAKTUR_TIPLERI = [
-  {v:'kompresyon',l:'Kompresyon fraktürü'},
-  {v:'burst',l:'Burst (Patlama) fraktürü'},
-  {v:'chance',l:'Chance fraktürü'},
-  {v:'dislokasyon',l:'Fraktür-dislokasyon'},
-  {v:'odontoid',l:'Odontoid fraktür'},
-  {v:'patolojik',l:'Patolojik fraktür'}
+  {v:'kompresyon',l:T.fxKompresyon},
+  {v:'burst',l:T.fxBurst},
+  {v:'chance',l:T.fxChance},
+  {v:'dislokasyon',l:T.fxDislokasyon},
+  {v:'odontoid',l:T.fxOdontoid},
+  {v:'patolojik',l:T.fxPatolojik}
 ];
 const TUMOR_LOK = [
-  {v:'intramedüller',l:'İntramedüller'},
-  {v:'intradural_ekstramedüller',l:'İntradural-Ekstramedüller'},
-  {v:'ekstradural',l:'Ekstradural'},
-  {v:'vertebral',l:'Vertebral (Kemik)'}
+  {v:'intramedüller',l:T.lokIntramedüller},
+  {v:'intradural_ekstramedüller',l:T.lokIntradural},
+  {v:'ekstradural',l:T.lokExtradural},
+  {v:'vertebral',l:T.lokVertebral}
 ];
 const LEZYON_KATEGORILERI = [
-  {v:'travma',l:'Travma'},
-  {v:'dejeneratif',l:'Dejeneratif Hastalık'},
-  {v:'tumor',l:'Primer Tümör / Metastaz'},
-  {v:'enfeksiyon',l:'Enfeksiyon'},
-  {v:'konjenital',l:'Konjenital / Metabolik'}
+  {v:'travma',l:T.katTravma},
+  {v:'dejeneratif',l:T.katDejeneratif},
+  {v:'tumor',l:T.katTumor},
+  {v:'enfeksiyon',l:T.katEnfeksiyon},
+  {v:'konjenital',l:T.katKonjenital}
 ];
 
 /* ═══════════════════════════════════════════
@@ -236,15 +699,15 @@ let currentLezIdx = -1;
    STEPS
    ═══════════════════════════════════════════ */
 const STEPS = [
-  {id:'segment',title:'İnceleme Bölgesi'},
-  {id:'alignment',title:'Sagittal Alignment'},
-  {id:'vertebra_list',title:'Vertebra Bulguları'},
-  {id:'disk_list',title:'Disk Bulguları'},
-  {id:'kanal_kord',title:'Spinal Kanal & Kord'},
-  {id:'dejeneratif_ek',title:'Dejeneratif Ek Bulgular'},
-  {id:'lezyon_list',title:'Lezyon / Patoloji'},
-  {id:'ek_notlar',title:'Ek Notlar'},
-  {id:'rapor',title:'Rapor Oluştur'}
+  {id:'segment',title:T.stepSegment},
+  {id:'alignment',title:T.stepAlignment},
+  {id:'vertebra_list',title:T.stepVertList},
+  {id:'disk_list',title:T.stepDiscList},
+  {id:'kanal_kord',title:T.stepKanalKord},
+  {id:'dejeneratif_ek',title:T.stepDejenEk},
+  {id:'lezyon_list',title:T.stepLezyonList},
+  {id:'ek_notlar',title:T.stepEkNotlar},
+  {id:'rapor',title:T.stepRapor}
 ];
 
 function render() {
@@ -262,14 +725,19 @@ function render() {
     case 'dejeneratif_ek': h += rDejenEk(); break;
     case 'lezyon_list': h += rLezyonList(); break;
     case 'ek_notlar': h += rEkNot(); break;
-    case 'rapor': h += `<p class="note">Tüm veriler girildi. Rapor oluşturmak için aşağıdaki butona tıklayın.</p>`; break;
+    case 'rapor': h += `<p class="note">${T.noteRapor}</p>`; break;
   }
 
   h += `<div class="nav-row">`;
-  h += currentStep>0?`<button class="btn btn-prev" onclick="goPrev()">← Geri</button>`:`<div></div>`;
-  h += step.id==='rapor'?`<button class="btn btn-report" onclick="genReport()">📄 Rapor Oluştur</button>`:`<button class="btn btn-next" onclick="goNext()">İleri →</button>`;
+  h += currentStep>0?`<button class="btn btn-prev" onclick="goPrev()">${T.btnBack}</button>`:`<div></div>`;
+  h += step.id==='rapor'?`<button class="btn btn-report" onclick="genReport()">${T.btnReport}</button>`:`<button class="btn btn-next" onclick="goNext()">${T.btnNext}</button>`;
   h += `</div></div>`;
   app.innerHTML = h;
+
+  // Apply i18n to static elements after render
+  document.querySelectorAll('[data-i18n-tr]').forEach(el=>{
+    el.textContent = RV_LOCALE === 'en' ? (el.getAttribute('data-i18n-en')||el.getAttribute('data-i18n-tr')) : el.getAttribute('data-i18n-tr');
+  });
 }
 
 function goNext(){ save(); if(currentStep<STEPS.length-1){currentStep++;render();} }
@@ -318,9 +786,9 @@ function cg(name,opts,selArr){
   return `<div class="check-group">${opts.map(o=>`<label><input type="checkbox" name="${name}" value="${o.v}" ${selArr.includes(o.v)?'checked':''}><span>${o.l}</span></label>`).join('')}</div>`;
 }
 function sigPanel(pfx,sig){
-  const seqs=[{k:'t1',l:'T1A'},{k:'t2',l:'T2A'},{k:'stir',l:'STIR'},{k:'dwi',l:'DWI'}];
-  const opts=[{v:'hipointens',l:'Hipo'},{v:'hiperintens',l:'Hiper'},{v:'izointens',l:'İzo'}];
-  let h=`<div class="signal-panel"><div class="sh">Sekans</div><div class="sh">Hipo</div><div class="sh">Hiper</div><div class="sh">İzo</div>`;
+  const seqs=[{k:'t1',l:'T1'},{k:'t2',l:'T2'},{k:'stir',l:'STIR'},{k:'dwi',l:'DWI'}];
+  const opts=[{v:'hipointens',l:T.sigHipo},{v:'hiperintens',l:T.sigHiper},{v:'izointens',l:T.sigIzo}];
+  let h=`<div class="signal-panel"><div class="sh">${T.sigSeq}</div><div class="sh">${T.sigHipo}</div><div class="sh">${T.sigHiper}</div><div class="sh">${T.sigIzo}</div>`;
   seqs.forEach(s=>{
     h+=`<div class="sh">${s.l}</div>`;
     opts.forEach(o=>{h+=`<div class="sc"><label><input type="radio" name="${pfx}${s.k}" value="${o.v}" ${(sig&&sig[s.k]===o.v)?'checked':''}></label></div>`;});
@@ -330,7 +798,7 @@ function sigPanel(pfx,sig){
 function getSig(pfx){return{t1:gr(pfx+'t1'),t2:gr(pfx+'t2'),stir:gr(pfx+'stir'),dwi:gr(pfx+'dwi')};}
 function sigTxt(sig){
   if(!sig)return'-';
-  const m={hipointens:'hipo',hiperintens:'hiper',izointens:'izo'};
+  const m={hipointens:T.sigHipoAbbr,hiperintens:T.sigHiperAbbr,izointens:T.sigIzoAbbr};
   let r=[];
   if(sig.t1)r.push('T1:'+m[sig.t1]);
   if(sig.t2)r.push('T2:'+m[sig.t2]);
@@ -343,33 +811,33 @@ function sigTxt(sig){
    STEP RENDERERS
    ═══════════════════════════════════════════ */
 function rSegment(){
-  return `<p class="note">İncelenen spinal segmentleri seçiniz:</p>`+
+  return `<p class="note">${T.noteSegment}</p>`+
     cg('seg',Object.entries(SEGMENTS).map(([v,l])=>({v,l})),D.segments);
 }
 
 function rAlignment(){
   return rg('align',[
-    {v:'normal',l:'Normal'},
-    {v:'kifoz_artmis',l:'Kifoz artmış'},
-    {v:'lordoz_azalmis',l:'Lordoz azalmış/düzleşmiş'},
-    {v:'skolyoz',l:'Skolyoz'},
-    {v:'kifoskolyoz',l:'Kifoskolyoz'}
+    {v:'normal',l:T.alignNormal},
+    {v:'kifoz_artmis',l:T.alignKifozArtmis},
+    {v:'lordoz_azalmis',l:T.alignLordozAzalmis},
+    {v:'skolyoz',l:T.alignSkolyoz},
+    {v:'kifoskolyoz',l:T.alignKifoskolyoz}
   ],D.alignment)+
-  `<div class="input-row" style="margin-top:10px"><label>Not:</label><input class="text-input" id="alignNot" value="${D.alignmentNot||''}" placeholder="Opsiyonel detay..."></div>`;
+  `<div class="input-row" style="margin-top:10px"><label>${T.labelNot}</label><input class="text-input" id="alignNot" value="${D.alignmentNot||''}" placeholder="${T.placeholderAlignNot}"></div>`;
 }
 
 /* --- VERTEBRA --- */
 function rVertList(){
   let h=`<div class="items-list">`;
   D.vertebralar.forEach((v,i)=>{
-    h+=`<div class="item-card"><div class="info"><strong>${v.seviye}</strong> — ${v.fraktur==='var'?fxLabel(v.frakturTip):'Normal'} ${v.modic!=='0'?', Modic '+v.modic:''} ${sigTxt(v.sinyal)!=='-'?', '+sigTxt(v.sinyal):''}</div>
+    h+=`<div class="item-card"><div class="info"><strong>${v.seviye}</strong> — ${v.fraktur==='var'?fxLabel(v.frakturTip):T.normal} ${v.modic!=='0'?', Modic '+v.modic:''} ${sigTxt(v.sinyal)!=='-'?', '+sigTxt(v.sinyal):''}</div>
     <div><button class="btn btn-del" onclick="editVert(${i})">✏️</button> <button class="btn btn-del" onclick="delVert(${i})">🗑️</button></div></div>`;
   });
-  h+=`</div><button class="btn btn-add" onclick="addVert()">+ Vertebra Bulgusu Ekle</button>`;
+  h+=`</div><button class="btn btn-add" onclick="addVert()">${T.btnAddVert}</button>`;
   h+=`<div id="vertForm" class="hidden" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"></div>`;
   return h;
 }
-function fxLabel(t){return FRAKTUR_TIPLERI.find(f=>f.v===t)?.l||t||'Fraktür';}
+function fxLabel(t){return FRAKTUR_TIPLERI.find(f=>f.v===t)?.l||t||T.fxKompresyon;}
 
 function addVert(){
   currentVertIdx=-1;
@@ -384,14 +852,14 @@ function showVertForm(v){
   const f=document.getElementById('vertForm');
   f.classList.remove('hidden');
   f.innerHTML=`
-    <h3>Seviye</h3>${rg('vf_sev',allLevels,v.seviye)}
-    <h3>Yükseklik Kaybı</h3>${rg('vf_yk',[{v:'yok',l:'Yok'},{v:'hafif',l:'Hafif (<25%)'},{v:'orta',l:'Orta (25-50%)'},{v:'siddetli',l:'Şiddetli (>50%)'}],v.yukseklikKaybi)}
-    <h3>Fraktür</h3>${rg('vf_fx',[{v:'yok',l:'Yok'},{v:'var',l:'Var'}],v.fraktur)}
-    <div id="vf_fxTipDiv" class="${v.fraktur==='var'?'':'hidden'}"><h4>Fraktür Tipi</h4>${rg('vf_fxTip',FRAKTUR_TIPLERI,v.frakturTip)}</div>
-    <h3>Modic Değişiklik</h3>${rg('vf_modic',MODIC,v.modic)}
-    <h3>Sinyal Değişikliği</h3>${sigPanel('vf_sig_',v.sinyal)}
-    <div class="input-row"><label>Not:</label><textarea id="vf_not" rows="2">${v.notlar||''}</textarea></div>
-    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveVert()">💾 Kaydet</button> <button class="btn btn-prev" onclick="cancelVert()">İptal</button></div>`;
+    <h3>${T.labelLevel}</h3>${rg('vf_sev',allLevels,v.seviye)}
+    <h3>${T.labelHeightLoss}</h3>${rg('vf_yk',[{v:'yok',l:T.ykYok},{v:'hafif',l:T.ykHafif},{v:'orta',l:T.ykOrta},{v:'siddetli',l:T.ykSiddetli}],v.yukseklikKaybi)}
+    <h3>${T.labelFraktur}</h3>${rg('vf_fx',[{v:'yok',l:T.yok},{v:'var',l:T.var}],v.fraktur)}
+    <div id="vf_fxTipDiv" class="${v.fraktur==='var'?'':'hidden'}"><h4>${T.labelFrakturTip}</h4>${rg('vf_fxTip',FRAKTUR_TIPLERI,v.frakturTip)}</div>
+    <h3>${T.labelModic}</h3>${rg('vf_modic',MODIC,v.modic)}
+    <h3>${T.labelSignal}</h3>${sigPanel('vf_sig_',v.sinyal)}
+    <div class="input-row"><label>${T.labelNot}</label><textarea id="vf_not" rows="2">${v.notlar||''}</textarea></div>
+    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveVert()">${T.btnSave}</button> <button class="btn btn-prev" onclick="cancelVert()">${T.btnCancel}</button></div>`;
   f.querySelector('[name="vf_fx"]')?.closest('.radio-group')?.addEventListener('change',function(){
     document.getElementById('vf_fxTipDiv').classList.toggle('hidden',gr('vf_fx')!=='var');
   });
@@ -408,10 +876,10 @@ function rDiscList(){
   let h=`<div class="items-list">`;
   D.diskler.forEach((d,i)=>{
     const ht=HERNI_TIPLERI.find(x=>x.v===d.herniTip);
-    h+=`<div class="item-card"><div class="info"><strong>${d.seviye}</strong> — Pf:${d.pfirrmann||'-'} ${ht?ht.l:'-'} ${d.stenozSantral&&d.stenozSantral!=='yok'?'Stenoz:'+d.stenozSantral:''}</div>
+    h+=`<div class="item-card"><div class="info"><strong>${d.seviye}</strong> — Pf:${d.pfirrmann||'-'} ${ht?ht.l:'-'} ${d.stenozSantral&&d.stenozSantral!=='yok'?T.labelSantalKanal+':'+d.stenozSantral:''}</div>
     <div><button class="btn btn-del" onclick="editDisc(${i})">✏️</button> <button class="btn btn-del" onclick="delDisc(${i})">🗑️</button></div></div>`;
   });
-  h+=`</div><button class="btn btn-add" onclick="addDisc()">+ Disk Bulgusu Ekle</button>`;
+  h+=`</div><button class="btn btn-add" onclick="addDisc()">${T.btnAddDisc}</button>`;
   h+=`<div id="discForm" class="hidden" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"></div>`;
   return h;
 }
@@ -424,17 +892,17 @@ function showDiscForm(d){
   D.segments.forEach(s=>(DISC_LEVELS[s]||[]).forEach(l=>allLevels.push({v:l,l:l})));
   const f=document.getElementById('discForm');f.classList.remove('hidden');
   f.innerHTML=`
-    <h3>Seviye</h3>${rg('df_sev',allLevels,d.seviye)}
-    <h3>Pfirrmann Grade</h3>${rg('df_pf',PFIRRMANN,d.pfirrmann)}
-    <h3>Herniasyon Tipi</h3>${rg('df_ht',[{v:'yok',l:'Yok / Normal'},...HERNI_TIPLERI],d.herniTip)}
-    <h3>Annüler Yırtık (HIZ)</h3>${rg('df_ay',[{v:'yok',l:'Yok'},{v:'var',l:'Var'}],d.annulerYirtik)}
-    <h3>Santral Kanal Stenozu</h3>${rg('df_ss',STENOZ_DERECE,d.stenozSantral)}
-    <h3>Foraminal Stenoz — Sağ</h3>${rg('df_fsr',STENOZ_DERECE,d.stenozForaminalSag)}
-    <h3>Foraminal Stenoz — Sol</h3>${rg('df_fsl',STENOZ_DERECE,d.stenozForaminalSol)}
-    <div class="input-row"><label>Sinir kökü basısı Sağ:</label><input class="text-input" id="df_skr" value="${d.sinirKokuSag||''}"></div>
-    <div class="input-row"><label>Sinir kökü basısı Sol:</label><input class="text-input" id="df_skl" value="${d.sinirKokuSol||''}"></div>
-    <div class="input-row"><label>Not:</label><textarea id="df_not" rows="2">${d.notlar||''}</textarea></div>
-    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveDisc()">💾 Kaydet</button> <button class="btn btn-prev" onclick="cancelDisc()">İptal</button></div>`;
+    <h3>${T.labelLevel}</h3>${rg('df_sev',allLevels,d.seviye)}
+    <h3>${T.labelPfirrmann}</h3>${rg('df_pf',PFIRRMANN,d.pfirrmann)}
+    <h3>${T.labelHerniTip}</h3>${rg('df_ht',[{v:'yok',l:T.hYokNormal},...HERNI_TIPLERI],d.herniTip)}
+    <h3>${T.labelAnnuler}</h3>${rg('df_ay',[{v:'yok',l:T.yok},{v:'var',l:T.var}],d.annulerYirtik)}
+    <h3>${T.labelSantalKanal}</h3>${rg('df_ss',STENOZ_DERECE,d.stenozSantral)}
+    <h3>${T.labelForaminalR}</h3>${rg('df_fsr',STENOZ_DERECE,d.stenozForaminalSag)}
+    <h3>${T.labelForaminalL}</h3>${rg('df_fsl',STENOZ_DERECE,d.stenozForaminalSol)}
+    <div class="input-row"><label>${T.labelNerveRootR}</label><input class="text-input" id="df_skr" value="${d.sinirKokuSag||''}"></div>
+    <div class="input-row"><label>${T.labelNerveRootL}</label><input class="text-input" id="df_skl" value="${d.sinirKokuSol||''}"></div>
+    <div class="input-row"><label>${T.labelNot}</label><textarea id="df_not" rows="2">${d.notlar||''}</textarea></div>
+    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveDisc()">${T.btnSave}</button> <button class="btn btn-prev" onclick="cancelDisc()">${T.btnCancel}</button></div>`;
 }
 function saveDisc(){
   const obj={seviye:gr('df_sev'),pfirrmann:gr('df_pf'),herniTip:gr('df_ht'),annulerYirtik:gr('df_ay'),stenozSantral:gr('df_ss'),stenozForaminalSag:gr('df_fsr'),stenozForaminalSol:gr('df_fsl'),sinirKokuSag:gv('df_skr'),sinirKokuSol:gv('df_skl'),notlar:gv('df_not')};
@@ -447,43 +915,43 @@ function cancelDisc(){currentDiscIdx=-1;document.getElementById('discForm').clas
 function rKanalKord(){
   let h='';
   D.segments.forEach(seg=>{
-    h+=`<h3>${SEGMENTS[seg]} — Spinal Kanal Stenozu</h3>${rg('kanal_'+seg,STENOZ_DERECE,D.kanalStenoz[seg]||'yok')}`;
+    h+=`<h3>${SEGMENTS[seg]}${T.kanalStenozSuffix}</h3>${rg('kanal_'+seg,STENOZ_DERECE,D.kanalStenoz[seg]||'yok')}`;
   });
-  h+=`<hr class="sep"><h3>Spinal Kord</h3>`;
-  h+=rg('kord',[{v:'normal',l:'Normal'},{v:'miyelopati',l:'Miyelopati sinyal değişikliği'},{v:'lezyon',l:'İntramedüller lezyon (Lezyon bölümünde detaylandırılacak)'}],D.kordBulgu||'normal');
-  h+=`<div class="input-row"><label>Miyelopati seviyesi:</label><input class="text-input" id="miyelopatiSeviye" value="${D.kordMiyelopatiSeviye||''}"></div>`;
-  h+=`<div class="input-row"><label>Kord notu:</label><textarea id="kordNot" rows="2">${D.kordNotlar||''}</textarea></div>`;
+  h+=`<hr class="sep"><h3>${T.labelSpinalKord}</h3>`;
+  h+=rg('kord',[{v:'normal',l:T.kordNormal},{v:'miyelopati',l:T.kordMiyelopati},{v:'lezyon',l:T.kordLezyon}],D.kordBulgu||'normal');
+  h+=`<div class="input-row"><label>${T.labelMiyelopatiSev}</label><input class="text-input" id="miyelopatiSeviye" value="${D.kordMiyelopatiSeviye||''}"></div>`;
+  h+=`<div class="input-row"><label>${T.labelKordNot}</label><textarea id="kordNot" rows="2">${D.kordNotlar||''}</textarea></div>`;
   return h;
 }
 
 /* --- DEJENERATİF EK --- */
 function rDejenEk(){
-  let h=`<h3>Faset Artroz</h3><div class="items-list" id="fasetList">`;
+  let h=`<h3>${T.fasetSagHeader}</h3><div class="items-list" id="fasetList">`;
   D.fasetArtroz.forEach((f,i)=>{
     h+=`<div class="item-card"><div class="info"><strong>${f.seviye}</strong> — ${f.taraf}</div><button class="btn btn-del" onclick="delFaset(${i})">🗑️</button></div>`;
   });
   h+=`</div><div class="input-row"><select id="fasetSev">`;
   D.segments.forEach(s=>(DISC_LEVELS[s]||[]).forEach(l=>{h+=`<option value="${l}">${l}</option>`;}));
-  h+=`</select><select id="fasetTaraf"><option value="Bilateral">Bilateral</option><option value="Sağ">Sağ</option><option value="Sol">Sol</option></select>
-  <button class="btn btn-add" onclick="addFaset()">+ Ekle</button></div>`;
+  h+=`</select><select id="fasetTaraf"><option value="${T.dirBilateral}">${T.dirBilateral}</option><option value="${T.dirSag}">${T.dirSag}</option><option value="${T.dirSol}">${T.dirSol}</option></select>
+  <button class="btn btn-add" onclick="addFaset()">${T.btnAdd}</button></div>`;
 
-  h+=`<hr class="sep"><h3>Ligamentum Flavum Hipertrofisi</h3><div class="items-list" id="ligList">`;
+  h+=`<hr class="sep"><h3>${T.ligFlavumHeader}</h3><div class="items-list" id="ligList">`;
   D.ligFlavumHipertrofi.forEach((l,i)=>{
     h+=`<div class="item-card"><div class="info"><strong>${l}</strong></div><button class="btn btn-del" onclick="delLig(${i})">🗑️</button></div>`;
   });
   h+=`</div><div class="input-row"><select id="ligSev">`;
   D.segments.forEach(s=>(DISC_LEVELS[s]||[]).forEach(l=>{h+=`<option value="${l}">${l}</option>`;}));
-  h+=`</select><button class="btn btn-add" onclick="addLig()">+ Ekle</button></div>`;
+  h+=`</select><button class="btn btn-add" onclick="addLig()">${T.btnAdd}</button></div>`;
 
-  h+=`<hr class="sep"><h3>Spondilolistezis</h3><div class="items-list" id="spondList">`;
+  h+=`<hr class="sep"><h3>${T.spondHeader}</h3><div class="items-list" id="spondList">`;
   D.spondilolistezis.forEach((s,i)=>{
     h+=`<div class="item-card"><div class="info"><strong>${s.seviye}</strong> — Grade ${s.derece}, ${s.tip}</div><button class="btn btn-del" onclick="delSpond(${i})">🗑️</button></div>`;
   });
   h+=`</div><div class="input-row"><select id="spondSev">`;
   D.segments.forEach(s=>(DISC_LEVELS[s]||[]).forEach(l=>{h+=`<option value="${l}">${l}</option>`;}));
   h+=`</select><select id="spondDer"><option value="I">Grade I</option><option value="II">Grade II</option><option value="III">Grade III</option><option value="IV">Grade IV</option></select>
-  <select id="spondTip"><option value="Dejeneratif">Dejeneratif</option><option value="İstmik">İstmik</option><option value="Travmatik">Travmatik</option><option value="Patolojik">Patolojik</option></select>
-  <button class="btn btn-add" onclick="addSpond()">+ Ekle</button></div>`;
+  <select id="spondTip"><option value="${T.spondDej}">${T.spondDej}</option><option value="${T.spondIstmik}">${T.spondIstmik}</option><option value="${T.spondTravmatik}">${T.spondTravmatik}</option><option value="${T.spondPatolojik}">${T.spondPatolojik}</option></select>
+  <button class="btn btn-add" onclick="addSpond()">${T.btnAdd}</button></div>`;
   return h;
 }
 function addFaset(){D.fasetArtroz.push({seviye:gv('fasetSev'),taraf:gv('fasetTaraf')});render();}
@@ -495,12 +963,12 @@ function delSpond(i){D.spondilolistezis.splice(i,1);render();}
 
 /* --- LEZYON --- */
 function rLezyonList(){
-  let h=`<p class="note">Travma, tümör, enfeksiyon, konjenital veya metabolik lezyonları ekleyiniz.</p><div class="items-list">`;
+  let h=`<p class="note">${T.noteLezyon}</p><div class="items-list">`;
   D.lezyonlar.forEach((l,i)=>{
-    h+=`<div class="item-card"><div class="info"><strong>${l.isim||LEZYON_KATEGORILERI.find(c=>c.v===l.kategori)?.l||'Lezyon'}</strong> — ${l.seviye||''} ${l.lokasyon||''} ${l.boyut?l.boyut+'mm':''}</div>
+    h+=`<div class="item-card"><div class="info"><strong>${l.isim||LEZYON_KATEGORILERI.find(c=>c.v===l.kategori)?.l||T.rpLezyonDefault}</strong> — ${l.seviye||''} ${l.lokasyon||''} ${l.boyut?l.boyut+'mm':''}</div>
     <div><button class="btn btn-del" onclick="editLez(${i})">✏️</button> <button class="btn btn-del" onclick="delLez(${i})">🗑️</button></div></div>`;
   });
-  h+=`</div><button class="btn btn-add" onclick="addLez()">+ Lezyon Ekle</button>`;
+  h+=`</div><button class="btn btn-add" onclick="addLez()">${T.btnAddLez}</button>`;
   h+=`<div id="lezForm" class="hidden" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"></div>`;
   return h;
 }
@@ -514,17 +982,17 @@ function showLezForm(l){
   D.segments.forEach(s=>VERT_LEVELS[s].forEach(v=>allLevels.push({v:v,l:v})));
   const f=document.getElementById('lezForm');f.classList.remove('hidden');
   f.innerHTML=`
-    <h3>Kategori</h3>${rg('lf_kat',LEZYON_KATEGORILERI,l.kategori)}
-    <h3>İsim / Tanım</h3><input class="text-input" id="lf_isim" value="${l.isim||''}" placeholder="Ör: Clear cell RCC metastazı..." style="width:100%">
-    <h3>Seviye</h3>${rg('lf_sev',allLevels,l.seviye)}
-    <h3>Lokasyon</h3>${rg('lf_lok',TUMOR_LOK,l.lokasyon)}
-    <div class="input-row"><label>Boyut (mm):</label><input class="num-input" id="lf_boyut" value="${l.boyut||''}"></div>
-    <h3>Sinyal Özellikleri</h3>${sigPanel('lf_sig_',l.signal)}
-    <h3>IVKM (Kontrastlanma)</h3>
-    ${rg('lf_ivkm_p',[{v:'homojen',l:'Homojen'},{v:'heterojen',l:'Heterojen'},{v:'rim',l:'Rim/Periferal'}],l.ivkmPat)}
-    ${rg('lf_ivkm_g',[{v:'guclu',l:'Güçlü'},{v:'orta',l:'Orta'},{v:'zayif',l:'Zayıf'},{v:'minimal',l:'Minimal'},{v:'yok',l:'Yok'}],l.ivkmGuc)}
-    <div class="input-row"><label>Not:</label><textarea id="lf_not" rows="2">${l.notlar||''}</textarea></div>
-    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveLez()">💾 Kaydet</button> <button class="btn btn-prev" onclick="cancelLez()">İptal</button></div>`;
+    <h3>${T.labelKategori}</h3>${rg('lf_kat',LEZYON_KATEGORILERI,l.kategori)}
+    <h3>${T.labelIsim}</h3><input class="text-input" id="lf_isim" value="${l.isim||''}" placeholder="${T.placeholderLezIsim}" style="width:100%">
+    <h3>${T.labelLevel}</h3>${rg('lf_sev',allLevels,l.seviye)}
+    <h3>${T.labelLokasyon}</h3>${rg('lf_lok',TUMOR_LOK,l.lokasyon)}
+    <div class="input-row"><label>${T.labelBoyut}</label><input class="num-input" id="lf_boyut" value="${l.boyut||''}"></div>
+    <h3>${T.labelSignalChar}</h3>${sigPanel('lf_sig_',l.signal)}
+    <h3>${T.labelIVKM}</h3>
+    ${rg('lf_ivkm_p',[{v:'homojen',l:T.ivkmHomojen},{v:'heterojen',l:T.ivkmHeterojen},{v:'rim',l:T.ivkmRim}],l.ivkmPat)}
+    ${rg('lf_ivkm_g',[{v:'guclu',l:T.ivkmGuclu},{v:'orta',l:T.ivkmOrta},{v:'zayif',l:T.ivkmZayif},{v:'minimal',l:T.ivkmMinimal},{v:'yok',l:T.ivkmYok}],l.ivkmGuc)}
+    <div class="input-row"><label>${T.labelNot}</label><textarea id="lf_not" rows="2">${l.notlar||''}</textarea></div>
+    <div style="margin-top:10px"><button class="btn btn-next" onclick="saveLez()">${T.btnSave}</button> <button class="btn btn-prev" onclick="cancelLez()">${T.btnCancel}</button></div>`;
 }
 function saveLez(){
   const obj={kategori:gr('lf_kat'),isim:gv('lf_isim'),seviye:gr('lf_sev'),lokasyon:gr('lf_lok'),boyut:gv('lf_boyut'),signal:getSig('lf_sig_'),ivkmPat:gr('lf_ivkm_p'),ivkmGuc:gr('lf_ivkm_g'),notlar:gv('lf_not')};
@@ -534,7 +1002,7 @@ function saveLez(){
 function cancelLez(){currentLezIdx=-1;document.getElementById('lezForm').classList.add('hidden');}
 
 function rEkNot(){
-  return `<textarea id="ekNot" rows="4" placeholder="Ek bulgular, klinik korelasyon notları...">${D.ekNotlar||''}</textarea>`;
+  return `<textarea id="ekNot" rows="4" placeholder="${T.placeholderEkNot}">${D.ekNotlar||''}</textarea>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -597,100 +1065,94 @@ function mIVKM(g,pk){
 function genReport(){
   save();
   const sh=document.getElementById('reportSheet');
-  let h=`<h1>SPİNAL MR — YAPILANDIRILMIŞ RAPOR</h1>`;
+  let h=`<h1>${T.rpTitle}</h1>`;
 
   // Segments & Alignment
-  h+=`<h2>GENEL</h2><table>`;
-  h+=rr('İnceleme Bölgesi',D.segments.map(s=>SEGMENTS[s]).join(', '));
-  const alignMap={normal:'Normal',kifoz_artmis:'Kifoz artmış',lordoz_azalmis:'Lordoz azalmış/düzleşmiş',skolyoz:'Skolyoz',kifoskolyoz:'Kifoskolyoz'};
-  h+=rr('Alignment',alignMap[D.alignment]||'-'+(D.alignmentNot?' — '+D.alignmentNot:''));
+  h+=`<h2>${T.rpGenel}</h2><table>`;
+  h+=rr(T.rpInceleme,D.segments.map(s=>SEGMENTS[s]).join(', '));
+  const alignKey='rpAlignMap_'+D.alignment;
+  h+=rr(T.rpAlignment,(T[alignKey]||'-')+(D.alignmentNot?' — '+D.alignmentNot:''));
   h+=`</table>`;
 
   // Vertebralar
   if(D.vertebralar.length>0){
-    h+=`<h2>VERTEBRA BULGULARI</h2><table><tr><th>Seviye</th><th>Yükseklik Kaybı</th><th>Fraktür</th><th>Modic</th><th>Sinyal</th><th>Not</th></tr>`;
+    h+=`<h2>${T.rpVertBulgu}</h2><table><tr><th>${T.rpVertSev}</th><th>${T.rpVertYK}</th><th>${T.rpVertFx}</th><th>${T.rpVertModic}</th><th>${T.rpVertSig}</th><th>${T.rpVertNot}</th></tr>`;
     D.vertebralar.forEach(v=>{
-      const ykMap={yok:'Yok',hafif:'Hafif (<25%)',orta:'Orta (25-50%)',siddetli:'Şiddetli (>50%)'};
-      h+=`<tr><td><b>${v.seviye}</b></td><td>${ykMap[v.yukseklikKaybi]||'-'}</td><td>${v.fraktur==='var'?fxLabel(v.frakturTip):'Yok'}</td><td>${v.modic!=='0'?'Tip '+v.modic:'-'}</td><td>${sigTxt(v.sinyal)}</td><td>${v.notlar||'-'}</td></tr>`;
+      const ykKey='rpYKMap_'+v.yukseklikKaybi;
+      h+=`<tr><td><b>${v.seviye}</b></td><td>${T[ykKey]||'-'}</td><td>${v.fraktur==='var'?fxLabel(v.frakturTip):T.yok}</td><td>${v.modic!=='0'?T.rpModicTip+v.modic:'-'}</td><td>${sigTxt(v.sinyal)}</td><td>${v.notlar||'-'}</td></tr>`;
     });
     h+=`</table>`;
   }
 
   // Diskler
   if(D.diskler.length>0){
-    h+=`<h2>DİSK BULGULARI</h2><table><tr><th>Seviye</th><th>Pfirrmann</th><th>Herniasyon</th><th>Annüler Yırtık</th><th>Santral Stenoz</th><th>Foraminal St.</th><th>Sinir Kökü</th></tr>`;
+    h+=`<h2>${T.rpDiscBulgu}</h2><table><tr><th>${T.rpDiscSev}</th><th>${T.rpDiscPf}</th><th>${T.rpDiscHerni}</th><th>${T.rpDiscAnnul}</th><th>${T.rpDiscSanSten}</th><th>${T.rpDiscForSten}</th><th>${T.rpDiscNerve}</th></tr>`;
     D.diskler.forEach(d=>{
       const ht=HERNI_TIPLERI.find(x=>x.v===d.herniTip);
       let forStr='';
-      if(d.stenozForaminalSag&&d.stenozForaminalSag!=='yok')forStr+=`Sağ:${d.stenozForaminalSag} `;
-      if(d.stenozForaminalSol&&d.stenozForaminalSol!=='yok')forStr+=`Sol:${d.stenozForaminalSol}`;
+      if(d.stenozForaminalSag&&d.stenozForaminalSag!=='yok')forStr+=`${T.dirSag}:${d.stenozForaminalSag} `;
+      if(d.stenozForaminalSol&&d.stenozForaminalSol!=='yok')forStr+=`${T.dirSol}:${d.stenozForaminalSol}`;
       let skStr='';
-      if(d.sinirKokuSag)skStr+=`Sağ:${d.sinirKokuSag} `;
-      if(d.sinirKokuSol)skStr+=`Sol:${d.sinirKokuSol}`;
-      h+=`<tr><td><b>${d.seviye}</b></td><td>${d.pfirrmann||'-'}</td><td>${ht?ht.l:(d.herniTip==='yok'?'Yok':'-')}</td><td>${d.annulerYirtik==='var'?'Var':'Yok'}</td><td>${d.stenozSantral!=='yok'?d.stenozSantral:'-'}</td><td>${forStr||'-'}</td><td>${skStr||'-'}</td></tr>`;
+      if(d.sinirKokuSag)skStr+=`${T.dirSag}:${d.sinirKokuSag} `;
+      if(d.sinirKokuSol)skStr+=`${T.dirSol}:${d.sinirKokuSol}`;
+      h+=`<tr><td><b>${d.seviye}</b></td><td>${d.pfirrmann||'-'}</td><td>${ht?ht.l:(d.herniTip==='yok'?T.yok:'-')}</td><td>${d.annulerYirtik==='var'?T.var:T.yok}</td><td>${d.stenozSantral!=='yok'?d.stenozSantral:'-'}</td><td>${forStr||'-'}</td><td>${skStr||'-'}</td></tr>`;
     });
     h+=`</table>`;
   }
 
   // Kanal & Kord
-  h+=`<h2>SPİNAL KANAL & KORD</h2><table>`;
+  h+=`<h2>${T.rpKanalKord}</h2><table>`;
   D.segments.forEach(seg=>{
     const st=D.kanalStenoz[seg];
-    if(st&&st!=='yok')h+=rr(SEGMENTS[seg]+' Kanal Stenozu',st);
+    if(st&&st!=='yok')h+=rr(SEGMENTS[seg]+T.rpKanalStenozSuffix,st);
   });
-  const kordMap={normal:'Normal',miyelopati:'Miyelopati sinyal değişikliği',lezyon:'İntramedüller lezyon'};
-  h+=rr('Spinal Kord',kordMap[D.kordBulgu]||'Normal');
-  if(D.kordBulgu==='miyelopati'&&D.kordMiyelopatiSeviye)h+=rr('Miyelopati Seviyesi',D.kordMiyelopatiSeviye);
-  if(D.kordNotlar)h+=rr('Kord Notu',D.kordNotlar);
+  const kordMap={normal:T.rpKordNormal,miyelopati:T.rpKordMiyelopati,lezyon:T.rpKordLezyon};
+  h+=rr(T.labelSpinalKord,kordMap[D.kordBulgu]||T.rpKordNormal);
+  if(D.kordBulgu==='miyelopati'&&D.kordMiyelopatiSeviye)h+=rr(T.labelMiyelopatiSeviye,D.kordMiyelopatiSeviye);
+  if(D.kordNotlar)h+=rr(T.labelKordNotRp,D.kordNotlar);
   h+=`</table>`;
 
   // Dejeneratif ek
   if(D.fasetArtroz.length||D.ligFlavumHipertrofi.length||D.spondilolistezis.length){
-    h+=`<h2>DEJENERATİF EK BULGULAR</h2><table>`;
-    if(D.fasetArtroz.length)h+=rr('Faset Artroz',D.fasetArtroz.map(f=>f.seviye+' '+f.taraf).join(', '));
-    if(D.ligFlavumHipertrofi.length)h+=rr('Lig. Flavum Hipertrofisi',D.ligFlavumHipertrofi.join(', '));
-    D.spondilolistezis.forEach(s=>{h+=rr('Spondilolistezis',`${s.seviye} — Grade ${s.derece} (${s.tip})`);});
+    h+=`<h2>${T.rpDejenEk}</h2><table>`;
+    if(D.fasetArtroz.length)h+=rr(T.labelFasetArtroz,D.fasetArtroz.map(f=>f.seviye+' '+f.taraf).join(', '));
+    if(D.ligFlavumHipertrofi.length)h+=rr(T.labelLigFlavum,D.ligFlavumHipertrofi.join(', '));
+    D.spondilolistezis.forEach(s=>{h+=rr(T.labelSpondilolistezis,`${s.seviye} — Grade ${s.derece} (${s.tip})`);});
     h+=`</table>`;
   }
 
   // Lezyonlar + Differential
   if(D.lezyonlar.length>0){
-    h+=`<h2>LEZYONLAR / PATOLOJİLER</h2>`;
+    h+=`<h2>${T.rpLezyonlar}</h2>`;
     D.lezyonlar.forEach((l,i)=>{
       const katLbl=LEZYON_KATEGORILERI.find(c=>c.v===l.kategori)?.l||'';
       const lokLbl=TUMOR_LOK.find(t=>t.v===l.lokasyon)?.l||'';
-      h+=`<table><tr><th colspan="2">${l.isim||'Lezyon '+(i+1)} ${katLbl?'('+katLbl+')':''}</th></tr>`;
-      h+=rr('Seviye',l.seviye||'-');
-      h+=rr('Lokasyon',lokLbl||'-');
-      if(l.boyut)h+=rr('Boyut',l.boyut+' mm');
-      h+=rr('Sinyal',sigTxt(l.signal));
+      h+=`<table><tr><th colspan="2">${l.isim||T.rpLezyonDefault+' '+(i+1)} ${katLbl?'('+katLbl+')':''}</th></tr>`;
+      h+=rr(T.rpLezSev,l.seviye||'-');
+      h+=rr(T.rpLezLok,lokLbl||'-');
+      if(l.boyut)h+=rr(T.rpLezBoyut,l.boyut+' mm');
+      h+=rr(T.rpLezSig,sigTxt(l.signal));
       if(l.ivkmGuc){
-        const ivkmMap={guclu:'Güçlü',orta:'Orta',zayif:'Zayıf',minimal:'Minimal',yok:'Yok'};
-        h+=rr('IVKM',`${l.ivkmPat==='homojen'?'Homojen':(l.ivkmPat==='rim'?'Rim/Periferal':'Heterojen')} — ${ivkmMap[l.ivkmGuc]||''}`);
+        const ivkmPatMap={homojen:T.rpIVKMHomojen,rim:T.rpIVKMRim};
+        const ivkmGucMap={guclu:T.ivkmGuclu,orta:T.ivkmOrta,zayif:T.ivkmZayif,minimal:T.ivkmMinimal,yok:T.ivkmYok};
+        h+=rr(T.rpLezIVKM,`${ivkmPatMap[l.ivkmPat]||T.rpIVKMHeterojen} — ${ivkmGucMap[l.ivkmGuc]||''}`);
       }
-      if(l.notlar)h+=rr('Not',l.notlar);
+      if(l.notlar)h+=rr(T.rpLezNot,l.notlar);
       h+=`</table>`;
 
       // Differential
       const dx=scoreLezyon(l).filter(d=>d.pct>0).slice(0,8);
       if(dx.length){
-        h+=`<div class="yorum"><b>YORUM — Ayırıcı Tanı:</b></div>`;
+        h+=`<div class="yorum"><b>${T.rpYorum}</b></div>`;
         h+=dxBars(dx);
       }
     });
   }
 
-  // MR Ayırıcı Tanı Kuralları
-  h+=`<h2>SPİNAL MR AYIRICI TANI REHBERİ</h2><div class="yorum">
-    <b>Vertebral Sinyal:</b> T1 hipo + STIR hiper → Akut patoloji (fraktür, enfeksiyon, tümör) | T1 hiper → Yağlı dejenerasyon, hemanjiom, subakut kanama<br>
-    <b>Disk vs Endplate:</b> Endplate destrüksiyonu + disk tutulumu → Enfeksiyon | Endplate intakt + yükseklik kaybı → Osteoporotik Fx<br>
-    <b>İntramedüller:</b> Santral + homojen kontrast → Ependimom | Eksantrik + heterojen → Astrositom | Güçlü nodüler + flow void → Hemanjioblastom<br>
-    <b>İntradural-Ekstramedüller:</b> İzointens + güçlü homojen + dural tail → Meningiom | T2 çok hiper + dumbbell → Schwannom<br>
-    <b>Vertebral Çökme:</b> Konveks posterior + pedikül tutulumu → Malign | Retropulsiyon yok + posterior intakt → Benign<br>
-    <b>Enfeksiyon:</b> Spondilodiskit → Komşu 2 vertebra + disk | TB → Skip lezyon + paravertebral abse + disk korunabilir
-  </div>`;
+  // MRI Differential Guide
+  h+=`<h2>${T.rpDxRehber}</h2><div class="yorum">${T.rpDxContent}</div>`;
 
-  if(D.ekNotlar)h+=`<h2>EK NOTLAR</h2><p>${D.ekNotlar}</p>`;
+  if(D.ekNotlar)h+=`<h2>${T.rpEkNotlar}</h2><p>${D.ekNotlar}</p>`;
 
   sh.innerHTML=h;
   document.getElementById('reportOverlay').classList.add('show');
@@ -705,7 +1167,7 @@ function dxBars(dx){
 function closeReport(){document.getElementById('reportOverlay').classList.remove('show');}
 function copyReport(){
   const s=document.getElementById('reportSheet');const r=document.createRange();r.selectNodeContents(s);
-  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);document.execCommand('copy');sel.removeAllRanges();alert('Rapor panoya kopyalandı!');
+  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);document.execCommand('copy');sel.removeAllRanges();alert(T.copyAlert);
 }
 
 /* INIT */

@@ -154,6 +154,671 @@
 const {useState,useMemo,useRef,useEffect} = React;
 
 /* ====================================================================
+   LOCALE INFRASTRUCTURE
+   ==================================================================== */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+
+/* L(obj, key) — picks obj[key+'En'] when EN, falls back to obj[key] */
+const L = (o, k) => (RV_LOCALE === 'en' && o[k + 'En']) ? o[k + 'En'] : o[k];
+
+const T = {
+  tr: {
+    /* Topbar */
+    appTitle: "Omuz MRG — Karar Destek Sistemi",
+    appSub: "Çok-lezyonlu mimari · Ağırlıklı skorlama · Zebra + kutulu rapor formatı",
+    stepLabel: (cur, total) => `Adım ${cur}/${total}`,
+    /* Nav */
+    back: "← Geri",
+    next: "İleri →",
+    openReport: "Raporu Aç",
+    /* Step labels */
+    stepLabels: [
+      "Hasta Bilgileri","Sekanslar","Akromion & AC Eklem","Kemik & AVN",
+      "Hill-Sachs & Bony Bankart","Supraspinatus & Kalsifik","Rotator Manşet Lezyonları",
+      "Manşet Lezyon Detayı (loop)","Biceps Tendonu","Glenoid Labrum (loop)",
+      "Ligaman & Kapsül","Kıkırdak & OA","Efüzyon & Bursa","Kas & Nörovasküler",
+      "Sinoviyal & İnflamatuar","Kitle / Yer Kaplayıcı","Serbest Metin",
+      "Özet — Rotator Manşet","Özet — Labrum","Ayırıcı Tanı Paneli",
+      "Son Gözden Geçirme","Rapor Üretimi",
+    ],
+    stepSub: (lesionIdx, lesionSub, RC_SUBSTEPS, labralIdx, labralSub, LAB_SUBSTEPS) => {
+      if (lesionIdx !== -1) return `Rotator manşet lezyon alt adımı ${lesionSub+1}/${RC_SUBSTEPS}`;
+      if (labralIdx !== -1) return `Labral yırtık alt adımı ${labralSub+1}/${LAB_SUBSTEPS}`;
+      return "Gerekli alanları doldurun ve İleri ile devam edin.";
+    },
+    /* Step 0 */
+    patientInfo: "Hasta Bilgileri",
+    age: "Yaş",
+    agePlaceholder: "örn. 54",
+    sex: "Cinsiyet",
+    side: "İncelenen Taraf",
+    clinicalInfo: "Klinik Bilgi",
+    clinicalLabel: "Klinik endikasyon / şikayet",
+    clinicalPlaceholder: "Örn: Kronik ağrı, aktif abdüksiyonda zayıflık, 2 yıl önce düşme öyküsü...",
+    traumaLabel: "Travma öyküsü",
+    noTrauma: "Yok",
+    yesTrauma: "Var",
+    dislocationLabel: "Dislokasyon öyküsü",
+    noDisloc: "Yok",
+    anteriorDisloc: "Anterior",
+    posteriorDisloc: "Posterior",
+    /* Step 1 */
+    mrSequences: "Uygulanan MR Sekansları",
+    seqHint: "Uygulanan tüm sekansları seçin — rapor tekniği bölümünde listelenecek.",
+    seqT1: "T1A (aksiyel, koronal obl., sagital obl.)",
+    seqT2: "T2A (aksiyel, koronal obl., sagital obl.)",
+    seqPd: "PD yağ baskılı",
+    seqFs: "Yağ baskılı T2A",
+    seqStir: "STIR",
+    seqArtro: "MR Artrografi (direkt)",
+    seqPost: "Kontrast sonrası yağ baskılı T1A",
+    /* Step 2 */
+    acromionMorphology: "Akromion Morfolojisi",
+    osAcromiale: "Os acromiale varlığı",
+    absent: "Yok",
+    present: "Var",
+    acromioHumeralDist: "Akromiohumeral mesafe",
+    normal: "Normal (≥7 mm)",
+    narrowed: "Daralmış (<7 mm)",
+    acJoint: "Akromioklaviküler Eklem",
+    osteophyteFormation: "Osteofit formasyonu",
+    degenerativeChange: "Eklem içi dejeneratif değişiklik",
+    capsularHypertrophy: "Kapsüler hipertrofi",
+    inferiorOsteophyte: "İnferior osteofit uzanımı",
+    acBoneMarrowEdema: "AC eklemde kemik iliği ödemi",
+    jointSpaceNarrowing: "Eklem aralığında daralma",
+    /* Step 3 */
+    boneMarrow: "Kemik İliği ve Morfoloji",
+    greaterTubEdema: "Büyük tüberkül kemik iliği ödemi",
+    lesserTubEdema: "Küçük tüberkül kemik iliği ödemi",
+    avnAssessment: "Humerus Başı Avasküler Nekroz Değerlendirmesi",
+    subchondralMarrowChange: "Subkondral kemik iliği sinyal değişikliği",
+    doubleLineSign: "Çift çizgi işareti (T2)",
+    subchondralCollapse: "Subkondral kollaps",
+    avnRiskFactor: "AVN için risk faktörü (steroid/alkol/vs.)",
+    /* Step 4 */
+    hillSachsLesion: "Hill-Sachs Lezyonu",
+    hillSachsLabel: "Humerus başı posterolateralinde kompresyon defekti",
+    defectSize: "Defekt boyutu",
+    small12mm: "Küçük (<12 mm)",
+    large12mm: "Büyük (≥12 mm, engage edici olabilir)",
+    glenoidBoneLoss: "Glenoid Kemik Kaybı (Bony Bankart)",
+    glenoidBoneLossLabel: "Anteroinferior glenoid kemik kaybı / fraktür",
+    boneLossSeverity: "Kemik kaybı şiddeti",
+    mild10: "Hafif (<10%)",
+    mod1020: "Orta (10-20%)",
+    severe20: "Ciddi (>20%)",
+    revHillSachs: "Reverse Hill-Sachs (McLaughlin)",
+    revHillSachsLabel: "Humerus başı anteromedialinde kompresyon defekti",
+    revHillSachsYes: "Var (konvülziyon/elektrik şok öyküsü sorgulanır)",
+    /* Step 5 */
+    supraspinatusAssessment: "Supraspinatus Genel Değerlendirme",
+    supraspinatusHint: "Sonraki adımda her tendon için ayrı ayrı lezyon ekleyeceksiniz. Bu adım genel morfolojik ön değerlendirmedir.",
+    tendonThickeningHetero: "Tendon kalınlaşması / heterojenite",
+    tendonHeightReduction: "Tendon yüksekliğinde azalma",
+    signalLocation: "Predominant sinyal değişikliği lokalizasyonu",
+    criticalZone: "Kritik zon (insersiyo 1-2 cm proksimal)",
+    footprint: "Footprint (insersiyonel)",
+    mtjZone: "Muskulotendinöz bileşke",
+    diffuse: "Difüz / birden çok alan",
+    calcTendinitis: "Kalsifik Tendinit Değerlendirmesi",
+    calcFocus: "Tendonda kalsifik fokus",
+    calcEdema: "Kalsifikasyon çevresi ödem (rezorpsiyon fazı)",
+    cuffArthropathy: "Manşet artropatisi bulguları (süperior humeral migrasyon, kronik yırtık)",
+    /* Step 6 */
+    rcLesions: "Rotator Manşet Lezyonları",
+    rcHint: `Her patolojik bulgu için ayrı lezyon ekleyin (aynı tendon içinde birden fazla yerleşim varsa ayrı lezyon olarak kaydedebilirsiniz). Sonrasında "Tendondan başka lezyon yok" seçeneği ile devam edin.`,
+    recordedLesions: "Kaydedilen Lezyonlar",
+    lesionTitle: (i, name) => `Lezyon #${i+1} — ${name || "(tendon seçilmedi)"}`,
+    deleteBtn: "Sil",
+    addRCLesion: "+ Yeni Rotator Manşet Lezyonu Ekle",
+    noMoreLesion: "Başka lezyon yok, devam et →",
+    noRCPathology: "Rotator manşette patolojik bulgu yok, devam et →",
+    /* Step 7 */
+    rcLesionsRecorded: "Rotator Manşet Lezyonları Kaydedildi",
+    noLesionsHint: "Kayıtlı lezyon yok.",
+    lesionSticker: (idx, sub, total) => `Lezyon #${idx+1} — Adım ${sub+1}/${total}`,
+    whichTendon: "Hangi tendon?",
+    tendonLocation: "Tendon içinde lokalizasyon",
+    footprintLoc: "Footprint (insersiyonel)",
+    criticalZoneLoc: "Kritik zon (insersiyo 1-2 cm proksimali)",
+    mtjLoc: "Muskulotendinöz bileşke",
+    diffuseLoc: "Difüz / birden çok alan",
+    tendonIntegrity: "Tendon bütünlüğü",
+    tendinopathy: "Tendinopati",
+    tendinopathyHint: "Sinyal artışı, yırtık yok",
+    partialTear: "Parsiyel yırtık",
+    partialTearHint: "Tendon kalınlığının bir kısmı",
+    fullTear: "Tam kat yırtık",
+    fullTearHint: "Artiküler-bursal geçişli sıvı",
+    tendinopNoDetail: "Tendinopati için ek detay yok",
+    tendinopNoDetailHint: "Bu adımda ek detay gerekmiyor. Sonraki adıma geçin.",
+    partialFace: "Parsiyel Yırtık — Yüz",
+    articularFace: "Artiküler yüz",
+    bursalFace: "Bursal yüz",
+    intratendinous: "İntratendinöz",
+    partialThicknessLabel: "Tendon kalınlığının yaklaşık kaç %'si? (opsiyonel)",
+    partialThicknessPlaceholder: "örn. 40",
+    fullTearSizeRetrac: "Tam Kat Yırtık — Boyut & Retraksiyon",
+    defectSizeCofield: "Defekt boyutu (Cofield/DeOrio)",
+    smallSize: "Küçük (<1 cm)",
+    mediumSize: "Orta (1–3 cm)",
+    largeSize: "Geniş (3–5 cm)",
+    massiveSize: "Masif (>5 cm)",
+    retraction: "Tendon retraksiyonu (Patte)",
+    goutallierTitle: "Kas Yağlı Dejenerasyonu (Goutallier)",
+    calcificFocus: "Kalsifik Fokus",
+    calcificFocusCheck: "Bu tendon liflerinde kalsifik fokus var",
+    addMoreLesion: "+ Başka Lezyon Ekle",
+    continueBtn: "Devam et →",
+    /* Step 8 */
+    bicepsLHB: "Biceps Uzun Başı Tendonu",
+    tendonSignal: "Tendon sinyali",
+    normalSignal: "Normal",
+    increasedSignal: "Artmış (tendinopati)",
+    bicepsSheathFluid: "Biceps kılıfı sıvısı",
+    noFluid: "Yok",
+    minimalFluid: "Minimal",
+    prominentFluid: "Belirgin (tenosinovit)",
+    tendonIntegrity8: "Tendon bütünlüğü",
+    intact: "İntakt",
+    partialTear8: "Parsiyel yırtık",
+    fullTear8: "Tam kat yırtık",
+    popeyeSign: "Popeye işareti (distal kas karnı retraksiyonu)",
+    bicepsPosition: "Bicipital olukta pozisyon",
+    normalPosition: "Normal pozisyon",
+    medialSublux: "Medial subluksasyon",
+    medialDisloc: "Medial dislokasyon",
+    /* Step 9 */
+    glenoidLabrumLesions: "Glenoid Labrum Lezyonları",
+    labralHint: "Her yırtık için kadran ve tip seçin. Bankart/SLAP/ALPSA vb. ayrı ayrı kaydedilebilir.",
+    recordedLabralTears: "Kaydedilen Labral Yırtıklar",
+    labralTearTitle: (i, qName, tName) => `Yırtık #${i+1} — ${qName} — ${tName}`,
+    labralSticker: (idx, sub, total) => `Labral Yırtık #${idx+1} — Adım ${sub+1}/${total}`,
+    tearLocation: "Yırtık Lokalizasyonu (Kadran)",
+    tearCategory: "Yırtık Kategorisi",
+    slapSuperior: "SLAP (Süperior)",
+    slapHint: "Biceps ankoru ile ilişkili",
+    anteriorBankart: "Anterior (Bankart spektrumu)",
+    anteriorBankartHint: "Bankart, kemik Bankart, ALPSA, Perthes, GLAD, HAGL",
+    posterior: "Posterior",
+    posteriorHint: "Reverse Bankart, Kim",
+    simpleTear: "Basit labral yırtık / dejenerasyon",
+    simpleTearHint: "Spesifik alt tip tanımlanmamış",
+    slapSubtype: "SLAP Alt Tipi",
+    anteriorVariant: "Anterior Labral Varyant",
+    posteriorVariant: "Posterior Labral Varyant",
+    simpleTearTitle: "Basit Labral Yırtık",
+    simpleTearHintText: "Spesifik alt tip tanımlanmadı; lokalize sinyal değişikliği olarak raporlanacak.",
+    accompanyingParalabralCyst: "Eşlik eden paralabral kist",
+    addLabralTear: "+ Yeni Labral Yırtık Ekle",
+    noLabralTear: "Labral yırtık yok, devam et →",
+    noMoreLabralTear: "Başka yırtık yok, devam et →",
+    additionalLabralFindings: "Ek Labral Bulgular",
+    labralDegen: "Labral dejenerasyon (yırtık olmadan)",
+    labralDegenPresent: "Var (sinyal artışı)",
+    paralabralCystLoc: "Paralabral kist lokalizasyonu",
+    spinoglenoid: "Spinoglenoid çentik",
+    suprascapular: "Suprascapular çentik",
+    other: "Diğer",
+    simpleBasit: "Basit",
+    /* Step 10 */
+    glenohumLigaments: "Glenohumeral Ligamanlar",
+    sghl: "SGHL (süperior glenohumeral lig.)",
+    mghl: "MGHL (orta glenohumeral lig.)",
+    ighl: "IGHL (inferior glenohumeral lig.)",
+    ighlAbnormal: "Yırtık / HAGL",
+    chl: "Korakohumeral ligaman (CHL)",
+    chlThickened: "Kalınlaşmış (>4 mm)",
+    capsuleRotatorInterval: "Kapsül & Rotator İnterval",
+    rotatorInterval: "Rotator interval",
+    rotatorIntervalErased: "Silinmiş / sinyal artmış",
+    axillaryThickening: "Aksiller reseste kapsüler kalınlaşma (>4 mm)",
+    postCapsuleLaxity: "Posterior kapsül laksitesi",
+    clinicalFrozen: "Klinik: ağrılı hareket kısıtlılığı",
+    clinicalFrozenPresent: "Var (adeziv kapsülit düşündürücü)",
+    /* Step 11 */
+    glenohumCartilage: "Glenohumeral Eklem Kıkırdağı",
+    mildLoss: "Hafif kayıp",
+    moderateLoss: "Orta kayıp",
+    markedLoss: "Belirgin kayıp",
+    degenerativeChanges: "Dejeneratif Değişiklikler",
+    subchondralCystSclerosis: "Subkondral kist/skleroz",
+    glenohumOsteophyte: "Glenohumeral osteofit",
+    jointSpaceNarrow: "Eklem aralığında daralma",
+    /* Step 12 */
+    jointEffusion: "Eklem Efüzyonu",
+    noEffusion: "Yok",
+    minimal: "Minimal",
+    moderate: "Orta",
+    prominent: "Belirgin",
+    subacromialBursa: "Subakromial-Subdeltoid Bursa",
+    noFluidBursa: "Sıvı yok",
+    bursalWall: "Bursal duvar",
+    normalBursaWall: "Normal",
+    thickenedBursaWall: "Kalınlaşmış",
+    postContrastEnhancement: "Kontrast sonrası boyanma",
+    focal: "Fokal",
+    bursalWallEnh: "Bursal duvar",
+    diffuseSynovitis: "Yaygın sinovit",
+    /* Step 13 */
+    muscleAssessment: "Kas Değerlendirmesi",
+    muscleHint: "Rotator manşet kaslarında yağlı dejenerasyon her lezyon kaydında ayrıca girilmiştir. Bu adım ek nörovasküler/denervasyon bulgularına odaklıdır.",
+    deltoidAbnormality: "Deltoid kası anormalliği",
+    teresMinorDenerv: "Teres minor denervasyonu (kuadrilateral bölge sendromu)",
+    infraspinatusDenerv: "İnfraspinatus denervasyonu (suprascapular nöropati)",
+    /* Step 14 */
+    synovialInflammatory: "Sinoviyal & İnflamatuar Bulgular",
+    hemosiderinLabel: "Sinoviyal kalınlaşmada hemosiderin (düşük T1/T2)",
+    bloomingLabel: "GRE blooming artefaktı",
+    hemarthrosLabel: "Hemartroz / tekrarlayan hemoraji",
+    earlyErosion: "Subkondral kemikte erken erozyon",
+    periArticularEdema: "Periartiküler yumuşak doku ödemi/selülit",
+    clinicalSeptic: "Klinik: ateş / lökositoz / lokal ısı artışı",
+    /* Step 15 */
+    massLesion: "Kitle / Yer Kaplayıcı Lezyon",
+    massLesionLabel: "Periartiküler veya eklem içi kitle lezyonu",
+    massPresent: "Var — ileri değerlendirme önerilir",
+    /* Step 16 */
+    freeText: "Ek / Serbest Metin Bulgular",
+    freeTextLabel: "Yukarıdaki yapılandırılmış girdilere eklenecek ek bulgular",
+    freeTextPlaceholder: "Örn: Pektoralis majorda travmatik avülsiyon, kronik bursit sekeli, scapulothoracic bursit...",
+    /* Step 17 */
+    rcSummary: "Lezyon Özeti — Rotator Manşet",
+    /* Step 18 */
+    labralSummary: "Lezyon Özeti — Labrum",
+    noLabralTears: "Kayıtlı labral yırtık yok.",
+    quadrant: (name) => `${name} kadran`,
+    /* Step 19 */
+    diffDx: "Ayırıcı Tanı Olasılıkları",
+    diffDxHint: "Olasılıklar, girilen bulguların ağırlıklı skorlamasıyla hesaplanmıştır (yalnızca klinik korelasyon ile değerlendirilmelidir).",
+    noPosFindings: "Henüz yeterli pozitif bulgu girilmedi.",
+    /* Step 20 */
+    finalReview: "Son Gözden Geçirme",
+    finalReviewHint: "Rapor oluşturulmadan önce aşağıdaki özeti kontrol edin. Gerekirse geri dönüp değişiklik yapabilirsiniz.",
+    sideLabel: "Taraf",
+    ageLabel: "Yaş",
+    sexLabel: "Cinsiyet",
+    traumaLabel20: "Travma",
+    dislocationLabel20: "Dislokasyon",
+    acromionLabel: "Akromion",
+    rcLesionCount: "Rotator manşet lezyonu",
+    labralTearCount: "Labral yırtık",
+    hillSachsLabel20: "Hill-Sachs",
+    bonyBankartLabel20: "Bony Bankart",
+    /* Step 21 */
+    reportGeneration: "Rapor Üretimi",
+    reportGenerationHint: `Zebra + kutulu formatta rapor hazır. "Raporu Oluştur" butonu ile görüntüleyebilir; ardından yazdırma, panoya kopyalama veya HTML olarak indirme yapabilirsiniz.`,
+    generateReport: "Raporu Oluştur / Göster",
+    /* Overlay buttons */
+    printBtn: "🖨 Yazdır",
+    copyBtn: "📋 Kopyala",
+    downloadBtn: "⬇ HTML İndir",
+    closeBtn: "✕ Kapat",
+    /* Overlay report headers */
+    reportMainTitle: "OMUZ MANYETİK REZONANS GÖRÜNTÜLEME RAPORU",
+    reportHeaderSub: (side, age, sex, date) => `İncelenen taraf: ${side} Omuz · Yaş: ${age} · Cinsiyet: ${sex} · Tarih: ${date}`,
+    clinicalInfoHead: "KLİNİK BİLGİ",
+    noClinicalInfo: "Klinik bilgi belirtilmemiştir.",
+    techniqueHead: "İNCELEME TEKNİĞİ",
+    noTechnique: "Teknik belirtilmemiştir.",
+    findingsBone: "BULGULAR — KEMİK YAPILAR",
+    findingsAcromion: "AKROMİON & AKROMİOKLAVİKÜLER EKLEM",
+    findingsRC: "ROTATOR MANŞET",
+    findingsBiceps: "BİCEPS TENDONU",
+    findingsLabrum: "GLENOİD LABRUM",
+    findingsLig: "GLENOHUMERAL LİGAMANLAR & KAPSÜL",
+    findingsCart: "EKLEM KIKIRDAĞI & DEJENERATİF DEĞİŞİKLİKLER",
+    findingsFluid: "EKLEM SIVISI & SUBAKROMİAL-SUBDELTOİD BURSA",
+    findingsMuscle: "KAS YAPILARI & NÖROVASKÜLER",
+    findingsOther: "DİĞER BULGULAR",
+    impression: "Yorum",
+    diffDxTable: "AYIRICI TANI OLASILIKLARI",
+    diffDxColDx: "Tanı",
+    diffDxColCat: "Kategori",
+    diffDxColMatch: "Uyum",
+    sigLine: "Raporlayan Radyolog: ________________________",
+    sigDate: (date) => `İmza & Tarih: ${date}`,
+    /* Copy/alert */
+    copySuccess: "Rapor panoya kopyalandı.",
+    copyFail: "Kopyalama başarısız.",
+    abnormal: "Anormal",
+    /* Chips */
+    chipTendinopathy: "Tendinopati",
+    chipPartialTear: "Parsiyel yırtık",
+    chipFullTear: "Tam kat yırtık",
+    chipCalcific: "Kalsifik",
+  },
+  en: {
+    /* Topbar */
+    appTitle: "Shoulder MRI — Decision Support System",
+    appSub: "Multi-lesion architecture · Weighted scoring · Zebra + boxed report format",
+    stepLabel: (cur, total) => `Step ${cur}/${total}`,
+    /* Nav */
+    back: "← Back",
+    next: "Next →",
+    openReport: "Open Report",
+    /* Step labels */
+    stepLabels: [
+      "Patient Information","Sequences","Acromion & AC Joint","Bone & AVN",
+      "Hill-Sachs & Bony Bankart","Supraspinatus & Calcific","Rotator Cuff Lesions",
+      "Cuff Lesion Detail (loop)","Biceps Tendon","Glenoid Labrum (loop)",
+      "Ligaments & Capsule","Cartilage & OA","Effusion & Bursa","Muscle & Neurovascular",
+      "Synovial & Inflammatory","Mass / Space-Occupying","Free Text",
+      "Summary — Rotator Cuff","Summary — Labrum","Differential Diagnosis Panel",
+      "Final Review","Report Generation",
+    ],
+    stepSub: (lesionIdx, lesionSub, RC_SUBSTEPS, labralIdx, labralSub, LAB_SUBSTEPS) => {
+      if (lesionIdx !== -1) return `Rotator cuff lesion sub-step ${lesionSub+1}/${RC_SUBSTEPS}`;
+      if (labralIdx !== -1) return `Labral tear sub-step ${labralSub+1}/${LAB_SUBSTEPS}`;
+      return "Fill in required fields and click Next to continue.";
+    },
+    /* Step 0 */
+    patientInfo: "Patient Information",
+    age: "Age",
+    agePlaceholder: "e.g. 54",
+    sex: "Sex",
+    side: "Side Examined",
+    clinicalInfo: "Clinical Information",
+    clinicalLabel: "Clinical indication / complaint",
+    clinicalPlaceholder: "e.g. Chronic pain, weakness on active abduction, fall 2 years ago...",
+    traumaLabel: "Trauma history",
+    noTrauma: "None",
+    yesTrauma: "Present",
+    dislocationLabel: "Dislocation history",
+    noDisloc: "None",
+    anteriorDisloc: "Anterior",
+    posteriorDisloc: "Posterior",
+    /* Step 1 */
+    mrSequences: "MRI Sequences Performed",
+    seqHint: "Select all sequences performed — they will be listed in the technique section.",
+    seqT1: "T1W (axial, coronal oblique, sagittal oblique)",
+    seqT2: "T2W (axial, coronal oblique, sagittal oblique)",
+    seqPd: "PD fat-saturated",
+    seqFs: "Fat-saturated T2W",
+    seqStir: "STIR",
+    seqArtro: "MR Arthrography (direct)",
+    seqPost: "Post-contrast fat-saturated T1W",
+    /* Step 2 */
+    acromionMorphology: "Acromion Morphology",
+    osAcromiale: "Os acromiale",
+    absent: "Absent",
+    present: "Present",
+    acromioHumeralDist: "Acromiohumeral distance",
+    normal: "Normal (≥7 mm)",
+    narrowed: "Narrowed (<7 mm)",
+    acJoint: "Acromioclavicular Joint",
+    osteophyteFormation: "Osteophyte formation",
+    degenerativeChange: "Intra-articular degenerative change",
+    capsularHypertrophy: "Capsular hypertrophy",
+    inferiorOsteophyte: "Inferior osteophyte extension",
+    acBoneMarrowEdema: "AC joint bone marrow edema",
+    jointSpaceNarrowing: "Joint space narrowing",
+    /* Step 3 */
+    boneMarrow: "Bone Marrow and Morphology",
+    greaterTubEdema: "Greater tuberosity bone marrow edema",
+    lesserTubEdema: "Lesser tuberosity bone marrow edema",
+    avnAssessment: "Humeral Head Avascular Necrosis Assessment",
+    subchondralMarrowChange: "Subchondral bone marrow signal change",
+    doubleLineSign: "Double-line sign (T2)",
+    subchondralCollapse: "Subchondral collapse",
+    avnRiskFactor: "AVN risk factor (steroid/alcohol/etc.)",
+    /* Step 4 */
+    hillSachsLesion: "Hill-Sachs Lesion",
+    hillSachsLabel: "Compression defect in posterolateral humeral head",
+    defectSize: "Defect size",
+    small12mm: "Small (<12 mm)",
+    large12mm: "Large (≥12 mm, potentially engaging)",
+    glenoidBoneLoss: "Glenoid Bone Loss (Bony Bankart)",
+    glenoidBoneLossLabel: "Anteroinferior glenoid bone loss / fracture",
+    boneLossSeverity: "Bone loss severity",
+    mild10: "Mild (<10%)",
+    mod1020: "Moderate (10–20%)",
+    severe20: "Severe (>20%)",
+    revHillSachs: "Reverse Hill-Sachs (McLaughlin)",
+    revHillSachsLabel: "Compression defect in anteromedial humeral head",
+    revHillSachsYes: "Present (history of seizure/electrical shock queried)",
+    /* Step 5 */
+    supraspinatusAssessment: "Supraspinatus General Assessment",
+    supraspinatusHint: "In the next step you will add individual lesions per tendon. This step is a general morphological pre-assessment.",
+    tendonThickeningHetero: "Tendon thickening / heterogeneity",
+    tendonHeightReduction: "Reduction in tendon height",
+    signalLocation: "Predominant signal change localization",
+    criticalZone: "Critical zone (1–2 cm proximal to insertion)",
+    footprint: "Footprint (insertional)",
+    mtjZone: "Myotendinous junction",
+    diffuse: "Diffuse / multiple areas",
+    calcTendinitis: "Calcific Tendinitis Assessment",
+    calcFocus: "Calcific focus in tendon",
+    calcEdema: "Peri-calcific edema (resorption phase)",
+    cuffArthropathy: "Cuff arthropathy findings (superior humeral migration, chronic tear)",
+    /* Step 6 */
+    rcLesions: "Rotator Cuff Lesions",
+    rcHint: `Add a separate lesion for each pathological finding (multiple locations within the same tendon can be recorded as separate lesions). Then select "No more lesions" to continue.`,
+    recordedLesions: "Recorded Lesions",
+    lesionTitle: (i, name) => `Lesion #${i+1} — ${name || "(tendon not selected)"}`,
+    deleteBtn: "Delete",
+    addRCLesion: "+ Add New Rotator Cuff Lesion",
+    noMoreLesion: "No more lesions, continue →",
+    noRCPathology: "No pathological finding in rotator cuff, continue →",
+    /* Step 7 */
+    rcLesionsRecorded: "Rotator Cuff Lesions Recorded",
+    noLesionsHint: "No recorded lesions.",
+    lesionSticker: (idx, sub, total) => `Lesion #${idx+1} — Step ${sub+1}/${total}`,
+    whichTendon: "Which tendon?",
+    tendonLocation: "Location within tendon",
+    footprintLoc: "Footprint (insertional)",
+    criticalZoneLoc: "Critical zone (1–2 cm proximal to insertion)",
+    mtjLoc: "Myotendinous junction",
+    diffuseLoc: "Diffuse / multiple areas",
+    tendonIntegrity: "Tendon integrity",
+    tendinopathy: "Tendinopathy",
+    tendinopathyHint: "Signal increase, no tear",
+    partialTear: "Partial tear",
+    partialTearHint: "Partial tendon thickness",
+    fullTear: "Full-thickness tear",
+    fullTearHint: "Fluid signal across articular–bursal surfaces",
+    tendinopNoDetail: "No additional detail for tendinopathy",
+    tendinopNoDetailHint: "No additional detail required at this step. Proceed to next.",
+    partialFace: "Partial Tear — Surface",
+    articularFace: "Articular surface",
+    bursalFace: "Bursal surface",
+    intratendinous: "Intratendinous",
+    partialThicknessLabel: "Approximately what % of tendon thickness? (optional)",
+    partialThicknessPlaceholder: "e.g. 40",
+    fullTearSizeRetrac: "Full-Thickness Tear — Size & Retraction",
+    defectSizeCofield: "Defect size (Cofield/DeOrio)",
+    smallSize: "Small (<1 cm)",
+    mediumSize: "Medium (1–3 cm)",
+    largeSize: "Large (3–5 cm)",
+    massiveSize: "Massive (>5 cm)",
+    retraction: "Tendon retraction (Patte)",
+    goutallierTitle: "Fatty Degeneration of Muscle (Goutallier)",
+    calcificFocus: "Calcific Focus",
+    calcificFocusCheck: "Calcific focus present within this tendon",
+    addMoreLesion: "+ Add Another Lesion",
+    continueBtn: "Continue →",
+    /* Step 8 */
+    bicepsLHB: "Biceps Long Head Tendon",
+    tendonSignal: "Tendon signal",
+    normalSignal: "Normal",
+    increasedSignal: "Increased (tendinopathy)",
+    bicepsSheathFluid: "Biceps sheath fluid",
+    noFluid: "None",
+    minimalFluid: "Minimal",
+    prominentFluid: "Prominent (tenosynovitis)",
+    tendonIntegrity8: "Tendon integrity",
+    intact: "Intact",
+    partialTear8: "Partial tear",
+    fullTear8: "Full-thickness tear",
+    popeyeSign: "Popeye sign (distal muscle belly retraction)",
+    bicepsPosition: "Position in bicipital groove",
+    normalPosition: "Normal position",
+    medialSublux: "Medial subluxation",
+    medialDisloc: "Medial dislocation",
+    /* Step 9 */
+    glenoidLabrumLesions: "Glenoid Labrum Lesions",
+    labralHint: "Select quadrant and type for each tear. Bankart/SLAP/ALPSA etc. can be recorded separately.",
+    recordedLabralTears: "Recorded Labral Tears",
+    labralTearTitle: (i, qName, tName) => `Tear #${i+1} — ${qName} — ${tName}`,
+    labralSticker: (idx, sub, total) => `Labral Tear #${idx+1} — Step ${sub+1}/${total}`,
+    tearLocation: "Tear Location (Quadrant)",
+    tearCategory: "Tear Category",
+    slapSuperior: "SLAP (Superior)",
+    slapHint: "Related to biceps anchor",
+    anteriorBankart: "Anterior (Bankart spectrum)",
+    anteriorBankartHint: "Bankart, bony Bankart, ALPSA, Perthes, GLAD, HAGL",
+    posterior: "Posterior",
+    posteriorHint: "Reverse Bankart, Kim",
+    simpleTear: "Simple labral tear / degeneration",
+    simpleTearHint: "Specific subtype not defined",
+    slapSubtype: "SLAP Subtype",
+    anteriorVariant: "Anterior Labral Variant",
+    posteriorVariant: "Posterior Labral Variant",
+    simpleTearTitle: "Simple Labral Tear",
+    simpleTearHintText: "No specific subtype defined; will be reported as localized signal change.",
+    accompanyingParalabralCyst: "Accompanying paralabral cyst",
+    addLabralTear: "+ Add New Labral Tear",
+    noLabralTear: "No labral tear, continue →",
+    noMoreLabralTear: "No more tears, continue →",
+    additionalLabralFindings: "Additional Labral Findings",
+    labralDegen: "Labral degeneration (without tear)",
+    labralDegenPresent: "Present (signal increase)",
+    paralabralCystLoc: "Paralabral cyst location",
+    spinoglenoid: "Spinoglenoid notch",
+    suprascapular: "Suprascapular notch",
+    other: "Other",
+    simpleBasit: "Simple",
+    /* Step 10 */
+    glenohumLigaments: "Glenohumeral Ligaments",
+    sghl: "SGHL (superior glenohumeral ligament)",
+    mghl: "MGHL (middle glenohumeral ligament)",
+    ighl: "IGHL (inferior glenohumeral ligament)",
+    ighlAbnormal: "Torn / HAGL",
+    chl: "Coracohumeral ligament (CHL)",
+    chlThickened: "Thickened (>4 mm)",
+    capsuleRotatorInterval: "Capsule & Rotator Interval",
+    rotatorInterval: "Rotator interval",
+    rotatorIntervalErased: "Obliterated / increased signal",
+    axillaryThickening: "Axillary recess capsular thickening (>4 mm)",
+    postCapsuleLaxity: "Posterior capsular laxity",
+    clinicalFrozen: "Clinical: painful range-of-motion limitation",
+    clinicalFrozenPresent: "Present (suggestive of adhesive capsulitis)",
+    /* Step 11 */
+    glenohumCartilage: "Glenohumeral Joint Cartilage",
+    mildLoss: "Mild loss",
+    moderateLoss: "Moderate loss",
+    markedLoss: "Marked loss",
+    degenerativeChanges: "Degenerative Changes",
+    subchondralCystSclerosis: "Subchondral cyst/sclerosis",
+    glenohumOsteophyte: "Glenohumeral osteophyte",
+    jointSpaceNarrow: "Joint space narrowing",
+    /* Step 12 */
+    jointEffusion: "Joint Effusion",
+    noEffusion: "None",
+    minimal: "Minimal",
+    moderate: "Moderate",
+    prominent: "Prominent",
+    subacromialBursa: "Subacromial-Subdeltoid Bursa",
+    noFluidBursa: "No fluid",
+    bursalWall: "Bursal wall",
+    normalBursaWall: "Normal",
+    thickenedBursaWall: "Thickened",
+    postContrastEnhancement: "Post-contrast enhancement",
+    focal: "Focal",
+    bursalWallEnh: "Bursal wall",
+    diffuseSynovitis: "Diffuse synovitis",
+    /* Step 13 */
+    muscleAssessment: "Muscle Assessment",
+    muscleHint: "Fatty degeneration of rotator cuff muscles is entered per lesion record. This step focuses on additional neurovascular/denervation findings.",
+    deltoidAbnormality: "Deltoid muscle abnormality",
+    teresMinorDenerv: "Teres minor denervation (quadrilateral space syndrome)",
+    infraspinatusDenerv: "Infraspinatus denervation (suprascapular neuropathy)",
+    /* Step 14 */
+    synovialInflammatory: "Synovial & Inflammatory Findings",
+    hemosiderinLabel: "Hemosiderin in synovial thickening (low T1/T2)",
+    bloomingLabel: "GRE blooming artifact",
+    hemarthrosLabel: "Hemarthrosis / recurrent hemorrhage",
+    earlyErosion: "Early erosion of subchondral bone",
+    periArticularEdema: "Periarticular soft tissue edema/cellulitis",
+    clinicalSeptic: "Clinical: fever / leukocytosis / local warmth",
+    /* Step 15 */
+    massLesion: "Mass / Space-Occupying Lesion",
+    massLesionLabel: "Periarticular or intra-articular mass lesion",
+    massPresent: "Present — further evaluation recommended",
+    /* Step 16 */
+    freeText: "Additional / Free Text Findings",
+    freeTextLabel: "Additional findings to append to structured entries above",
+    freeTextPlaceholder: "e.g. Traumatic avulsion of pectoralis major, chronic bursitis sequela, scapulothoracic bursitis...",
+    /* Step 17 */
+    rcSummary: "Lesion Summary — Rotator Cuff",
+    /* Step 18 */
+    labralSummary: "Lesion Summary — Labrum",
+    noLabralTears: "No recorded labral tears.",
+    quadrant: (name) => `${name} quadrant`,
+    /* Step 19 */
+    diffDx: "Differential Diagnosis Probabilities",
+    diffDxHint: "Probabilities are calculated from weighted scoring of entered findings (for use only with clinical correlation).",
+    noPosFindings: "Insufficient positive findings entered yet.",
+    /* Step 20 */
+    finalReview: "Final Review",
+    finalReviewHint: "Check the summary below before generating the report. You may go back to make changes.",
+    sideLabel: "Side",
+    ageLabel: "Age",
+    sexLabel: "Sex",
+    traumaLabel20: "Trauma",
+    dislocationLabel20: "Dislocation",
+    acromionLabel: "Acromion",
+    rcLesionCount: "Rotator cuff lesions",
+    labralTearCount: "Labral tears",
+    hillSachsLabel20: "Hill-Sachs",
+    bonyBankartLabel20: "Bony Bankart",
+    /* Step 21 */
+    reportGeneration: "Report Generation",
+    reportGenerationHint: `Report ready in zebra + boxed format. Click "Generate Report" to view; then print, copy to clipboard, or download as HTML.`,
+    generateReport: "Generate / Show Report",
+    /* Overlay buttons */
+    printBtn: "🖨 Print",
+    copyBtn: "📋 Copy",
+    downloadBtn: "⬇ Download HTML",
+    closeBtn: "✕ Close",
+    /* Overlay report headers */
+    reportMainTitle: "SHOULDER MAGNETIC RESONANCE IMAGING REPORT",
+    reportHeaderSub: (side, age, sex, date) => `Side examined: ${side} Shoulder · Age: ${age} · Sex: ${sex} · Date: ${date}`,
+    clinicalInfoHead: "CLINICAL INFORMATION",
+    noClinicalInfo: "No clinical information provided.",
+    techniqueHead: "TECHNIQUE",
+    noTechnique: "Technique not specified.",
+    findingsBone: "FINDINGS — BONE STRUCTURES",
+    findingsAcromion: "ACROMION & ACROMIOCLAVICULAR JOINT",
+    findingsRC: "ROTATOR CUFF",
+    findingsBiceps: "BICEPS TENDON",
+    findingsLabrum: "GLENOID LABRUM",
+    findingsLig: "GLENOHUMERAL LIGAMENTS & CAPSULE",
+    findingsCart: "ARTICULAR CARTILAGE & DEGENERATIVE CHANGES",
+    findingsFluid: "JOINT FLUID & SUBACROMIAL-SUBDELTOID BURSA",
+    findingsMuscle: "MUSCLE STRUCTURES & NEUROVASCULAR",
+    findingsOther: "OTHER FINDINGS",
+    impression: "Impression",
+    diffDxTable: "DIFFERENTIAL DIAGNOSIS PROBABILITIES",
+    diffDxColDx: "Diagnosis",
+    diffDxColCat: "Category",
+    diffDxColMatch: "Match",
+    sigLine: "Reporting Radiologist: ________________________",
+    sigDate: (date) => `Signature & Date: ${date}`,
+    abnormal: "Abnormal",
+    /* Copy/alert */
+    copySuccess: "Report copied to clipboard.",
+    copyFail: "Copy failed.",
+    /* Chips */
+    chipTendinopathy: "Tendinopathy",
+    chipPartialTear: "Partial tear",
+    chipFullTear: "Full-thickness tear",
+    chipCalcific: "Calcific",
+  },
+}[RV_LOCALE];
+
+/* ====================================================================
    OMUZ MRG — KARAR DESTEK SİSTEMİ v1.0
    Mimari: Çok-lezyonlu loop, else-if ağırlıklı skorlama,
            finalize()→idx=-1 reset, DOM overlay export,
@@ -161,95 +826,101 @@ const {useState,useMemo,useRef,useEffect} = React;
    ==================================================================== */
 
 /* Sabit listeler */
-const SIDE = ["Sağ","Sol"];
-const SEX = ["Kadın","Erkek"];
+const SIDE = [
+  {id:"Sağ", label:"Sağ", labelEn:"Right"},
+  {id:"Sol", label:"Sol", labelEn:"Left"},
+];
+const SEX = [
+  {id:"Kadın", label:"Kadın", labelEn:"Female"},
+  {id:"Erkek", label:"Erkek", labelEn:"Male"},
+];
 const RC_TENDONS = [
-  {id:"supra", name:"Supraspinatus"},
-  {id:"infra", name:"İnfraspinatus"},
-  {id:"subsc", name:"Subskapularis"},
-  {id:"teres", name:"Teres minor"},
+  {id:"supra", name:"Supraspinatus", nameEn:"Supraspinatus"},
+  {id:"infra", name:"İnfraspinatus", nameEn:"Infraspinatus"},
+  {id:"subsc", name:"Subskapularis", nameEn:"Subscapularis"},
+  {id:"teres", name:"Teres minor",   nameEn:"Teres minor"},
 ];
 const BIGLIANI = [
-  {id:"t1", label:"Tip I — Düz",      txt:"Düz akromion (Tip I)"},
-  {id:"t2", label:"Tip II — Kurvilineer", txt:"Kurvilineer akromion (Tip II)"},
-  {id:"t3", label:"Tip III — Kancamsı", txt:"Kanca şeklinde akromion (Tip III) — subakromial sıkışmaya predispoze"},
-  {id:"t4", label:"Tip IV — Konveks", txt:"Konveks akromion (Tip IV)"},
+  {id:"t1", label:"Tip I — Düz",           labelEn:"Type I — Flat",       txt:"Düz akromion (Tip I)",                                                      txtEn:"Flat acromion (Type I)"},
+  {id:"t2", label:"Tip II — Kurvilineer",   labelEn:"Type II — Curved",    txt:"Kurvilineer akromion (Tip II)",                                              txtEn:"Curved acromion (Type II)"},
+  {id:"t3", label:"Tip III — Kancamsı",     labelEn:"Type III — Hooked",   txt:"Kanca şeklinde akromion (Tip III) — subakromial sıkışmaya predispoze",       txtEn:"Hooked acromion (Type III) — predisposed to subacromial impingement"},
+  {id:"t4", label:"Tip IV — Konveks",       labelEn:"Type IV — Convex",    txt:"Konveks akromion (Tip IV)",                                                  txtEn:"Convex acromion (Type IV)"},
 ];
 const GOUTALLIER = [
-  {id:0, label:"Grade 0", txt:"normal kas (yağlı infiltrasyon yok)"},
-  {id:1, label:"Grade 1", txt:"seyrek yağ çizgileri"},
-  {id:2, label:"Grade 2", txt:"yağ < kas hacmi"},
-  {id:3, label:"Grade 3", txt:"yağ = kas hacmi"},
-  {id:4, label:"Grade 4", txt:"yağ > kas hacmi"},
+  {id:0, label:"Grade 0", txt:"normal kas (yağlı infiltrasyon yok)",   txtEn:"normal muscle (no fatty infiltration)"},
+  {id:1, label:"Grade 1", txt:"seyrek yağ çizgileri",                  txtEn:"scattered fatty streaks"},
+  {id:2, label:"Grade 2", txt:"yağ < kas hacmi",                       txtEn:"fat < muscle volume"},
+  {id:3, label:"Grade 3", txt:"yağ = kas hacmi",                       txtEn:"fat = muscle volume"},
+  {id:4, label:"Grade 4", txt:"yağ > kas hacmi",                       txtEn:"fat > muscle volume"},
 ];
 const PATTE = [
-  {id:1, label:"Patte I",  txt:"tendon ucu humerus başı seviyesinde (retraksiyon yok/minimal)"},
-  {id:2, label:"Patte II", txt:"tendon ucu humerus başı ile glenoid arasında"},
-  {id:3, label:"Patte III",txt:"tendon ucu glenoid seviyesinde veya medialinde (belirgin retraksiyon)"},
+  {id:1, label:"Patte I",   txt:"tendon ucu humerus başı seviyesinde (retraksiyon yok/minimal)",              txtEn:"tendon end at humeral head level (no/minimal retraction)"},
+  {id:2, label:"Patte II",  txt:"tendon ucu humerus başı ile glenoid arasında",                               txtEn:"tendon end between humeral head and glenoid"},
+  {id:3, label:"Patte III", txt:"tendon ucu glenoid seviyesinde veya medialinde (belirgin retraksiyon)",       txtEn:"tendon end at glenoid level or medial to it (marked retraction)"},
 ];
 const LABRAL_QUADRANTS = [
-  {id:"sup", name:"Süperior"},
-  {id:"ant-sup", name:"Anterosuperior"},
-  {id:"ant", name:"Anterior"},
-  {id:"ant-inf", name:"Anteroinferior"},
-  {id:"inf", name:"İnferior"},
-  {id:"post-inf", name:"Posteroinferior"},
-  {id:"post", name:"Posterior"},
-  {id:"post-sup", name:"Posterosuperior"},
+  {id:"sup",      name:"Süperior",        nameEn:"Superior"},
+  {id:"ant-sup",  name:"Anterosuperior",  nameEn:"Anterosuperior"},
+  {id:"ant",      name:"Anterior",        nameEn:"Anterior"},
+  {id:"ant-inf",  name:"Anteroinferior",  nameEn:"Anteroinferior"},
+  {id:"inf",      name:"İnferior",        nameEn:"Inferior"},
+  {id:"post-inf", name:"Posteroinferior", nameEn:"Posteroinferior"},
+  {id:"post",     name:"Posterior",       nameEn:"Posterior"},
+  {id:"post-sup", name:"Posterosuperior", nameEn:"Posterosuperior"},
 ];
 const SLAP_TYPES = [
-  {id:"s1", name:"SLAP Tip I", txt:"süperior labrumda dejeneratif fibrilasyon; biseps ankoru sağlam"},
-  {id:"s2", name:"SLAP Tip II", txt:"süperior labrum ve biseps ankorunun glenoidden ayrılması (en sık)"},
-  {id:"s3", name:"SLAP Tip III", txt:"süperior labrumun kova sapı yırtığı; biseps ankoru intakt"},
-  {id:"s4", name:"SLAP Tip IV", txt:"süperior labrumun kova sapı yırtığı + biseps tendonuna uzanım"},
-  {id:"s5", name:"SLAP Tip V", txt:"SLAP II + anteroinferior Bankart lezyonu"},
-  {id:"s6", name:"SLAP Tip VI", txt:"süperior labrumda flep yırtığı"},
-  {id:"s7", name:"SLAP Tip VII", txt:"SLAP II + MGHL'ye uzanım"},
+  {id:"s1", name:"SLAP Tip I",   nameEn:"SLAP Type I",   txt:"süperior labrumda dejeneratif fibrilasyon; biseps ankoru sağlam",                              txtEn:"degenerative fibrillation of superior labrum; biceps anchor intact"},
+  {id:"s2", name:"SLAP Tip II",  nameEn:"SLAP Type II",  txt:"süperior labrum ve biseps ankorunun glenoidden ayrılması (en sık)",                            txtEn:"detachment of superior labrum and biceps anchor from glenoid (most common)"},
+  {id:"s3", name:"SLAP Tip III", nameEn:"SLAP Type III", txt:"süperior labrumun kova sapı yırtığı; biseps ankoru intakt",                                    txtEn:"bucket-handle tear of superior labrum; biceps anchor intact"},
+  {id:"s4", name:"SLAP Tip IV",  nameEn:"SLAP Type IV",  txt:"süperior labrumun kova sapı yırtığı + biseps tendonuna uzanım",                               txtEn:"bucket-handle tear of superior labrum + extension into biceps tendon"},
+  {id:"s5", name:"SLAP Tip V",   nameEn:"SLAP Type V",   txt:"SLAP II + anteroinferior Bankart lezyonu",                                                     txtEn:"SLAP II + anteroinferior Bankart lesion"},
+  {id:"s6", name:"SLAP Tip VI",  nameEn:"SLAP Type VI",  txt:"süperior labrumda flep yırtığı",                                                              txtEn:"flap tear of superior labrum"},
+  {id:"s7", name:"SLAP Tip VII", nameEn:"SLAP Type VII", txt:"SLAP II + MGHL'ye uzanım",                                                                    txtEn:"SLAP II + extension into MGHL"},
 ];
 const ANT_LABRAL_VARIANTS = [
-  {id:"bankart",   name:"Bankart (klasik)",     txt:"anteroinferior labroligamentöz kompleksin glenoidden soyulması (periost YIRTIK)"},
-  {id:"bony",      name:"Bony Bankart",         txt:"anteroinferior glenoid kırığı ile birlikte labroligamentöz avülsiyon"},
-  {id:"alpsa",     name:"ALPSA",                txt:"anterior labroligamentöz periosteal sleeve avülsiyonu (periost İNTAKT; labrum mediale deplase)"},
-  {id:"perthes",   name:"Perthes",              txt:"anterior labrum glenoidden ayrılmış ancak periost intakt; anatomik pozisyonda (MR artrografi ile belirgin)"},
-  {id:"glad",      name:"GLAD",                 txt:"anteroinferior labrum yırtığı + bitişik glenoid kıkırdak defekti"},
-  {id:"hagl",      name:"HAGL",                 txt:"inferior glenohumeral ligamanın humeral avülsiyonu (J-sign)"},
+  {id:"bankart",  name:"Bankart (klasik)", nameEn:"Bankart (classic)",    txt:"anteroinferior labroligamentöz kompleksin glenoidden soyulması (periost YIRTIK)",          txtEn:"avulsion of anteroinferior labro-ligamentous complex from glenoid (periosteum TORN)"},
+  {id:"bony",     name:"Bony Bankart",     nameEn:"Bony Bankart",         txt:"anteroinferior glenoid kırığı ile birlikte labroligamentöz avülsiyon",                     txtEn:"labro-ligamentous avulsion with anteroinferior glenoid fracture"},
+  {id:"alpsa",    name:"ALPSA",            nameEn:"ALPSA",                txt:"anterior labroligamentöz periosteal sleeve avülsiyonu (periost İNTAKT; labrum mediale deplase)", txtEn:"anterior labroligamentous periosteal sleeve avulsion (periosteum INTACT; labrum displaced medially)"},
+  {id:"perthes",  name:"Perthes",          nameEn:"Perthes",              txt:"anterior labrum glenoidden ayrılmış ancak periost intakt; anatomik pozisyonda (MR artrografi ile belirgin)", txtEn:"anterior labrum detached from glenoid but periosteum intact; anatomic position (better seen on MR arthrography)"},
+  {id:"glad",     name:"GLAD",             nameEn:"GLAD",                 txt:"anteroinferior labrum yırtığı + bitişik glenoid kıkırdak defekti",                         txtEn:"anteroinferior labral tear + adjacent glenoid cartilage defect"},
+  {id:"hagl",     name:"HAGL",             nameEn:"HAGL",                 txt:"inferior glenohumeral ligamanın humeral avülsiyonu (J-sign)",                              txtEn:"humeral avulsion of the inferior glenohumeral ligament (J-sign)"},
 ];
 const POST_LABRAL_VARIANTS = [
-  {id:"rev-bankart", name:"Reverse Bankart",    txt:"posteroinferior labral yırtık (posterior instabilite)"},
-  {id:"kim",         name:"Kim lezyonu",        txt:"posteroinferior labrumda inkomplet, gizli yırtık"},
-  {id:"post-alpsa",  name:"Posterior ALPSA",    txt:"posterior labroligamentöz periosteal sleeve avülsiyonu"},
+  {id:"rev-bankart", name:"Reverse Bankart", nameEn:"Reverse Bankart",   txt:"posteroinferior labral yırtık (posterior instabilite)",                                    txtEn:"posteroinferior labral tear (posterior instability)"},
+  {id:"kim",         name:"Kim lezyonu",     nameEn:"Kim lesion",        txt:"posteroinferior labrumda inkomplet, gizli yırtık",                                         txtEn:"incomplete, concealed tear of posteroinferior labrum"},
+  {id:"post-alpsa",  name:"Posterior ALPSA", nameEn:"Posterior ALPSA",   txt:"posterior labroligamentöz periosteal sleeve avülsiyonu",                                   txtEn:"posterior labroligamentous periosteal sleeve avulsion"},
 ];
 
 /* ====== Patoloji veri tabanı ve ağırlıklı skorlama ====== */
 /* Anahtar: key, isim, kategori, feature üretici fonksiyon */
 
 const PATHO = [
-  {key:"supra_tendinop", name:"Supraspinatus tendinopati", cat:"manşet"},
-  {key:"supra_partial",  name:"Supraspinatus parsiyel yırtığı", cat:"manşet"},
-  {key:"supra_full",     name:"Supraspinatus tam kat yırtığı", cat:"manşet"},
-  {key:"infra_tear",     name:"İnfraspinatus yırtığı", cat:"manşet"},
-  {key:"subsc_tear",     name:"Subskapularis yırtığı", cat:"manşet"},
-  {key:"massive_rct",    name:"Masif rotator manşet yırtığı", cat:"manşet"},
-  {key:"calc_tendinit",  name:"Kalsifik tendinit", cat:"manşet"},
-  {key:"impingement",    name:"Subakromial sıkışma sendromu", cat:"sıkışma"},
-  {key:"biceps_tendinop",name:"Biceps tendinopatisi / tenosinovit", cat:"biceps"},
-  {key:"biceps_tear",    name:"Biceps uzun başı yırtığı", cat:"biceps"},
-  {key:"biceps_instab",  name:"Biceps tendon subluksasyonu/dislokasyonu", cat:"biceps"},
-  {key:"slap",           name:"SLAP lezyonu", cat:"labrum"},
-  {key:"bankart",        name:"Bankart lezyonu (anterior instabilite)", cat:"labrum"},
-  {key:"bony_bankart",   name:"Kemik Bankart / glenoid kemik kaybı", cat:"labrum"},
-  {key:"alpsa",          name:"ALPSA lezyonu", cat:"labrum"},
-  {key:"hill_sachs",     name:"Hill-Sachs lezyonu", cat:"labrum"},
-  {key:"rev_bankart",    name:"Reverse Bankart (posterior instabilite)", cat:"labrum"},
-  {key:"rev_hill_sachs", name:"Reverse Hill-Sachs (McLaughlin)", cat:"labrum"},
-  {key:"frozen",         name:"Adeziv kapsülit (donuk omuz)", cat:"kapsül"},
-  {key:"gh_oa",          name:"Glenohumeral osteoartrit", cat:"dejeneratif"},
-  {key:"ac_oa",          name:"Akromioklaviküler eklem osteoartriti", cat:"dejeneratif"},
-  {key:"bursit",         name:"Subakromial-subdeltoid bursit", cat:"bursa"},
-  {key:"paralab_cyst",   name:"Paralabral kist / spinoglenoid çentik kisti", cat:"diğer"},
-  {key:"avn",            name:"Humerus başı avasküler nekrozu", cat:"kemik"},
-  {key:"septic",         name:"Septik artrit", cat:"inflamatuar"},
-  {key:"pvns",           name:"Pigmente villonodüler sinovit (PVNS)", cat:"sinoviyal"},
+  {key:"supra_tendinop", name:"Supraspinatus tendinopati",                  nameEn:"Supraspinatus tendinopathy",                   cat:"manşet"},
+  {key:"supra_partial",  name:"Supraspinatus parsiyel yırtığı",             nameEn:"Supraspinatus partial tear",                   cat:"manşet"},
+  {key:"supra_full",     name:"Supraspinatus tam kat yırtığı",              nameEn:"Supraspinatus full-thickness tear",             cat:"manşet"},
+  {key:"infra_tear",     name:"İnfraspinatus yırtığı",                      nameEn:"Infraspinatus tear",                           cat:"manşet"},
+  {key:"subsc_tear",     name:"Subskapularis yırtığı",                      nameEn:"Subscapularis tear",                           cat:"manşet"},
+  {key:"massive_rct",    name:"Masif rotator manşet yırtığı",               nameEn:"Massive rotator cuff tear",                    cat:"manşet"},
+  {key:"calc_tendinit",  name:"Kalsifik tendinit",                          nameEn:"Calcific tendinitis",                          cat:"manşet"},
+  {key:"impingement",    name:"Subakromial sıkışma sendromu",               nameEn:"Subacromial impingement syndrome",             cat:"sıkışma"},
+  {key:"biceps_tendinop",name:"Biceps tendinopatisi / tenosinovit",         nameEn:"Biceps tendinopathy / tenosynovitis",          cat:"biceps"},
+  {key:"biceps_tear",    name:"Biceps uzun başı yırtığı",                   nameEn:"Biceps long head tear",                        cat:"biceps"},
+  {key:"biceps_instab",  name:"Biceps tendon subluksasyonu/dislokasyonu",   nameEn:"Biceps tendon subluxation/dislocation",        cat:"biceps"},
+  {key:"slap",           name:"SLAP lezyonu",                               nameEn:"SLAP lesion",                                  cat:"labrum"},
+  {key:"bankart",        name:"Bankart lezyonu (anterior instabilite)",     nameEn:"Bankart lesion (anterior instability)",        cat:"labrum"},
+  {key:"bony_bankart",   name:"Kemik Bankart / glenoid kemik kaybı",       nameEn:"Bony Bankart / glenoid bone loss",             cat:"labrum"},
+  {key:"alpsa",          name:"ALPSA lezyonu",                              nameEn:"ALPSA lesion",                                 cat:"labrum"},
+  {key:"hill_sachs",     name:"Hill-Sachs lezyonu",                        nameEn:"Hill-Sachs lesion",                            cat:"labrum"},
+  {key:"rev_bankart",    name:"Reverse Bankart (posterior instabilite)",    nameEn:"Reverse Bankart (posterior instability)",      cat:"labrum"},
+  {key:"rev_hill_sachs", name:"Reverse Hill-Sachs (McLaughlin)",           nameEn:"Reverse Hill-Sachs (McLaughlin)",              cat:"labrum"},
+  {key:"frozen",         name:"Adeziv kapsülit (donuk omuz)",              nameEn:"Adhesive capsulitis (frozen shoulder)",        cat:"kapsül"},
+  {key:"gh_oa",          name:"Glenohumeral osteoartrit",                   nameEn:"Glenohumeral osteoarthritis",                  cat:"dejeneratif"},
+  {key:"ac_oa",          name:"Akromioklaviküler eklem osteoartriti",      nameEn:"Acromioclavicular joint osteoarthritis",       cat:"dejeneratif"},
+  {key:"bursit",         name:"Subakromial-subdeltoid bursit",             nameEn:"Subacromial-subdeltoid bursitis",              cat:"bursa"},
+  {key:"paralab_cyst",   name:"Paralabral kist / spinoglenoid çentik kisti",nameEn:"Paralabral cyst / spinoglenoid notch cyst",   cat:"diğer"},
+  {key:"avn",            name:"Humerus başı avasküler nekrozu",              nameEn:"Avascular necrosis of humeral head",           cat:"kemik"},
+  {key:"septic",         name:"Septik artrit",                               nameEn:"Septic arthritis",                             cat:"inflamatuar"},
+  {key:"pvns",           name:"Pigmente villonodüler sinovit (PVNS)",        nameEn:"Pigmented villonodular synovitis (PVNS)",       cat:"sinoviyal"},
 ];
 
 const CAT_COLOR = {
@@ -568,217 +1239,382 @@ function Radio({value, onChange, options, cols}) {
 
 function generateReport(data, lesions, labralTears, scores) {
   const d = data;
-  const sides = d.side || "Sağ";
-  const today = new Date().toLocaleDateString("tr-TR");
+  const sideObj = SIDE.find(s => s.id === d.side) || SIDE[0];
+  const sides = RV_LOCALE === 'en' ? sideObj.labelEn : sideObj.label;
+  const today = new Date().toLocaleDateString(RV_LOCALE === 'en' ? 'en-US' : 'tr-TR');
 
-  // Teknik
+  // Teknik / Sequences
   const seq = [];
-  if (d.seq_t1) seq.push("Aksiyel, koronal oblik, sagital oblik T1A");
-  if (d.seq_t2) seq.push("Aksiyel, koronal oblik, sagital oblik T2A");
-  if (d.seq_pd) seq.push("PD yağ baskılı");
+  if (d.seq_t1)   seq.push(RV_LOCALE==='en' ? "Axial, coronal oblique, sagittal oblique T1W" : "Aksiyel, koronal oblik, sagital oblik T1A");
+  if (d.seq_t2)   seq.push(RV_LOCALE==='en' ? "Axial, coronal oblique, sagittal oblique T2W" : "Aksiyel, koronal oblik, sagital oblik T2A");
+  if (d.seq_pd)   seq.push(RV_LOCALE==='en' ? "PD fat-saturated" : "PD yağ baskılı");
   if (d.seq_stir) seq.push("STIR");
-  if (d.seq_fs) seq.push("Yağ baskılı T2A");
-  if (d.seq_artro) seq.push("MR artrografi (direkt intraartiküler gadolinyum)");
-  if (d.seq_post) seq.push("Kontrast sonrası yağ baskılı T1A");
+  if (d.seq_fs)   seq.push(RV_LOCALE==='en' ? "Fat-saturated T2W" : "Yağ baskılı T2A");
+  if (d.seq_artro) seq.push(RV_LOCALE==='en' ? "MRI arthrography (direct intra-articular gadolinium)" : "MR artrografi (direkt intraartiküler gadolinyum)");
+  if (d.seq_post) seq.push(RV_LOCALE==='en' ? "Post-contrast fat-saturated T1W" : "Kontrast sonrası yağ baskılı T1A");
 
-  // Kemik bulguları
+  // Bone findings / Kemik bulguları
   const bone = [];
-  if (d.greater_tub_edema === "evet") bone.push("Büyük tüberkülde kemik iliği ödemi izlenmektedir.");
-  if (d.lesser_tub_edema === "evet")  bone.push("Küçük tüberkülde kemik iliği ödemi izlenmektedir.");
+  if (d.greater_tub_edema === "evet") bone.push(RV_LOCALE==='en' ? "Bone marrow edema of the greater tuberosity is noted." : "Büyük tüberkülde kemik iliği ödemi izlenmektedir.");
+  if (d.lesser_tub_edema === "evet")  bone.push(RV_LOCALE==='en' ? "Bone marrow edema of the lesser tuberosity is noted." : "Küçük tüberkülde kemik iliği ödemi izlenmektedir.");
   if (d.hill_sachs === "evet") {
-    const sz = d.hill_sachs_size === "buyuk" ? "(defekt boyutu >12 mm, engage-edici nitelikte olabilir)" : "";
-    bone.push(`Humerus başı posterolateralinde kompresyon defekti (Hill-Sachs lezyonu) ${sz}.`);
+    const sz = d.hill_sachs_size === "buyuk"
+      ? (RV_LOCALE==='en' ? "(defect size >12 mm, potentially engaging)" : "(defekt boyutu >12 mm, engage-edici nitelikte olabilir)")
+      : "";
+    bone.push(RV_LOCALE==='en'
+      ? `Compression defect in the posterolateral humeral head (Hill-Sachs lesion) ${sz}.`
+      : `Humerus başı posterolateralinde kompresyon defekti (Hill-Sachs lezyonu) ${sz}.`);
   }
-  if (d.rev_hill_sachs === "evet") bone.push("Humerus başı anteromedial yüzeyinde kompresyon defekti (reverse Hill-Sachs / McLaughlin lezyonu) izlenmektedir.");
+  if (d.rev_hill_sachs === "evet") bone.push(RV_LOCALE==='en'
+    ? "Compression defect in the anteromedial humeral head (reverse Hill-Sachs / McLaughlin lesion) is noted."
+    : "Humerus başı anteromedial yüzeyinde kompresyon defekti (reverse Hill-Sachs / McLaughlin lezyonu) izlenmektedir.");
   if (d.glenoid_bone_loss === "evet") {
-    const sev = d.glenoid_bone_loss_severity === "ciddi" ? "ciddi (>20%)" : (d.glenoid_bone_loss_severity === "orta" ? "orta" : "hafif");
-    bone.push(`Anteroinferior glenoid kenarında ${sev} boyutta kemik kaybı (kemik Bankart lezyonu ile uyumlu) izlenmektedir.`);
+    const sev = d.glenoid_bone_loss_severity === "ciddi"
+      ? (RV_LOCALE==='en' ? "severe (>20%)" : "ciddi (>20%)")
+      : (d.glenoid_bone_loss_severity === "orta"
+          ? (RV_LOCALE==='en' ? "moderate" : "orta")
+          : (RV_LOCALE==='en' ? "mild" : "hafif"));
+    bone.push(RV_LOCALE==='en'
+      ? `${sev} anteroinferior glenoid bone loss (consistent with bony Bankart lesion) is noted.`
+      : `Anteroinferior glenoid kenarında ${sev} boyutta kemik kaybı (kemik Bankart lezyonu ile uyumlu) izlenmektedir.`);
   }
   if (d.avn_marrow_change === "evet" || d.avn_double_line === "evet") {
-    bone.push("Humerus başında avasküler nekroz ile uyumlu subkondral kemik iliği sinyal değişikliği" + (d.avn_double_line==="evet" ? " (çift çizgi işareti pozitif)" : "") + (d.avn_collapse==="evet" ? " ve subkondral kollaps" : "") + " izlenmektedir.");
+    const dbl = d.avn_double_line==="evet" ? (RV_LOCALE==='en' ? " (double-line sign positive)" : " (çift çizgi işareti pozitif)") : "";
+    const col = d.avn_collapse==="evet" ? (RV_LOCALE==='en' ? " and subchondral collapse" : " ve subkondral kollaps") : "";
+    bone.push(RV_LOCALE==='en'
+      ? `Subchondral bone marrow signal change consistent with avascular necrosis of the humeral head${dbl}${col} is noted.`
+      : `Humerus başında avasküler nekroz ile uyumlu subkondral kemik iliği sinyal değişikliği${dbl}${col} izlenmektedir.`);
   }
-  if (bone.length === 0) bone.push("Kemik yapılarda sinyal ve morfoloji normal sınırlardadır.");
+  if (bone.length === 0) bone.push(RV_LOCALE==='en'
+    ? "Signal and morphology of bone structures are within normal limits."
+    : "Kemik yapılarda sinyal ve morfoloji normal sınırlardadır.");
 
-  // Akromion & AC
+  // Acromion & AC / Akromion & AC
   const acromion = [];
   const acrType = BIGLIANI.find(b => b.id === d.acromion_type);
-  if (acrType) acromion.push(acrType.txt + ".");
-  if (d.os_acromiale === "evet") acromion.push("Os akromiale varyasyonu izlenmektedir.");
-  if (d.acromio_humeral === "daralmis") acromion.push("Akromiohumeral mesafe daralmıştır (<7 mm); manşet artropatisi/üst humeral migrasyon ile uyumludur.");
-  else if (d.acromio_humeral === "normal") acromion.push("Akromiohumeral mesafe korunmuştur.");
-  if (d.ac_osteofit === "evet" || d.ac_arthrosis === "evet") acromion.push("Akromioklaviküler eklemde dejeneratif değişiklikler mevcuttur.");
-  if (d.ac_hypertrophy === "evet") acromion.push("AC eklem kapsüler hipertrofisi izlenmektedir.");
-  if (d.ac_osteophyte === "evet") acromion.push("AC ekleminden inferiora uzanan osteofit; subakromial alana basınç oluşturmaktadır.");
-  if (d.ac_edema === "evet") acromion.push("AC eklem civarı kemik iliği ödemi izlenmektedir.");
-  if (acromion.length === 0) acromion.push("Akromion morfolojisi ve AC eklem normal sınırlardadır.");
+  if (acrType) acromion.push(L(acrType,'txt') + ".");
+  if (d.os_acromiale === "evet") acromion.push(RV_LOCALE==='en' ? "Os acromiale variant is noted." : "Os akromiale varyasyonu izlenmektedir.");
+  if (d.acromio_humeral === "daralmis") acromion.push(RV_LOCALE==='en'
+    ? "Acromiohumeral distance is narrowed (<7 mm); consistent with cuff arthropathy/superior humeral migration."
+    : "Akromiohumeral mesafe daralmıştır (<7 mm); manşet artropatisi/üst humeral migrasyon ile uyumludur.");
+  else if (d.acromio_humeral === "normal") acromion.push(RV_LOCALE==='en' ? "Acromiohumeral distance is preserved." : "Akromiohumeral mesafe korunmuştur.");
+  if (d.ac_osteofit === "evet" || d.ac_arthrosis === "evet") acromion.push(RV_LOCALE==='en'
+    ? "Degenerative changes are present at the acromioclavicular joint."
+    : "Akromioklaviküler eklemde dejeneratif değişiklikler mevcuttur.");
+  if (d.ac_hypertrophy === "evet") acromion.push(RV_LOCALE==='en' ? "AC joint capsular hypertrophy is noted." : "AC eklem kapsüler hipertrofisi izlenmektedir.");
+  if (d.ac_osteophyte === "evet") acromion.push(RV_LOCALE==='en'
+    ? "Inferior osteophyte from the AC joint exerts pressure on the subacromial space."
+    : "AC ekleminden inferiora uzanan osteofit; subakromial alana basınç oluşturmaktadır.");
+  if (d.ac_edema === "evet") acromion.push(RV_LOCALE==='en' ? "Bone marrow edema around the AC joint is noted." : "AC eklem civarı kemik iliği ödemi izlenmektedir.");
+  if (acromion.length === 0) acromion.push(RV_LOCALE==='en'
+    ? "Acromion morphology and AC joint are within normal limits."
+    : "Akromion morfolojisi ve AC eklem normal sınırlardadır.");
 
-  // Rotator manşet (her tendon)
+  // Rotator cuff per tendon / Rotator manşet (her tendon)
   const rcSections = RC_TENDONS.map(t => {
-    const tL = (lesions||[]).filter(L => L.tendon === t.id);
+    const tName = L(t,'name');
+    const tL = (lesions||[]).filter(Lx => Lx.tendon === t.id);
     if (tL.length === 0) {
-      return {name: t.name, lines: ["Tendonda sinyal ve morfoloji doğaldır."]};
+      return {name: tName, lines: [RV_LOCALE==='en' ? "Signal and morphology of the tendon are normal." : "Tendonda sinyal ve morfoloji doğaldır."]};
     }
     const lines = [];
-    tL.forEach(L => {
-      const locMap = {"kritik":"kritik zon (insersiyonun 1-2 cm proksimali)","footprint":"footprint (insersiyonel bölge)","mtj":"muskulotendinöz bileşke","tum":"difüz"};
-      const loc = locMap[L.location] || "tendon gövdesi";
-      if (L.continuity === "tendinop") {
-        lines.push(`${t.name} tendonu ${loc}de sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.`);
-      } else if (L.continuity === "partial") {
-        const faceMap = {"artikuler":"artiküler yüzeyinde","bursal":"bursal yüzeyinde","intratendinoz":"intratendinöz"};
-        const face = faceMap[L.partial_face] || "bir yüzünde";
-        const pctTxt = L.partial_thickness ? ` (tendon kalınlığının yaklaşık %${L.partial_thickness}'i)` : "";
-        lines.push(`${t.name} tendonunun ${loc}de, ${face} parsiyel kat yırtık${pctTxt} izlenmektedir.`);
-      } else if (L.continuity === "full") {
-        const sizeMap = {"small":"küçük (<1 cm)","medium":"orta (1–3 cm)","large":"geniş (3–5 cm)","massive":"masif (>5 cm)"};
-        const sz = sizeMap[L.full_size] || "";
-        const retracMap = {1:"Patte I (minimal retraksiyon)", 2:"Patte II (humerus başı–glenoid arası retraksiyon)", 3:"Patte III (glenoid seviyesinde retraksiyon)"};
-        const retrac = L.retraction ? `, ${retracMap[L.retraction]}` : "";
-        lines.push(`${t.name} tendonunda ${loc}de tam kat yırtık (${sz} boyutlu${retrac}) izlenmektedir.`);
+    tL.forEach(Lx => {
+      const locMapTR = {"kritik":"kritik zon (insersiyonun 1-2 cm proksimali)","footprint":"footprint (insersiyonel bölge)","mtj":"muskulotendinöz bileşke","tum":"difüz"};
+      const locMapEN = {"kritik":"critical zone (1–2 cm proximal to insertion)","footprint":"footprint (insertional area)","mtj":"myotendinous junction","tum":"diffuse"};
+      const loc = (RV_LOCALE==='en' ? locMapEN[Lx.location] : locMapTR[Lx.location]) || (RV_LOCALE==='en' ? "tendon body" : "tendon gövdesi");
+      if (Lx.continuity === "tendinop") {
+        lines.push(RV_LOCALE==='en'
+          ? `Signal increase and thickening (tendinopathy) are noted in the ${loc} of the ${tName} tendon.`
+          : `${tName} tendonu ${loc}de sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.`);
+      } else if (Lx.continuity === "partial") {
+        const faceMapTR = {"artikuler":"artiküler yüzeyinde","bursal":"bursal yüzeyinde","intratendinoz":"intratendinöz"};
+        const faceMapEN = {"artikuler":"articular surface","bursal":"bursal surface","intratendinoz":"intratendinous"};
+        const face = (RV_LOCALE==='en' ? faceMapEN[Lx.partial_face] : faceMapTR[Lx.partial_face]) || (RV_LOCALE==='en' ? "one surface" : "bir yüzünde");
+        const pctTxt = Lx.partial_thickness
+          ? (RV_LOCALE==='en' ? ` (approximately ${Lx.partial_thickness}% of tendon thickness)` : ` (tendon kalınlığının yaklaşık %${Lx.partial_thickness}'i)`)
+          : "";
+        lines.push(RV_LOCALE==='en'
+          ? `Partial-thickness tear at the ${face} of the ${tName} tendon at the ${loc}${pctTxt} is noted.`
+          : `${tName} tendonunun ${loc}de, ${face} parsiyel kat yırtık${pctTxt} izlenmektedir.`);
+      } else if (Lx.continuity === "full") {
+        const sizeMapTR = {"small":"küçük (<1 cm)","medium":"orta (1–3 cm)","large":"geniş (3–5 cm)","massive":"masif (>5 cm)"};
+        const sizeMapEN = {"small":"small (<1 cm)","medium":"medium (1–3 cm)","large":"large (3–5 cm)","massive":"massive (>5 cm)"};
+        const sz = (RV_LOCALE==='en' ? sizeMapEN[Lx.full_size] : sizeMapTR[Lx.full_size]) || "";
+        const retracMapTR = {1:"Patte I (minimal retraksiyon)", 2:"Patte II (humerus başı–glenoid arası retraksiyon)", 3:"Patte III (glenoid seviyesinde retraksiyon)"};
+        const retracMapEN = {1:"Patte I (minimal retraction)", 2:"Patte II (retraction between humeral head and glenoid)", 3:"Patte III (retraction to glenoid level)"};
+        const retrac = Lx.retraction ? `, ${(RV_LOCALE==='en' ? retracMapEN : retracMapTR)[Lx.retraction]}` : "";
+        lines.push(RV_LOCALE==='en'
+          ? `Full-thickness tear of the ${tName} tendon at the ${loc} (${sz}${retrac}) is noted.`
+          : `${tName} tendonunda ${loc}de tam kat yırtık (${sz} boyutlu${retrac}) izlenmektedir.`);
       }
-      if (L.calcific) lines.push(`${t.name} tendonu lifleri içinde kalsifik fokus izlenmektedir.`);
-      if (L.goutallier !== undefined && L.goutallier !== "" && Number(L.goutallier) > 0) {
-        const g = GOUTALLIER.find(x => x.id === Number(L.goutallier));
-        if (g) lines.push(`${t.name} kasında yağlı dejenerasyon (${g.label}: ${g.txt}).`);
+      if (Lx.calcific) lines.push(RV_LOCALE==='en'
+        ? `A calcific focus is noted within the ${tName} tendon fibers.`
+        : `${tName} tendonu lifleri içinde kalsifik fokus izlenmektedir.`);
+      if (Lx.goutallier !== undefined && Lx.goutallier !== "" && Number(Lx.goutallier) > 0) {
+        const g = GOUTALLIER.find(x => x.id === Number(Lx.goutallier));
+        if (g) lines.push(RV_LOCALE==='en'
+          ? `Fatty degeneration of the ${tName} muscle (${g.label}: ${L(g,'txt')}).`
+          : `${tName} kasında yağlı dejenerasyon (${g.label}: ${g.txt}).`);
       }
     });
-    return {name: t.name, lines};
+    return {name: tName, lines};
   });
 
   // Biceps
   const biceps = [];
   if (d.biceps_continuity === "intakt" && d.biceps_signal === "normal" && d.biceps_sheath === "yok" && (d.biceps_position==="normal" || !d.biceps_position)) {
-    biceps.push("Biceps uzun başı tendonu bicipital olukta normal lokalizasyonda, sinyal ve konturu korunmuştur.");
+    biceps.push(RV_LOCALE==='en'
+      ? "The biceps long head tendon is in normal position within the bicipital groove with preserved signal and contour."
+      : "Biceps uzun başı tendonu bicipital olukta normal lokalizasyonda, sinyal ve konturu korunmuştur.");
   } else {
-    if (d.biceps_signal === "artmis") biceps.push("Biceps uzun başı tendonunda sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.");
-    if (d.biceps_sheath === "minimal") biceps.push("Biceps kılıfında minimal sıvı.");
-    else if (d.biceps_sheath === "belirgin") biceps.push("Biceps kılıfında belirgin sıvı (tenosinovit ile uyumlu).");
-    if (d.biceps_continuity === "parsiyel") biceps.push("Biceps uzun başı tendonunda parsiyel yırtık alanları seçilmektedir.");
+    if (d.biceps_signal === "artmis") biceps.push(RV_LOCALE==='en'
+      ? "Signal increase and thickening (tendinopathy) are noted in the biceps long head tendon."
+      : "Biceps uzun başı tendonunda sinyal artışı ve kalınlaşma (tendinopati) izlenmektedir.");
+    if (d.biceps_sheath === "minimal") biceps.push(RV_LOCALE==='en' ? "Minimal fluid in the biceps sheath." : "Biceps kılıfında minimal sıvı.");
+    else if (d.biceps_sheath === "belirgin") biceps.push(RV_LOCALE==='en'
+      ? "Prominent fluid in the biceps sheath (consistent with tenosynovitis)."
+      : "Biceps kılıfında belirgin sıvı (tenosinovit ile uyumlu).");
+    if (d.biceps_continuity === "parsiyel") biceps.push(RV_LOCALE==='en'
+      ? "Partial-thickness tear areas are identified in the biceps long head tendon."
+      : "Biceps uzun başı tendonunda parsiyel yırtık alanları seçilmektedir.");
     else if (d.biceps_continuity === "tam") {
-      biceps.push("Biceps uzun başı tendonunda tam kat yırtık; tendon bicipital oluktan kaybolmuştur.");
-      if (d.biceps_popeye === "evet") biceps.push("Distalde kas karnında retraksiyon (Popeye işareti) izlenmektedir.");
+      biceps.push(RV_LOCALE==='en'
+        ? "Full-thickness tear of the biceps long head tendon; the tendon is absent from the bicipital groove."
+        : "Biceps uzun başı tendonunda tam kat yırtık; tendon bicipital oluktan kaybolmuştur.");
+      if (d.biceps_popeye === "evet") biceps.push(RV_LOCALE==='en'
+        ? "Distal muscle belly retraction (Popeye sign) is noted."
+        : "Distalde kas karnında retraksiyon (Popeye işareti) izlenmektedir.");
     }
-    if (d.biceps_position === "sublukse") biceps.push("Biceps uzun başı tendonu bicipital olukta medial subluksasyon göstermektedir.");
-    else if (d.biceps_position === "dislok_med") biceps.push("Biceps uzun başı tendonu medial dislokasyon göstermiş; bicipital oluk boş izlenmektedir.");
+    if (d.biceps_position === "sublukse") biceps.push(RV_LOCALE==='en'
+      ? "The biceps long head tendon shows medial subluxation within the bicipital groove."
+      : "Biceps uzun başı tendonu bicipital olukta medial subluksasyon göstermektedir.");
+    else if (d.biceps_position === "dislok_med") biceps.push(RV_LOCALE==='en'
+      ? "The biceps long head tendon is medially dislocated; the bicipital groove is empty."
+      : "Biceps uzun başı tendonu medial dislokasyon göstermiş; bicipital oluk boş izlenmektedir.");
   }
 
   // Labrum
   const labrum = [];
   if (!labralTears || labralTears.length === 0) {
-    labrum.push("Glenoid labrumda sinyal ve morfoloji tüm kadranlarda korunmuştur.");
+    labrum.push(RV_LOCALE==='en'
+      ? "Signal and morphology of the glenoid labrum are preserved in all quadrants."
+      : "Glenoid labrumda sinyal ve morfoloji tüm kadranlarda korunmuştur.");
   } else {
-    labralTears.forEach(L => {
-      const q = LABRAL_QUADRANTS.find(x => x.id === L.quadrant);
-      const qn = q ? q.name.toLowerCase() : "lokalize";
-      if (L.category === "slap") {
-        const t = SLAP_TYPES.find(x => x.id === L.subtype);
-        labrum.push(`Süperior labrumda ${t ? `${t.name} (${t.txt})` : "SLAP lezyonu"} izlenmektedir.`);
-      } else if (L.category === "ant") {
-        const t = ANT_LABRAL_VARIANTS.find(x => x.id === L.subtype);
-        labrum.push(`Anteroinferior labrumda ${t ? `${t.name}: ${t.txt}` : "anterior labral yırtık"} izlenmektedir.`);
-      } else if (L.category === "post") {
-        const t = POST_LABRAL_VARIANTS.find(x => x.id === L.subtype);
-        labrum.push(`Posterior labrumda ${t ? `${t.name}: ${t.txt}` : "posterior labral yırtık"} izlenmektedir.`);
-      } else if (L.category === "simple") {
-        labrum.push(`${q ? q.name : "İlgili"} kadranda labral yırtık/dejenerasyon sinyali izlenmektedir.`);
+    labralTears.forEach(Lx => {
+      const q = LABRAL_QUADRANTS.find(x => x.id === Lx.quadrant);
+      const qn = q ? L(q,'name').toLowerCase() : (RV_LOCALE==='en' ? "localized" : "lokalize");
+      if (Lx.category === "slap") {
+        const t = SLAP_TYPES.find(x => x.id === Lx.subtype);
+        labrum.push(RV_LOCALE==='en'
+          ? `${t ? `${t.name} (${L(t,'txt')})` : "SLAP lesion"} is noted in the superior labrum.`
+          : `Süperior labrumda ${t ? `${t.name} (${t.txt})` : "SLAP lezyonu"} izlenmektedir.`);
+      } else if (Lx.category === "ant") {
+        const t = ANT_LABRAL_VARIANTS.find(x => x.id === Lx.subtype);
+        labrum.push(RV_LOCALE==='en'
+          ? `${t ? `${L(t,'name')}: ${L(t,'txt')}` : "anterior labral tear"} is noted in the anteroinferior labrum.`
+          : `Anteroinferior labrumda ${t ? `${t.name}: ${t.txt}` : "anterior labral yırtık"} izlenmektedir.`);
+      } else if (Lx.category === "post") {
+        const t = POST_LABRAL_VARIANTS.find(x => x.id === Lx.subtype);
+        labrum.push(RV_LOCALE==='en'
+          ? `${t ? `${L(t,'name')}: ${L(t,'txt')}` : "posterior labral tear"} is noted in the posterior labrum.`
+          : `Posterior labrumda ${t ? `${t.name}: ${t.txt}` : "posterior labral yırtık"} izlenmektedir.`);
+      } else if (Lx.category === "simple") {
+        labrum.push(RV_LOCALE==='en'
+          ? `Labral tear/degeneration signal is noted in the ${q ? L(q,'name') : "relevant"} quadrant.`
+          : `${q ? q.name : "İlgili"} kadranda labral yırtık/dejenerasyon sinyali izlenmektedir.`);
       }
-      if (L.paralabralCyst) {
-        labrum.push(`Eşlik eden paralabral kist (${qn} yerleşimli) izlenmektedir.`);
+      if (Lx.paralabralCyst) {
+        labrum.push(RV_LOCALE==='en'
+          ? `An accompanying paralabral cyst (${qn}-located) is noted.`
+          : `Eşlik eden paralabral kist (${qn} yerleşimli) izlenmektedir.`);
       }
     });
   }
 
-  // Ligamanlar
+  // Ligaments / Ligamanlar
   const lig = [];
-  if (d.ighl_torn === "evet") lig.push("İnferior glenohumeral ligaman (IGHL) devamlılığında bozulma izlenmektedir.");
-  if (d.mghl_abn === "evet") lig.push("Orta glenohumeral ligaman (MGHL) sinyal değişikliği göstermektedir.");
-  if (d.sghl_abn === "evet") lig.push("Süperior glenohumeral ligaman (SGHL) anormalliği izlenmektedir.");
-  if (d.chl_thickening === "evet") lig.push("Korakohumeral ligaman kalınlaşmıştır (>4 mm); adeziv kapsülit bulgusu.");
-  if (d.rotator_interval === "silinmis") lig.push("Rotator interval yağ dokusu silinmiş ve T2 sinyal artışı izlenmektedir.");
-  if (d.post_capsule_lax === "evet") lig.push("Posterior kapsül laksitesi mevcuttur.");
-  if (lig.length === 0) lig.push("Glenohumeral ligamanlar ve kapsüler yapılar normal sınırlardadır.");
+  if (d.ighl_torn === "evet") lig.push(RV_LOCALE==='en'
+    ? "Disruption of the inferior glenohumeral ligament (IGHL) continuity is noted."
+    : "İnferior glenohumeral ligaman (IGHL) devamlılığında bozulma izlenmektedir.");
+  if (d.mghl_abn === "evet") lig.push(RV_LOCALE==='en'
+    ? "The middle glenohumeral ligament (MGHL) shows signal change."
+    : "Orta glenohumeral ligaman (MGHL) sinyal değişikliği göstermektedir.");
+  if (d.sghl_abn === "evet") lig.push(RV_LOCALE==='en'
+    ? "Abnormality of the superior glenohumeral ligament (SGHL) is noted."
+    : "Süperior glenohumeral ligaman (SGHL) anormalliği izlenmektedir.");
+  if (d.chl_thickening === "evet") lig.push(RV_LOCALE==='en'
+    ? "The coracohumeral ligament is thickened (>4 mm); a finding of adhesive capsulitis."
+    : "Korakohumeral ligaman kalınlaşmıştır (>4 mm); adeziv kapsülit bulgusu.");
+  if (d.rotator_interval === "silinmis") lig.push(RV_LOCALE==='en'
+    ? "Rotator interval fat tissue is obliterated with increased T2 signal."
+    : "Rotator interval yağ dokusu silinmiş ve T2 sinyal artışı izlenmektedir.");
+  if (d.post_capsule_lax === "evet") lig.push(RV_LOCALE==='en'
+    ? "Posterior capsular laxity is present."
+    : "Posterior kapsül laksitesi mevcuttur.");
+  if (lig.length === 0) lig.push(RV_LOCALE==='en'
+    ? "Glenohumeral ligaments and capsular structures are within normal limits."
+    : "Glenohumeral ligamanlar ve kapsüler yapılar normal sınırlardadır.");
 
-  // Kıkırdak
+  // Cartilage / Kıkırdak
   const cart = [];
-  if (d.cartilage_gh === "normal" || !d.cartilage_gh) cart.push("Glenohumeral eklem kıkırdağı korunmuştur.");
-  else if (d.cartilage_gh === "hafif") cart.push("Glenohumeral eklem kıkırdağında hafif incelme/fibrilasyon.");
-  else if (d.cartilage_gh === "orta") cart.push("Glenohumeral eklem kıkırdağında orta derecede kayıp.");
-  else if (d.cartilage_gh === "belirgin") cart.push("Glenohumeral eklem kıkırdağında belirgin kayıp.");
-  if (d.subchondral_change === "evet") cart.push("Subkondral kemikte skleroz ve kistik değişiklikler izlenmektedir.");
-  if (d.gh_osteofit === "evet") cart.push("Glenohumeral eklem kenarlarında osteofitler mevcuttur.");
-  if (d.gh_narrow === "evet") cart.push("Glenohumeral eklem aralığında daralma izlenmektedir.");
+  if (d.cartilage_gh === "normal" || !d.cartilage_gh) cart.push(RV_LOCALE==='en'
+    ? "Glenohumeral joint cartilage is preserved."
+    : "Glenohumeral eklem kıkırdağı korunmuştur.");
+  else if (d.cartilage_gh === "hafif") cart.push(RV_LOCALE==='en'
+    ? "Mild thinning/fibrillation of glenohumeral joint cartilage."
+    : "Glenohumeral eklem kıkırdağında hafif incelme/fibrilasyon.");
+  else if (d.cartilage_gh === "orta") cart.push(RV_LOCALE==='en'
+    ? "Moderate cartilage loss of the glenohumeral joint."
+    : "Glenohumeral eklem kıkırdağında orta derecede kayıp.");
+  else if (d.cartilage_gh === "belirgin") cart.push(RV_LOCALE==='en'
+    ? "Marked cartilage loss of the glenohumeral joint."
+    : "Glenohumeral eklem kıkırdağında belirgin kayıp.");
+  if (d.subchondral_change === "evet") cart.push(RV_LOCALE==='en'
+    ? "Sclerosis and cystic changes are noted in the subchondral bone."
+    : "Subkondral kemikte skleroz ve kistik değişiklikler izlenmektedir.");
+  if (d.gh_osteofit === "evet") cart.push(RV_LOCALE==='en'
+    ? "Osteophytes are present at the glenohumeral joint margins."
+    : "Glenohumeral eklem kenarlarında osteofitler mevcuttur.");
+  if (d.gh_narrow === "evet") cart.push(RV_LOCALE==='en'
+    ? "Narrowing of the glenohumeral joint space is noted."
+    : "Glenohumeral eklem aralığında daralma izlenmektedir.");
 
-  // Efüzyon & bursa
+  // Effusion & bursa / Efüzyon & bursa
   const fluidLines = [];
-  const effMap = {"yok":"Glenohumeral eklemde efüzyon izlenmemektedir.",
+  const effMapTR = {"yok":"Glenohumeral eklemde efüzyon izlenmemektedir.",
     "minimal":"Glenohumeral eklemde minimal miktarda efüzyon.",
     "orta":"Glenohumeral eklemde orta miktarda efüzyon.",
     "belirgin":"Glenohumeral eklemde belirgin miktarda efüzyon."};
-  fluidLines.push(effMap[d.effusion_amount] || effMap["yok"]);
-  if (d.axillary_thickening === "evet") fluidLines.push("Aksiller reseste kapsüler kalınlaşma (>4 mm) izlenmektedir.");
-  const bursaMap = {"yok":"Subakromial-subdeltoid bursada sıvı izlenmemektedir.",
+  const effMapEN = {"yok":"No glenohumeral joint effusion.",
+    "minimal":"Minimal glenohumeral joint effusion.",
+    "orta":"Moderate glenohumeral joint effusion.",
+    "belirgin":"Prominent glenohumeral joint effusion."};
+  fluidLines.push((RV_LOCALE==='en' ? effMapEN : effMapTR)[d.effusion_amount] || (RV_LOCALE==='en' ? effMapEN["yok"] : effMapTR["yok"]));
+  if (d.axillary_thickening === "evet") fluidLines.push(RV_LOCALE==='en'
+    ? "Capsular thickening (>4 mm) is noted in the axillary recess."
+    : "Aksiller reseste kapsüler kalınlaşma (>4 mm) izlenmektedir.");
+  const bursaMapTR = {"yok":"Subakromial-subdeltoid bursada sıvı izlenmemektedir.",
     "minimal":"Subakromial-subdeltoid bursada minimal sıvı.",
     "orta":"Subakromial-subdeltoid bursada orta miktarda sıvı (bursit ile uyumlu).",
     "belirgin":"Subakromial-subdeltoid bursada belirgin sıvı (bursit)."};
-  fluidLines.push(bursaMap[d.bursa_effusion] || bursaMap["yok"]);
-  if (d.bursa_wall === "kalin") fluidLines.push("Bursal duvarda kalınlaşma.");
-  if (d.post_contrast_enh === "sinovit") fluidLines.push("Kontrast sonrası yaygın sinoviyal boyanma (sinovit).");
-  else if (d.post_contrast_enh === "bursal") fluidLines.push("Kontrast sonrası bursal duvarsal boyanma.");
-  else if (d.post_contrast_enh === "fokal") fluidLines.push("Kontrast sonrası fokal boyanma izlenmektedir.");
+  const bursaMapEN = {"yok":"No fluid in the subacromial-subdeltoid bursa.",
+    "minimal":"Minimal fluid in the subacromial-subdeltoid bursa.",
+    "orta":"Moderate fluid in the subacromial-subdeltoid bursa (consistent with bursitis).",
+    "belirgin":"Prominent fluid in the subacromial-subdeltoid bursa (bursitis)."};
+  fluidLines.push((RV_LOCALE==='en' ? bursaMapEN : bursaMapTR)[d.bursa_effusion] || (RV_LOCALE==='en' ? bursaMapEN["yok"] : bursaMapTR["yok"]));
+  if (d.bursa_wall === "kalin") fluidLines.push(RV_LOCALE==='en' ? "Bursal wall thickening." : "Bursal duvarda kalınlaşma.");
+  if (d.post_contrast_enh === "sinovit") fluidLines.push(RV_LOCALE==='en'
+    ? "Diffuse synovial enhancement on post-contrast imaging (synovitis)."
+    : "Kontrast sonrası yaygın sinoviyal boyanma (sinovit).");
+  else if (d.post_contrast_enh === "bursal") fluidLines.push(RV_LOCALE==='en'
+    ? "Bursal wall enhancement on post-contrast imaging."
+    : "Kontrast sonrası bursal duvarsal boyanma.");
+  else if (d.post_contrast_enh === "fokal") fluidLines.push(RV_LOCALE==='en'
+    ? "Focal enhancement is noted on post-contrast imaging."
+    : "Kontrast sonrası fokal boyanma izlenmektedir.");
 
-  // Kas & diğer
+  // Muscle & other / Kas & diğer
   const muscle = [];
   RC_TENDONS.forEach(t => {
-    const L = (lesions||[]).filter(l => l.tendon === t.id && l.goutallier !== undefined && l.goutallier !== "" && Number(l.goutallier)>0)[0];
-    if (L) {
-      const g = GOUTALLIER.find(x => x.id === Number(L.goutallier));
-      muscle.push(`${t.name} kası: ${g.label} (${g.txt}).`);
+    const Lx = (lesions||[]).filter(l => l.tendon === t.id && l.goutallier !== undefined && l.goutallier !== "" && Number(l.goutallier)>0)[0];
+    if (Lx) {
+      const g = GOUTALLIER.find(x => x.id === Number(Lx.goutallier));
+      muscle.push(RV_LOCALE==='en'
+        ? `${L(t,'name')} muscle: ${g.label} (${L(g,'txt')}).`
+        : `${t.name} kası: ${g.label} (${g.txt}).`);
     }
   });
-  if (d.deltoid_abn === "evet") muscle.push("Deltoid kasında sinyal değişikliği izlenmektedir.");
-  if (d.quadrilateral_space === "evet") muscle.push("Kuadrilateral bölgede teres minor kası denervasyon bulguları (ödem/atrofi); kuadrilateral bölge sendromu düşünülmelidir.");
-  if (d.infraspinatus_denerv === "evet") muscle.push("İnfraspinatus kasında denervasyon paterni (ödem ve/veya atrofi); suprascapular nöropati açısından değerlendirilmelidir.");
-  if (muscle.length === 0) muscle.push("Rotator manşet kas kompleksinde sinyal ve volüm doğaldır.");
+  if (d.deltoid_abn === "evet") muscle.push(RV_LOCALE==='en'
+    ? "Signal change is noted in the deltoid muscle."
+    : "Deltoid kasında sinyal değişikliği izlenmektedir.");
+  if (d.quadrilateral_space === "evet") muscle.push(RV_LOCALE==='en'
+    ? "Denervation findings (edema/atrophy) of the teres minor muscle in the quadrilateral space; quadrilateral space syndrome should be considered."
+    : "Kuadrilateral bölgede teres minor kası denervasyon bulguları (ödem/atrofi); kuadrilateral bölge sendromu düşünülmelidir.");
+  if (d.infraspinatus_denerv === "evet") muscle.push(RV_LOCALE==='en'
+    ? "Denervation pattern (edema and/or atrophy) of the infraspinatus muscle; suprascapular neuropathy should be considered."
+    : "İnfraspinatus kasında denervasyon paterni (ödem ve/veya atrofi); suprascapular nöropati açısından değerlendirilmelidir.");
+  if (muscle.length === 0) muscle.push(RV_LOCALE==='en'
+    ? "Signal and volume of the rotator cuff muscle complex are normal."
+    : "Rotator manşet kas kompleksinde sinyal ve volüm doğaldır.");
 
-  // Paralabral kist
+  // Paralabral cyst / Paralabral kist
   const cyst = [];
-  if (d.paralabral_cyst === "spinoglenoid") cyst.push("Spinoglenoid çentikte paralabral kist; suprascapular sinire bası yapabilir.");
-  else if (d.paralabral_cyst === "suprascapular") cyst.push("Suprascapular çentikte paralabral kist.");
-  else if (d.paralabral_cyst === "diger") cyst.push("Labrum komşuluğunda paralabral kist izlenmektedir.");
+  if (d.paralabral_cyst === "spinoglenoid") cyst.push(RV_LOCALE==='en'
+    ? "Paralabral cyst in the spinoglenoid notch; may compress the suprascapular nerve."
+    : "Spinoglenoid çentikte paralabral kist; suprascapular sinire bası yapabilir.");
+  else if (d.paralabral_cyst === "suprascapular") cyst.push(RV_LOCALE==='en'
+    ? "Paralabral cyst in the suprascapular notch."
+    : "Suprascapular çentikte paralabral kist.");
+  else if (d.paralabral_cyst === "diger") cyst.push(RV_LOCALE==='en'
+    ? "A paralabral cyst is noted adjacent to the labrum."
+    : "Labrum komşuluğunda paralabral kist izlenmektedir.");
 
-  // Diğer
+  // Other / Diğer
   const other = [];
-  if (d.synovial_hemosiderin === "evet") other.push("Sinoviyal kalınlaşma içinde tüm sekanslarda hipointens alanlar (hemosiderin); PVNS açısından düşündürücüdür.");
-  if (d.blooming === "evet") other.push("GRE sekansta belirgin blooming artefaktı.");
-  if (d.calcification_present === "evet" && !(lesions||[]).some(l=>l.calcific)) other.push("Manşet tendonunda kalsifik fokus izlenmektedir.");
-  if (d.mass_present === "evet") other.push("Periartiküler/eklem içi yer kaplayıcı lezyon izlenmekte olup ileri değerlendirme önerilir.");
-  if (d.periarticular_edema === "evet") other.push("Periartiküler yumuşak doku ödemi/inflamatuar değişiklikler mevcuttur.");
+  if (d.synovial_hemosiderin === "evet") other.push(RV_LOCALE==='en'
+    ? "Hypointense areas on all sequences within synovial thickening (hemosiderin); suggestive of PVNS."
+    : "Sinoviyal kalınlaşma içinde tüm sekanslarda hipointens alanlar (hemosiderin); PVNS açısından düşündürücüdür.");
+  if (d.blooming === "evet") other.push(RV_LOCALE==='en' ? "Prominent blooming artifact on GRE sequence." : "GRE sekansta belirgin blooming artefaktı.");
+  if (d.calcification_present === "evet" && !(lesions||[]).some(l=>l.calcific)) other.push(RV_LOCALE==='en'
+    ? "A calcific focus is noted in the cuff tendon."
+    : "Manşet tendonunda kalsifik fokus izlenmektedir.");
+  if (d.mass_present === "evet") other.push(RV_LOCALE==='en'
+    ? "A periarticular/intra-articular space-occupying lesion is noted; further evaluation is recommended."
+    : "Periartiküler/eklem içi yer kaplayıcı lezyon izlenmekte olup ileri değerlendirme önerilir.");
+  if (d.periarticular_edema === "evet") other.push(RV_LOCALE==='en'
+    ? "Periarticular soft tissue edema/inflammatory changes are present."
+    : "Periartiküler yumuşak doku ödemi/inflamatuar değişiklikler mevcuttur.");
   if (d.freetext && d.freetext.trim()) other.push(d.freetext.trim());
 
-  /* ====== YORUM ====== */
+  /* ====== IMPRESSION / YORUM ====== */
   const topScores = [...scores].sort((a,b) => b.score - a.score).filter(s => s.score >= 15);
   let yorum = "";
   if (topScores.length === 0) {
-    yorum = `${sides} omuz MRG incelemede belirgin patoloji saptanmamıştır. Klinik bulgular eşliğinde değerlendirilmesi önerilir.`;
+    yorum = RV_LOCALE==='en'
+      ? `No significant pathology is identified on ${sides} shoulder MRI. Clinical correlation is recommended.`
+      : `${sides} omuz MRG incelemede belirgin patoloji saptanmamıştır. Klinik bulgular eşliğinde değerlendirilmesi önerilir.`;
   } else {
     const top = topScores[0];
-    const name = PATHO.find(p => p.key === top.key)?.name || top.key;
+    const pathoEntry = PATHO.find(p => p.key === top.key);
+    const name = L(pathoEntry, 'name') || top.key;
     const parts = [];
-    parts.push(`${sides} omuz MRG'de en olası tanı: ${name} (uyum %${top.score}).`);
+    parts.push(RV_LOCALE==='en'
+      ? `Most likely diagnosis on ${sides} shoulder MRI: ${name} (match ${top.score}%).`
+      : `${sides} omuz MRG'de en olası tanı: ${name} (uyum %${top.score}).`);
     if (topScores.length >= 2) {
-      const others = topScores.slice(1,3).map(s => `${PATHO.find(p=>p.key===s.key)?.name} (%${s.score})`).join(", ");
-      parts.push(`Ayırıcı tanıda ayrıca ${others} göz önünde bulundurulmalıdır.`);
+      const others = topScores.slice(1,3).map(s => `${L(PATHO.find(p=>p.key===s.key)||{},'name')} (${s.score}%)`).join(", ");
+      parts.push(RV_LOCALE==='en'
+        ? `Differential diagnosis should also include ${others}.`
+        : `Ayırıcı tanıda ayrıca ${others} göz önünde bulundurulmalıdır.`);
     }
-    // Patoloji özgü yorum cümleleri
-    if (top.key === "massive_rct") parts.push("Masif rotator manşet yırtığı mevcut olup cerrahi değerlendirme (tendon transferi veya ters omuz artroplastisi) planı açısından MSK ortopedi konsültasyonu önerilir.");
-    else if (top.key === "supra_full") parts.push("Supraspinatus tam kat yırtığı mevcut olup kas yağlı dejenerasyon durumu ve retraksiyon derecesi cerrahi onarılabilirlik açısından önemlidir.");
-    else if (top.key === "frozen") parts.push("Adeziv kapsülit bulguları mevcuttur. Aktif hareket kısıtlılığı ve ağrı ile birlikte klinik korelasyon önerilir.");
-    else if (top.key === "bankart" || top.key === "bony_bankart" || top.key === "alpsa") parts.push("Anterior glenohumeral instabilite bulguları mevcuttur. Glenoid kemik kaybı oranı ve Hill-Sachs lezyonu boyutu, artroskopik Bankart onarımı ile kemik augmentasyonu (Latarjet) arasında seçim yapılmasında belirleyicidir.");
-    else if (top.key === "slap") parts.push("SLAP lezyonu bulguları mevcuttur. Biseps ankoru ile ilişki ve paralabral kist varlığı operatif planı etkileyebilir.");
-    else if (top.key === "calc_tendinit") parts.push("Kalsifik tendinit bulguları mevcuttur. Tedavi (barbotaj, perkütan aspirasyon) planlaması için klinik evre değerlendirilmelidir.");
-    else if (top.key === "avn") parts.push("Humerus başı avasküler nekrozu açısından ileri evreleme (Ficat-Arlet), risk faktörü sorgulaması ve erken ortopedi konsültasyonu önerilir.");
-    else if (top.key === "septic") parts.push("Septik artrit şüphesi acil değerlendirme gerektirir; eklem aspirasyonu ve kültür planlanmalıdır.");
-    else if (top.key === "paralab_cyst") parts.push("Paralabral kist, altta yatan labral yırtığa sekonder olup nöropatik semptomların (suprascapular sinir) değerlendirilmesi gerekir.");
+    // Pathology-specific impression sentences / Patoloji özgü yorum cümleleri
+    if (top.key === "massive_rct") parts.push(RV_LOCALE==='en'
+      ? "Massive rotator cuff tear is present; musculoskeletal orthopaedic consultation is recommended for surgical planning (tendon transfer or reverse shoulder arthroplasty)."
+      : "Masif rotator manşet yırtığı mevcut olup cerrahi değerlendirme (tendon transferi veya ters omuz artroplastisi) planı açısından MSK ortopedi konsültasyonu önerilir.");
+    else if (top.key === "supra_full") parts.push(RV_LOCALE==='en'
+      ? "Supraspinatus full-thickness tear is present; the degree of fatty degeneration and retraction are important for surgical repairability."
+      : "Supraspinatus tam kat yırtığı mevcut olup kas yağlı dejenerasyon durumu ve retraksiyon derecesi cerrahi onarılabilirlik açısından önemlidir.");
+    else if (top.key === "frozen") parts.push(RV_LOCALE==='en'
+      ? "Findings consistent with adhesive capsulitis are present. Clinical correlation with active range-of-motion restriction and pain is recommended."
+      : "Adeziv kapsülit bulguları mevcuttur. Aktif hareket kısıtlılığı ve ağrı ile birlikte klinik korelasyon önerilir.");
+    else if (top.key === "bankart" || top.key === "bony_bankart" || top.key === "alpsa") parts.push(RV_LOCALE==='en'
+      ? "Anterior glenohumeral instability findings are present. The degree of glenoid bone loss and Hill-Sachs lesion size determine the choice between arthroscopic Bankart repair and bone augmentation (Latarjet)."
+      : "Anterior glenohumeral instabilite bulguları mevcuttur. Glenoid kemik kaybı oranı ve Hill-Sachs lezyonu boyutu, artroskopik Bankart onarımı ile kemik augmentasyonu (Latarjet) arasında seçim yapılmasında belirleyicidir.");
+    else if (top.key === "slap") parts.push(RV_LOCALE==='en'
+      ? "SLAP lesion findings are present. The relationship with the biceps anchor and the presence of a paralabral cyst may influence operative planning."
+      : "SLAP lezyonu bulguları mevcuttur. Biseps ankoru ile ilişki ve paralabral kist varlığı operatif planı etkileyebilir.");
+    else if (top.key === "calc_tendinit") parts.push(RV_LOCALE==='en'
+      ? "Calcific tendinitis findings are present. Clinical staging should be assessed for treatment planning (barbotage, percutaneous aspiration)."
+      : "Kalsifik tendinit bulguları mevcuttur. Tedavi (barbotaj, perkütan aspirasyon) planlaması için klinik evre değerlendirilmelidir.");
+    else if (top.key === "avn") parts.push(RV_LOCALE==='en'
+      ? "Advanced staging (Ficat-Arlet), risk factor evaluation, and early orthopaedic consultation are recommended for humeral head avascular necrosis."
+      : "Humerus başı avasküler nekrozu açısından ileri evreleme (Ficat-Arlet), risk faktörü sorgulaması ve erken ortopedi konsültasyonu önerilir.");
+    else if (top.key === "septic") parts.push(RV_LOCALE==='en'
+      ? "Suspicion of septic arthritis requires urgent evaluation; joint aspiration and culture should be planned."
+      : "Septik artrit şüphesi acil değerlendirme gerektirir; eklem aspirasyonu ve kültür planlanmalıdır.");
+    else if (top.key === "paralab_cyst") parts.push(RV_LOCALE==='en'
+      ? "The paralabral cyst is secondary to an underlying labral tear; neuropathic symptoms (suprascapular nerve) should be evaluated."
+      : "Paralabral kist, altta yatan labral yırtığa sekonder olup nöropatik semptomların (suprascapular sinir) değerlendirilmesi gerekir.");
     yorum = parts.join(" ");
   }
 
@@ -786,7 +1622,7 @@ function generateReport(data, lesions, labralTears, scores) {
     headerInfo: {
       side: sides,
       age: d.age || "",
-      sex: d.sex || "",
+      sex: (RV_LOCALE==='en' ? (SEX.find(s=>s.id===d.sex)?.labelEn || d.sex) : d.sex) || "",
       date: today,
       clinical: d.clinical || "",
     },
@@ -958,8 +1794,8 @@ function App() {
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
-    try { document.execCommand("copy"); alert("Rapor panoya kopyalandı."); }
-    catch(e) { alert("Kopyalama başarısız."); }
+    try { document.execCommand("copy"); alert(T.copySuccess); }
+    catch(e) { alert(T.copyFail); }
     sel.removeAllRanges();
   }
   function downloadHTML() {
@@ -996,134 +1832,134 @@ function App() {
   /* ==== Step renderer ==== */
   function renderStep() {
     const d = data;
-    // Step 0 — Hasta ve klinik bilgi
+    // Step 0 — Hasta ve klinik bilgi / Patient and clinical info
     if (step === 0) return <>
-      <h3 className="sec">Hasta Bilgileri</h3>
+      <h3 className="sec">{T.patientInfo}</h3>
       <div className="grid grid-3">
-        <div className="field"><label>Yaş</label>
-          <input className="num" type="number" value={d.age} onChange={e=>update("age", e.target.value)} placeholder="örn. 54" />
+        <div className="field"><label>{T.age}</label>
+          <input className="num" type="number" value={d.age} onChange={e=>update("age", e.target.value)} placeholder={T.agePlaceholder} />
         </div>
-        <div className="field"><label>Cinsiyet</label>
+        <div className="field"><label>{T.sex}</label>
           <div className="grid grid-2">
-            {SEX.map(s => <OptBox key={s} selected={d.sex===s} onClick={()=>update("sex",s)}>{s}</OptBox>)}
+            {SEX.map(s => <OptBox key={s.id} selected={d.sex===s.id} onClick={()=>update("sex",s.id)}>{L(s,'label')}</OptBox>)}
           </div>
         </div>
-        <div className="field"><label>İncelenen Taraf</label>
+        <div className="field"><label>{T.side}</label>
           <div className="grid grid-2">
-            {SIDE.map(s => <OptBox key={s} selected={d.side===s} onClick={()=>update("side",s)} amber>{s}</OptBox>)}
+            {SIDE.map(s => <OptBox key={s.id} selected={d.side===s.id} onClick={()=>update("side",s.id)} amber>{L(s,'label')}</OptBox>)}
           </div>
         </div>
       </div>
-      <h3 className="sec">Klinik Bilgi</h3>
-      <div className="field"><label>Klinik endikasyon / şikayet</label>
-        <textarea value={d.clinical} onChange={e=>update("clinical", e.target.value)} placeholder="Örn: Kronik ağrı, aktif abdüksiyonda zayıflık, 2 yıl önce düşme öyküsü..." />
+      <h3 className="sec">{T.clinicalInfo}</h3>
+      <div className="field"><label>{T.clinicalLabel}</label>
+        <textarea value={d.clinical} onChange={e=>update("clinical", e.target.value)} placeholder={T.clinicalPlaceholder} />
       </div>
       <div className="grid grid-2">
-        <div className="field"><label>Travma öyküsü</label>
+        <div className="field"><label>{T.traumaLabel}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.trauma==="yok"} onClick={()=>update("trauma","yok")}>Yok</OptBox>
-            <OptBox selected={d.trauma==="evet"} onClick={()=>update("trauma","evet")}>Var</OptBox>
+            <OptBox selected={d.trauma==="yok"} onClick={()=>update("trauma","yok")}>{T.noTrauma}</OptBox>
+            <OptBox selected={d.trauma==="evet"} onClick={()=>update("trauma","evet")}>{T.yesTrauma}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Dislokasyon öyküsü</label>
+        <div className="field"><label>{T.dislocationLabel}</label>
           <div className="grid grid-3">
-            <OptBox selected={d.dislocation_hx==="yok"} onClick={()=>{update("dislocation_hx","yok"); update("post_dislocation_hx","yok");}}>Yok</OptBox>
-            <OptBox selected={d.dislocation_hx==="evet"} onClick={()=>update("dislocation_hx","evet")}>Anterior</OptBox>
-            <OptBox selected={d.post_dislocation_hx==="evet"} onClick={()=>update("post_dislocation_hx","evet")}>Posterior</OptBox>
+            <OptBox selected={d.dislocation_hx==="yok"} onClick={()=>{update("dislocation_hx","yok"); update("post_dislocation_hx","yok");}}>{T.noDisloc}</OptBox>
+            <OptBox selected={d.dislocation_hx==="evet"} onClick={()=>update("dislocation_hx","evet")}>{T.anteriorDisloc}</OptBox>
+            <OptBox selected={d.post_dislocation_hx==="evet"} onClick={()=>update("post_dislocation_hx","evet")}>{T.posteriorDisloc}</OptBox>
           </div>
         </div>
       </div>
     </>;
 
-    // Step 1 — Sekanslar
+    // Step 1 — Sekanslar / Sequences
     if (step === 1) return <>
-      <h3 className="sec">Uygulanan MR Sekansları</h3>
-      <div className="hint">Uygulanan tüm sekansları seçin — rapor tekniği bölümünde listelenecek.</div>
+      <h3 className="sec">{T.mrSequences}</h3>
+      <div className="hint">{T.seqHint}</div>
       <div className="grid grid-2">
-        <ChkBox selected={d.seq_t1} onClick={()=>update("seq_t1", !d.seq_t1)}>T1A (aksiyel, koronal obl., sagital obl.)</ChkBox>
-        <ChkBox selected={d.seq_t2} onClick={()=>update("seq_t2", !d.seq_t2)}>T2A (aksiyel, koronal obl., sagital obl.)</ChkBox>
-        <ChkBox selected={d.seq_pd} onClick={()=>update("seq_pd", !d.seq_pd)}>PD yağ baskılı</ChkBox>
-        <ChkBox selected={d.seq_fs} onClick={()=>update("seq_fs", !d.seq_fs)}>Yağ baskılı T2A</ChkBox>
-        <ChkBox selected={d.seq_stir} onClick={()=>update("seq_stir", !d.seq_stir)}>STIR</ChkBox>
-        <ChkBox selected={d.seq_artro} onClick={()=>update("seq_artro", !d.seq_artro)}>MR Artrografi (direkt)</ChkBox>
-        <ChkBox selected={d.seq_post} onClick={()=>update("seq_post", !d.seq_post)}>Kontrast sonrası yağ baskılı T1A</ChkBox>
+        <ChkBox selected={d.seq_t1} onClick={()=>update("seq_t1", !d.seq_t1)}>{T.seqT1}</ChkBox>
+        <ChkBox selected={d.seq_t2} onClick={()=>update("seq_t2", !d.seq_t2)}>{T.seqT2}</ChkBox>
+        <ChkBox selected={d.seq_pd} onClick={()=>update("seq_pd", !d.seq_pd)}>{T.seqPd}</ChkBox>
+        <ChkBox selected={d.seq_fs} onClick={()=>update("seq_fs", !d.seq_fs)}>{T.seqFs}</ChkBox>
+        <ChkBox selected={d.seq_stir} onClick={()=>update("seq_stir", !d.seq_stir)}>{T.seqStir}</ChkBox>
+        <ChkBox selected={d.seq_artro} onClick={()=>update("seq_artro", !d.seq_artro)}>{T.seqArtro}</ChkBox>
+        <ChkBox selected={d.seq_post} onClick={()=>update("seq_post", !d.seq_post)}>{T.seqPost}</ChkBox>
       </div>
     </>;
 
     // Step 2 — Akromion & AC
     if (step === 2) return <>
-      <h3 className="sec">Akromion Morfolojisi</h3>
+      <h3 className="sec">{T.acromionMorphology}</h3>
       <div className="grid grid-2">
         {BIGLIANI.map(b => <OptBox key={b.id} selected={d.acromion_type===b.id} onClick={()=>update("acromion_type", b.id)}>
-          <b>{b.label}</b>
+          <b>{L(b,'label')}</b>
         </OptBox>)}
       </div>
       <div className="grid grid-2" style={{marginTop:10}}>
-        <div className="field"><label>Os acromiale varlığı</label>
+        <div className="field"><label>{T.osAcromiale}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.os_acromiale==="yok"} onClick={()=>update("os_acromiale","yok")}>Yok</OptBox>
-            <OptBox selected={d.os_acromiale==="evet"} onClick={()=>update("os_acromiale","evet")}>Var</OptBox>
+            <OptBox selected={d.os_acromiale==="yok"} onClick={()=>update("os_acromiale","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.os_acromiale==="evet"} onClick={()=>update("os_acromiale","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Akromiohumeral mesafe</label>
+        <div className="field"><label>{T.acromioHumeralDist}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.acromio_humeral==="normal"} onClick={()=>update("acromio_humeral","normal")}>Normal (≥7 mm)</OptBox>
-            <OptBox selected={d.acromio_humeral==="daralmis"} onClick={()=>update("acromio_humeral","daralmis")} amber>Daralmış (&lt;7 mm)</OptBox>
+            <OptBox selected={d.acromio_humeral==="normal"} onClick={()=>update("acromio_humeral","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.acromio_humeral==="daralmis"} onClick={()=>update("acromio_humeral","daralmis")} amber>{T.narrowed}</OptBox>
           </div>
         </div>
       </div>
-      <h3 className="sec amber">Akromioklaviküler Eklem</h3>
+      <h3 className="sec amber">{T.acJoint}</h3>
       <div className="grid grid-2">
-        <ChkBox selected={d.ac_osteofit==="evet"} onClick={()=>update("ac_osteofit", d.ac_osteofit==="evet" ? "yok":"evet")}>Osteofit formasyonu</ChkBox>
-        <ChkBox selected={d.ac_arthrosis==="evet"} onClick={()=>update("ac_arthrosis", d.ac_arthrosis==="evet" ? "yok":"evet")}>Eklem içi dejeneratif değişiklik</ChkBox>
-        <ChkBox selected={d.ac_hypertrophy==="evet"} onClick={()=>update("ac_hypertrophy", d.ac_hypertrophy==="evet" ? "yok":"evet")}>Kapsüler hipertrofi</ChkBox>
-        <ChkBox selected={d.ac_osteophyte==="evet"} onClick={()=>update("ac_osteophyte", d.ac_osteophyte==="evet" ? "yok":"evet")}>İnferior osteofit uzanımı</ChkBox>
-        <ChkBox selected={d.ac_edema==="evet"} onClick={()=>update("ac_edema", d.ac_edema==="evet" ? "yok":"evet")}>AC eklemde kemik iliği ödemi</ChkBox>
-        <ChkBox selected={d.ac_narrow==="evet"} onClick={()=>update("ac_narrow", d.ac_narrow==="evet" ? "yok":"evet")}>Eklem aralığında daralma</ChkBox>
+        <ChkBox selected={d.ac_osteofit==="evet"} onClick={()=>update("ac_osteofit", d.ac_osteofit==="evet" ? "yok":"evet")}>{T.osteophyteFormation}</ChkBox>
+        <ChkBox selected={d.ac_arthrosis==="evet"} onClick={()=>update("ac_arthrosis", d.ac_arthrosis==="evet" ? "yok":"evet")}>{T.degenerativeChange}</ChkBox>
+        <ChkBox selected={d.ac_hypertrophy==="evet"} onClick={()=>update("ac_hypertrophy", d.ac_hypertrophy==="evet" ? "yok":"evet")}>{T.capsularHypertrophy}</ChkBox>
+        <ChkBox selected={d.ac_osteophyte==="evet"} onClick={()=>update("ac_osteophyte", d.ac_osteophyte==="evet" ? "yok":"evet")}>{T.inferiorOsteophyte}</ChkBox>
+        <ChkBox selected={d.ac_edema==="evet"} onClick={()=>update("ac_edema", d.ac_edema==="evet" ? "yok":"evet")}>{T.acBoneMarrowEdema}</ChkBox>
+        <ChkBox selected={d.ac_narrow==="evet"} onClick={()=>update("ac_narrow", d.ac_narrow==="evet" ? "yok":"evet")}>{T.jointSpaceNarrowing}</ChkBox>
       </div>
     </>;
 
-    // Step 3 — Kemik
+    // Step 3 — Kemik / Bone
     if (step === 3) return <>
-      <h3 className="sec">Kemik İliği ve Morfoloji</h3>
+      <h3 className="sec">{T.boneMarrow}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Büyük tüberkül kemik iliği ödemi</label>
+        <div className="field"><label>{T.greaterTubEdema}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.greater_tub_edema==="yok"} onClick={()=>update("greater_tub_edema","yok")}>Yok</OptBox>
-            <OptBox selected={d.greater_tub_edema==="evet"} onClick={()=>update("greater_tub_edema","evet")}>Var</OptBox>
+            <OptBox selected={d.greater_tub_edema==="yok"} onClick={()=>update("greater_tub_edema","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.greater_tub_edema==="evet"} onClick={()=>update("greater_tub_edema","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Küçük tüberkül kemik iliği ödemi</label>
+        <div className="field"><label>{T.lesserTubEdema}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.lesser_tub_edema==="yok"} onClick={()=>update("lesser_tub_edema","yok")}>Yok</OptBox>
-            <OptBox selected={d.lesser_tub_edema==="evet"} onClick={()=>update("lesser_tub_edema","evet")}>Var</OptBox>
+            <OptBox selected={d.lesser_tub_edema==="yok"} onClick={()=>update("lesser_tub_edema","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.lesser_tub_edema==="evet"} onClick={()=>update("lesser_tub_edema","evet")}>{T.present}</OptBox>
           </div>
         </div>
       </div>
-      <h3 className="sec amber">Humerus Başı Avasküler Nekroz Değerlendirmesi</h3>
+      <h3 className="sec amber">{T.avnAssessment}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Subkondral kemik iliği sinyal değişikliği</label>
+        <div className="field"><label>{T.subchondralMarrowChange}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.avn_marrow_change==="yok"} onClick={()=>update("avn_marrow_change","yok")}>Yok</OptBox>
-            <OptBox selected={d.avn_marrow_change==="evet"} onClick={()=>update("avn_marrow_change","evet")}>Var</OptBox>
+            <OptBox selected={d.avn_marrow_change==="yok"} onClick={()=>update("avn_marrow_change","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.avn_marrow_change==="evet"} onClick={()=>update("avn_marrow_change","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Çift çizgi işareti (T2)</label>
+        <div className="field"><label>{T.doubleLineSign}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.avn_double_line==="yok"} onClick={()=>update("avn_double_line","yok")}>Yok</OptBox>
-            <OptBox selected={d.avn_double_line==="evet"} onClick={()=>update("avn_double_line","evet")}>Var</OptBox>
+            <OptBox selected={d.avn_double_line==="yok"} onClick={()=>update("avn_double_line","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.avn_double_line==="evet"} onClick={()=>update("avn_double_line","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Subkondral kollaps</label>
+        <div className="field"><label>{T.subchondralCollapse}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.avn_collapse==="yok"} onClick={()=>update("avn_collapse","yok")}>Yok</OptBox>
-            <OptBox selected={d.avn_collapse==="evet"} onClick={()=>update("avn_collapse","evet")}>Var</OptBox>
+            <OptBox selected={d.avn_collapse==="yok"} onClick={()=>update("avn_collapse","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.avn_collapse==="evet"} onClick={()=>update("avn_collapse","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>AVN için risk faktörü (steroid/alkol/vs.)</label>
+        <div className="field"><label>{T.avnRiskFactor}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.avn_risk==="yok"} onClick={()=>update("avn_risk","yok")}>Yok</OptBox>
-            <OptBox selected={d.avn_risk==="evet"} onClick={()=>update("avn_risk","evet")}>Var</OptBox>
+            <OptBox selected={d.avn_risk==="yok"} onClick={()=>update("avn_risk","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.avn_risk==="evet"} onClick={()=>update("avn_risk","evet")}>{T.present}</OptBox>
           </div>
         </div>
       </div>
@@ -1131,673 +1967,671 @@ function App() {
 
     // Step 4 — Hill-Sachs / Bony Bankart / Reverse
     if (step === 4) return <>
-      <h3 className="sec">Hill-Sachs Lezyonu</h3>
-      <div className="field"><label>Humerus başı posterolateralinde kompresyon defekti</label>
+      <h3 className="sec">{T.hillSachsLesion}</h3>
+      <div className="field"><label>{T.hillSachsLabel}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.hill_sachs==="yok"} onClick={()=>update("hill_sachs","yok")}>Yok</OptBox>
-          <OptBox selected={d.hill_sachs==="evet"} onClick={()=>update("hill_sachs","evet")} amber>Var</OptBox>
+          <OptBox selected={d.hill_sachs==="yok"} onClick={()=>update("hill_sachs","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.hill_sachs==="evet"} onClick={()=>update("hill_sachs","evet")} amber>{T.present}</OptBox>
         </div>
       </div>
-      {d.hill_sachs==="evet" && <div className="field"><label>Defekt boyutu</label>
+      {d.hill_sachs==="evet" && <div className="field"><label>{T.defectSize}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.hill_sachs_size==="kucuk"} onClick={()=>update("hill_sachs_size","kucuk")}>Küçük (&lt;12 mm)</OptBox>
-          <OptBox selected={d.hill_sachs_size==="buyuk"} onClick={()=>update("hill_sachs_size","buyuk")} amber>Büyük (≥12 mm, engage edici olabilir)</OptBox>
+          <OptBox selected={d.hill_sachs_size==="kucuk"} onClick={()=>update("hill_sachs_size","kucuk")}>{T.small12mm}</OptBox>
+          <OptBox selected={d.hill_sachs_size==="buyuk"} onClick={()=>update("hill_sachs_size","buyuk")} amber>{T.large12mm}</OptBox>
         </div>
       </div>}
 
-      <h3 className="sec">Glenoid Kemik Kaybı (Bony Bankart)</h3>
-      <div className="field"><label>Anteroinferior glenoid kemik kaybı / fraktür</label>
+      <h3 className="sec">{T.glenoidBoneLoss}</h3>
+      <div className="field"><label>{T.glenoidBoneLossLabel}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.glenoid_bone_loss==="yok"} onClick={()=>update("glenoid_bone_loss","yok")}>Yok</OptBox>
-          <OptBox selected={d.glenoid_bone_loss==="evet"} onClick={()=>update("glenoid_bone_loss","evet")} amber>Var</OptBox>
+          <OptBox selected={d.glenoid_bone_loss==="yok"} onClick={()=>update("glenoid_bone_loss","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.glenoid_bone_loss==="evet"} onClick={()=>update("glenoid_bone_loss","evet")} amber>{T.present}</OptBox>
         </div>
       </div>
-      {d.glenoid_bone_loss==="evet" && <div className="field"><label>Kemik kaybı şiddeti</label>
+      {d.glenoid_bone_loss==="evet" && <div className="field"><label>{T.boneLossSeverity}</label>
         <div className="grid grid-3">
-          <OptBox selected={d.glenoid_bone_loss_severity==="hafif"} onClick={()=>update("glenoid_bone_loss_severity","hafif")}>Hafif (&lt;10%)</OptBox>
-          <OptBox selected={d.glenoid_bone_loss_severity==="orta"} onClick={()=>update("glenoid_bone_loss_severity","orta")}>Orta (10-20%)</OptBox>
-          <OptBox selected={d.glenoid_bone_loss_severity==="ciddi"} onClick={()=>update("glenoid_bone_loss_severity","ciddi")} amber>Ciddi (&gt;20%)</OptBox>
+          <OptBox selected={d.glenoid_bone_loss_severity==="hafif"} onClick={()=>update("glenoid_bone_loss_severity","hafif")}>{T.mild10}</OptBox>
+          <OptBox selected={d.glenoid_bone_loss_severity==="orta"} onClick={()=>update("glenoid_bone_loss_severity","orta")}>{T.mod1020}</OptBox>
+          <OptBox selected={d.glenoid_bone_loss_severity==="ciddi"} onClick={()=>update("glenoid_bone_loss_severity","ciddi")} amber>{T.severe20}</OptBox>
         </div>
       </div>}
 
-      <h3 className="sec amber">Reverse Hill-Sachs (McLaughlin)</h3>
-      <div className="field"><label>Humerus başı anteromedialinde kompresyon defekti</label>
+      <h3 className="sec amber">{T.revHillSachs}</h3>
+      <div className="field"><label>{T.revHillSachsLabel}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.rev_hill_sachs==="yok"} onClick={()=>update("rev_hill_sachs","yok")}>Yok</OptBox>
-          <OptBox selected={d.rev_hill_sachs==="evet"} onClick={()=>update("rev_hill_sachs","evet")} amber>Var (konvülziyon/elektrik şok öyküsü sorgulanır)</OptBox>
+          <OptBox selected={d.rev_hill_sachs==="yok"} onClick={()=>update("rev_hill_sachs","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.rev_hill_sachs==="evet"} onClick={()=>update("rev_hill_sachs","evet")} amber>{T.revHillSachsYes}</OptBox>
         </div>
       </div>
     </>;
 
-    // Step 5 — Supraspinatus ön değerlendirme + kalsifikasyon
+    // Step 5 — Supraspinatus + kalsifikasyon / calcific
     if (step === 5) return <>
-      <h3 className="sec">Supraspinatus Genel Değerlendirme</h3>
-      <div className="hint">Sonraki adımda her tendon için ayrı ayrı lezyon ekleyeceksiniz. Bu adım genel morfolojik ön değerlendirmedir.</div>
+      <h3 className="sec">{T.supraspinatusAssessment}</h3>
+      <div className="hint">{T.supraspinatusHint}</div>
       <div className="grid grid-2">
-        <div className="field"><label>Tendon kalınlaşması / heterojenite</label>
+        <div className="field"><label>{T.tendonThickeningHetero}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.supra_thick==="yok"} onClick={()=>update("supra_thick","yok")}>Yok</OptBox>
-            <OptBox selected={d.supra_thick==="evet"} onClick={()=>update("supra_thick","evet")}>Var</OptBox>
+            <OptBox selected={d.supra_thick==="yok"} onClick={()=>update("supra_thick","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.supra_thick==="evet"} onClick={()=>update("supra_thick","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Tendon yüksekliğinde azalma</label>
+        <div className="field"><label>{T.tendonHeightReduction}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.supra_thin==="yok"} onClick={()=>update("supra_thin","yok")}>Yok</OptBox>
-            <OptBox selected={d.supra_thin==="evet"} onClick={()=>update("supra_thin","evet")}>Var</OptBox>
+            <OptBox selected={d.supra_thin==="yok"} onClick={()=>update("supra_thin","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.supra_thin==="evet"} onClick={()=>update("supra_thin","evet")}>{T.present}</OptBox>
           </div>
         </div>
       </div>
-      <div className="field"><label>Predominant sinyal değişikliği lokalizasyonu</label>
+      <div className="field"><label>{T.signalLocation}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.supra_location==="kritik"} onClick={()=>update("supra_location","kritik")}>Kritik zon (insersiyo 1-2 cm proksimal)</OptBox>
-          <OptBox selected={d.supra_location==="footprint"} onClick={()=>update("supra_location","footprint")}>Footprint (insersiyonel)</OptBox>
-          <OptBox selected={d.supra_location==="mtj"} onClick={()=>update("supra_location","mtj")}>Muskulotendinöz bileşke</OptBox>
-          <OptBox selected={d.supra_location==="tum"} onClick={()=>update("supra_location","tum")}>Difüz / birden çok alan</OptBox>
+          <OptBox selected={d.supra_location==="kritik"} onClick={()=>update("supra_location","kritik")}>{T.criticalZone}</OptBox>
+          <OptBox selected={d.supra_location==="footprint"} onClick={()=>update("supra_location","footprint")}>{T.footprint}</OptBox>
+          <OptBox selected={d.supra_location==="mtj"} onClick={()=>update("supra_location","mtj")}>{T.mtjZone}</OptBox>
+          <OptBox selected={d.supra_location==="tum"} onClick={()=>update("supra_location","tum")}>{T.diffuse}</OptBox>
         </div>
       </div>
 
-      <h3 className="sec amber">Kalsifik Tendinit Değerlendirmesi</h3>
+      <h3 className="sec amber">{T.calcTendinitis}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Tendonda kalsifik fokus</label>
+        <div className="field"><label>{T.calcFocus}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.calcification_present==="yok"} onClick={()=>update("calcification_present","yok")}>Yok</OptBox>
-            <OptBox selected={d.calcification_present==="evet"} onClick={()=>update("calcification_present","evet")} amber>Var</OptBox>
+            <OptBox selected={d.calcification_present==="yok"} onClick={()=>update("calcification_present","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.calcification_present==="evet"} onClick={()=>update("calcification_present","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Kalsifikasyon çevresi ödem (rezorpsiyon fazı)</label>
+        <div className="field"><label>{T.calcEdema}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.calcific_edema==="yok"} onClick={()=>update("calcific_edema","yok")}>Yok</OptBox>
-            <OptBox selected={d.calcific_edema==="evet"} onClick={()=>update("calcific_edema","evet")}>Var</OptBox>
+            <OptBox selected={d.calcific_edema==="yok"} onClick={()=>update("calcific_edema","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.calcific_edema==="evet"} onClick={()=>update("calcific_edema","evet")}>{T.present}</OptBox>
           </div>
         </div>
       </div>
-      <div className="field"><label>Manşet artropatisi bulguları (süperior humeral migrasyon, kronik yırtık)</label>
+      <div className="field"><label>{T.cuffArthropathy}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.cuff_arthropathy==="yok"} onClick={()=>update("cuff_arthropathy","yok")}>Yok</OptBox>
-          <OptBox selected={d.cuff_arthropathy==="evet"} onClick={()=>update("cuff_arthropathy","evet")}>Var</OptBox>
+          <OptBox selected={d.cuff_arthropathy==="yok"} onClick={()=>update("cuff_arthropathy","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.cuff_arthropathy==="evet"} onClick={()=>update("cuff_arthropathy","evet")}>{T.present}</OptBox>
         </div>
       </div>
     </>;
 
-    // Step 6 — Manşet loop girişi
+    // Step 6 — Manşet loop girişi / RC loop entry
     if (step === 6) return <>
-      <h3 className="sec">Rotator Manşet Lezyonları</h3>
-      <div className="hint">Her patolojik bulgu için ayrı lezyon ekleyin (aynı tendon içinde birden fazla yerleşim varsa ayrı lezyon olarak kaydedebilirsiniz). Sonrasında &quot;Tendondan başka lezyon yok&quot; seçeneği ile devam edin.</div>
+      <h3 className="sec">{T.rcLesions}</h3>
+      <div className="hint">{T.rcHint}</div>
       {lesions.length > 0 && <div>
-        <h3 className="sec amber">Kaydedilen Lezyonlar</h3>
-        {lesions.map((L,i) => {
-          const t = RC_TENDONS.find(x => x.id === L.tendon);
-          return <div key={L.id} className="lesion-card">
+        <h3 className="sec amber">{T.recordedLesions}</h3>
+        {lesions.map((Lx,i) => {
+          const t = RC_TENDONS.find(x => x.id === Lx.tendon);
+          return <div key={Lx.id} className="lesion-card">
             <div className="lesion-head">
-              <div className="lesion-title">Lezyon #{i+1} — {t ? t.name : "(tendon seçilmedi)"}</div>
-              <button className="btn btn-sm" onClick={()=>removeLesion(i)}>Sil</button>
+              <div className="lesion-title">{T.lesionTitle(i, t ? L(t,'name') : null)}</div>
+              <button className="btn btn-sm" onClick={()=>removeLesion(i)}>{T.deleteBtn}</button>
             </div>
             <div>
-              {L.continuity === "tendinop" && <span className="chip chip-teal">Tendinopati</span>}
-              {L.continuity === "partial" && <span className="chip chip-amber">Parsiyel yırtık</span>}
-              {L.continuity === "full" && <span className="chip chip-red">Tam kat yırtık</span>}
-              {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
-              {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+              {Lx.continuity === "tendinop" && <span className="chip chip-teal">{T.chipTendinopathy}</span>}
+              {Lx.continuity === "partial" && <span className="chip chip-amber">{T.chipPartialTear}</span>}
+              {Lx.continuity === "full" && <span className="chip chip-red">{T.chipFullTear}</span>}
+              {Lx.calcific && <span className="chip chip-amber">{T.chipCalcific}</span>}
+              {Lx.goutallier > 0 && <span className="chip chip-amber">Goutallier {Lx.goutallier}</span>}
             </div>
           </div>;
         })}
       </div>}
-      <button className="btn btn-primary" onClick={()=>{setStep(7); startRCLesion();}}>+ Yeni Rotator Manşet Lezyonu Ekle</button>
-      {lesions.length > 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Başka lezyon yok, devam et →</button>}
-      {lesions.length === 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Rotator manşette patolojik bulgu yok, devam et →</button>}
+      <button className="btn btn-primary" onClick={()=>{setStep(7); startRCLesion();}}>{T.addRCLesion}</button>
+      {lesions.length > 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>{T.noMoreLesion}</button>}
+      {lesions.length === 0 && <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>{T.noRCPathology}</button>}
     </>;
 
-    // Step 7 — Manşet lezyon loop (alt adımlar)
+    // Step 7 — Manşet lezyon loop (alt adımlar) / RC lesion loop sub-steps
     if (step === 7) {
       if (lesionIdx === -1) {
-        // loop biter, manşet özeti + devam butonu
         return <>
-          <h3 className="sec">Rotator Manşet Lezyonları Kaydedildi</h3>
-          {lesions.length === 0 && <div className="hint">Kayıtlı lezyon yok.</div>}
-          {lesions.map((L,i) => {
-            const t = RC_TENDONS.find(x => x.id === L.tendon);
-            return <div key={L.id} className="lesion-card">
+          <h3 className="sec">{T.rcLesionsRecorded}</h3>
+          {lesions.length === 0 && <div className="hint">{T.noLesionsHint}</div>}
+          {lesions.map((Lx,i) => {
+            const t = RC_TENDONS.find(x => x.id === Lx.tendon);
+            return <div key={Lx.id} className="lesion-card">
               <div className="lesion-head">
-                <div className="lesion-title">#{i+1} — {t ? t.name : "?"}</div>
-                <button className="btn btn-sm" onClick={()=>removeLesion(i)}>Sil</button>
+                <div className="lesion-title">#{i+1} — {t ? L(t,'name') : "?"}</div>
+                <button className="btn btn-sm" onClick={()=>removeLesion(i)}>{T.deleteBtn}</button>
               </div>
               <div>
-                {L.continuity === "tendinop" && <span className="chip chip-teal">Tendinopati</span>}
-                {L.continuity === "partial" && <span className="chip chip-amber">Parsiyel ({L.partial_face})</span>}
-                {L.continuity === "full" && <span className="chip chip-red">Tam kat ({L.full_size})</span>}
-                {L.retraction && <span className="chip chip-red">Patte {L.retraction}</span>}
-                {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
-                {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+                {Lx.continuity === "tendinop" && <span className="chip chip-teal">{T.chipTendinopathy}</span>}
+                {Lx.continuity === "partial" && <span className="chip chip-amber">{T.chipPartialTear} ({Lx.partial_face})</span>}
+                {Lx.continuity === "full" && <span className="chip chip-red">{T.chipFullTear} ({Lx.full_size})</span>}
+                {Lx.retraction && <span className="chip chip-red">Patte {Lx.retraction}</span>}
+                {Lx.calcific && <span className="chip chip-amber">{T.chipCalcific}</span>}
+                {Lx.goutallier > 0 && <span className="chip chip-amber">Goutallier {Lx.goutallier}</span>}
               </div>
             </div>;
           })}
-          <button className="btn btn-primary" onClick={()=>startRCLesion()}>+ Başka Lezyon Ekle</button>
-          <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>Devam et →</button>
+          <button className="btn btn-primary" onClick={()=>startRCLesion()}>{T.addMoreLesion}</button>
+          <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(8)}>{T.continueBtn}</button>
         </>;
       }
-      const L = lesions[lesionIdx];
-      if (!L) return null;
-      // alt adım 0: tendon
+      const Lx = lesions[lesionIdx];
+      if (!Lx) return null;
+      // sub-step 0: tendon
       if (lesionSub === 0) return <>
-        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-        <h3 className="sec">Hangi tendon?</h3>
+        <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+        <h3 className="sec">{T.whichTendon}</h3>
         <div className="grid grid-2">
-          {RC_TENDONS.map(t => <OptBox key={t.id} selected={L.tendon===t.id} onClick={()=>updateCurrentLesion({tendon:t.id})}>
-            <b>{t.name}</b>
+          {RC_TENDONS.map(t => <OptBox key={t.id} selected={Lx.tendon===t.id} onClick={()=>updateCurrentLesion({tendon:t.id})}>
+            <b>{L(t,'name')}</b>
           </OptBox>)}
         </div>
       </>;
-      // alt adım 1: lokalizasyon
+      // sub-step 1: location
       if (lesionSub === 1) return <>
-        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-        <h3 className="sec">Tendon içinde lokalizasyon</h3>
+        <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+        <h3 className="sec">{T.tendonLocation}</h3>
         <div className="grid grid-2">
-          <OptBox selected={L.location==="footprint"} onClick={()=>updateCurrentLesion({location:"footprint"})}>Footprint (insersiyonel)</OptBox>
-          <OptBox selected={L.location==="kritik"} onClick={()=>updateCurrentLesion({location:"kritik"})}>Kritik zon (insersiyo 1-2 cm proksimali)</OptBox>
-          <OptBox selected={L.location==="mtj"} onClick={()=>updateCurrentLesion({location:"mtj"})}>Muskulotendinöz bileşke</OptBox>
-          <OptBox selected={L.location==="tum"} onClick={()=>updateCurrentLesion({location:"tum"})}>Difüz / birden çok alan</OptBox>
+          <OptBox selected={Lx.location==="footprint"} onClick={()=>updateCurrentLesion({location:"footprint"})}>{T.footprintLoc}</OptBox>
+          <OptBox selected={Lx.location==="kritik"} onClick={()=>updateCurrentLesion({location:"kritik"})}>{T.criticalZoneLoc}</OptBox>
+          <OptBox selected={Lx.location==="mtj"} onClick={()=>updateCurrentLesion({location:"mtj"})}>{T.mtjLoc}</OptBox>
+          <OptBox selected={Lx.location==="tum"} onClick={()=>updateCurrentLesion({location:"tum"})}>{T.diffuseLoc}</OptBox>
         </div>
       </>;
-      // alt adım 2: kontinüite
+      // sub-step 2: integrity
       if (lesionSub === 2) return <>
-        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-        <h3 className="sec">Tendon bütünlüğü</h3>
+        <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+        <h3 className="sec">{T.tendonIntegrity}</h3>
         <div className="grid grid-2">
-          <OptBox selected={L.continuity==="tendinop"} onClick={()=>updateCurrentLesion({continuity:"tendinop", partial_face:"", partial_thickness:"", full_size:"", retraction:null})}>
-            <b>Tendinopati</b><small>Sinyal artışı, yırtık yok</small>
+          <OptBox selected={Lx.continuity==="tendinop"} onClick={()=>updateCurrentLesion({continuity:"tendinop", partial_face:"", partial_thickness:"", full_size:"", retraction:null})}>
+            <b>{T.tendinopathy}</b><small>{T.tendinopathyHint}</small>
           </OptBox>
-          <OptBox selected={L.continuity==="partial"} onClick={()=>updateCurrentLesion({continuity:"partial", full_size:"", retraction:null})}>
-            <b>Parsiyel yırtık</b><small>Tendon kalınlığının bir kısmı</small>
+          <OptBox selected={Lx.continuity==="partial"} onClick={()=>updateCurrentLesion({continuity:"partial", full_size:"", retraction:null})}>
+            <b>{T.partialTear}</b><small>{T.partialTearHint}</small>
           </OptBox>
-          <OptBox selected={L.continuity==="full"} onClick={()=>updateCurrentLesion({continuity:"full", partial_face:"", partial_thickness:""})}>
-            <b>Tam kat yırtık</b><small>Artiküler-bursal geçişli sıvı</small>
+          <OptBox selected={Lx.continuity==="full"} onClick={()=>updateCurrentLesion({continuity:"full", partial_face:"", partial_thickness:""})}>
+            <b>{T.fullTear}</b><small>{T.fullTearHint}</small>
           </OptBox>
         </div>
       </>;
-      // alt adım 3: detay
+      // sub-step 3: detail
       if (lesionSub === 3) {
-        if (L.continuity === "tendinop") {
+        if (Lx.continuity === "tendinop") {
           return <>
-            <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-            <h3 className="sec">Tendinopati için ek detay yok</h3>
-            <div className="hint">Bu adımda ek detay gerekmiyor. Sonraki adıma geçin.</div>
+            <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+            <h3 className="sec">{T.tendinopNoDetail}</h3>
+            <div className="hint">{T.tendinopNoDetailHint}</div>
           </>;
         }
-        if (L.continuity === "partial") return <>
-          <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-          <h3 className="sec">Parsiyel Yırtık — Yüz</h3>
+        if (Lx.continuity === "partial") return <>
+          <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+          <h3 className="sec">{T.partialFace}</h3>
           <div className="grid grid-3">
-            <OptBox selected={L.partial_face==="artikuler"} onClick={()=>updateCurrentLesion({partial_face:"artikuler"})}>Artiküler yüz</OptBox>
-            <OptBox selected={L.partial_face==="bursal"} onClick={()=>updateCurrentLesion({partial_face:"bursal"})}>Bursal yüz</OptBox>
-            <OptBox selected={L.partial_face==="intratendinoz"} onClick={()=>updateCurrentLesion({partial_face:"intratendinoz"})}>İntratendinöz</OptBox>
+            <OptBox selected={Lx.partial_face==="artikuler"} onClick={()=>updateCurrentLesion({partial_face:"artikuler"})}>{T.articularFace}</OptBox>
+            <OptBox selected={Lx.partial_face==="bursal"} onClick={()=>updateCurrentLesion({partial_face:"bursal"})}>{T.bursalFace}</OptBox>
+            <OptBox selected={Lx.partial_face==="intratendinoz"} onClick={()=>updateCurrentLesion({partial_face:"intratendinoz"})}>{T.intratendinous}</OptBox>
           </div>
-          <div className="field"><label>Tendon kalınlığının yaklaşık kaç %'si? (opsiyonel)</label>
-            <input className="num" type="number" min="0" max="99" value={L.partial_thickness} onChange={e=>updateCurrentLesion({partial_thickness:e.target.value})} placeholder="örn. 40" />
+          <div className="field"><label>{T.partialThicknessLabel}</label>
+            <input className="num" type="number" min="0" max="99" value={Lx.partial_thickness} onChange={e=>updateCurrentLesion({partial_thickness:e.target.value})} placeholder={T.partialThicknessPlaceholder} />
           </div>
         </>;
-        if (L.continuity === "full") return <>
-          <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-          <h3 className="sec">Tam Kat Yırtık — Boyut & Retraksiyon</h3>
-          <div className="field"><label>Defekt boyutu (Cofield/DeOrio)</label>
+        if (Lx.continuity === "full") return <>
+          <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+          <h3 className="sec">{T.fullTearSizeRetrac}</h3>
+          <div className="field"><label>{T.defectSizeCofield}</label>
             <div className="grid grid-2">
-              <OptBox selected={L.full_size==="small"} onClick={()=>updateCurrentLesion({full_size:"small"})}>Küçük (&lt;1 cm)</OptBox>
-              <OptBox selected={L.full_size==="medium"} onClick={()=>updateCurrentLesion({full_size:"medium"})}>Orta (1–3 cm)</OptBox>
-              <OptBox selected={L.full_size==="large"} onClick={()=>updateCurrentLesion({full_size:"large"})} amber>Geniş (3–5 cm)</OptBox>
-              <OptBox selected={L.full_size==="massive"} onClick={()=>updateCurrentLesion({full_size:"massive"})} amber>Masif (&gt;5 cm)</OptBox>
+              <OptBox selected={Lx.full_size==="small"} onClick={()=>updateCurrentLesion({full_size:"small"})}>{T.smallSize}</OptBox>
+              <OptBox selected={Lx.full_size==="medium"} onClick={()=>updateCurrentLesion({full_size:"medium"})}>{T.mediumSize}</OptBox>
+              <OptBox selected={Lx.full_size==="large"} onClick={()=>updateCurrentLesion({full_size:"large"})} amber>{T.largeSize}</OptBox>
+              <OptBox selected={Lx.full_size==="massive"} onClick={()=>updateCurrentLesion({full_size:"massive"})} amber>{T.massiveSize}</OptBox>
             </div>
           </div>
-          <div className="field"><label>Tendon retraksiyonu (Patte)</label>
+          <div className="field"><label>{T.retraction}</label>
             <div className="grid grid-3">
-              {PATTE.map(p => <OptBox key={p.id} selected={L.retraction===p.id} onClick={()=>updateCurrentLesion({retraction:p.id})}>
-                <b>{p.label}</b><small>{p.txt}</small>
+              {PATTE.map(p => <OptBox key={p.id} selected={Lx.retraction===p.id} onClick={()=>updateCurrentLesion({retraction:p.id})}>
+                <b>{p.label}</b><small>{L(p,'txt')}</small>
               </OptBox>)}
             </div>
           </div>
         </>;
       }
-      // alt adım 4: goutallier & kalsifik
+      // sub-step 4: goutallier & calcific
       if (lesionSub === 4) return <>
-        <div className="sticker">Lezyon <b>#{lesionIdx+1}</b> — Adım {lesionSub+1}/{RC_SUBSTEPS}</div>
-        <h3 className="sec">Kas Yağlı Dejenerasyonu (Goutallier)</h3>
+        <div className="sticker">{T.lesionSticker(lesionIdx, lesionSub, RC_SUBSTEPS)}</div>
+        <h3 className="sec">{T.goutallierTitle}</h3>
         <div className="grid grid-3">
-          {GOUTALLIER.map(g => <OptBox key={g.id} selected={Number(L.goutallier)===g.id} onClick={()=>updateCurrentLesion({goutallier:g.id})}>
-            <b>{g.label}</b><small>{g.txt}</small>
+          {GOUTALLIER.map(g => <OptBox key={g.id} selected={Number(Lx.goutallier)===g.id} onClick={()=>updateCurrentLesion({goutallier:g.id})}>
+            <b>{g.label}</b><small>{L(g,'txt')}</small>
           </OptBox>)}
         </div>
-        <h3 className="sec amber">Kalsifik Fokus</h3>
-        <ChkBox selected={L.calcific} onClick={()=>updateCurrentLesion({calcific: !L.calcific})}>Bu tendon liflerinde kalsifik fokus var</ChkBox>
+        <h3 className="sec amber">{T.calcificFocus}</h3>
+        <ChkBox selected={Lx.calcific} onClick={()=>updateCurrentLesion({calcific: !Lx.calcific})}>{T.calcificFocusCheck}</ChkBox>
       </>;
     }
 
     // Step 8 — Biceps tendon
     if (step === 8) return <>
-      <h3 className="sec">Biceps Uzun Başı Tendonu</h3>
+      <h3 className="sec">{T.bicepsLHB}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Tendon sinyali</label>
+        <div className="field"><label>{T.tendonSignal}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.biceps_signal==="normal"} onClick={()=>update("biceps_signal","normal")}>Normal</OptBox>
-            <OptBox selected={d.biceps_signal==="artmis"} onClick={()=>update("biceps_signal","artmis")}>Artmış (tendinopati)</OptBox>
+            <OptBox selected={d.biceps_signal==="normal"} onClick={()=>update("biceps_signal","normal")}>{T.normalSignal}</OptBox>
+            <OptBox selected={d.biceps_signal==="artmis"} onClick={()=>update("biceps_signal","artmis")}>{T.increasedSignal}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Biceps kılıfı sıvısı</label>
+        <div className="field"><label>{T.bicepsSheathFluid}</label>
           <div className="grid grid-3">
-            <OptBox selected={d.biceps_sheath==="yok"} onClick={()=>update("biceps_sheath","yok")}>Yok</OptBox>
-            <OptBox selected={d.biceps_sheath==="minimal"} onClick={()=>update("biceps_sheath","minimal")}>Minimal</OptBox>
-            <OptBox selected={d.biceps_sheath==="belirgin"} onClick={()=>update("biceps_sheath","belirgin")}>Belirgin (tenosinovit)</OptBox>
+            <OptBox selected={d.biceps_sheath==="yok"} onClick={()=>update("biceps_sheath","yok")}>{T.noFluid}</OptBox>
+            <OptBox selected={d.biceps_sheath==="minimal"} onClick={()=>update("biceps_sheath","minimal")}>{T.minimalFluid}</OptBox>
+            <OptBox selected={d.biceps_sheath==="belirgin"} onClick={()=>update("biceps_sheath","belirgin")}>{T.prominentFluid}</OptBox>
           </div>
         </div>
       </div>
-      <div className="field"><label>Tendon bütünlüğü</label>
+      <div className="field"><label>{T.tendonIntegrity8}</label>
         <div className="grid grid-3">
-          <OptBox selected={d.biceps_continuity==="intakt"} onClick={()=>update("biceps_continuity","intakt")}>İntakt</OptBox>
-          <OptBox selected={d.biceps_continuity==="parsiyel"} onClick={()=>update("biceps_continuity","parsiyel")}>Parsiyel yırtık</OptBox>
-          <OptBox selected={d.biceps_continuity==="tam"} onClick={()=>update("biceps_continuity","tam")} amber>Tam kat yırtık</OptBox>
+          <OptBox selected={d.biceps_continuity==="intakt"} onClick={()=>update("biceps_continuity","intakt")}>{T.intact}</OptBox>
+          <OptBox selected={d.biceps_continuity==="parsiyel"} onClick={()=>update("biceps_continuity","parsiyel")}>{T.partialTear8}</OptBox>
+          <OptBox selected={d.biceps_continuity==="tam"} onClick={()=>update("biceps_continuity","tam")} amber>{T.fullTear8}</OptBox>
         </div>
       </div>
-      {d.biceps_continuity==="tam" && <div className="field"><label>Popeye işareti (distal kas karnı retraksiyonu)</label>
+      {d.biceps_continuity==="tam" && <div className="field"><label>{T.popeyeSign}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.biceps_popeye==="yok"} onClick={()=>update("biceps_popeye","yok")}>Yok</OptBox>
-          <OptBox selected={d.biceps_popeye==="evet"} onClick={()=>update("biceps_popeye","evet")}>Var</OptBox>
+          <OptBox selected={d.biceps_popeye==="yok"} onClick={()=>update("biceps_popeye","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.biceps_popeye==="evet"} onClick={()=>update("biceps_popeye","evet")}>{T.present}</OptBox>
         </div>
       </div>}
-      <div className="field"><label>Bicipital olukta pozisyon</label>
+      <div className="field"><label>{T.bicepsPosition}</label>
         <div className="grid grid-3">
-          <OptBox selected={d.biceps_position==="normal"} onClick={()=>update("biceps_position","normal")}>Normal pozisyon</OptBox>
-          <OptBox selected={d.biceps_position==="sublukse"} onClick={()=>update("biceps_position","sublukse")} amber>Medial subluksasyon</OptBox>
-          <OptBox selected={d.biceps_position==="dislok_med"} onClick={()=>update("biceps_position","dislok_med")} amber>Medial dislokasyon</OptBox>
+          <OptBox selected={d.biceps_position==="normal"} onClick={()=>update("biceps_position","normal")}>{T.normalPosition}</OptBox>
+          <OptBox selected={d.biceps_position==="sublukse"} onClick={()=>update("biceps_position","sublukse")} amber>{T.medialSublux}</OptBox>
+          <OptBox selected={d.biceps_position==="dislok_med"} onClick={()=>update("biceps_position","dislok_med")} amber>{T.medialDisloc}</OptBox>
         </div>
       </div>
     </>;
 
-    // Step 9 — Labrum loop girişi & loop
+    // Step 9 — Labrum loop girişi & loop / Labrum loop
     if (step === 9) {
-      // loop içindeyse
       if (labralIdx !== -1) {
-        const L = (data.labralTears||[])[labralIdx];
-        if (!L) return null;
+        const Lx = (data.labralTears||[])[labralIdx];
+        if (!Lx) return null;
         if (labralSub === 0) return <>
-          <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-          <h3 className="sec">Yırtık Lokalizasyonu (Kadran)</h3>
+          <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+          <h3 className="sec">{T.tearLocation}</h3>
           <div className="grid grid-4">
-            {LABRAL_QUADRANTS.map(q => <OptBox key={q.id} selected={L.quadrant===q.id} onClick={()=>updateCurrentLabral({quadrant:q.id})}>
-              {q.name}
+            {LABRAL_QUADRANTS.map(q => <OptBox key={q.id} selected={Lx.quadrant===q.id} onClick={()=>updateCurrentLabral({quadrant:q.id})}>
+              {L(q,'name')}
             </OptBox>)}
           </div>
         </>;
         if (labralSub === 1) return <>
-          <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-          <h3 className="sec">Yırtık Kategorisi</h3>
+          <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+          <h3 className="sec">{T.tearCategory}</h3>
           <div className="grid grid-2">
-            <OptBox selected={L.category==="slap"} onClick={()=>updateCurrentLabral({category:"slap", subtype:""})}>
-              <b>SLAP (Süperior)</b><small>Biceps ankoru ile ilişkili</small>
+            <OptBox selected={Lx.category==="slap"} onClick={()=>updateCurrentLabral({category:"slap", subtype:""})}>
+              <b>{T.slapSuperior}</b><small>{T.slapHint}</small>
             </OptBox>
-            <OptBox selected={L.category==="ant"} onClick={()=>updateCurrentLabral({category:"ant", subtype:""})}>
-              <b>Anterior (Bankart spektrumu)</b><small>Bankart, kemik Bankart, ALPSA, Perthes, GLAD, HAGL</small>
+            <OptBox selected={Lx.category==="ant"} onClick={()=>updateCurrentLabral({category:"ant", subtype:""})}>
+              <b>{T.anteriorBankart}</b><small>{T.anteriorBankartHint}</small>
             </OptBox>
-            <OptBox selected={L.category==="post"} onClick={()=>updateCurrentLabral({category:"post", subtype:""})}>
-              <b>Posterior</b><small>Reverse Bankart, Kim</small>
+            <OptBox selected={Lx.category==="post"} onClick={()=>updateCurrentLabral({category:"post", subtype:""})}>
+              <b>{T.posterior}</b><small>{T.posteriorHint}</small>
             </OptBox>
-            <OptBox selected={L.category==="simple"} onClick={()=>updateCurrentLabral({category:"simple", subtype:""})}>
-              <b>Basit labral yırtık / dejenerasyon</b><small>Spesifik alt tip tanımlanmamış</small>
+            <OptBox selected={Lx.category==="simple"} onClick={()=>updateCurrentLabral({category:"simple", subtype:""})}>
+              <b>{T.simpleTear}</b><small>{T.simpleTearHint}</small>
             </OptBox>
           </div>
         </>;
         if (labralSub === 2) {
-          if (L.category === "slap") return <>
-            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-            <h3 className="sec">SLAP Alt Tipi</h3>
+          if (Lx.category === "slap") return <>
+            <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+            <h3 className="sec">{T.slapSubtype}</h3>
             <div className="grid grid-2">
-              {SLAP_TYPES.map(s => <OptBox key={s.id} selected={L.subtype===s.id} onClick={()=>updateCurrentLabral({subtype:s.id})}>
-                <b>{s.name}</b><small>{s.txt}</small>
+              {SLAP_TYPES.map(s => <OptBox key={s.id} selected={Lx.subtype===s.id} onClick={()=>updateCurrentLabral({subtype:s.id})}>
+                <b>{s.name}</b><small>{L(s,'txt')}</small>
               </OptBox>)}
             </div>
-            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+            <ChkBox selected={Lx.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!Lx.paralabralCyst})}>{T.accompanyingParalabralCyst}</ChkBox>
           </>;
-          if (L.category === "ant") return <>
-            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-            <h3 className="sec">Anterior Labral Varyant</h3>
+          if (Lx.category === "ant") return <>
+            <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+            <h3 className="sec">{T.anteriorVariant}</h3>
             <div className="grid grid-2">
-              {ANT_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={L.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
-                <b>{v.name}</b><small>{v.txt}</small>
+              {ANT_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={Lx.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
+                <b>{L(v,'name')}</b><small>{L(v,'txt')}</small>
               </OptBox>)}
             </div>
-            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+            <ChkBox selected={Lx.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!Lx.paralabralCyst})}>{T.accompanyingParalabralCyst}</ChkBox>
           </>;
-          if (L.category === "post") return <>
-            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-            <h3 className="sec">Posterior Labral Varyant</h3>
+          if (Lx.category === "post") return <>
+            <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+            <h3 className="sec">{T.posteriorVariant}</h3>
             <div className="grid grid-2">
-              {POST_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={L.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
-                <b>{v.name}</b><small>{v.txt}</small>
+              {POST_LABRAL_VARIANTS.map(v => <OptBox key={v.id} selected={Lx.subtype===v.id} onClick={()=>updateCurrentLabral({subtype:v.id})}>
+                <b>{L(v,'name')}</b><small>{L(v,'txt')}</small>
               </OptBox>)}
             </div>
-            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+            <ChkBox selected={Lx.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!Lx.paralabralCyst})}>{T.accompanyingParalabralCyst}</ChkBox>
           </>;
           // simple
           return <>
-            <div className="sticker">Labral Yırtık <b>#{labralIdx+1}</b> — Adım {labralSub+1}/{LAB_SUBSTEPS}</div>
-            <h3 className="sec">Basit Labral Yırtık</h3>
-            <div className="hint">Spesifik alt tip tanımlanmadı; lokalize sinyal değişikliği olarak raporlanacak.</div>
-            <ChkBox selected={L.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!L.paralabralCyst})}>Eşlik eden paralabral kist</ChkBox>
+            <div className="sticker">{T.labralSticker(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
+            <h3 className="sec">{T.simpleTearTitle}</h3>
+            <div className="hint">{T.simpleTearHintText}</div>
+            <ChkBox selected={Lx.paralabralCyst} onClick={()=>updateCurrentLabral({paralabralCyst:!Lx.paralabralCyst})}>{T.accompanyingParalabralCyst}</ChkBox>
           </>;
         }
       }
 
-      // loop dışında — özet + yeni ekle
+      // loop dışında — özet + yeni ekle / outside loop — summary + add new
       return <>
-        <h3 className="sec">Glenoid Labrum Lezyonları</h3>
-        <div className="hint">Her yırtık için kadran ve tip seçin. Bankart/SLAP/ALPSA vb. ayrı ayrı kaydedilebilir.</div>
+        <h3 className="sec">{T.glenoidLabrumLesions}</h3>
+        <div className="hint">{T.labralHint}</div>
         {(data.labralTears||[]).length > 0 && <div>
-          <h3 className="sec amber">Kaydedilen Labral Yırtıklar</h3>
-          {(data.labralTears||[]).map((L,i) => {
-            const q = LABRAL_QUADRANTS.find(x => x.id === L.quadrant);
+          <h3 className="sec amber">{T.recordedLabralTears}</h3>
+          {(data.labralTears||[]).map((Lx,i) => {
+            const q = LABRAL_QUADRANTS.find(x => x.id === Lx.quadrant);
             let tName = "";
-            if (L.category === "slap") tName = SLAP_TYPES.find(x=>x.id===L.subtype)?.name || "SLAP";
-            else if (L.category === "ant") tName = ANT_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Anterior";
-            else if (L.category === "post") tName = POST_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Posterior";
-            else tName = "Basit";
-            return <div key={L.id} className="lesion-card">
+            if (Lx.category === "slap") tName = SLAP_TYPES.find(x=>x.id===Lx.subtype)?.name || "SLAP";
+            else if (Lx.category === "ant") tName = L(ANT_LABRAL_VARIANTS.find(x=>x.id===Lx.subtype)||{}, 'name') || "Anterior";
+            else if (Lx.category === "post") tName = L(POST_LABRAL_VARIANTS.find(x=>x.id===Lx.subtype)||{}, 'name') || "Posterior";
+            else tName = T.simpleBasit;
+            return <div key={Lx.id} className="lesion-card">
               <div className="lesion-head">
-                <div className="lesion-title">Yırtık #{i+1} — {q?.name} — {tName}</div>
-                <button className="btn btn-sm" onClick={()=>removeLabral(i)}>Sil</button>
+                <div className="lesion-title">{T.labralTearTitle(i, q ? L(q,'name') : "?", tName)}</div>
+                <button className="btn btn-sm" onClick={()=>removeLabral(i)}>{T.deleteBtn}</button>
               </div>
-              {L.paralabralCyst && <span className="chip chip-amber">Paralabral kist (+)</span>}
+              {Lx.paralabralCyst && <span className="chip chip-amber">{T.accompanyingParalabralCyst} (+)</span>}
             </div>;
           })}
         </div>}
         <div>
-          <button className="btn btn-primary" onClick={()=>startLabralTear()}>+ Yeni Labral Yırtık Ekle</button>
+          <button className="btn btn-primary" onClick={()=>startLabralTear()}>{T.addLabralTear}</button>
           <button className="btn" style={{marginLeft:10}} onClick={()=>setStep(10)}>
-            {(data.labralTears||[]).length === 0 ? "Labral yırtık yok, devam et →" : "Başka yırtık yok, devam et →"}
+            {(data.labralTears||[]).length === 0 ? T.noLabralTear : T.noMoreLabralTear}
           </button>
         </div>
 
-        <h3 className="sec">Ek Labral Bulgular</h3>
-        <div className="field"><label>Labral dejenerasyon (yırtık olmadan)</label>
+        <h3 className="sec">{T.additionalLabralFindings}</h3>
+        <div className="field"><label>{T.labralDegen}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.labral_degen==="yok"} onClick={()=>update("labral_degen","yok")}>Yok</OptBox>
-            <OptBox selected={d.labral_degen==="evet"} onClick={()=>update("labral_degen","evet")}>Var (sinyal artışı)</OptBox>
+            <OptBox selected={d.labral_degen==="yok"} onClick={()=>update("labral_degen","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.labral_degen==="evet"} onClick={()=>update("labral_degen","evet")}>{T.labralDegenPresent}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Paralabral kist lokalizasyonu</label>
+        <div className="field"><label>{T.paralabralCystLoc}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.paralabral_cyst==="yok"} onClick={()=>update("paralabral_cyst","yok")}>Yok</OptBox>
-            <OptBox selected={d.paralabral_cyst==="spinoglenoid"} onClick={()=>update("paralabral_cyst","spinoglenoid")} amber>Spinoglenoid çentik</OptBox>
-            <OptBox selected={d.paralabral_cyst==="suprascapular"} onClick={()=>update("paralabral_cyst","suprascapular")} amber>Suprascapular çentik</OptBox>
-            <OptBox selected={d.paralabral_cyst==="diger"} onClick={()=>update("paralabral_cyst","diger")}>Diğer</OptBox>
+            <OptBox selected={d.paralabral_cyst==="yok"} onClick={()=>update("paralabral_cyst","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.paralabral_cyst==="spinoglenoid"} onClick={()=>update("paralabral_cyst","spinoglenoid")} amber>{T.spinoglenoid}</OptBox>
+            <OptBox selected={d.paralabral_cyst==="suprascapular"} onClick={()=>update("paralabral_cyst","suprascapular")} amber>{T.suprascapular}</OptBox>
+            <OptBox selected={d.paralabral_cyst==="diger"} onClick={()=>update("paralabral_cyst","diger")}>{T.other}</OptBox>
           </div>
         </div>
       </>;
     }
 
-    // Step 10 — Ligaman & kapsül
+    // Step 10 — Ligaman & kapsül / Ligaments & capsule
     if (step === 10) return <>
-      <h3 className="sec">Glenohumeral Ligamanlar</h3>
+      <h3 className="sec">{T.glenohumLigaments}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>SGHL (süperior glenohumeral lig.)</label>
+        <div className="field"><label>{T.sghl}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.sghl_abn==="normal"} onClick={()=>update("sghl_abn","normal")}>Normal</OptBox>
-            <OptBox selected={d.sghl_abn==="evet"} onClick={()=>update("sghl_abn","evet")}>Anormal</OptBox>
+            <OptBox selected={d.sghl_abn==="normal"} onClick={()=>update("sghl_abn","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.sghl_abn==="evet"} onClick={()=>update("sghl_abn","evet")}>{T.abnormal}</OptBox>
           </div>
         </div>
-        <div className="field"><label>MGHL (orta glenohumeral lig.)</label>
+        <div className="field"><label>{T.mghl}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.mghl_abn==="normal"} onClick={()=>update("mghl_abn","normal")}>Normal</OptBox>
-            <OptBox selected={d.mghl_abn==="evet"} onClick={()=>update("mghl_abn","evet")}>Anormal</OptBox>
+            <OptBox selected={d.mghl_abn==="normal"} onClick={()=>update("mghl_abn","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.mghl_abn==="evet"} onClick={()=>update("mghl_abn","evet")}>{T.abnormal}</OptBox>
           </div>
         </div>
-        <div className="field"><label>IGHL (inferior glenohumeral lig.)</label>
+        <div className="field"><label>{T.ighl}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.ighl_torn==="normal"} onClick={()=>update("ighl_torn","normal")}>Normal</OptBox>
-            <OptBox selected={d.ighl_torn==="evet"} onClick={()=>update("ighl_torn","evet")} amber>Yırtık / HAGL</OptBox>
+            <OptBox selected={d.ighl_torn==="normal"} onClick={()=>update("ighl_torn","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.ighl_torn==="evet"} onClick={()=>update("ighl_torn","evet")} amber>{T.ighlAbnormal}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Korakohumeral ligaman (CHL)</label>
+        <div className="field"><label>{T.chl}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.chl_thickening==="normal"} onClick={()=>update("chl_thickening","normal")}>Normal</OptBox>
-            <OptBox selected={d.chl_thickening==="evet"} onClick={()=>update("chl_thickening","evet")}>Kalınlaşmış (&gt;4 mm)</OptBox>
+            <OptBox selected={d.chl_thickening==="normal"} onClick={()=>update("chl_thickening","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.chl_thickening==="evet"} onClick={()=>update("chl_thickening","evet")}>{T.chlThickened}</OptBox>
           </div>
         </div>
       </div>
-      <h3 className="sec amber">Kapsül & Rotator İnterval</h3>
+      <h3 className="sec amber">{T.capsuleRotatorInterval}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Rotator interval</label>
+        <div className="field"><label>{T.rotatorInterval}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.rotator_interval==="normal"} onClick={()=>update("rotator_interval","normal")}>Normal</OptBox>
-            <OptBox selected={d.rotator_interval==="silinmis"} onClick={()=>update("rotator_interval","silinmis")}>Silinmiş / sinyal artmış</OptBox>
+            <OptBox selected={d.rotator_interval==="normal"} onClick={()=>update("rotator_interval","normal")}>{T.normal}</OptBox>
+            <OptBox selected={d.rotator_interval==="silinmis"} onClick={()=>update("rotator_interval","silinmis")}>{T.rotatorIntervalErased}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Aksiller reseste kapsüler kalınlaşma (&gt;4 mm)</label>
+        <div className="field"><label>{T.axillaryThickening}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.axillary_thickening==="yok"} onClick={()=>update("axillary_thickening","yok")}>Yok</OptBox>
-            <OptBox selected={d.axillary_thickening==="evet"} onClick={()=>update("axillary_thickening","evet")}>Var</OptBox>
+            <OptBox selected={d.axillary_thickening==="yok"} onClick={()=>update("axillary_thickening","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.axillary_thickening==="evet"} onClick={()=>update("axillary_thickening","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Posterior kapsül laksitesi</label>
+        <div className="field"><label>{T.postCapsuleLaxity}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.post_capsule_lax==="yok"} onClick={()=>update("post_capsule_lax","yok")}>Yok</OptBox>
-            <OptBox selected={d.post_capsule_lax==="evet"} onClick={()=>update("post_capsule_lax","evet")}>Var</OptBox>
+            <OptBox selected={d.post_capsule_lax==="yok"} onClick={()=>update("post_capsule_lax","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.post_capsule_lax==="evet"} onClick={()=>update("post_capsule_lax","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Klinik: ağrılı hareket kısıtlılığı</label>
+        <div className="field"><label>{T.clinicalFrozen}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.clinical_frozen==="yok"} onClick={()=>update("clinical_frozen","yok")}>Yok</OptBox>
-            <OptBox selected={d.clinical_frozen==="evet"} onClick={()=>update("clinical_frozen","evet")}>Var (adeziv kapsülit düşündürücü)</OptBox>
+            <OptBox selected={d.clinical_frozen==="yok"} onClick={()=>update("clinical_frozen","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.clinical_frozen==="evet"} onClick={()=>update("clinical_frozen","evet")}>{T.clinicalFrozenPresent}</OptBox>
           </div>
         </div>
       </div>
     </>;
 
-    // Step 11 — Kıkırdak & OA
+    // Step 11 — Kıkırdak & OA / Cartilage & OA
     if (step === 11) return <>
-      <h3 className="sec">Glenohumeral Eklem Kıkırdağı</h3>
+      <h3 className="sec">{T.glenohumCartilage}</h3>
       <div className="grid grid-4">
-        <OptBox selected={d.cartilage_gh==="normal"} onClick={()=>update("cartilage_gh","normal")}>Normal</OptBox>
-        <OptBox selected={d.cartilage_gh==="hafif"} onClick={()=>update("cartilage_gh","hafif")}>Hafif kayıp</OptBox>
-        <OptBox selected={d.cartilage_gh==="orta"} onClick={()=>update("cartilage_gh","orta")}>Orta kayıp</OptBox>
-        <OptBox selected={d.cartilage_gh==="belirgin"} onClick={()=>update("cartilage_gh","belirgin")} amber>Belirgin kayıp</OptBox>
+        <OptBox selected={d.cartilage_gh==="normal"} onClick={()=>update("cartilage_gh","normal")}>{T.normal}</OptBox>
+        <OptBox selected={d.cartilage_gh==="hafif"} onClick={()=>update("cartilage_gh","hafif")}>{T.mildLoss}</OptBox>
+        <OptBox selected={d.cartilage_gh==="orta"} onClick={()=>update("cartilage_gh","orta")}>{T.moderateLoss}</OptBox>
+        <OptBox selected={d.cartilage_gh==="belirgin"} onClick={()=>update("cartilage_gh","belirgin")} amber>{T.markedLoss}</OptBox>
       </div>
-      <h3 className="sec">Dejeneratif Değişiklikler</h3>
+      <h3 className="sec">{T.degenerativeChanges}</h3>
       <div className="grid grid-2">
-        <ChkBox selected={d.subchondral_change==="evet"} onClick={()=>update("subchondral_change", d.subchondral_change==="evet"?"yok":"evet")}>Subkondral kist/skleroz</ChkBox>
-        <ChkBox selected={d.gh_osteofit==="evet"} onClick={()=>update("gh_osteofit", d.gh_osteofit==="evet"?"yok":"evet")}>Glenohumeral osteofit</ChkBox>
-        <ChkBox selected={d.gh_narrow==="evet"} onClick={()=>update("gh_narrow", d.gh_narrow==="evet"?"yok":"evet")}>Eklem aralığında daralma</ChkBox>
+        <ChkBox selected={d.subchondral_change==="evet"} onClick={()=>update("subchondral_change", d.subchondral_change==="evet"?"yok":"evet")}>{T.subchondralCystSclerosis}</ChkBox>
+        <ChkBox selected={d.gh_osteofit==="evet"} onClick={()=>update("gh_osteofit", d.gh_osteofit==="evet"?"yok":"evet")}>{T.glenohumOsteophyte}</ChkBox>
+        <ChkBox selected={d.gh_narrow==="evet"} onClick={()=>update("gh_narrow", d.gh_narrow==="evet"?"yok":"evet")}>{T.jointSpaceNarrow}</ChkBox>
       </div>
     </>;
 
-    // Step 12 — Efüzyon & bursa & kontrast
+    // Step 12 — Efüzyon & bursa & kontrast / Effusion & bursa & contrast
     if (step === 12) return <>
-      <h3 className="sec">Eklem Efüzyonu</h3>
+      <h3 className="sec">{T.jointEffusion}</h3>
       <div className="grid grid-4">
-        <OptBox selected={d.effusion_amount==="yok"} onClick={()=>update("effusion_amount","yok")}>Yok</OptBox>
-        <OptBox selected={d.effusion_amount==="minimal"} onClick={()=>update("effusion_amount","minimal")}>Minimal</OptBox>
-        <OptBox selected={d.effusion_amount==="orta"} onClick={()=>update("effusion_amount","orta")}>Orta</OptBox>
-        <OptBox selected={d.effusion_amount==="belirgin"} onClick={()=>update("effusion_amount","belirgin")} amber>Belirgin</OptBox>
+        <OptBox selected={d.effusion_amount==="yok"} onClick={()=>update("effusion_amount","yok")}>{T.noEffusion}</OptBox>
+        <OptBox selected={d.effusion_amount==="minimal"} onClick={()=>update("effusion_amount","minimal")}>{T.minimal}</OptBox>
+        <OptBox selected={d.effusion_amount==="orta"} onClick={()=>update("effusion_amount","orta")}>{T.moderate}</OptBox>
+        <OptBox selected={d.effusion_amount==="belirgin"} onClick={()=>update("effusion_amount","belirgin")} amber>{T.prominent}</OptBox>
       </div>
-      <h3 className="sec amber">Subakromial-Subdeltoid Bursa</h3>
+      <h3 className="sec amber">{T.subacromialBursa}</h3>
       <div className="grid grid-4">
-        <OptBox selected={d.bursa_effusion==="yok"} onClick={()=>update("bursa_effusion","yok")}>Sıvı yok</OptBox>
-        <OptBox selected={d.bursa_effusion==="minimal"} onClick={()=>update("bursa_effusion","minimal")}>Minimal</OptBox>
-        <OptBox selected={d.bursa_effusion==="orta"} onClick={()=>update("bursa_effusion","orta")}>Orta</OptBox>
-        <OptBox selected={d.bursa_effusion==="belirgin"} onClick={()=>update("bursa_effusion","belirgin")} amber>Belirgin</OptBox>
+        <OptBox selected={d.bursa_effusion==="yok"} onClick={()=>update("bursa_effusion","yok")}>{T.noFluidBursa}</OptBox>
+        <OptBox selected={d.bursa_effusion==="minimal"} onClick={()=>update("bursa_effusion","minimal")}>{T.minimal}</OptBox>
+        <OptBox selected={d.bursa_effusion==="orta"} onClick={()=>update("bursa_effusion","orta")}>{T.moderate}</OptBox>
+        <OptBox selected={d.bursa_effusion==="belirgin"} onClick={()=>update("bursa_effusion","belirgin")} amber>{T.prominent}</OptBox>
       </div>
-      <div className="field" style={{marginTop:10}}><label>Bursal duvar</label>
+      <div className="field" style={{marginTop:10}}><label>{T.bursalWall}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.bursa_wall==="normal"} onClick={()=>update("bursa_wall","normal")}>Normal</OptBox>
-          <OptBox selected={d.bursa_wall==="kalin"} onClick={()=>update("bursa_wall","kalin")}>Kalınlaşmış</OptBox>
+          <OptBox selected={d.bursa_wall==="normal"} onClick={()=>update("bursa_wall","normal")}>{T.normalBursaWall}</OptBox>
+          <OptBox selected={d.bursa_wall==="kalin"} onClick={()=>update("bursa_wall","kalin")}>{T.thickenedBursaWall}</OptBox>
         </div>
       </div>
-      {d.seq_post && <div className="field"><label>Kontrast sonrası boyanma</label>
+      {d.seq_post && <div className="field"><label>{T.postContrastEnhancement}</label>
         <div className="grid grid-4">
-          <OptBox selected={d.post_contrast_enh==="yok"} onClick={()=>update("post_contrast_enh","yok")}>Yok</OptBox>
-          <OptBox selected={d.post_contrast_enh==="fokal"} onClick={()=>update("post_contrast_enh","fokal")}>Fokal</OptBox>
-          <OptBox selected={d.post_contrast_enh==="bursal"} onClick={()=>update("post_contrast_enh","bursal")}>Bursal duvar</OptBox>
-          <OptBox selected={d.post_contrast_enh==="sinovit"} onClick={()=>update("post_contrast_enh","sinovit")} amber>Yaygın sinovit</OptBox>
+          <OptBox selected={d.post_contrast_enh==="yok"} onClick={()=>update("post_contrast_enh","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.post_contrast_enh==="fokal"} onClick={()=>update("post_contrast_enh","fokal")}>{T.focal}</OptBox>
+          <OptBox selected={d.post_contrast_enh==="bursal"} onClick={()=>update("post_contrast_enh","bursal")}>{T.bursalWallEnh}</OptBox>
+          <OptBox selected={d.post_contrast_enh==="sinovit"} onClick={()=>update("post_contrast_enh","sinovit")} amber>{T.diffuseSynovitis}</OptBox>
         </div>
       </div>}
     </>;
 
-    // Step 13 — Kas & nörovasküler
+    // Step 13 — Kas & nörovasküler / Muscle & neurovascular
     if (step === 13) return <>
-      <h3 className="sec">Kas Değerlendirmesi</h3>
-      <div className="hint">Rotator manşet kaslarında yağlı dejenerasyon her lezyon kaydında ayrıca girilmiştir. Bu adım ek nörovasküler/denervasyon bulgularına odaklıdır.</div>
+      <h3 className="sec">{T.muscleAssessment}</h3>
+      <div className="hint">{T.muscleHint}</div>
       <div className="grid grid-2">
-        <div className="field"><label>Deltoid kası anormalliği</label>
+        <div className="field"><label>{T.deltoidAbnormality}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.deltoid_abn==="yok"} onClick={()=>update("deltoid_abn","yok")}>Yok</OptBox>
-            <OptBox selected={d.deltoid_abn==="evet"} onClick={()=>update("deltoid_abn","evet")}>Var</OptBox>
+            <OptBox selected={d.deltoid_abn==="yok"} onClick={()=>update("deltoid_abn","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.deltoid_abn==="evet"} onClick={()=>update("deltoid_abn","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Teres minor denervasyonu (kuadrilateral bölge sendromu)</label>
+        <div className="field"><label>{T.teresMinorDenerv}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.quadrilateral_space==="yok"} onClick={()=>update("quadrilateral_space","yok")}>Yok</OptBox>
-            <OptBox selected={d.quadrilateral_space==="evet"} onClick={()=>update("quadrilateral_space","evet")} amber>Var</OptBox>
+            <OptBox selected={d.quadrilateral_space==="yok"} onClick={()=>update("quadrilateral_space","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.quadrilateral_space==="evet"} onClick={()=>update("quadrilateral_space","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>İnfraspinatus denervasyonu (suprascapular nöropati)</label>
+        <div className="field"><label>{T.infraspinatusDenerv}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.infraspinatus_denerv==="yok"} onClick={()=>update("infraspinatus_denerv","yok")}>Yok</OptBox>
-            <OptBox selected={d.infraspinatus_denerv==="evet"} onClick={()=>update("infraspinatus_denerv","evet")} amber>Var</OptBox>
+            <OptBox selected={d.infraspinatus_denerv==="yok"} onClick={()=>update("infraspinatus_denerv","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.infraspinatus_denerv==="evet"} onClick={()=>update("infraspinatus_denerv","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
       </div>
     </>;
 
-    // Step 14 — PVNS / İnflamatuar / Septik
+    // Step 14 — Sinoviyal / Synovial & inflammatory
     if (step === 14) return <>
-      <h3 className="sec">Sinoviyal & İnflamatuar Bulgular</h3>
+      <h3 className="sec">{T.synovialInflammatory}</h3>
       <div className="grid grid-2">
-        <div className="field"><label>Sinoviyal kalınlaşmada hemosiderin (düşük T1/T2)</label>
+        <div className="field"><label>{T.hemosiderinLabel}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.synovial_hemosiderin==="yok"} onClick={()=>update("synovial_hemosiderin","yok")}>Yok</OptBox>
-            <OptBox selected={d.synovial_hemosiderin==="evet"} onClick={()=>update("synovial_hemosiderin","evet")} amber>Var</OptBox>
+            <OptBox selected={d.synovial_hemosiderin==="yok"} onClick={()=>update("synovial_hemosiderin","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.synovial_hemosiderin==="evet"} onClick={()=>update("synovial_hemosiderin","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>GRE blooming artefaktı</label>
+        <div className="field"><label>{T.bloomingLabel}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.blooming==="yok"} onClick={()=>update("blooming","yok")}>Yok</OptBox>
-            <OptBox selected={d.blooming==="evet"} onClick={()=>update("blooming","evet")}>Var</OptBox>
+            <OptBox selected={d.blooming==="yok"} onClick={()=>update("blooming","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.blooming==="evet"} onClick={()=>update("blooming","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Hemartroz / tekrarlayan hemoraji</label>
+        <div className="field"><label>{T.hemarthrosLabel}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.hemarthros==="yok"} onClick={()=>update("hemarthros","yok")}>Yok</OptBox>
-            <OptBox selected={d.hemarthros==="evet"} onClick={()=>update("hemarthros","evet")}>Var</OptBox>
+            <OptBox selected={d.hemarthros==="yok"} onClick={()=>update("hemarthros","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.hemarthros==="evet"} onClick={()=>update("hemarthros","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Subkondral kemikte erken erozyon</label>
+        <div className="field"><label>{T.earlyErosion}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.septic_erosion==="yok"} onClick={()=>update("septic_erosion","yok")}>Yok</OptBox>
-            <OptBox selected={d.septic_erosion==="evet"} onClick={()=>update("septic_erosion","evet")} amber>Var</OptBox>
+            <OptBox selected={d.septic_erosion==="yok"} onClick={()=>update("septic_erosion","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.septic_erosion==="evet"} onClick={()=>update("septic_erosion","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Periartiküler yumuşak doku ödemi/selülit</label>
+        <div className="field"><label>{T.periArticularEdema}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.periarticular_edema==="yok"} onClick={()=>update("periarticular_edema","yok")}>Yok</OptBox>
-            <OptBox selected={d.periarticular_edema==="evet"} onClick={()=>update("periarticular_edema","evet")}>Var</OptBox>
+            <OptBox selected={d.periarticular_edema==="yok"} onClick={()=>update("periarticular_edema","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.periarticular_edema==="evet"} onClick={()=>update("periarticular_edema","evet")}>{T.present}</OptBox>
           </div>
         </div>
-        <div className="field"><label>Klinik: ateş / lökositoz / lokal ısı artışı</label>
+        <div className="field"><label>{T.clinicalSeptic}</label>
           <div className="grid grid-2">
-            <OptBox selected={d.clinical_septic==="yok"} onClick={()=>update("clinical_septic","yok")}>Yok</OptBox>
-            <OptBox selected={d.clinical_septic==="evet"} onClick={()=>update("clinical_septic","evet")} amber>Var</OptBox>
+            <OptBox selected={d.clinical_septic==="yok"} onClick={()=>update("clinical_septic","yok")}>{T.absent}</OptBox>
+            <OptBox selected={d.clinical_septic==="evet"} onClick={()=>update("clinical_septic","evet")} amber>{T.present}</OptBox>
           </div>
         </div>
       </div>
     </>;
 
-    // Step 15 — Kitle / mass (opsiyonel)
+    // Step 15 — Kitle / Mass
     if (step === 15) return <>
-      <h3 className="sec">Kitle / Yer Kaplayıcı Lezyon</h3>
-      <div className="field"><label>Periartiküler veya eklem içi kitle lezyonu</label>
+      <h3 className="sec">{T.massLesion}</h3>
+      <div className="field"><label>{T.massLesionLabel}</label>
         <div className="grid grid-2">
-          <OptBox selected={d.mass_present==="yok"} onClick={()=>update("mass_present","yok")}>Yok</OptBox>
-          <OptBox selected={d.mass_present==="evet"} onClick={()=>update("mass_present","evet")} amber>Var — ileri değerlendirme önerilir</OptBox>
+          <OptBox selected={d.mass_present==="yok"} onClick={()=>update("mass_present","yok")}>{T.absent}</OptBox>
+          <OptBox selected={d.mass_present==="evet"} onClick={()=>update("mass_present","evet")} amber>{T.massPresent}</OptBox>
         </div>
       </div>
     </>;
 
-    // Step 16 — Serbest metin
+    // Step 16 — Serbest metin / Free text
     if (step === 16) return <>
-      <h3 className="sec">Ek / Serbest Metin Bulgular</h3>
-      <div className="field"><label>Yukarıdaki yapılandırılmış girdilere eklenecek ek bulgular</label>
-        <textarea value={d.freetext} onChange={e=>update("freetext", e.target.value)} placeholder="Örn: Pektoralis majorda travmatik avülsiyon, kronik bursit sekeli, scapulothoracic bursit..." />
+      <h3 className="sec">{T.freeText}</h3>
+      <div className="field"><label>{T.freeTextLabel}</label>
+        <textarea value={d.freetext} onChange={e=>update("freetext", e.target.value)} placeholder={T.freeTextPlaceholder} />
       </div>
     </>;
 
-    // Step 17–20 — Özet ekranlar (gözden geçirme)
+    // Step 17–20 — Özet ekranlar / Summary screens
     if (step === 17) return <>
-      <h3 className="sec">Lezyon Özeti — Rotator Manşet</h3>
-      {lesions.length === 0 && <div className="hint">Kayıtlı rotator manşet lezyonu yok.</div>}
-      {lesions.map((L,i) => {
-        const t = RC_TENDONS.find(x=>x.id===L.tendon);
-        return <div key={L.id} className="lesion-card">
-          <div className="lesion-title">#{i+1} — {t?.name}</div>
+      <h3 className="sec">{T.rcSummary}</h3>
+      {lesions.length === 0 && <div className="hint">{T.noLesionsHint}</div>}
+      {lesions.map((Lx,i) => {
+        const t = RC_TENDONS.find(x=>x.id===Lx.tendon);
+        return <div key={Lx.id} className="lesion-card">
+          <div className="lesion-title">#{i+1} — {t ? L(t,'name') : "?"}</div>
           <div>
-            {L.continuity==="tendinop" && <span className="chip chip-teal">Tendinopati</span>}
-            {L.continuity==="partial" && <span className="chip chip-amber">Parsiyel — {L.partial_face}</span>}
-            {L.continuity==="full" && <span className="chip chip-red">Tam kat — {L.full_size}</span>}
-            {L.retraction && <span className="chip chip-red">Patte {L.retraction}</span>}
-            {L.calcific && <span className="chip chip-amber">Kalsifik</span>}
-            {L.goutallier > 0 && <span className="chip chip-amber">Goutallier {L.goutallier}</span>}
+            {Lx.continuity==="tendinop" && <span className="chip chip-teal">{T.chipTendinopathy}</span>}
+            {Lx.continuity==="partial" && <span className="chip chip-amber">{T.chipPartialTear} — {Lx.partial_face}</span>}
+            {Lx.continuity==="full" && <span className="chip chip-red">{T.chipFullTear} — {Lx.full_size}</span>}
+            {Lx.retraction && <span className="chip chip-red">Patte {Lx.retraction}</span>}
+            {Lx.calcific && <span className="chip chip-amber">{T.chipCalcific}</span>}
+            {Lx.goutallier > 0 && <span className="chip chip-amber">Goutallier {Lx.goutallier}</span>}
           </div>
         </div>;
       })}
     </>;
 
     if (step === 18) return <>
-      <h3 className="sec">Lezyon Özeti — Labrum</h3>
-      {(data.labralTears||[]).length === 0 && <div className="hint">Kayıtlı labral yırtık yok.</div>}
-      {(data.labralTears||[]).map((L,i) => {
-        const q = LABRAL_QUADRANTS.find(x=>x.id===L.quadrant);
+      <h3 className="sec">{T.labralSummary}</h3>
+      {(data.labralTears||[]).length === 0 && <div className="hint">{T.noLabralTears}</div>}
+      {(data.labralTears||[]).map((Lx,i) => {
+        const q = LABRAL_QUADRANTS.find(x=>x.id===Lx.quadrant);
         let tName = "";
-        if (L.category === "slap") tName = SLAP_TYPES.find(x=>x.id===L.subtype)?.name || "SLAP";
-        else if (L.category === "ant") tName = ANT_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Anterior";
-        else if (L.category === "post") tName = POST_LABRAL_VARIANTS.find(x=>x.id===L.subtype)?.name || "Posterior";
-        else tName = "Basit yırtık";
-        return <div key={L.id} className="lesion-card">
-          <div className="lesion-title">#{i+1} — {q?.name} kadran — {tName}</div>
-          {L.paralabralCyst && <span className="chip chip-amber">Paralabral kist (+)</span>}
+        if (Lx.category === "slap") tName = SLAP_TYPES.find(x=>x.id===Lx.subtype)?.name || "SLAP";
+        else if (Lx.category === "ant") tName = L(ANT_LABRAL_VARIANTS.find(x=>x.id===Lx.subtype)||{}, 'name') || "Anterior";
+        else if (Lx.category === "post") tName = L(POST_LABRAL_VARIANTS.find(x=>x.id===Lx.subtype)||{}, 'name') || "Posterior";
+        else tName = T.simpleBasit;
+        return <div key={Lx.id} className="lesion-card">
+          <div className="lesion-title">#{i+1} — {q ? L(q,'name') : "?"} {T.quadrant("")} — {tName}</div>
+          {Lx.paralabralCyst && <span className="chip chip-amber">{T.accompanyingParalabralCyst} (+)</span>}
         </div>;
       })}
     </>;
 
-    // Step 19 — Ayırıcı tanı paneli
+    // Step 19 — Ayırıcı tanı paneli / Differential diagnosis panel
     if (step === 19) return <>
-      <h3 className="sec">Ayırıcı Tanı Olasılıkları</h3>
-      <div className="hint">Olasılıklar, girilen bulguların ağırlıklı skorlamasıyla hesaplanmıştır (yalnızca klinik korelasyon ile değerlendirilmelidir).</div>
+      <h3 className="sec">{T.diffDx}</h3>
+      <div className="hint">{T.diffDxHint}</div>
       {[...scores].filter(s => s.score > 0).sort((a,b)=>b.score-a.score).map(s => {
         const p = PATHO.find(x => x.key === s.key);
         const color = CAT_COLOR[p?.cat] || "#64748b";
         const barClass = s.score >= 60 ? "top" : (s.score >= 30 ? "mid" : "low");
         return <div key={s.key} className="bar-row">
-          <div className="name"><span className="dx-dot" style={{background:color,display:"inline-block",width:10,height:10,borderRadius:"50%",marginRight:7}}></span>{p?.name}</div>
+          <div className="name"><span className="dx-dot" style={{background:color,display:"inline-block",width:10,height:10,borderRadius:"50%",marginRight:7}}></span>{L(p,'name')}</div>
           <div className={"bar "+barClass}><span style={{width:s.score+"%"}}></span></div>
           <div className="pct">%{s.score}</div>
         </div>;
       })}
-      {scores.filter(s => s.score > 0).length === 0 && <div className="hint">Henüz yeterli pozitif bulgu girilmedi.</div>}
+      {scores.filter(s => s.score > 0).length === 0 && <div className="hint">{T.noPosFindings}</div>}
     </>;
 
-    // Step 20 — Son gözden geçirme
+    // Step 20 — Son gözden geçirme / Final review
     if (step === 20) return <>
-      <h3 className="sec">Son Gözden Geçirme</h3>
-      <div className="hint">Rapor oluşturulmadan önce aşağıdaki özeti kontrol edin. Gerekirse geri dönüp değişiklik yapabilirsiniz.</div>
+      <h3 className="sec">{T.finalReview}</h3>
+      <div className="hint">{T.finalReviewHint}</div>
       <div className="grid grid-2">
-        <div><b>Taraf:</b> {d.side} | <b>Yaş:</b> {d.age} | <b>Cinsiyet:</b> {d.sex}</div>
-        <div><b>Travma:</b> {d.trauma || "?"} | <b>Dislokasyon:</b> {d.dislocation_hx || "?"}</div>
+        <div><b>{T.sideLabel}:</b> {L(SIDE.find(s=>s.id===d.side)||SIDE[0],'label')} | <b>{T.ageLabel}:</b> {d.age} | <b>{T.sexLabel}:</b> {L(SEX.find(s=>s.id===d.sex)||SEX[0],'label')}</div>
+        <div><b>{T.traumaLabel20}:</b> {d.trauma || "?"} | <b>{T.dislocationLabel20}:</b> {d.dislocation_hx || "?"}</div>
       </div>
-      <div><b>Akromion:</b> {BIGLIANI.find(b=>b.id===d.acromion_type)?.label || "?"}</div>
-      <div><b>Rotator manşet lezyonu:</b> {lesions.length}</div>
-      <div><b>Labral yırtık:</b> {(data.labralTears||[]).length}</div>
-      <div><b>Hill-Sachs:</b> {d.hill_sachs || "?"} | <b>Bony Bankart:</b> {d.glenoid_bone_loss || "?"}</div>
+      <div><b>{T.acromionLabel}:</b> {L(BIGLIANI.find(b=>b.id===d.acromion_type)||{}, 'label') || "?"}</div>
+      <div><b>{T.rcLesionCount}:</b> {lesions.length}</div>
+      <div><b>{T.labralTearCount}:</b> {(data.labralTears||[]).length}</div>
+      <div><b>{T.hillSachsLabel20}:</b> {d.hill_sachs || "?"} | <b>{T.bonyBankartLabel20}:</b> {d.glenoid_bone_loss || "?"}</div>
     </>;
 
-    // Step 21 — Rapor üret
+    // Step 21 — Rapor üret / Report generation
     if (step === 21) return <>
-      <h3 className="sec">Rapor Üretimi</h3>
-      <div className="hint">Zebra + kutulu formatta rapor hazır. &quot;Raporu Oluştur&quot; butonu ile görüntüleyebilir; ardından yazdırma, panoya kopyalama veya HTML olarak indirme yapabilirsiniz.</div>
-      <button className="btn btn-primary" onClick={()=>setShowReport(true)}>Raporu Oluştur / Göster</button>
+      <h3 className="sec">{T.reportGeneration}</h3>
+      <div className="hint">{T.reportGenerationHint}</div>
+      <button className="btn btn-primary" onClick={()=>setShowReport(true)}>{T.generateReport}</button>
     </>;
 
     return null;
@@ -1807,43 +2641,20 @@ function App() {
 
   /* ==== Topbar ==== */
   const pct = Math.round(100 * (step+1) / TOTAL_STEPS);
-  const stepLabels = [
-    "Hasta Bilgileri",
-    "Sekanslar",
-    "Akromion & AC Eklem",
-    "Kemik & AVN",
-    "Hill-Sachs & Bony Bankart",
-    "Supraspinatus & Kalsifik",
-    "Rotator Manşet Lezyonları",
-    "Manşet Lezyon Detayı (loop)",
-    "Biceps Tendonu",
-    "Glenoid Labrum (loop)",
-    "Ligaman & Kapsül",
-    "Kıkırdak & OA",
-    "Efüzyon & Bursa",
-    "Kas & Nörovasküler",
-    "Sinoviyal & İnflamatuar",
-    "Kitle / Yer Kaplayıcı",
-    "Serbest Metin",
-    "Özet — Rotator Manşet",
-    "Özet — Labrum",
-    "Ayırıcı Tanı Paneli",
-    "Son Gözden Geçirme",
-    "Rapor Üretimi",
-  ];
+  const stepLabels = T.stepLabels;
 
   return <div className="app">
     <div className="topbar">
       <div className="brand">
         <div className="logo">Ω</div>
         <div>
-          <h1>Omuz MRG — Karar Destek Sistemi</h1>
-          <p>Çok-lezyonlu mimari · Ağırlıklı skorlama · Zebra + kutulu rapor formatı</p>
+          <h1>{T.appTitle}</h1>
+          <p>{T.appSub}</p>
         </div>
       </div>
       <div className="progress-wrap">
         <div className="progress-label">
-          <span>Adım {step+1}/{TOTAL_STEPS}: {stepLabels[step]}</span>
+          <span>{T.stepLabel(step+1, TOTAL_STEPS)}: {stepLabels[step]}</span>
           <span>%{pct}</span>
         </div>
         <div className="progress"><span style={{width:pct+"%"}}></span></div>
@@ -1856,9 +2667,12 @@ function App() {
         <div>
           <h3 className="step-title">{stepLabels[step]}</h3>
           <p className="step-sub">
-            {step === 7 && lesionIdx !== -1 && `Rotator manşet lezyon alt adımı ${lesionSub+1}/${RC_SUBSTEPS}`}
-            {step === 9 && labralIdx !== -1 && `Labral yırtık alt adımı ${labralSub+1}/${LAB_SUBSTEPS}`}
-            {!(step === 7 && lesionIdx !== -1) && !(step === 9 && labralIdx !== -1) && "Gerekli alanları doldurun ve İleri ile devam edin."}
+            {T.stepSub(
+              (step === 7) ? lesionIdx : -1,
+              lesionSub, RC_SUBSTEPS,
+              (step === 9) ? labralIdx : -1,
+              labralSub, LAB_SUBSTEPS
+            )}
           </p>
         </div>
       </div>
@@ -1866,9 +2680,9 @@ function App() {
       {renderStep()}
 
       <div className="nav">
-        <button className="btn" onClick={goPrev} disabled={step===0 && lesionIdx===-1 && labralIdx===-1}>← Geri</button>
+        <button className="btn" onClick={goPrev} disabled={step===0 && lesionIdx===-1 && labralIdx===-1}>{T.back}</button>
         <button className={step === TOTAL_STEPS-1 ? "btn btn-amber" : "btn btn-primary"} onClick={goNext} disabled={!canNext()}>
-          {step === TOTAL_STEPS-1 ? "Raporu Aç" : "İleri →"}
+          {step === TOTAL_STEPS-1 ? T.openReport : T.next}
         </button>
       </div>
     </div>
@@ -1885,46 +2699,46 @@ function ReportOverlay({report, data, scores, onClose, onCopy, onPrint, onDownlo
 
   return <div className="overlay" onClick={onClose}>
     <div className="overlay-actions" onClick={e=>e.stopPropagation()}>
-      <button className="btn" onClick={onPrint}>🖨 Yazdır</button>
-      <button className="btn" onClick={onCopy}>📋 Kopyala</button>
-      <button className="btn btn-primary" onClick={onDownload}>⬇ HTML İndir</button>
-      <button className="btn" onClick={onClose}>✕ Kapat</button>
+      <button className="btn" onClick={onPrint}>{T.printBtn}</button>
+      <button className="btn" onClick={onCopy}>{T.copyBtn}</button>
+      <button className="btn btn-primary" onClick={onDownload}>{T.downloadBtn}</button>
+      <button className="btn" onClick={onClose}>{T.closeBtn}</button>
     </div>
     <div className="report-wrap" onClick={e=>e.stopPropagation()} id="report-text-content">
       <div className="report-header">
-        <h2>OMUZ MANYETİK REZONANS GÖRÜNTÜLEME RAPORU</h2>
-        <p>İncelenen taraf: {h.side} Omuz · Yaş: {h.age} · Cinsiyet: {h.sex} · Tarih: {h.date}</p>
+        <h2>{T.reportMainTitle}</h2>
+        <p>{T.reportHeaderSub(h.side, h.age, h.sex, h.date)}</p>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head slate">KLİNİK BİLGİ</div>
-        <div className="rbox-body">{h.clinical || "Klinik bilgi belirtilmemiştir."}</div>
+        <div className="rbox-head slate">{T.clinicalInfoHead}</div>
+        <div className="rbox-body">{h.clinical || T.noClinicalInfo}</div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head slate">İNCELEME TEKNİĞİ</div>
+        <div className="rbox-head slate">{T.techniqueHead}</div>
         <div className="rbox-body">
-          {report.seq.length === 0 && <div>Teknik belirtilmemiştir.</div>}
+          {report.seq.length === 0 && <div>{T.noTechnique}</div>}
           {report.seq.map((s,i) => <div key={i} className="zbullet">{s}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">BULGULAR — KEMİK YAPILAR</div>
+        <div className="rbox-head">{T.findingsBone}</div>
         <div className="rbox-body">
           {report.bone.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">AKROMİON & AKROMİOKLAVİKÜLER EKLEM</div>
+        <div className="rbox-head">{T.findingsAcromion}</div>
         <div className="rbox-body">
           {report.acromion.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head teal">ROTATOR MANŞET</div>
+        <div className="rbox-head teal">{T.findingsRC}</div>
         <div className="rbox-body" style={{padding:0}}>
           {report.rcSections.map((sec,i)=>(
             <div key={i} style={{borderTop:i>0?"1px solid #cbd5e1":"none"}}>
@@ -1937,42 +2751,42 @@ function ReportOverlay({report, data, scores, onClose, onCopy, onPrint, onDownlo
       </div>
 
       <div className="rbox">
-        <div className="rbox-head teal">BİCEPS TENDONU</div>
+        <div className="rbox-head teal">{T.findingsBiceps}</div>
         <div className="rbox-body">
           {report.biceps.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head amber">GLENOİD LABRUM</div>
+        <div className="rbox-head amber">{T.findingsLabrum}</div>
         <div className="rbox-body">
           {report.labrum.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">GLENOHUMERAL LİGAMANLAR & KAPSÜL</div>
+        <div className="rbox-head">{T.findingsLig}</div>
         <div className="rbox-body">
           {report.lig.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">EKLEM KIKIRDAĞI & DEJENERATİF DEĞİŞİKLİKLER</div>
+        <div className="rbox-head">{T.findingsCart}</div>
         <div className="rbox-body">
           {report.cart.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">EKLEM SIVISI & SUBAKROMİAL-SUBDELTOİD BURSA</div>
+        <div className="rbox-head">{T.findingsFluid}</div>
         <div className="rbox-body">
           {report.fluidLines.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>
 
       <div className="rbox">
-        <div className="rbox-head">KAS YAPILARI & NÖROVASKÜLER</div>
+        <div className="rbox-head">{T.findingsMuscle}</div>
         <div className="rbox-body">
           {report.muscle.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
           {report.cyst.map((b,i)=><div key={"c"+i} className="zbullet">{b}</div>)}
@@ -1980,28 +2794,28 @@ function ReportOverlay({report, data, scores, onClose, onCopy, onPrint, onDownlo
       </div>
 
       {report.other.length > 0 && <div className="rbox">
-        <div className="rbox-head">DİĞER BULGULAR</div>
+        <div className="rbox-head">{T.findingsOther}</div>
         <div className="rbox-body">
           {report.other.map((b,i)=><div key={i} className="zbullet">{b}</div>)}
         </div>
       </div>}
 
       <div className="yorum">
-        <b>Yorum</b>
+        <b>{T.impression}</b>
         {report.yorum}
       </div>
 
       {sortedScores.length > 0 && <div className="rbox">
-        <div className="rbox-head slate">AYIRICI TANI OLASILIKLARI</div>
+        <div className="rbox-head slate">{T.diffDxTable}</div>
         <div className="rbox-body" style={{padding:0}}>
           <table className="dx-table">
-            <thead><tr><th style={{width:"60%"}}>Tanı</th><th>Kategori</th><th style={{width:90,textAlign:"right"}}>Uyum</th></tr></thead>
+            <thead><tr><th style={{width:"60%"}}>{T.diffDxColDx}</th><th>{T.diffDxColCat}</th><th style={{width:90,textAlign:"right"}}>{T.diffDxColMatch}</th></tr></thead>
             <tbody>
               {sortedScores.map(s => {
                 const p = PATHO.find(x=>x.key===s.key);
                 const color = CAT_COLOR[p?.cat] || "#64748b";
                 return <tr key={s.key}>
-                  <td><span className="dx-dot" style={{background:color}}></span>{p?.name}</td>
+                  <td><span className="dx-dot" style={{background:color}}></span>{L(p,'name')}</td>
                   <td style={{textTransform:"capitalize"}}>{p?.cat}</td>
                   <td style={{textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:700}}>%{s.score}</td>
                 </tr>;
@@ -2012,8 +2826,8 @@ function ReportOverlay({report, data, scores, onClose, onCopy, onPrint, onDownlo
       </div>}
 
       <div className="sig">
-        Raporlayan Radyolog: ________________________<br/>
-        İmza &amp; Tarih: {h.date}
+        {T.sigLine}<br/>
+        {T.sigDate(h.date)}
       </div>
     </div>
   </div>;

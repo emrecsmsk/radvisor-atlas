@@ -159,6 +159,304 @@ tr:nth-child(even) td{background:#f9f9f9}
 <body>
 <div id="root"></div>
 <script type="text/babel">
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Pankreas MRI Değerlendirme',
+    appSub: 'Multi-lezyon ağırlıklı diferansiyel tanı — Fukuoka 2017 IPMN Risk Sınıflaması',
+    stepLabel: 'Adım',
+    of: '/',
+    stepBadgePrefix: 'S',
+    lesionLabel: 'Lezyon',
+    back: '← Geri',
+    next: 'İleri →',
+    showReport: '📄 Raporu Görüntüle',
+    close: '✕ Kapat',
+    copy: '📋 Kopyala',
+    print: '🖨 Yazdır',
+    download: '⬇ İndir',
+    copyPaste: '📋 Panoya Kopyala',
+    downloadHtml: '⬇ HTML İndir',
+    printPdf: '🖨 Yazdır / PDF',
+    addLesion: '+ Lezyon Ekle',
+    editLesion: 'Düzenle',
+    finalizeLesion: '✓ Lezyonu Tamamla',
+    lesionSummary: 'LEZYON ÖZETİ',
+    allDone: 'Tüm adımlar tamamlandı',
+    allDoneSub: 'Raporu görüntülemek veya dışa aktarmak için aşağıdaki seçenekleri kullanın.',
+    noLocation: 'Lokalizasyon girilmedi',
+    noType: 'Tip belirsiz',
+    highestProb: 'En yüksek olasılık',
+    ipmn2017: 'IPMN Fukuoka 2017',
+    highRiskStigmata: 'YÜKSEK RİSK STİGMATA:',
+    worrisomeFindings: 'ENDİŞELENDİRİCİ BULGULAR:',
+    alertMpdIpmn: '⚠ MPD ≥5mm — IPMN olasılığı değerlendirilmeli',
+    alertMpdHighRisk: '🚨 Fukuoka Yüksek Risk Kriterine karşılık gelir — MPD ≥10mm',
+    alertCbd: '⚠ CBD ≥8mm — obstrüktif etiyoloji araştırılmalı',
+    alertDoubleDuct: '🔴 Double Duct Sign — PDAC PPV %85-90! Kontrast pankreas protokolü ve/veya EUS önerilir.',
+    alertSma: '🚨 SMA invazyonu — Rezektabilite kısıtlanmış. Multidisipliner değerlendirme önerilir.',
+    alertSuddenCalib: '⚠ Ani MPD kalibrasyon değişimi — malignite şüphesi, Fukuoka endişe verici bulgu',
+    alertArterial: 'ℹ Arteriyel hipervasküler lezyon — pNET, kistik pNET, metastaz (RCC, melanoma?) düşün',
+    alertHalo: 'ℹ Halo sign — AIP (otoimmün pankreatit) sıklıkla görülür',
+    alertFibro: 'ℹ Fibröz kapsül — SPN (solid psödopapiller neoplezi) bulgusu',
+    alertMpdComm: 'ℹ MPD kommunikasyonu mevcut — IPMN olasılığı yüksek',
+    alertMuralNodule: '🚨 Enhancing mural nodül ≥5mm — Fukuoka Yüksek Risk',
+    alertMpdGrowth: '⚠ MPD ≥5mm — IPMN olasılığı değerlendirilmeli',
+    lezyonGirildi: 'lezyon girildi. Devam için →  ileri tuşuna basın.',
+    copyDone: 'Rapor panoya kopyalandı.',
+    reportTitle: 'PANKREAS MRI DEĞERLENDİRME RAPORU',
+    date: 'Tarih',
+    time: 'Saat',
+    indication: 'Endikasyon',
+    age: 'Yaş',
+    gender: 'Cinsiyet',
+    ca199: 'CA 19-9',
+    igg4: 'IgG4',
+    amylaseLipase: 'Amilaz/Lipaz',
+    igg4High: 'Yüksek',
+    igg4Normal: 'Normal/bilinmiyor',
+    technique: 'TEKNİK',
+    techStandard: 'Standart pankreas MRI protokolü uygulandı.',
+    techContrast: 'Gadolinyum bazlı kontrast madde verildi.',
+    techMrcp: 'MRCP sekansı eklendi.',
+    parenchyma: 'PANKREASİK PARENKİM',
+    parTissue: 'Parankimal doku',
+    parFat: 'Yağ infiltrasyonu',
+    parAtrophy: 'Atrofi',
+    parCalc: 'Parankimal kalsifikasyon',
+    parNormal: 'Pankreas parankimi normal görünüm ve sinyalde.',
+    mpd: 'ANA PANKREAS KANALI (WIRSUNG)',
+    mpdDiam: 'Ana pankreas kanalı çapı',
+    mpdLoc: 'lokalizasyon',
+    mpdStone: 'Kanal içi taş saptandı.',
+    mpdIrreg: 'Kanal irregülaritesi mevcut.',
+    mpdCalib: 'Ani kalibrasyon değişimi saptandı.',
+    mpdNormal: 'Ana pankreas kanalı normal kalibrede (3mm altı).',
+    cbd: 'SAFRA YOLLARI',
+    cbdDiam: 'Koledok çapı',
+    cbdIhDil: 'İntrahepatik safra yollarında dilatasyon mevcut.',
+    cbdDouble: 'Çift kanal işareti (double duct sign) saptandı.',
+    cbdStone: 'Taş/striktur saptandı.',
+    cbdNormal: 'Safra yolları normal kalibrede.',
+    vascular: 'VASKÜLER BULGULAR',
+    pvSmv: 'Portal ven/SMV',
+    sma: 'SMA',
+    celiac: 'Çölyak aks',
+    splenicV: 'Splenik ven',
+    vascNormal: 'Major vasküler yapılar normaldir.',
+    lymph: 'LENFADENOPATİ / ASİT',
+    lap: 'Bölgesel lenfadenopati',
+    lapDetail: 'mevcut',
+    noLap: 'Bölgesel lenfadenopati saptanmadı.',
+    ascites: 'Asit mevcut',
+    ascitesSmall: 'az miktarda',
+    liver: 'KARACİĞER',
+    liverNormal: 'Karaciğer değerlendirilen kesitlerde olağan görünümdedir.',
+    otherFindings: 'DİĞER BULGULAR',
+    lesions: 'LEZYONlar',
+    lesionHeader: 'Lezyon',
+    t1: 'T1',
+    t2: 'T2',
+    dwi: 'DWI',
+    contrast: 'Kontrast',
+    probabilities: 'Olasılıklar',
+    comment: 'Yorum',
+    ipmn: 'IPMN Fukuoka Risk',
+    highRisk: 'Yüksek risk',
+    worrisome: 'Endişe verici',
+    conclusion: 'SONUÇ / YORUM',
+    noLesion: 'Pankreas lezyon saptanmadı. Yukarıda belirtilen bulgular klinisyen ile birlikte değerlendirilmelidir.',
+    highestProbText: 'En yüksek olasılık',
+    diffDiag: 'Ayırıcı tanıda',
+    diffDiagSuffix: 'göz önünde bulundurulmalıdır.',
+    // Step titles
+    sClinical: 'Klinik Bilgiler',
+    sClinicalSub: 'Endikasyon, yaş, biyokimya',
+    sTechnique: 'MRI Tekniği',
+    sTechniqueSub: 'Sekanslar ve protokol',
+    sParenchyma: 'Pankreas Parankimi',
+    sParenchymaSub: 'Doku karakteri, atrofi',
+    sMpd: 'Ana Pankreas Kanalı',
+    sMpdSub: 'Wirsung / MPD değerlendirme',
+    sCbd: 'Safra Yolları',
+    sCbdSub: 'CBD, intrahepatik dilatasyon',
+    sVascular: 'Vasküler Değerlendirme',
+    sVascularSub: 'Portal ven, SMA, çölyak',
+    sLymph: 'LAP / Asit',
+    sLymphSub: 'Lenfadenopati ve serbest sıvı',
+    sLesionCount: 'Lezyon Girişi',
+    sLesionCountSub: 'Lezyon ekle veya düzenle',
+    sLoc: 'Lokalizasyon',
+    sType: 'Lezyon Tipi',
+    sTypeSub: 'Solid, kistik veya mikst',
+    sT1: 'T1 Sinyali',
+    sT1Sub: 'Ön kontrast T1 karakteri',
+    sT2: 'T2 Sinyali',
+    sT2Sub: 'T2 sinyal ve kistik özellikler',
+    sDwi: 'DWI / ADC',
+    sDwiSub: 'Difüzyon kısıtlaması',
+    sContrast: 'Kontrast Tutulumu',
+    sContrastSub: 'Dinamik kontrast karakteri',
+    sSpecific: 'Spesifik Özellikler',
+    sSpecificSub: 'Tanıya yönelik bulgular',
+    sDiagnosis: 'Tanı Olasılıkları',
+    sDiagnosisSub: 'Ağırlıklı diferansiyel tanı',
+    sLiver: 'Karaciğer',
+    sLiverSub: 'Değerlendirilen kesitler',
+    sOther: 'Diğer Bulgular',
+    sOtherSub: 'Dalak, böbrekler, kemik, sürrenal',
+    sReport: 'Rapor',
+    sReportSub: 'Dışa aktarma seçenekleri',
+  },
+  en: {
+    appTitle: 'Pancreas MRI Assessment',
+    appSub: 'Multi-lesion weighted differential diagnosis — Fukuoka 2017 IPMN Risk Classification',
+    stepLabel: 'Step',
+    of: '/',
+    stepBadgePrefix: 'S',
+    lesionLabel: 'Lesion',
+    back: '← Back',
+    next: 'Next →',
+    showReport: '📄 View Report',
+    close: '✕ Close',
+    copy: '📋 Copy',
+    print: '🖨 Print',
+    download: '⬇ Download',
+    copyPaste: '📋 Copy to Clipboard',
+    downloadHtml: '⬇ Download HTML',
+    printPdf: '🖨 Print / PDF',
+    addLesion: '+ Add Lesion',
+    editLesion: 'Edit',
+    finalizeLesion: '✓ Finalize Lesion',
+    lesionSummary: 'LESION SUMMARY',
+    allDone: 'All steps completed',
+    allDoneSub: 'Use the options below to view or export the report.',
+    noLocation: 'Location not entered',
+    noType: 'Type unclear',
+    highestProb: 'Highest probability',
+    ipmn2017: 'IPMN Fukuoka 2017',
+    highRiskStigmata: 'HIGH RISK STIGMATA:',
+    worrisomeFindings: 'WORRISOME FEATURES:',
+    alertMpdIpmn: '⚠ MPD ≥5mm — IPMN should be considered',
+    alertMpdHighRisk: '🚨 Meets Fukuoka High Risk Criteria — MPD ≥10mm',
+    alertCbd: '⚠ CBD ≥8mm — obstructive etiology should be investigated',
+    alertDoubleDuct: '🔴 Double Duct Sign — PDAC PPV 85-90%! Contrast pancreas protocol and/or EUS recommended.',
+    alertSma: '🚨 SMA invasion — Resectability compromised. Multidisciplinary evaluation recommended.',
+    alertSuddenCalib: '⚠ Abrupt MPD caliber change — malignancy suspicion, Fukuoka worrisome feature',
+    alertArterial: 'ℹ Arterial hypervascular lesion — consider pNET, cystic pNET, metastasis (RCC, melanoma?)',
+    alertHalo: 'ℹ Halo sign — commonly seen in AIP (autoimmune pancreatitis)',
+    alertFibro: 'ℹ Fibrous capsule — finding of SPN (solid pseudopapillary neoplasm)',
+    alertMpdComm: 'ℹ MPD communication present — IPMN likelihood high',
+    alertMuralNodule: '🚨 Enhancing mural nodule ≥5mm — Fukuoka High Risk',
+    alertMpdGrowth: '⚠ MPD ≥5mm — IPMN should be considered',
+    lezyonGirildi: 'lesion(s) entered. Press → to continue.',
+    copyDone: 'Report copied to clipboard.',
+    reportTitle: 'PANCREAS MRI ASSESSMENT REPORT',
+    date: 'Date',
+    time: 'Time',
+    indication: 'Indication',
+    age: 'Age',
+    gender: 'Gender',
+    ca199: 'CA 19-9',
+    igg4: 'IgG4',
+    amylaseLipase: 'Amylase/Lipase',
+    igg4High: 'Elevated',
+    igg4Normal: 'Normal/unknown',
+    technique: 'TECHNIQUE',
+    techStandard: 'Standard pancreas MRI protocol applied.',
+    techContrast: 'Gadolinium-based contrast agent administered.',
+    techMrcp: 'MRCP sequence included.',
+    parenchyma: 'PANCREATIC PARENCHYMA',
+    parTissue: 'Parenchymal tissue',
+    parFat: 'Fat infiltration',
+    parAtrophy: 'Atrophy',
+    parCalc: 'Parenchymal calcification',
+    parNormal: 'Pancreatic parenchyma appears normal in morphology and signal.',
+    mpd: 'MAIN PANCREATIC DUCT (WIRSUNG)',
+    mpdDiam: 'Main pancreatic duct diameter',
+    mpdLoc: 'localization',
+    mpdStone: 'Intraductal stone detected.',
+    mpdIrreg: 'Ductal irregularity present.',
+    mpdCalib: 'Abrupt caliber change detected.',
+    mpdNormal: 'Main pancreatic duct is of normal caliber (below 3mm).',
+    cbd: 'BILIARY SYSTEM',
+    cbdDiam: 'Common bile duct diameter',
+    cbdIhDil: 'Intrahepatic biliary ductal dilatation present.',
+    cbdDouble: 'Double duct sign detected.',
+    cbdStone: 'Stone/stricture detected.',
+    cbdNormal: 'Biliary ducts are of normal caliber.',
+    vascular: 'VASCULAR FINDINGS',
+    pvSmv: 'Portal vein/SMV',
+    sma: 'SMA',
+    celiac: 'Celiac axis',
+    splenicV: 'Splenic vein',
+    vascNormal: 'Major vascular structures are normal.',
+    lymph: 'LYMPHADENOPATHY / ASCITES',
+    lap: 'Regional lymphadenopathy',
+    lapDetail: 'present',
+    noLap: 'No regional lymphadenopathy detected.',
+    ascites: 'Ascites present',
+    ascitesSmall: 'small amount',
+    liver: 'LIVER',
+    liverNormal: 'Liver appears unremarkable on evaluated sections.',
+    otherFindings: 'OTHER FINDINGS',
+    lesions: 'LESIONS',
+    lesionHeader: 'Lesion',
+    t1: 'T1',
+    t2: 'T2',
+    dwi: 'DWI',
+    contrast: 'Contrast',
+    probabilities: 'Probabilities',
+    comment: 'Comment',
+    ipmn: 'IPMN Fukuoka Risk',
+    highRisk: 'High risk',
+    worrisome: 'Worrisome',
+    conclusion: 'CONCLUSION / IMPRESSION',
+    noLesion: 'No pancreatic lesion detected. The findings noted above should be evaluated in conjunction with clinical information.',
+    highestProbText: 'Highest probability',
+    diffDiag: 'Differential diagnosis includes',
+    diffDiagSuffix: 'should be considered.',
+    // Step titles
+    sClinical: 'Clinical Information',
+    sClinicalSub: 'Indication, age, biochemistry',
+    sTechnique: 'MRI Technique',
+    sTechniqueSub: 'Sequences and protocol',
+    sParenchyma: 'Pancreatic Parenchyma',
+    sParenchymaSub: 'Tissue character, atrophy',
+    sMpd: 'Main Pancreatic Duct',
+    sMpdSub: 'Wirsung / MPD assessment',
+    sCbd: 'Biliary System',
+    sCbdSub: 'CBD, intrahepatic dilatation',
+    sVascular: 'Vascular Assessment',
+    sVascularSub: 'Portal vein, SMA, celiac',
+    sLymph: 'LAP / Ascites',
+    sLymphSub: 'Lymphadenopathy and free fluid',
+    sLesionCount: 'Lesion Entry',
+    sLesionCountSub: 'Add or edit lesions',
+    sLoc: 'Localization',
+    sType: 'Lesion Type',
+    sTypeSub: 'Solid, cystic, or mixed',
+    sT1: 'T1 Signal',
+    sT1Sub: 'Pre-contrast T1 character',
+    sT2: 'T2 Signal',
+    sT2Sub: 'T2 signal and cystic features',
+    sDwi: 'DWI / ADC',
+    sDwiSub: 'Diffusion restriction',
+    sContrast: 'Contrast Enhancement',
+    sContrastSub: 'Dynamic contrast character',
+    sSpecific: 'Specific Features',
+    sSpecificSub: 'Diagnosis-oriented findings',
+    sDiagnosis: 'Diagnostic Probabilities',
+    sDiagnosisSub: 'Weighted differential diagnosis',
+    sLiver: 'Liver',
+    sLiverSub: 'Evaluated sections',
+    sOther: 'Other Findings',
+    sOtherSub: 'Spleen, kidneys, bone, adrenal',
+    sReport: 'Report',
+    sReportSub: 'Export options',
+  },
+})[RV_LOCALE];
+
 const {useState,useCallback,useMemo,useRef} = React;
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -389,112 +687,113 @@ function ipmNRisk(L, mpd){
 function generateReportHTML(data){
   const{clin,tech,parenchyma,mpd,cbd,vascular,lymph,lesions,liver,other}=data;
   const now=new Date();
-  const dateStr=now.toLocaleDateString('tr-TR',{year:'numeric',month:'long',day:'numeric'});
-  const timeStr=now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const loc=RV_LOCALE==='en'?'en-GB':'tr-TR';
+  const dateStr=now.toLocaleDateString(loc,{year:'numeric',month:'long',day:'numeric'});
+  const timeStr=now.toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'});
 
   let rows='';
 
   // Header
-  rows+=`<h2>PANKREAS MRI DEĞERLENDİRME RAPORU</h2>
-  <div class="rpt-meta">Tarih: ${dateStr} &nbsp;|&nbsp; Saat: ${timeStr} &nbsp;|&nbsp; Endikasyon: ${(clin.indications||[]).join(', ')||'—'}</div>`;
+  rows+=`<h2>${T.reportTitle}</h2>
+  <div class="rpt-meta">${T.date}: ${dateStr} &nbsp;|&nbsp; ${T.time}: ${timeStr} &nbsp;|&nbsp; ${T.indication}: ${(clin.indications||[]).join(', ')||'—'}</div>`;
 
   // Patient info table
-  rows+=`<table><tr><th>Yaş</th><th>Cinsiyet</th><th>CA 19-9</th><th>IgG4</th><th>Amilaz/Lipaz</th></tr>
-  <tr><td>${clin.age||'—'}</td><td>${clin.gender||'—'}</td><td>${clin.ca199||'—'}</td><td>${clin.igg4High?'Yüksek':'Normal/bilinmiyor'}</td><td>${clin.amylaseLipase||'—'}</td></tr></table>`;
+  rows+=`<table><tr><th>${T.age}</th><th>${T.gender}</th><th>${T.ca199}</th><th>${T.igg4}</th><th>${T.amylaseLipase}</th></tr>
+  <tr><td>${clin.age||'—'}</td><td>${clin.gender||'—'}</td><td>${clin.ca199||'—'}</td><td>${clin.igg4High?T.igg4High:T.igg4Normal}</td><td>${clin.amylaseLipase||'—'}</td></tr></table>`;
 
   // Technique
-  rows+=`<h3>TEKNİK</h3><p>${tech.sequences||'Standart pankreas MRI protokolü uygulandı.'} ${tech.contrast?'Gadolinyum bazlı kontrast madde verildi.':''} ${tech.mrcp?'MRCP sekansı eklendi.':''}</p>`;
+  rows+=`<h3>${T.technique}</h3><p>${tech.sequences||T.techStandard} ${tech.contrast?T.techContrast:''} ${tech.mrcp?T.techMrcp:''}</p>`;
 
   // Parenchyma
-  rows+=`<h3>PANKREASİK PARENKİM</h3>`;
-  if(parenchyma.texture) rows+=`<p>Parankimal doku: ${parenchyma.texture}.</p>`;
-  if(parenchyma.fat) rows+=`<p>Yağ infiltrasyonu: ${parenchyma.fat}.</p>`;
-  if(parenchyma.atrophy) rows+=`<p>Atrofi: ${parenchyma.atrophy}.</p>`;
-  if(parenchyma.calcification) rows+=`<p>Parankimal kalsifikasyon: ${parenchyma.calcification}.</p>`;
-  if(!parenchyma.texture) rows+=`<p>Pankreas parankimi normal görünüm ve sinyalde.</p>`;
+  rows+=`<h3>${T.parenchyma}</h3>`;
+  if(parenchyma.texture) rows+=`<p>${T.parTissue}: ${parenchyma.texture}.</p>`;
+  if(parenchyma.fat) rows+=`<p>${T.parFat}: ${parenchyma.fat}.</p>`;
+  if(parenchyma.atrophy) rows+=`<p>${T.parAtrophy}: ${parenchyma.atrophy}.</p>`;
+  if(parenchyma.calcification) rows+=`<p>${T.parCalc}: ${parenchyma.calcification}.</p>`;
+  if(!parenchyma.texture) rows+=`<p>${T.parNormal}</p>`;
 
   // MPD
-  rows+=`<h3>ANA PANKREAS KANALI (WIRSUNG)</h3>`;
+  rows+=`<h3>${T.mpd}</h3>`;
   const mpdMm = parseInt(mpd.mpdMm||'0');
   if(mpdMm>0){
-    rows+=`<p>Ana pankreas kanalı çapı: ${mpdMm} mm (${mpd.mpdDilation||''}), lokalizasyon: ${mpd.mpdLocation||'difüz'}.</p>`;
-    if(mpd.mpdStone) rows+=`<p>Kanal içi taş saptandı.</p>`;
-    if(mpd.mpdIrreg) rows+=`<p>Kanal irregülaritesi mevcut.</p>`;
-    if(mpd.suddenCalib) rows+=`<p><strong>Ani kalibrasyon değişimi saptandı.</strong></p>`;
+    rows+=`<p>${T.mpdDiam}: ${mpdMm} mm (${mpd.mpdDilation||''}), ${T.mpdLoc}: ${mpd.mpdLocation||'difüz'}.</p>`;
+    if(mpd.mpdStone) rows+=`<p>${T.mpdStone}</p>`;
+    if(mpd.mpdIrreg) rows+=`<p>${T.mpdIrreg}</p>`;
+    if(mpd.suddenCalib) rows+=`<p><strong>${T.mpdCalib}</strong></p>`;
   } else {
-    rows+=`<p>Ana pankreas kanalı normal kalibrede (3mm altı).</p>`;
+    rows+=`<p>${T.mpdNormal}</p>`;
   }
 
   // CBD
-  rows+=`<h3>SAFRA YOLLARI</h3>`;
+  rows+=`<h3>${T.cbd}</h3>`;
   const cbdMm = parseInt(cbd.cbdMm||'0');
   if(cbdMm>0){
-    rows+=`<p>Koledok çapı: ${cbdMm} mm (${cbd.cbdDilation||''}).</p>`;
-    if(cbd.ihDilation) rows+=`<p>İntrahepatik safra yollarında dilatasyon mevcut.</p>`;
-    if(cbd.doubleDuct) rows+=`<p><strong>Çift kanal işareti (double duct sign) saptandı.</strong></p>`;
-    if(cbd.cbdStone) rows+=`<p>Taş/striktur saptandı.</p>`;
+    rows+=`<p>${T.cbdDiam}: ${cbdMm} mm (${cbd.cbdDilation||''}).</p>`;
+    if(cbd.ihDilation) rows+=`<p>${T.cbdIhDil}</p>`;
+    if(cbd.doubleDuct) rows+=`<p><strong>${T.cbdDouble}</strong></p>`;
+    if(cbd.cbdStone) rows+=`<p>${T.cbdStone}</p>`;
   } else {
-    rows+=`<p>Safra yolları normal kalibrede.</p>`;
+    rows+=`<p>${T.cbdNormal}</p>`;
   }
 
   // Vascular
-  rows+=`<h3>VASKÜLER BULGULAR</h3>`;
+  rows+=`<h3>${T.vascular}</h3>`;
   let vascNormal=true;
-  if(vascular.pvSmv && vascular.pvSmv!=='normal'){rows+=`<p>Portal ven/SMV: ${vascular.pvSmv}.</p>`;vascNormal=false}
-  if(vascular.sma && vascular.sma!=='normal'){rows+=`<p>SMA: ${vascular.sma}.</p>`;vascNormal=false}
-  if(vascular.celiac && vascular.celiac!=='normal'){rows+=`<p>Çölyak aks: ${vascular.celiac}.</p>`;vascNormal=false}
-  if(vascular.splenicV && vascular.splenicV!=='normal'){rows+=`<p>Splenik ven: ${vascular.splenicV}.</p>`;vascNormal=false}
-  if(vascNormal) rows+=`<p>Major vasküler yapılar normaldir.</p>`;
+  if(vascular.pvSmv && vascular.pvSmv!=='normal'){rows+=`<p>${T.pvSmv}: ${vascular.pvSmv}.</p>`;vascNormal=false}
+  if(vascular.sma && vascular.sma!=='normal'){rows+=`<p>${T.sma}: ${vascular.sma}.</p>`;vascNormal=false}
+  if(vascular.celiac && vascular.celiac!=='normal'){rows+=`<p>${T.celiac}: ${vascular.celiac}.</p>`;vascNormal=false}
+  if(vascular.splenicV && vascular.splenicV!=='normal'){rows+=`<p>${T.splenicV}: ${vascular.splenicV}.</p>`;vascNormal=false}
+  if(vascNormal) rows+=`<p>${T.vascNormal}</p>`;
 
   // Lymph
-  rows+=`<h3>LENFADENOPATİ / ASİT</h3>`;
-  if(lymph.lap) rows+=`<p>Bölgesel lenfadenopati: ${lymph.lapDetail||'mevcut'}.</p>`;
-  else rows+=`<p>Bölgesel lenfadenopati saptanmadı.</p>`;
-  if(lymph.ascites) rows+=`<p>Asit mevcut: ${lymph.ascitesDetail||'az miktarda'}.</p>`;
+  rows+=`<h3>${T.lymph}</h3>`;
+  if(lymph.lap) rows+=`<p>${T.lap}: ${lymph.lapDetail||T.lapDetail}.</p>`;
+  else rows+=`<p>${T.noLap}</p>`;
+  if(lymph.ascites) rows+=`<p>${T.ascites}: ${lymph.ascitesDetail||T.ascitesSmall}.</p>`;
 
   // Liver
-  rows+=`<h3>KARACİĞER</h3>`;
+  rows+=`<h3>${T.liver}</h3>`;
   if(liver.liverFindings) rows+=`<p>${liver.liverFindings}</p>`;
-  else rows+=`<p>Karaciğer değerlendirilen kesitlerde olağan görünümdedir.</p>`;
+  else rows+=`<p>${T.liverNormal}</p>`;
 
   // Other
   if(other.otherFindings){
-    rows+=`<h3>DİĞER BULGULAR</h3><p>${other.otherFindings}</p>`;
+    rows+=`<h3>${T.otherFindings}</h3><p>${other.otherFindings}</p>`;
   }
 
   // Lesions
   if(lesions.length>0){
-    rows+=`<h3>LEZYONlar</h3>`;
+    rows+=`<h3>${T.lesions}</h3>`;
     lesions.forEach((L,i)=>{
-      rows+=`<p class="rpt-lesion-header">Lezyon ${i+1}: ${L.location||''} – ${L.sizeMm||'?'} mm – ${L.type||''}</p>`;
-      rows+=`<p>T1: ${L.t1||'—'} | T2: ${L.t2||'—'} | DWI: ${L.dwi||'—'} | Kontrast: ${L.contrast||'—'}</p>`;
+      rows+=`<p class="rpt-lesion-header">${T.lesionHeader} ${i+1}: ${L.location||''} – ${L.sizeMm||'?'} mm – ${L.type||''}</p>`;
+      rows+=`<p>${T.t1}: ${L.t1||'—'} | ${T.t2}: ${L.t2||'—'} | ${T.dwi}: ${L.dwi||'—'} | ${T.contrast}: ${L.contrast||'—'}</p>`;
       const diags = L.type==='Kistik' ? diagCystic(L,clin,mpd) : diagSolid(L,clin);
       const top = diags.slice(0,3);
       if(top.length>0){
-        rows+=`<p>Olasılıklar: ${top.map(d=>`${d.name} %${d.pct}`).join(' | ')}</p>`;
+        rows+=`<p>${T.probabilities}: ${top.map(d=>`${d.name} %${d.pct}`).join(' | ')}</p>`;
       }
-      if(L.comment) rows+=`<p>Yorum: ${L.comment}</p>`;
+      if(L.comment) rows+=`<p>${T.comment}: ${L.comment}</p>`;
       // Fukuoka
       const isIPMN = top[0]&&(top[0].name.includes('IPMN')||top[0].name.includes('MCN'));
       if(isIPMN||L.mpdComm==='var'){
         const fuk = ipmNRisk(L,mpd);
-        rows+=`<p><strong>IPMN Fukuoka Risk:</strong> ${fuk.rec}</p>`;
-        if(fuk.highRisk.length) rows+=`<p>Yüksek risk: ${fuk.highRisk.join(', ')}</p>`;
-        if(fuk.worrisome.length) rows+=`<p>Endişe verici: ${fuk.worrisome.join(', ')}</p>`;
+        rows+=`<p><strong>${T.ipmn}:</strong> ${fuk.rec}</p>`;
+        if(fuk.highRisk.length) rows+=`<p>${T.highRisk}: ${fuk.highRisk.join(', ')}</p>`;
+        if(fuk.worrisome.length) rows+=`<p>${T.worrisome}: ${fuk.worrisome.join(', ')}</p>`;
       }
     });
   }
 
-  // Yorum
-  rows+=`<h3>SONUÇ / YORUM</h3>`;
+  // Conclusion
+  rows+=`<h3>${T.conclusion}</h3>`;
   if(lesions.length===0){
-    rows+=`<div class="yorum">Pankreas lezyon saptanmadı. Yukarıda belirtilen bulgular klinisyen ile birlikte değerlendirilmelidir.</div>`;
+    rows+=`<div class="yorum">${T.noLesion}</div>`;
   } else {
     lesions.forEach((L,i)=>{
       const diags = L.type==='Kistik' ? diagCystic(L,clin,mpd) : diagSolid(L,clin);
       const top1 = diags[0];
       if(top1){
-        rows+=`<div class="yorum">Lezyon ${i+1} (${L.location||''}, ${L.sizeMm||'?'} mm): En yüksek olasılık <strong>${top1.name}</strong> (%${top1.pct}). ${diags[1]?`Ayırıcı tanıda ${diags[1].name} (%${diags[1].pct}) göz önünde bulundurulmalıdır.`:''} ${L.comment||''}</div>`;
+        rows+=`<div class="yorum">${T.lesionHeader} ${i+1} (${L.location||''}, ${L.sizeMm||'?'} mm): ${T.highestProbText} <strong>${top1.name}</strong> (%${top1.pct}). ${diags[1]?`${T.diffDiag} ${diags[1].name} (%${diags[1].pct}) ${T.diffDiagSuffix}`:''} ${L.comment||''}</div>`;
       }
     });
   }
@@ -547,7 +846,7 @@ function ProbChart({data,isIPMN,mpd,lesion}){
     <div className="primary-diag">
       <div className="diag-name">{top1.name}</div>
       <div className="diag-pct">%{top1.pct}</div>
-      <div className="diag-sub">En yüksek olasılık</div>
+      <div className="diag-sub">{T.highestProb}</div>
     </div>
     <div className="prob-chart">
       {data.slice(0,8).map((d,i)=><div key={d.name} className="prob-row">
@@ -560,16 +859,16 @@ function ProbChart({data,isIPMN,mpd,lesion}){
     </div>
     {fuk&&<div className={`fukuoka-box fukuoka-${fuk.recClass}`} style={{marginTop:14}}>
       <div className="fukuoka-title" style={{color:fuk.recClass==='surgery'?'#fca5a5':fuk.recClass==='eus'?'#fcd34d':'#6ee7b7'}}>
-        IPMN Fukuoka 2017 — {fuk.rec}
+        {T.ipmn2017} — {fuk.rec}
       </div>
       {fuk.highRisk.length>0&&<>
-        <div style={{fontSize:'.75rem',color:'#fca5a5',fontWeight:700,marginBottom:4}}>YÜK­SEK RİSK STİGMATA:</div>
+        <div style={{fontSize:'.75rem',color:'#fca5a5',fontWeight:700,marginBottom:4}}>{T.highRiskStigmata}</div>
         <div className="fukuoka-features">
           {fuk.highRisk.map(f=><span key={f} className="fukuoka-tag" style={{background:'rgba(239,68,68,.2)',color:'#fca5a5'}}>{f}</span>)}
         </div>
       </>}
       {fuk.worrisome.length>0&&<>
-        <div style={{fontSize:'.75rem',color:'#fcd34d',fontWeight:700,marginTop:6,marginBottom:4}}>ENDİŞELENDİRİCİ BULGULAR:</div>
+        <div style={{fontSize:'.75rem',color:'#fcd34d',fontWeight:700,marginTop:6,marginBottom:4}}>{T.worrisomeFindings}</div>
         <div className="fukuoka-features">
           {fuk.worrisome.map(f=><span key={f} className="fukuoka-tag" style={{background:'rgba(249,115,22,.2)',color:'#fcd34d'}}>{f}</span>)}
         </div>
@@ -704,7 +1003,7 @@ function App(){
     const r=document.createRange();r.selectNode(div);
     window.getSelection().removeAllRanges();window.getSelection().addRange(r);
     document.execCommand('copy');document.body.removeChild(div);
-    alert('Rapor panoya kopyalandı.');
+    alert(T.copyDone);
   };
 
   const handleDownload = ()=>{
@@ -796,8 +1095,8 @@ function App(){
     const mm = parseInt(mpd.mpdMm||'0');
     return <>
       <SliderMm label="MPD çapı (mm)" value={mpd.mpdMm} onChange={v=>setMpd(p=>({...p,mpdMm:v}))} max={25}/>
-      {mm>=5&&<div className="alert alert-warn">⚠ MPD ≥5mm — IPMN olasılığı değerlendirilmeli</div>}
-      {mm>=10&&<div className="alert alert-danger">🚨 Fukuoka Yüksek Risk Kriterine karşılık gelir — MPD ≥10mm</div>}
+      {mm>=5&&<div className="alert alert-warn">{T.alertMpdIpmn}</div>}
+      {mm>=10&&<div className="alert alert-danger">{T.alertMpdHighRisk}</div>}
       <div className="field"><label>Dilatasyon seviyesi</label>
         <SingleSelect options={['<3mm (normal)','3-4mm (borderline)','5-9mm (orta)','≥10mm (belirgin)']} value={mpd.mpdDilation} onChange={v=>setMpd(p=>({...p,mpdDilation:v}))}/>
       </div>
@@ -807,20 +1106,20 @@ function App(){
       <Toggle on={mpd.mpdIrreg} onChange={v=>setMpd(p=>({...p,mpdIrreg:v}))} label="Kanal irregülaritesi"/>
       <Toggle on={mpd.mpdStone} onChange={v=>setMpd(p=>({...p,mpdStone:v}))} label="Kanal içi taş"/>
       <Toggle on={mpd.suddenCalib} onChange={v=>setMpd(p=>({...p,suddenCalib:v}))} label="Ani kalibrasyon değişimi (cut-off sign)"/>
-      {mpd.suddenCalib&&<div className="alert alert-warn">⚠ Ani MPD kalibrasyon değişimi — malignite şüphesi, Fukuoka endişe verici bulgu</div>}
+      {mpd.suddenCalib&&<div className="alert alert-warn">{T.alertSuddenCalib}</div>}
     </>;
   }
 
   function renderCBD(){
     return <>
       <SliderMm label="Ortak safra kanalı çapı (mm)" value={cbd.cbdMm} onChange={v=>setCbd(p=>({...p,cbdMm:v}))} max={30}/>
-      {parseInt(cbd.cbdMm||'0')>=8&&<div className="alert alert-warn">⚠ CBD ≥8mm — obstrüktif etiyoloji araştırılmalı</div>}
+      {parseInt(cbd.cbdMm||'0')>=8&&<div className="alert alert-warn">{T.alertCbd}</div>}
       <div className="field"><label>Dilatasyon derecesi</label>
         <SingleSelect options={['yok / normal','hafif (6-8mm)','orta (8-12mm)','belirgin (>12mm)']} value={cbd.cbdDilation} onChange={v=>setCbd(p=>({...p,cbdDilation:v}))}/>
       </div>
       <Toggle on={cbd.ihDilation} onChange={v=>setCbd(p=>({...p,ihDilation:v}))} label="İntrahepatik dilatasyon"/>
       <Toggle on={cbd.doubleDuct} onChange={v=>setCbd(p=>({...p,doubleDuct:v}))} label="Çift kanal işareti (Double Duct Sign)"/>
-      {cbd.doubleDuct&&<div className="alert alert-danger">🔴 Double Duct Sign — PDAC PPV %85-90! Kontrast pankreas protokolü ve/veya EUS önerilir.</div>}
+      {cbd.doubleDuct&&<div className="alert alert-danger">{T.alertDoubleDuct}</div>}
       <Toggle on={cbd.cbdStone} onChange={v=>setCbd(p=>({...p,cbdStone:v}))} label="Taş / striktur"/>
     </>;
   }
@@ -836,7 +1135,7 @@ function App(){
         <SingleSelect options={VSMA} value={vascular.sma} onChange={v=>setVascular(p=>({...p,sma:v}))}/>
       </div>
       {(vascular.sma==='≥180° (borderline rezektabl)'||vascular.sma==='invazyon (rezektabl değil)')&&
-        <div className="alert alert-danger">🚨 SMA invazyonu — Rezektabilite kısıtlanmış. Multidisipliner değerlendirme önerilir.</div>}
+        <div className="alert alert-danger">{T.alertSma}</div>}
       <div className="field"><label>Çölyak Aks</label>
         <SingleSelect options={['normal','temas var','invazyon']} value={vascular.celiac} onChange={v=>setVascular(p=>({...p,celiac:v}))}/>
       </div>
@@ -865,19 +1164,19 @@ function App(){
         {lesions.map((l,i)=><div key={i} className={`lesion-item${currentIdx===i?' active':''}`}>
           <div>
             <span className="lesion-badge">L{i+1}</span>
-            <span style={{marginLeft:10,fontSize:'.85rem',color:'var(--text)'}}>{l.location||'Lokalizasyon girilmedi'} – {l.type||'Tip belirsiz'} {l.sizeMm?`– ${l.sizeMm}mm`:''}</span>
+            <span style={{marginLeft:10,fontSize:'.85rem',color:'var(--text)'}}>{l.location||T.noLocation} – {l.type||T.noType} {l.sizeMm?`– ${l.sizeMm}mm`:''}</span>
           </div>
           <div style={{display:'flex',gap:8}}>
-            <button className="btn btn-sm btn-secondary" onClick={()=>startEditing(i)}>Düzenle</button>
+            <button className="btn btn-sm btn-secondary" onClick={()=>startEditing(i)}>{T.editLesion}</button>
             <button className="lesion-remove" onClick={()=>removeLesion(i)}>✕</button>
           </div>
         </div>)}
       </div>
       <button className="btn btn-cyan" onClick={()=>{addLesion();setCurrentIdx(lesions.length);setStep(LOOP_START);}}>
-        + Lezyon Ekle
+        {T.addLesion}
       </button>
       {lesions.length>0&&<div className="alert alert-info" style={{marginTop:12}}>
-        {lesions.length} lezyon girildi. Devam için →  ileri tuşuna basın.
+        {lesions.length} {T.lezyonGirildi}
       </div>}
     </>;
   }
@@ -926,7 +1225,7 @@ function App(){
         </div>
         <Toggle on={curLesion.muralNodule} onChange={v=>updateCurLesion({muralNodule:v})} label="Mural nodül"/>
         {curLesion.muralNodule&&<SliderMm label="Mural nodül boyutu (mm)" value={curLesion.muralNoduleSizeMm} onChange={v=>updateCurLesion({muralNoduleSizeMm:parseInt(v)})} max={30}/>}
-        {curLesion.muralNodule&&curLesion.muralNoduleSizeMm>=5&&<div className="alert alert-danger">🚨 Enhancing mural nodül ≥5mm — Fukuoka Yüksek Risk</div>}
+        {curLesion.muralNodule&&curLesion.muralNoduleSizeMm>=5&&<div className="alert alert-danger">{T.alertMuralNodule}</div>}
         <Toggle on={curLesion.debris} onChange={v=>updateCurLesion({debris:v})} label="İnternal debris"/>
         <div className="field"><label>Kist morfolojisi</label>
           <SingleSelect options={['mikrokistik petek','makrokistik','oligokistik','üzüm salkımı','uniloküler']} value={curLesion.morphology} onChange={v=>updateCurLesion({morphology:v})}/>
@@ -956,7 +1255,7 @@ function App(){
       <div className="field"><label>Kontrast tutulum paterni</label>
         <SingleSelect options={opts} value={curLesion.contrast} onChange={v=>updateCurLesion({contrast:v})}/>
       </div>
-      {curLesion.contrast==='arteriyel hipervasküler'&&<div className="alert alert-info">ℹ Arteriyel hipervasküler lezyon — pNET, kistik pNET, metastaz (RCC, melanoma?) düşün</div>}
+      {curLesion.contrast==='arteriyel hipervasküler'&&<div className="alert alert-info">{T.alertArterial}</div>}
     </>;
   }
 
@@ -973,9 +1272,9 @@ function App(){
             <SingleSelect options={['spiküle','lobüle','keskin','belirsiz']} value={curLesion.border} onChange={v=>updateCurLesion({border:v})}/>
           </div>
           <Toggle on={curLesion.haloSign} onChange={v=>updateCurLesion({haloSign:v})} label="Halo sign (çevre düşük sinyal)"/>
-          {curLesion.haloSign&&<div className="alert alert-info">ℹ Halo sign — AIP (otoimmün pankreatit) sıklıkla görülür</div>}
+          {curLesion.haloSign&&<div className="alert alert-info">{T.alertHalo}</div>}
           <Toggle on={curLesion.fibroKapsul} onChange={v=>updateCurLesion({fibroKapsul:v})} label="Fibröz kapsül"/>
-          {curLesion.fibroKapsul&&<div className="alert alert-info">ℹ Fibröz kapsül — SPN (solid psödopapiller neoplezi) bulgusu</div>}
+          {curLesion.fibroKapsul&&<div className="alert alert-info">{T.alertFibro}</div>}
           <Toggle on={curLesion.proxAtrophy} onChange={v=>updateCurLesion({proxAtrophy:v})} label="Proksimal parankim atrofisi"/>
           <Toggle on={curLesion.vascInvasion} onChange={v=>updateCurLesion({vascInvasion:v})} label="Vasküler invazyon şüphesi"/>
           <Toggle on={curLesion.bileInvasion} onChange={v=>updateCurLesion({bileInvasion:v})} label="Safra yolu invazyonu"/>
@@ -989,7 +1288,7 @@ function App(){
           <div className="field"><label>MPD kommunikasyonu</label>
             <SingleSelect options={['var','yok','şüpheli']} value={curLesion.mpdComm} onChange={v=>updateCurLesion({mpdComm:v})} cols={3}/>
           </div>
-          {curLesion.mpdComm==='var'&&<div className="alert alert-info">ℹ MPD kommunikasyonu mevcut — IPMN olasılığı yüksek</div>}
+          {curLesion.mpdComm==='var'&&<div className="alert alert-info">{T.alertMpdComm}</div>}
           <div className="field"><label>IPMN alt tipi (varsa)</label>
             <SingleSelect options={['Dal-tip (BD)','Ana kanal (MD)','Mikst tip','IPMN değil']} value={curLesion.ipmType} onChange={v=>updateCurLesion({ipmType:v})}/>
           </div>
@@ -1017,7 +1316,7 @@ function App(){
     return <>
       <ProbChart data={diags} isIPMN={topIsIPMN||topIsMCN} mpd={mpd} lesion={curLesion}/>
       <div className="btn-row">
-        <button className="btn btn-secondary" onClick={finalizeLesion}>✓ Lezyonu Tamamla</button>
+        <button className="btn btn-secondary" onClick={finalizeLesion}>{T.finalizeLesion}</button>
       </div>
     </>;
   }
@@ -1041,18 +1340,18 @@ function App(){
   function renderFinalReport(){
     return <>
       <div style={{textAlign:'center',padding:'20px 0'}}>
-        <div style={{fontSize:'1.1rem',fontWeight:700,color:'var(--accent)',marginBottom:8}}>Tüm adımlar tamamlandı</div>
-        <div style={{fontSize:'.85rem',color:'var(--text2)',marginBottom:20}}>Raporu görüntülemek veya dışa aktarmak için aşağıdaki seçenekleri kullanın.</div>
+        <div style={{fontSize:'1.1rem',fontWeight:700,color:'var(--accent)',marginBottom:8}}>{T.allDone}</div>
+        <div style={{fontSize:'.85rem',color:'var(--text2)',marginBottom:20}}>{T.allDoneSub}</div>
         <div className="btn-row" style={{justifyContent:'center'}}>
-          <button className="btn btn-primary" onClick={handleShowReport}>📄 Raporu Görüntüle</button>
-          <button className="btn btn-secondary" onClick={handlePrint}>🖨 Yazdır / PDF</button>
-          <button className="btn btn-secondary" onClick={handleCopy}>📋 Panoya Kopyala</button>
-          <button className="btn btn-cyan" onClick={handleDownload}>⬇ HTML İndir</button>
+          <button className="btn btn-primary" onClick={handleShowReport}>{T.showReport}</button>
+          <button className="btn btn-secondary" onClick={handlePrint}>{T.printPdf}</button>
+          <button className="btn btn-secondary" onClick={handleCopy}>{T.copyPaste}</button>
+          <button className="btn btn-cyan" onClick={handleDownload}>{T.downloadHtml}</button>
         </div>
       </div>
       {lesions.length>0&&<>
         <hr className="divider"/>
-        <div style={{fontSize:'.85rem',color:'var(--text3)',marginBottom:12,fontWeight:700}}>LEZYON ÖZETİ</div>
+        <div style={{fontSize:'.85rem',color:'var(--text3)',marginBottom:12,fontWeight:700}}>{T.lesionSummary}</div>
         {lesions.map((L,i)=>{
           const diags = L.type==='Kistik'?diagCystic(L,clin,mpd):diagSolid(L,clin);
           const top=diags[0];
@@ -1073,27 +1372,27 @@ function App(){
 
   // ── STEP CONFIG ─────────────────────────────────────────────────────────────
   const STEP_CONFIG = [
-    {title:'Klinik Bilgiler',sub:'Endikasyon, yaş, biyokimya',render:renderClinical},
-    {title:'MRI Tekniği',sub:'Sekanslar ve protokol',render:renderTechnique},
-    {title:'Pankreas Parankimi',sub:'Doku karakteri, atrofi',render:renderParenchyma},
-    {title:'Ana Pankreas Kanalı',sub:'Wirsung / MPD değerlendirme',render:renderMPD},
-    {title:'Safra Yolları',sub:'CBD, intrahepatik dilatasyon',render:renderCBD},
-    {title:'Vasküler Değerlendirme',sub:'Portal ven, SMA, çölyak',render:renderVascular},
-    {title:'LAP / Asit',sub:'Lenfadenopati ve serbest sıvı',render:renderLymph},
-    {title:'Lezyon Girişi',sub:'Lezyon ekle veya düzenle',render:renderLesionCount},
+    {title:T.sClinical,sub:T.sClinicalSub,render:renderClinical},
+    {title:T.sTechnique,sub:T.sTechniqueSub,render:renderTechnique},
+    {title:T.sParenchyma,sub:T.sParenchymaSub,render:renderParenchyma},
+    {title:T.sMpd,sub:T.sMpdSub,render:renderMPD},
+    {title:T.sCbd,sub:T.sCbdSub,render:renderCBD},
+    {title:T.sVascular,sub:T.sVascularSub,render:renderVascular},
+    {title:T.sLymph,sub:T.sLymphSub,render:renderLymph},
+    {title:T.sLesionCount,sub:T.sLesionCountSub,render:renderLesionCount},
     // Loop steps
-    {title:'Lokalizasyon',sub:`Lezyon ${currentIdx+1} / ${lesions.length}`,render:renderLocation},
-    {title:'Lezyon Tipi',sub:'Solid, kistik veya mikst',render:renderType},
-    {title:'T1 Sinyali',sub:'Ön kontrast T1 karakteri',render:renderT1},
-    {title:'T2 Sinyali',sub:'T2 sinyal ve kistik özellikler',render:renderT2},
-    {title:'DWI / ADC',sub:'Difüzyon kısıtlaması',render:renderDWI},
-    {title:'Kontrast Tutulumu',sub:'Dinamik kontrast karakteri',render:renderContrast},
-    {title:'Spesifik Özellikler',sub:'Tanıya yönelik bulgular',render:renderSpecific},
-    {title:'Tanı Olasılıkları',sub:'Ağırlıklı diferansiyel tanı',render:renderDiagnosis},
+    {title:T.sLoc,sub:`${T.lesionLabel} ${currentIdx+1} ${T.of} ${lesions.length}`,render:renderLocation},
+    {title:T.sType,sub:T.sTypeSub,render:renderType},
+    {title:T.sT1,sub:T.sT1Sub,render:renderT1},
+    {title:T.sT2,sub:T.sT2Sub,render:renderT2},
+    {title:T.sDwi,sub:T.sDwiSub,render:renderDWI},
+    {title:T.sContrast,sub:T.sContrastSub,render:renderContrast},
+    {title:T.sSpecific,sub:T.sSpecificSub,render:renderSpecific},
+    {title:T.sDiagnosis,sub:T.sDiagnosisSub,render:renderDiagnosis},
     // Post-loop
-    {title:'Karaciğer',sub:'Değerlendirilen kesitler',render:renderLiver},
-    {title:'Diğer Bulgular',sub:'Dalak, böbrekler, kemik, sürrenal',render:renderOther},
-    {title:'Rapor',sub:'Dışa aktarma seçenekleri',render:renderFinalReport},
+    {title:T.sLiver,sub:T.sLiverSub,render:renderLiver},
+    {title:T.sOther,sub:T.sOtherSub,render:renderOther},
+    {title:T.sReport,sub:T.sReportSub,render:renderFinalReport},
   ];
 
   const cfg = STEP_CONFIG[step];
@@ -1108,8 +1407,8 @@ function App(){
     <div className="header">
       <div className="header-icon">🫁</div>
       <div>
-        <h1>Pankreas MRI Değerlendirme</h1>
-        <p>Multi-lezyon ağırlıklı diferansiyel tanı — Fukuoka 2017 IPMN Risk Sınıflaması</p>
+        <h1>{T.appTitle}</h1>
+        <p>{T.appSub}</p>
       </div>
     </div>
 
@@ -1117,7 +1416,7 @@ function App(){
     <div className="progress-wrap">
       <div className="progress-bar"><div className="progress-fill" style={{width:`${progressPct}%`}}/></div>
       <div className="progress-label">
-        <span>Adım {step+1} / {TOTAL}</span>
+        <span>{T.stepLabel} {step+1} {T.of} {TOTAL}</span>
         <span>{progressPct}%</span>
       </div>
     </div>
@@ -1128,10 +1427,10 @@ function App(){
         <div className="section-dot"/>
         <div>
           <div className="card-title">
-            <span className="step-badge">S{step}</span>
+            <span className="step-badge">{T.stepBadgePrefix}{step}</span>
             {cfg.title}
             {inLoop&&curLesion&&<span style={{fontSize:'.75rem',background:'rgba(6,182,212,.2)',color:'var(--cyan)',padding:'2px 8px',borderRadius:20,marginLeft:6}}>
-              Lezyon {currentIdx+1}/{lesions.length}
+              {T.lesionLabel} {currentIdx+1}{T.of}{lesions.length}
             </span>}
           </div>
           <div className="card-subtitle">{cfg.sub}</div>
@@ -1142,18 +1441,18 @@ function App(){
 
     {/* Navigation */}
     <div className="btn-row">
-      {canPrev&&<button className="btn btn-secondary" onClick={goPrev}>← Geri</button>}
-      {canNext&&step!==STEPS.DIAGNOSIS&&<button className="btn btn-primary" onClick={goNext}>İleri →</button>}
-      {step===STEPS.REPORT&&<button className="btn btn-primary" onClick={handleShowReport}>📄 Raporu Görüntüle</button>}
+      {canPrev&&<button className="btn btn-secondary" onClick={goPrev}>{T.back}</button>}
+      {canNext&&step!==STEPS.DIAGNOSIS&&<button className="btn btn-primary" onClick={goNext}>{T.next}</button>}
+      {step===STEPS.REPORT&&<button className="btn btn-primary" onClick={handleShowReport}>{T.showReport}</button>}
     </div>
 
     {/* Report Overlay */}
     {showReport&&<div className="overlay" onClick={e=>{if(e.target.className==='overlay')setShowReport(false)}}>
       <div className="overlay-btns">
-        <button className="btn btn-secondary" onClick={()=>setShowReport(false)}>✕ Kapat</button>
-        <button className="btn btn-secondary btn-sm" onClick={handleCopy}>📋 Kopyala</button>
-        <button className="btn btn-secondary btn-sm" onClick={handlePrint}>🖨 Yazdır</button>
-        <button className="btn btn-cyan btn-sm" onClick={handleDownload}>⬇ İndir</button>
+        <button className="btn btn-secondary" onClick={()=>setShowReport(false)}>{T.close}</button>
+        <button className="btn btn-secondary btn-sm" onClick={handleCopy}>{T.copy}</button>
+        <button className="btn btn-secondary btn-sm" onClick={handlePrint}>{T.print}</button>
+        <button className="btn btn-cyan btn-sm" onClick={handleDownload}>{T.download}</button>
       </div>
       <div className="report-sheet" ref={reportRef} dangerouslySetInnerHTML={{__html:generateReportHTML(allData)}}/>
     </div>}

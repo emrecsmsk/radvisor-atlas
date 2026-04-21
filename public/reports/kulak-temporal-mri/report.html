@@ -93,8 +93,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t
 </head>
 <body>
 <div class="app-header">
-<h1>🦻 Kulak ve Temporal Kemik MRI Karar Destek</h1>
-<p>Kapsamlı Anatomik Değerlendirme — Çoklu Lezyon Analizi — v2.0</p>
+<h1 data-i18n-tr="🦻 Kulak ve Temporal Kemik MRI Karar Destek" data-i18n-en="🦻 Ear and Temporal Bone MRI Decision Support">🦻 Kulak ve Temporal Kemik MRI Karar Destek</h1>
+<p data-i18n-tr="Kapsamlı Anatomik Değerlendirme — Çoklu Lezyon Analizi — v2.0" data-i18n-en="Comprehensive Anatomical Assessment — Multi-Lesion Analysis — v2.0">Kapsamlı Anatomik Değerlendirme — Çoklu Lezyon Analizi — v2.0</p>
 </div>
 <div class="wizard-container" id="wizardContainer">
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -103,16 +103,457 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t
 <div class="report-overlay" id="reportOverlay">
 <div>
 <div class="report-toolbar">
-<button class="rpt-print" onclick="window.print()">🖨️ Yazdır</button>
-<button class="rpt-copy" onclick="copyReport()">📋 Kopyala</button>
-<button class="rpt-dl" onclick="downloadReport()">💾 HTML İndir</button>
-<button class="rpt-close" onclick="closeReport()">✕ Kapat</button>
+<button class="rpt-print" onclick="window.print()" data-i18n-tr="🖨️ Yazdır" data-i18n-en="🖨️ Print">🖨️ Yazdır</button>
+<button class="rpt-copy" onclick="copyReport()" data-i18n-tr="📋 Kopyala" data-i18n-en="📋 Copy">📋 Kopyala</button>
+<button class="rpt-dl" onclick="downloadReport()" data-i18n-tr="💾 HTML İndir" data-i18n-en="💾 Download HTML">💾 HTML İndir</button>
+<button class="rpt-close" onclick="closeReport()" data-i18n-tr="✕ Kapat" data-i18n-en="✕ Close">✕ Kapat</button>
 </div>
 <div class="report-sheet" id="reportSheet"></div>
 </div>
 </div>
 
 <script>
+// =====================================================
+// LOCALE
+// =====================================================
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    appTitle: 'Kulak ve Temporal Kemik MRI Karar Destek',
+    appSub: 'Kapsamlı Anatomik Değerlendirme — Çoklu Lezyon Analizi — v2.0',
+    // Mode select
+    modeTitle: 'İnceleme Tarafı Seçimi',
+    modeSub: 'Değerlendirilecek tarafı seçiniz',
+    modeSag: '🔵 Sağ Kulak',
+    modeSol: '🔴 Sol Kulak',
+    modeBilateral: '🟣 Bilateral',
+    // Side labels
+    sagKulak: 'Sağ Kulak',
+    solKulak: 'Sol Kulak',
+    // Other side
+    otherSideDone: ' değerlendirmesi tamamlandı ✓',
+    otherSideQ: ' tarafını da değerlendirmek ister misiniz?',
+    otherSideYes: 'Evet, ',
+    otherSideNo: 'Hayır, Sonuçlara Git',
+    // Not-assessed
+    notAssessed: 'Bu taraf değerlendirilmemiştir.',
+    // Lesion badge
+    lesionBadge: 'Lezyon',
+    lesionOf: '/',
+    // Nav
+    back: '← Geri',
+    next: 'İleri →',
+    finish: '✓ Tamamla',
+    // stepNum
+    stepOf: 'Adım',
+    stepTotal: '/19',
+    // Step 0
+    s0Title: 'Klinik Bilgi',
+    s0Sub: 'Klinik endikasyon, ön tanı, öykü',
+    s0Placeholder: 'Ör: Kronik otitis media, işitme kaybı, vertigo, kulak akıntısı, fasiyal paralizi, tinnitus...',
+    // Step 1
+    s1Title: 'Dış Kulak Yolu',
+    s1Sub: 'Dış kulak yolu değerlendirmesi',
+    s1Label: 'Dış Kulak Yolu Durumu',
+    s1Not: 'Not / Detay',
+    s1NotPh: 'Dış kulak yolu ile ilgili ek detay...',
+    // Step 2
+    s2Title: 'Orta Kulak Kavitesi',
+    s2Sub: 'Orta kulak yapıları detaylı değerlendirmesi',
+    s2Hav: 'Havalanma Durumu',
+    s2Kemik: 'Kemikçik Zinciri',
+    s2KemikPh: 'Etkilenen kemikçik: malleus / incus / stapes',
+    s2Kitle: 'Kitle / Granülasyon Dokusu',
+    s2KitlePh: 'Kitle/granülasyon detayı...',
+    // Step 3
+    s3Title: 'Mastoid Hücreler',
+    s3Sub: 'Mastoid hücre değerlendirmesi',
+    s3Pno: 'Pnömatizasyon',
+    s3Sivi: 'Mastoid Sıvı / Efüzyon',
+    s3Pla: 'Mastoid ek not...',
+    // Step 4
+    s4Title: 'İç Kulak Yapıları',
+    s4Sub: 'Koklea, vestibül, semisirküler kanallar ve anomali değerlendirmesi',
+    s4Koklea: 'Koklea',
+    s4KokleaPh: 'Koklea detay...',
+    s4Vest: 'Vestibül',
+    s4VestPh: 'Vestibül detay...',
+    s4SSK: 'Semisirküler Kanallar',
+    s4SSKPh: 'SSK detay...',
+    s4Anomali: 'İç Kulak Anomali / Obliterasyon',
+    s4AnomaliPh: 'Anomali detay (mondini, LVAS vs.)...',
+    // Step 5
+    s5Title: 'İnternal Akustik Kanal (IAC) ve Sinirler',
+    s5Sub: 'IAC genişliği, VII-VIII sinir kompleksi ve kitle değerlendirmesi',
+    s5IAC: 'IAC Genişliği',
+    s5Sinir: 'VII–VIII. Sinir Kompleksi',
+    s5SinirPh: 'Sinir detay...',
+    s5Kitle: 'IAC Kitle Lezyonu',
+    s5KitlePh: 'Kitle detay...',
+    // Step 6
+    s6Title: 'Serebellopontin Köşe (CPA)',
+    s6Sub: 'Kitle, kontrastlanma ve sistern değerlendirmesi',
+    s6CPA: 'CPA Patolojisi',
+    s6CPAPh: 'CPA detay...',
+    // Step 7
+    s7Title: 'Çevre Yumuşak Dokular',
+    s7Sub: 'Periauriküler, retroauriküler, parotis ve çevre yumuşak doku değerlendirmesi',
+    s7Label: 'Yumuşak Doku Patolojisi',
+    s7Ph: 'Yumuşak doku detay...',
+    // Step 8 — Lesion pre
+    s8Title: 'Lezyon / Kitle Değerlendirmesi',
+    s8Sub: 'Yer kaplayan lezyon veya kitle tespit edildi mi?',
+    s8Defined: 'Tanımlanan Lezyonlar',
+    s8LezyonN: 'Lezyon',
+    s8SizeNone: 'Boyut belirtilmedi',
+    s8LocNone: 'Lokalizasyon belirtilmedi',
+    s8AddNew: '➕ Yeni Lezyon Ekle',
+    s8Skip: 'Lezyon Yok / Devam Et →',
+    s8Del: 'Sil',
+    // Lesion steps 9-15
+    lzLokTitle: 'Lokalizasyon ve Boyut',
+    lzLokSub: 'Lezyonun yerleşim yeri ve üç boyutlu ölçüleri',
+    lzLok: 'Lokalizasyon (çoklu seçim)',
+    lzBoyut: 'Boyut (mm)',
+    lzBoyutNote: 'AP: anteroposterior, ML: mediolateral, CC: kraniokaudal',
+    lzMorTitle: 'Morfolojik Özellikler',
+    lzMorSub: 'Kontur, sınır, şekil ve homojenite',
+    lzKontur: 'Kontur',
+    lzSinir: 'Sınır',
+    lzSekil: 'Şekil',
+    lzHomo: 'İnternal Yapı / Homojenite',
+    lzT1T2Title: 'T1 ve T2 Sinyal Özellikleri',
+    lzT1T2Sub: 'Sinyal intensitesi ve homojenite değerlendirmesi',
+    lzT1: 'T1 Ağırlıklı Görüntü — Sinyal',
+    lzT1Homo: 'T1 — Sinyal Homojenitesi',
+    lzT2: 'T2 Ağırlıklı Görüntü — Sinyal',
+    lzT2Homo: 'T2 — Sinyal Homojenitesi',
+    lzFlairTitle: 'FLAIR ve Chemical Shift',
+    lzFlairSub: 'FLAIR sinyali ve out-phase/in-phase değerlendirmesi',
+    lzFlair: 'FLAIR Sinyali',
+    lzFlairNote: '💡 FLAIR: BOS baskılanır (hipointens), yağ baskılanmaz. Epidermoid kist FLAIR\'de hiperintens kalır (araknoid kistten ayırıcı), lipom FLAIR\'de baskılanır.',
+    lzOP: 'Out-Phase / Chemical Shift',
+    lzOPNote: '💡 Out-phase sinyal kaybı intrasellüler yağ varlığını gösterir. Lipomda belirgin sinyal kaybı beklenir.',
+    lzDWITitle: 'Difüzyon (DWI / ADC)',
+    lzDWISub: 'Difüzyon kısıtlaması ve ADC değerlendirmesi',
+    lzDWI: 'DWI Bulgusu',
+    lzDWINote: '💡 Non-EPI DWI kolesteatom/epidermoid tanısında kritik önemdedir. Belirgin restriksiyon + ADC düşük = gerçek difüzyon kısıtlaması.',
+    lzADC: 'ADC Haritası',
+    lzKontTitle: 'Kontrastlanma Özellikleri',
+    lzKontSub: 'Arterial faz, venöz/geç faz ve kontrastlanma paterni',
+    lzArterial: 'Arterial / Erken Faz',
+    lzVenoz: 'Venöz / Geç Faz',
+    lzEnhPat: 'Kontrastlanma Paterni',
+    lzKontNot: 'Kontrastlanma Notu',
+    lzKontNotPh: 'Kontrastlanma ile ilgili ek detay...',
+    lzInvTitle: 'İnvazyon ve Komşuluk İlişkisi',
+    lzInvSub: 'Çevre yapılara invazyon, erozyon ve ilişki bulguları',
+    lzInv: 'İnvazyon / Erozyon Bulguları (çoklu seçim)',
+    lzNotLabel: 'Lezyon Serbest Not',
+    lzNotPh: 'Lezyona ait ek gözlemler...',
+    // Step 16 — post
+    lzPostTitle: 'Lezyon Değerlendirmesi',
+    lzPostSub1: 'Lezyon ',
+    lzPostSub2: ' kaydedildi. Başka lezyon var mı?',
+    lzPostAllLabel: 'Tüm Lezyonlar',
+    lzAddAnother: '➕ Başka Lezyon Ekle',
+    lzFinish: 'Lezyonlar Tamam → Devam Et',
+    lzSummaryLocNone: 'Lokalizasyon belirtilmedi',
+    lzSummarySizeNone: '—',
+    // Step 17
+    s17Title: 'Ek Bulgular ve Eşlik Eden Patolojiler',
+    s17Sub: 'Genel ek bulgular (çoklu seçim)',
+    s17NotLabel: 'Serbest Not',
+    s17NotPh: 'Ek gözlemler, klinik korelasyon notları...',
+    // Step 18
+    s18Title: 'Ayırıcı Tanı Sonuçları',
+    s18KeyLabel: 'Kritik MRI İpuçları',
+    s18LesionLabel: 'Lezyon Bazlı Eşleşme',
+    // Results
+    resTitle: 'Ayırıcı Tanı Sonuçları',
+    resKeyLabel: 'Kritik İpuçları',
+    resShowReport: '📄 Rapor Oluştur',
+    resNewScan: '🔄 Yeni İnceleme',
+    // Report
+    rptH2: 'KULAK VE TEMPORAL KEMİK MRI İNCELEMESİ',
+    rptKlinik: 'Klinik Bilgi',
+    rptAnatomik: 'Anatomik Değerlendirme',
+    rptYapi: 'Yapı',
+    rptBulgu: 'Bulgu',
+    rptDisKulak: 'Dış Kulak Yolu',
+    rptOrtaHav: 'Orta Kulak — Havalanma',
+    rptOrtaKemik: 'Orta Kulak — Kemikçik Zinciri',
+    rptOrtaKitle: 'Orta Kulak — Kitle/Granülasyon',
+    rptMastoidPno: 'Mastoid — Pnömatizasyon',
+    rptMastoidSivi: 'Mastoid — Sıvı/Efüzyon',
+    rptKoklea: 'Koklea',
+    rptVestibul: 'Vestibül',
+    rptSSK: 'Semisirküler Kanallar',
+    rptIcKulakAnomali: 'İç Kulak Anomali',
+    rptIACGenislik: 'IAC Genişliği',
+    rptSinirKompleks: 'VII–VIII. Sinir Kompleksi',
+    rptIACKitle: 'IAC Kitle',
+    rptCPA: 'Serebellopontin Köşe',
+    rptYumusak: 'Çevre Yumuşak Dokular',
+    rptNaValue: 'Değerlendirilmedi',
+    rptLezyonTitle: 'Lezyon Detayları',
+    rptLezyonN: 'Lezyon',
+    rptParam: 'Parametre',
+    rptLok: 'Lokalizasyon',
+    rptBoyutMm: 'Boyut (mm)',
+    rptKontur: 'Kontur',
+    rptSinir: 'Sınır',
+    rptSekil: 'Şekil',
+    rptInternal: 'İnternal Yapı',
+    rptT1: 'T1 Sinyal',
+    rptT2: 'T2 Sinyal',
+    rptFlair: 'FLAIR',
+    rptOutphase: 'Out-Phase',
+    rptDWI: 'DWI',
+    rptADC: 'ADC',
+    rptArterial: 'Arterial Faz',
+    rptVenoz: 'Venöz / Geç Faz',
+    rptEnhPat: 'Kontrastlanma Paterni',
+    rptKontNot: 'Kontrastlanma Notu',
+    rptInvazyon: 'İnvazyon Bulguları',
+    rptLezyonNot: 'Lezyon Notu',
+    rptNoLesion: 'Yer kaplayan lezyon / kitle izlenmemiştir.',
+    rptInvYok: 'Yok',
+    rptEkBulgular: 'Ek Bulgular',
+    rptAyirici: 'Ayırıcı Tanı',
+    rptTani: 'Tanı',
+    rptUyumSkoru: 'Uyum Skoru',
+    rptYorumLabel: 'YORUM',
+    rptYorumText1: 'Tanımlanan anatomik bulgular ve sinyal özellikleri değerlendirildiğinde, bulgular en çok ',
+    rptYorumText2: ' ile uyumludur.',
+    rptKeyFeature: 'Anahtar bulgu: ',
+    rptDiffText: 'Ayırıcı tanıda ',
+    rptDiffTextEnd: ' düşünülmelidir.',
+    rptAnatomikComm: [
+      ['Destrüksiyon', 'Kemikçik zincirinde destrüksiyon bulgusu mevcuttur'],
+      ['mastoidSivi', 'Mastoid hücrelerde efüzyon/sıvı sinyali izlenmektedir'],
+      ['Sklerotik', 'Mastoid hücreler sklerotiktir'],
+      ['Genişlemiş', 'İnternal akustik kanal genişlemiştir'],
+      ['koklea', 'Kokleada patolojik bulgu mevcuttur']
+    ],
+    rptAddAnat: 'Ek anatomik bulgular: ',
+    rptMultiLesion: 'Toplam ',
+    rptMultiLesion2: ' adet lezyon tanımlanmıştır.',
+    rptCorr: 'Klinik bilgiler ve laboratuvar bulguları ile korelasyon önerilir.',
+    rptNotExamined: 'Bu taraf değerlendirilmemiştir.',
+    rptFooter: 'Kulak ve Temporal Kemik MRI Karar Destek Sistemi v2.0 — Otomatik Rapor',
+    rptDownloadTitle: 'Temporal MRI Rapor',
+    rptCopyOk: 'Rapor panoya kopyalandı (Word\'e yapıştırılabilir)',
+    rptCopyFail: 'Kopyalama başarısız. Lütfen manuel seçim yapın.',
+  },
+  en: {
+    appTitle: 'Ear and Temporal Bone MRI Decision Support',
+    appSub: 'Comprehensive Anatomical Assessment — Multi-Lesion Analysis — v2.0',
+    modeTitle: 'Examination Side Selection',
+    modeSub: 'Select the side to be evaluated',
+    modeSag: '🔵 Right Ear',
+    modeSol: '🔴 Left Ear',
+    modeBilateral: '🟣 Bilateral',
+    sagKulak: 'Right Ear',
+    solKulak: 'Left Ear',
+    otherSideDone: ' evaluation completed ✓',
+    otherSideQ: ' — would you like to evaluate this side as well?',
+    otherSideYes: 'Yes, ',
+    otherSideNo: 'No, Go to Results',
+    notAssessed: 'This side was not evaluated.',
+    lesionBadge: 'Lesion',
+    lesionOf: '/',
+    back: '← Back',
+    next: 'Next →',
+    finish: '✓ Complete',
+    stepOf: 'Step',
+    stepTotal: '/19',
+    s0Title: 'Clinical Information',
+    s0Sub: 'Clinical indication, preliminary diagnosis, history',
+    s0Placeholder: 'E.g.: Chronic otitis media, hearing loss, vertigo, ear discharge, facial paralysis, tinnitus...',
+    s1Title: 'External Auditory Canal',
+    s1Sub: 'External auditory canal assessment',
+    s1Label: 'External Auditory Canal Status',
+    s1Not: 'Note / Detail',
+    s1NotPh: 'Additional details about the external auditory canal...',
+    s2Title: 'Middle Ear Cavity',
+    s2Sub: 'Detailed assessment of middle ear structures',
+    s2Hav: 'Aeration Status',
+    s2Kemik: 'Ossicular Chain',
+    s2KemikPh: 'Affected ossicle: malleus / incus / stapes',
+    s2Kitle: 'Mass / Granulation Tissue',
+    s2KitlePh: 'Mass/granulation details...',
+    s3Title: 'Mastoid Air Cells',
+    s3Sub: 'Mastoid cell assessment',
+    s3Pno: 'Pneumatization',
+    s3Sivi: 'Mastoid Fluid / Effusion',
+    s3Pla: 'Mastoid additional note...',
+    s4Title: 'Inner Ear Structures',
+    s4Sub: 'Cochlea, vestibule, semicircular canals, and anomaly assessment',
+    s4Koklea: 'Cochlea',
+    s4KokleaPh: 'Cochlea detail...',
+    s4Vest: 'Vestibule',
+    s4VestPh: 'Vestibule detail...',
+    s4SSK: 'Semicircular Canals',
+    s4SSKPh: 'SCC detail...',
+    s4Anomali: 'Inner Ear Anomaly / Obliteration',
+    s4AnomaliPh: 'Anomaly detail (Mondini, LVAS, etc.)...',
+    s5Title: 'Internal Auditory Canal (IAC) and Nerves',
+    s5Sub: 'IAC width, VII-VIII nerve complex, and mass assessment',
+    s5IAC: 'IAC Width',
+    s5Sinir: 'VII–VIII Nerve Complex',
+    s5SinirPh: 'Nerve detail...',
+    s5Kitle: 'IAC Mass Lesion',
+    s5KitlePh: 'Mass detail...',
+    s6Title: 'Cerebellopontine Angle (CPA)',
+    s6Sub: 'Mass, enhancement, and cistern assessment',
+    s6CPA: 'CPA Pathology',
+    s6CPAPh: 'CPA detail...',
+    s7Title: 'Surrounding Soft Tissues',
+    s7Sub: 'Periauricular, retroauricular, parotid, and surrounding soft tissue assessment',
+    s7Label: 'Soft Tissue Pathology',
+    s7Ph: 'Soft tissue detail...',
+    s8Title: 'Lesion / Mass Assessment',
+    s8Sub: 'Was a space-occupying lesion or mass detected?',
+    s8Defined: 'Defined Lesions',
+    s8LezyonN: 'Lesion',
+    s8SizeNone: 'Size not specified',
+    s8LocNone: 'Location not specified',
+    s8AddNew: '➕ Add New Lesion',
+    s8Skip: 'No Lesion / Continue →',
+    s8Del: 'Delete',
+    lzLokTitle: 'Location and Size',
+    lzLokSub: 'Lesion location and three-dimensional measurements',
+    lzLok: 'Location (multiple selection)',
+    lzBoyut: 'Size (mm)',
+    lzBoyutNote: 'AP: anteroposterior, ML: mediolateral, CC: craniocaudal',
+    lzMorTitle: 'Morphological Features',
+    lzMorSub: 'Contour, margin, shape, and homogeneity',
+    lzKontur: 'Contour',
+    lzSinir: 'Margin',
+    lzSekil: 'Shape',
+    lzHomo: 'Internal Structure / Homogeneity',
+    lzT1T2Title: 'T1 and T2 Signal Characteristics',
+    lzT1T2Sub: 'Signal intensity and homogeneity assessment',
+    lzT1: 'T1-weighted Image — Signal',
+    lzT1Homo: 'T1 — Signal Homogeneity',
+    lzT2: 'T2-weighted Image — Signal',
+    lzT2Homo: 'T2 — Signal Homogeneity',
+    lzFlairTitle: 'FLAIR and Chemical Shift',
+    lzFlairSub: 'FLAIR signal and out-phase/in-phase assessment',
+    lzFlair: 'FLAIR Signal',
+    lzFlairNote: '💡 FLAIR: CSF suppressed (hypointense), fat not suppressed. Epidermoid cyst remains hyperintense on FLAIR (distinguishes from arachnoid cyst), lipoma suppressed on FLAIR.',
+    lzOP: 'Out-Phase / Chemical Shift',
+    lzOPNote: '💡 Out-phase signal loss indicates intracellular fat. Prominent signal loss expected in lipoma.',
+    lzDWITitle: 'Diffusion (DWI / ADC)',
+    lzDWISub: 'Diffusion restriction and ADC assessment',
+    lzDWI: 'DWI Finding',
+    lzDWINote: '💡 Non-EPI DWI is critical for cholesteatoma/epidermoid diagnosis. Marked restriction + low ADC = true diffusion restriction.',
+    lzADC: 'ADC Map',
+    lzKontTitle: 'Enhancement Characteristics',
+    lzKontSub: 'Arterial phase, venous/late phase, and enhancement pattern',
+    lzArterial: 'Arterial / Early Phase',
+    lzVenoz: 'Venous / Late Phase',
+    lzEnhPat: 'Enhancement Pattern',
+    lzKontNot: 'Enhancement Note',
+    lzKontNotPh: 'Additional details about enhancement...',
+    lzInvTitle: 'Invasion and Adjacent Structure Relations',
+    lzInvSub: 'Invasion, erosion, and relation findings to surrounding structures',
+    lzInv: 'Invasion / Erosion Findings (multiple selection)',
+    lzNotLabel: 'Lesion Free Note',
+    lzNotPh: 'Additional observations about the lesion...',
+    lzPostTitle: 'Lesion Assessment',
+    lzPostSub1: 'Lesion ',
+    lzPostSub2: ' saved. Is there another lesion?',
+    lzPostAllLabel: 'All Lesions',
+    lzAddAnother: '➕ Add Another Lesion',
+    lzFinish: 'Lesions Done → Continue',
+    lzSummaryLocNone: 'Location not specified',
+    lzSummarySizeNone: '—',
+    s17Title: 'Additional Findings and Accompanying Pathologies',
+    s17Sub: 'General additional findings (multiple selection)',
+    s17NotLabel: 'Free Note',
+    s17NotPh: 'Additional observations, clinical correlation notes...',
+    s18Title: 'Differential Diagnosis Results',
+    s18KeyLabel: 'Critical MRI Clues',
+    s18LesionLabel: 'Lesion-Based Match',
+    resTitle: 'Differential Diagnosis Results',
+    resKeyLabel: 'Critical Clues',
+    resShowReport: '📄 Generate Report',
+    resNewScan: '🔄 New Examination',
+    rptH2: 'EAR AND TEMPORAL BONE MRI EXAMINATION',
+    rptKlinik: 'Clinical Information',
+    rptAnatomik: 'Anatomical Assessment',
+    rptYapi: 'Structure',
+    rptBulgu: 'Finding',
+    rptDisKulak: 'External Auditory Canal',
+    rptOrtaHav: 'Middle Ear — Aeration',
+    rptOrtaKemik: 'Middle Ear — Ossicular Chain',
+    rptOrtaKitle: 'Middle Ear — Mass/Granulation',
+    rptMastoidPno: 'Mastoid — Pneumatization',
+    rptMastoidSivi: 'Mastoid — Fluid/Effusion',
+    rptKoklea: 'Cochlea',
+    rptVestibul: 'Vestibule',
+    rptSSK: 'Semicircular Canals',
+    rptIcKulakAnomali: 'Inner Ear Anomaly',
+    rptIACGenislik: 'IAC Width',
+    rptSinirKompleks: 'VII–VIII Nerve Complex',
+    rptIACKitle: 'IAC Mass',
+    rptCPA: 'Cerebellopontine Angle',
+    rptYumusak: 'Surrounding Soft Tissues',
+    rptNaValue: 'Not evaluated',
+    rptLezyonTitle: 'Lesion Details',
+    rptLezyonN: 'Lesion',
+    rptParam: 'Parameter',
+    rptLok: 'Location',
+    rptBoyutMm: 'Size (mm)',
+    rptKontur: 'Contour',
+    rptSinir: 'Margin',
+    rptSekil: 'Shape',
+    rptInternal: 'Internal Structure',
+    rptT1: 'T1 Signal',
+    rptT2: 'T2 Signal',
+    rptFlair: 'FLAIR',
+    rptOutphase: 'Out-Phase',
+    rptDWI: 'DWI',
+    rptADC: 'ADC',
+    rptArterial: 'Arterial Phase',
+    rptVenoz: 'Venous / Late Phase',
+    rptEnhPat: 'Enhancement Pattern',
+    rptKontNot: 'Enhancement Note',
+    rptInvazyon: 'Invasion Findings',
+    rptLezyonNot: 'Lesion Note',
+    rptNoLesion: 'No space-occupying lesion / mass identified.',
+    rptInvYok: 'None',
+    rptEkBulgular: 'Additional Findings',
+    rptAyirici: 'Differential Diagnosis',
+    rptTani: 'Diagnosis',
+    rptUyumSkoru: 'Match Score',
+    rptYorumLabel: 'IMPRESSION',
+    rptYorumText1: 'Based on the defined anatomical findings and signal characteristics, the findings are most consistent with ',
+    rptYorumText2: '.',
+    rptKeyFeature: 'Key finding: ',
+    rptDiffText: 'Differential diagnosis includes ',
+    rptDiffTextEnd: '.',
+    rptAnatomikComm: [
+      ['Destrüksiyon', 'Destruction of the ossicular chain is noted'],
+      ['mastoidSivi', 'Effusion/fluid signal is observed in the mastoid air cells'],
+      ['Sklerotik', 'Mastoid air cells are sclerotic'],
+      ['Genişlemiş', 'Internal auditory canal is widened'],
+      ['koklea', 'Pathological finding is present in the cochlea']
+    ],
+    rptAddAnat: 'Additional anatomical findings: ',
+    rptMultiLesion: 'A total of ',
+    rptMultiLesion2: ' lesions have been identified.',
+    rptCorr: 'Correlation with clinical information and laboratory findings is recommended.',
+    rptNotExamined: 'This side was not evaluated.',
+    rptFooter: 'Ear and Temporal Bone MRI Decision Support System v2.0 — Auto Report',
+    rptDownloadTitle: 'Temporal MRI Report',
+    rptCopyOk: 'Report copied to clipboard (can be pasted into Word)',
+    rptCopyFail: 'Copy failed. Please select manually.',
+  },
+})[RV_LOCALE];
+
 // =====================================================
 // PATHOLOGY DATABASE
 // =====================================================
@@ -420,18 +861,18 @@ function render(){
 }
 
 function updateProgress(pct){document.getElementById('progressFill').style.width=pct+'%'}
-function sideLabel(s){return s==='sag'?'Sağ Kulak':'Sol Kulak'}
+function sideLabel(s){return s==='sag'?T.sagKulak:T.solKulak}
 
 // Mode select
 function renderModeSelect(area){
   area.innerHTML=`
   <div class="step-card active">
-    <div class="step-title">İnceleme Tarafı Seçimi</div>
-    <div class="step-subtitle">Değerlendirilecek tarafı seçiniz</div>
+    <div class="step-title">${T.modeTitle}</div>
+    <div class="step-subtitle">${T.modeSub}</div>
     <div class="opt-grid cols3">
-      <button class="opt-btn" onclick="selectMode('sag')">🔵 Sağ Kulak</button>
-      <button class="opt-btn" onclick="selectMode('sol')">🔴 Sol Kulak</button>
-      <button class="opt-btn" onclick="selectMode('bilateral')">🟣 Bilateral</button>
+      <button class="opt-btn" onclick="selectMode('sag')">${T.modeSag}</button>
+      <button class="opt-btn" onclick="selectMode('sol')">${T.modeSol}</button>
+      <button class="opt-btn" onclick="selectMode('bilateral')">${T.modeBilateral}</button>
     </div>
   </div>`;
 }
@@ -448,11 +889,11 @@ function renderAskOtherSide(area){
   const otherSide=currentSide==='sag'?'sol':'sag';
   area.innerHTML=`
   <div class="side-ask-card">
-    <h3>${sideLabel(currentSide)} değerlendirmesi tamamlandı ✓</h3>
-    <p style="color:var(--text2);font-size:.88em;margin-top:6px">${sideLabel(otherSide)} tarafını da değerlendirmek ister misiniz?</p>
+    <h3>${sideLabel(currentSide)}${T.otherSideDone}</h3>
+    <p style="color:var(--text2);font-size:.88em;margin-top:6px">${sideLabel(otherSide)}${T.otherSideQ}</p>
     <div class="side-ask-btns">
-      <button class="yes" onclick="startOtherSide()">Evet, ${sideLabel(otherSide)}</button>
-      <button class="no" onclick="skipOtherSide()">Hayır, Sonuçlara Git</button>
+      <button class="yes" onclick="startOtherSide()">${T.otherSideYes}${sideLabel(otherSide)}</button>
+      <button class="no" onclick="skipOtherSide()">${T.otherSideNo}</button>
     </div>
   </div>`;
 }
@@ -472,7 +913,7 @@ function renderWizardStep(area){
   const d=sides[currentSide];
   let html=`<div class="side-badge">${sideLabel(currentSide)}</div>`;
   if(currentLesionIdx>=0 && currentStep>=LESION_START && currentStep<=LESION_END){
-    html+=`<span class="lesion-badge">Lezyon ${currentLesionIdx+1}/${d.lezyonlar.length}</span>`;
+    html+=`<span class="lesion-badge">${T.lesionBadge} ${currentLesionIdx+1}${T.lesionOf}${d.lezyonlar.length}</span>`;
   }
   html+=`<div class="step-card active">`;
 
@@ -501,7 +942,7 @@ function renderWizardStep(area){
 
   // Navigation
   html+=`<div class="nav-row">`;
-  if(currentStep>0) html+=`<button class="nav-btn prev" onclick="goPrev()">← Geri</button>`;
+  if(currentStep>0) html+=`<button class="nav-btn prev" onclick="goPrev()">${T.back}</button>`;
   else html+=`<span></span>`;
 
   if(currentStep===LESION_PRE){
@@ -509,175 +950,175 @@ function renderWizardStep(area){
   } else if(currentStep===LESION_POST){
     // handled in step
   } else if(currentStep===DIAG_STEP){
-    html+=`<button class="nav-btn next" onclick="finishSide()">✓ Tamamla</button>`;
+    html+=`<button class="nav-btn next" onclick="finishSide()">${T.finish}</button>`;
   } else {
-    html+=`<button class="nav-btn next" onclick="goNext()">İleri →</button>`;
+    html+=`<button class="nav-btn next" onclick="goNext()">${T.next}</button>`;
   }
   html+=`</div></div>`;
   area.innerHTML=html;
 }
 
-function stepNum(n){return `Adım ${n}/${TOTAL_BASE}`}
+function stepNum(n){return `${T.stepOf} ${n}${T.stepTotal}`}
 
 // =====================================================
 // ANATOMY STEPS (0-7)
 // =====================================================
 function stepEndikasyon(d){
-  return `<div class="step-title">${stepNum(1)} — Klinik Bilgi</div>
-  <div class="step-subtitle">Klinik endikasyon, ön tanı, öykü</div>
-  <textarea class="free-input" id="inp_endikasyon" rows="3" placeholder="Ör: Kronik otitis media, işitme kaybı, vertigo, kulak akıntısı, fasiyal paralizi, tinnitus...">${d.endikasyon}</textarea>`;
+  return `<div class="step-title">${stepNum(1)} — ${T.s0Title}</div>
+  <div class="step-subtitle">${T.s0Sub}</div>
+  <textarea class="free-input" id="inp_endikasyon" rows="3" placeholder="${T.s0Placeholder}">${d.endikasyon}</textarea>`;
 }
 
 function stepDisKulak(d){
-  let h=`<div class="step-title">${stepNum(2)} — Dış Kulak Yolu</div>
-  <div class="step-subtitle">Dış kulak yolu değerlendirmesi</div>
+  let h=`<div class="step-title">${stepNum(2)} — ${T.s1Title}</div>
+  <div class="step-subtitle">${T.s1Sub}</div>
   <div class="field-group">
-    <div class="field-label">Dış Kulak Yolu Durumu</div>
+    <div class="field-label">${T.s1Label}</div>
     <div class="opt-grid cols3">`;
   ['Açık (normal)','Daralmış','Kitle lezyonu mevcut','Duvar kalınlaşması','Tıkalı (oblitere)'].forEach(o=>{
     h+=mkRadio(o, d.disKulak, 'disKulak');
   });
   h+=`</div></div>`;
-  h+=`<div class="cond-detail"><div class="field-label">Not / Detay</div>
-  <textarea class="free-input" id="inp_disKulakNot" rows="2" placeholder="Dış kulak yolu ile ilgili ek detay...">${d.disKulakNot||''}</textarea></div>`;
+  h+=`<div class="cond-detail"><div class="field-label">${T.s1Not}</div>
+  <textarea class="free-input" id="inp_disKulakNot" rows="2" placeholder="${T.s1NotPh}">${d.disKulakNot||''}</textarea></div>`;
   return h;
 }
 
 function stepOrtaKulak(d){
-  let h=`<div class="step-title">${stepNum(3)} — Orta Kulak Kavitesi</div>
-  <div class="step-subtitle">Orta kulak yapıları detaylı değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(3)} — ${T.s2Title}</div>
+  <div class="step-subtitle">${T.s2Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Havalanma Durumu</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s2Hav}</div>
   <div class="opt-grid cols3">`;
   ['Normal (havalanmış)','Sıvı sinyali mevcut','Yumuşak doku sinyali','Kısmi havalanma kaybı','Total opasifikasyon'].forEach(o=>{
     h+=mkRadio(o, d.ortaKulakHavalanma, 'ortaKulakHavalanma');
   });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Kemikçik Zinciri</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s2Kemik}</div>
   <div class="opt-grid cols2">`;
   ['Doğal konfigürasyonda (intakt)','Destrüksiyon / erozyon bulgusu mevcut','Değerlendirilemedi','Postoperatif (parsiyel/total)'].forEach(o=>{
     h+=mkRadio(o, d.ortaKulakKemikçik, 'ortaKulakKemikçik');
   });
   h+=`</div>`;
-  h+=`<div class="cond-detail" style="margin-top:6px"><input type="text" class="free-input" id="inp_kemikçikHangi" value="${d.ortaKulakKemikçikHangi||''}" placeholder="Etkilenen kemikçik: malleus / incus / stapes" style="min-height:32px"></div></div>`;
+  h+=`<div class="cond-detail" style="margin-top:6px"><input type="text" class="free-input" id="inp_kemikçikHangi" value="${d.ortaKulakKemikçikHangi||''}" placeholder="${T.s2KemikPh}" style="min-height:32px"></div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Kitle / Granülasyon Dokusu</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s2Kitle}</div>
   <div class="opt-grid cols2">`;
   ['Yok','Granülasyon dokusu mevcut','Kitle lezyonu mevcut','Retraksiyon cebi'].forEach(o=>{
     h+=mkRadio(o, d.ortaKulakKitle, 'ortaKulakKitle');
   });
   h+=`</div>
-  <div class="cond-detail" style="margin-top:6px"><textarea class="free-input" id="inp_ortaKulakKitleNot" rows="2" placeholder="Kitle/granülasyon detayı...">${d.ortaKulakKitleNot||''}</textarea></div></div>`;
+  <div class="cond-detail" style="margin-top:6px"><textarea class="free-input" id="inp_ortaKulakKitleNot" rows="2" placeholder="${T.s2KitlePh}">${d.ortaKulakKitleNot||''}</textarea></div></div>`;
   return h;
 }
 
 function stepMastoid(d){
-  let h=`<div class="step-title">${stepNum(4)} — Mastoid Hücreler</div>
-  <div class="step-subtitle">Mastoid hücre değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(4)} — ${T.s3Title}</div>
+  <div class="step-subtitle">${T.s3Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Pnömatizasyon</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s3Pno}</div>
   <div class="opt-grid cols3">`;
   ['İyi (normal)','Azalmış','Sklerotik (pnömatizasyon yok)','İzlenmiyor (postoperatif)'].forEach(o=>{
     h+=mkRadio(o, d.mastoidPnomatizasyon, 'mastoidPnomatizasyon');
   });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Mastoid Sıvı / Efüzyon</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s3Sivi}</div>
   <div class="opt-grid cols3">`;
   ['Yok','Parsiyel sıvı sinyali','Total opasifikasyon','Yumuşak doku sinyali'].forEach(o=>{
     h+=mkRadio(o, d.mastoidSivi, 'mastoidSivi');
   });
   h+=`</div></div>`;
 
-  h+=`<textarea class="free-input" id="inp_mastoidNot" rows="2" placeholder="Mastoid ek not...">${d.mastoidNot||''}</textarea>`;
+  h+=`<textarea class="free-input" id="inp_mastoidNot" rows="2" placeholder="${T.s3Pla}">${d.mastoidNot||''}</textarea>`;
   return h;
 }
 
 function stepIcKulak(d){
-  let h=`<div class="step-title">${stepNum(5)} — İç Kulak Yapıları</div>
-  <div class="step-subtitle">Koklea, vestibül, semisirküler kanallar ve anomali değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(5)} — ${T.s4Title}</div>
+  <div class="step-subtitle">${T.s4Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Koklea</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s4Koklea}</div>
   <div class="opt-grid cols3">`;
   ['Normal','Sinyal artışı mevcut','Sinyal kaybı (ossifikasyon)','Displazik / malformasyon','Kontrastlanma mevcut'].forEach(o=>{
     h+=mkRadio(o, d.koklea, 'koklea');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_kokleaNot" value="${d.kokleaNot||''}" placeholder="Koklea detay..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_kokleaNot" value="${d.kokleaNot||''}" placeholder="${T.s4KokleaPh}" style="min-height:32px;margin-top:6px"></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Vestibül</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s4Vest}</div>
   <div class="opt-grid cols3">`;
   ['Normal','Sinyal artışı','Sinyal kaybı','Genişlemiş','Kontrastlanma mevcut'].forEach(o=>{
     h+=mkRadio(o, d.vestibul, 'vestibul');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_vestibulNot" value="${d.vestibulNot||''}" placeholder="Vestibül detay..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_vestibulNot" value="${d.vestibulNot||''}" placeholder="${T.s4VestPh}" style="min-height:32px;margin-top:6px"></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Semisirküler Kanallar</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s4SSK}</div>
   <div class="opt-grid cols3">`;
   ['Normal','Sinyal artışı','Sinyal kaybı (ossifikasyon)','Fistül şüphesi','Malformasyon'].forEach(o=>{
     h+=mkRadio(o, d.ssk, 'ssk');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_sskNot" value="${d.sskNot||''}" placeholder="SSK detay..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_sskNot" value="${d.sskNot||''}" placeholder="${T.s4SSKPh}" style="min-height:32px;margin-top:6px"></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">İç Kulak Anomali / Obliterasyon</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s4Anomali}</div>
   <div class="opt-grid cols2">`;
   ['Yok','Mevcut'].forEach(o=>{
     h+=mkRadio(o, d.icKulakAnomali, 'icKulakAnomali');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_icKulakAnomaliNot" value="${d.icKulakAnomaliNot||''}" placeholder="Anomali detay (mondini, LVAS vs.)..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_icKulakAnomaliNot" value="${d.icKulakAnomaliNot||''}" placeholder="${T.s4AnomaliPh}" style="min-height:32px;margin-top:6px"></div>`;
   return h;
 }
 
 function stepIAC(d){
-  let h=`<div class="step-title">${stepNum(6)} — İnternal Akustik Kanal (IAC) ve Sinirler</div>
-  <div class="step-subtitle">IAC genişliği, VII-VIII sinir kompleksi ve kitle değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(6)} — ${T.s5Title}</div>
+  <div class="step-subtitle">${T.s5Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">IAC Genişliği</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s5IAC}</div>
   <div class="opt-grid cols3">`;
   ['Normal','Genişlemiş','Daralmış','Asimetrik'].forEach(o=>{
     h+=mkRadio(o, d.iacGenislik, 'iacGenislik');
   });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">VII–VIII. Sinir Kompleksi</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s5Sinir}</div>
   <div class="opt-grid cols2">`;
   ['Normal kalibre ve sinyal','Kalınlaşmış','İncelmiş / atrofik','Patolojik kontrastlanma','Kitle lezyonu'].forEach(o=>{
     h+=mkRadio(o, d.sinirKompleks, 'sinirKompleks');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_sinirKompleksNot" value="${d.sinirKompleksNot||''}" placeholder="Sinir detay..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_sinirKompleksNot" value="${d.sinirKompleksNot||''}" placeholder="${T.s5SinirPh}" style="min-height:32px;margin-top:6px"></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">IAC Kitle Lezyonu</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s5Kitle}</div>
   <div class="opt-grid cols2">`;
   ['Yok','Mevcut'].forEach(o=>{
     h+=mkRadio(o, d.iacKitle, 'iacKitle');
   });
-  h+=`</div><input type="text" class="free-input" id="inp_iacKitleNot" value="${d.iacKitleNot||''}" placeholder="Kitle detay..." style="min-height:32px;margin-top:6px"></div>`;
+  h+=`</div><input type="text" class="free-input" id="inp_iacKitleNot" value="${d.iacKitleNot||''}" placeholder="${T.s5KitlePh}" style="min-height:32px;margin-top:6px"></div>`;
   return h;
 }
 
 function stepCPA(d){
-  let h=`<div class="step-title">${stepNum(7)} — Serebellopontin Köşe (CPA)</div>
-  <div class="step-subtitle">Kitle, kontrastlanma ve sistern değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(7)} — ${T.s6Title}</div>
+  <div class="step-subtitle">${T.s6Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">CPA Patolojisi</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s6CPA}</div>
   <div class="opt-grid cols2">`;
   ['Patoloji yok','Kitle lezyonu mevcut','Patolojik kontrastlanma','Sistern obliterasyonu','Vasküler loop'].forEach(o=>{
     h+=mkRadio(o, d.cpaPatoloji, 'cpaPatoloji');
   });
-  h+=`</div><textarea class="free-input" id="inp_cpaPatolojiNot" rows="2" placeholder="CPA detay...">${d.cpaPatolojiNot||''}</textarea></div>`;
+  h+=`</div><textarea class="free-input" id="inp_cpaPatolojiNot" rows="2" placeholder="${T.s6CPAPh}">${d.cpaPatolojiNot||''}</textarea></div>`;
   return h;
 }
 
 function stepYumusakDoku(d){
-  let h=`<div class="step-title">${stepNum(8)} — Çevre Yumuşak Dokular</div>
-  <div class="step-subtitle">Periauriküler, retroauriküler, parotis ve çevre yumuşak doku değerlendirmesi</div>`;
+  let h=`<div class="step-title">${stepNum(8)} — ${T.s7Title}</div>
+  <div class="step-subtitle">${T.s7Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Yumuşak Doku Patolojisi</div>
+  h+=`<div class="field-group"><div class="field-label">${T.s7Label}</div>
   <div class="opt-grid cols2">`;
   ['Patoloji yok','Sinyal değişikliği / ödem','Kitle / şişlik','Apse şüphesi','Postoperatif değişiklikler'].forEach(o=>{
     h+=mkRadio(o, d.yumusakDoku, 'yumusakDoku');
   });
-  h+=`</div><textarea class="free-input" id="inp_yumusakDokuNot" rows="2" placeholder="Yumuşak doku detay...">${d.yumusakDokuNot||''}</textarea></div>`;
+  h+=`</div><textarea class="free-input" id="inp_yumusakDokuNot" rows="2" placeholder="${T.s7Ph}">${d.yumusakDokuNot||''}</textarea></div>`;
   return h;
 }
 
@@ -685,25 +1126,25 @@ function stepYumusakDoku(d){
 // LESION PRE-LOOP (Step 8)
 // =====================================================
 function stepLezyonPre(d){
-  let h=`<div class="step-title">${stepNum(9)} — Lezyon / Kitle Değerlendirmesi</div>
-  <div class="step-subtitle">Yer kaplayan lezyon veya kitle tespit edildi mi?</div>`;
+  let h=`<div class="step-title">${stepNum(9)} — ${T.s8Title}</div>
+  <div class="step-subtitle">${T.s8Sub}</div>`;
 
   // Show existing lesions
   if(d.lezyonlar.length>0){
-    h+=`<div class="section-label">Tanımlanan Lezyonlar</div>`;
+    h+=`<div class="section-label">${T.s8Defined}</div>`;
     d.lezyonlar.forEach((lz,i)=>{
-      const locStr = lz.lokalizasyonlar.join(', ')||'Lokalizasyon belirtilmedi';
-      const sizeStr = [lz.boyutAP,lz.boyutML,lz.boyutCC].filter(x=>x).join('×')||'Boyut belirtilmedi';
+      const locStr = lz.lokalizasyonlar.join(', ')||T.s8LocNone;
+      const sizeStr = [lz.boyutAP,lz.boyutML,lz.boyutCC].filter(x=>x).join('×')||T.s8SizeNone;
       h+=`<div class="lesion-summary">
-        <div class="ls-info"><strong>Lezyon ${i+1}:</strong> ${locStr} — ${sizeStr} mm — ${lz.kontur||'?'} kontür</div>
-        <button class="ls-del" onclick="deleteLesion(${i})">Sil</button>
+        <div class="ls-info"><strong>${T.s8LezyonN} ${i+1}:</strong> ${locStr} — ${sizeStr} mm — ${lz.kontur||'?'} kontür</div>
+        <button class="ls-del" onclick="deleteLesion(${i})">${T.s8Del}</button>
       </div>`;
     });
   }
 
   h+=`<div style="margin-top:16px" class="opt-grid cols2">
-    <button class="opt-btn" style="text-align:center;padding:14px;font-weight:600;color:var(--green);border-color:var(--green)" onclick="addNewLesion()">➕ Yeni Lezyon Ekle</button>
-    <button class="opt-btn" style="text-align:center;padding:14px" onclick="skipLesions()">Lezyon Yok / Devam Et →</button>
+    <button class="opt-btn" style="text-align:center;padding:14px;font-weight:600;color:var(--green);border-color:var(--green)" onclick="addNewLesion()">${T.s8AddNew}</button>
+    <button class="opt-btn" style="text-align:center;padding:14px" onclick="skipLesions()">${T.s8Skip}</button>
   </div>`;
   return h;
 }
@@ -737,10 +1178,10 @@ function getLesion(){
 
 function stepLezyonLokBoyut(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — Lokalizasyon ve Boyut</div>
-  <div class="step-subtitle">Lezyonun yerleşim yeri ve üç boyutlu ölçüleri</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzLokTitle}</div>
+  <div class="step-subtitle">${T.lzLokSub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Lokalizasyon (çoklu seçim)</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzLok}</div>
   <div class="opt-grid cols3">`;
   LOCATIONS.forEach(l=>{
     const sel=lz.lokalizasyonlar.includes(l)?'selected':'';
@@ -748,38 +1189,38 @@ function stepLezyonLokBoyut(d){
   });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Boyut (mm)</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzBoyut}</div>
   <div class="size-row">
     <label>AP:</label><input type="text" class="num-input" id="inp_boyutAP" value="${lz.boyutAP}" placeholder="mm">
     <label>ML:</label><input type="text" class="num-input" id="inp_boyutML" value="${lz.boyutML}" placeholder="mm">
     <label>CC:</label><input type="text" class="num-input" id="inp_boyutCC" value="${lz.boyutCC}" placeholder="mm">
   </div>
-  <div style="font-size:.72em;color:var(--text2);margin-top:4px">AP: anteroposterior, ML: mediolateral, CC: kraniokaudal</div>
+  <div style="font-size:.72em;color:var(--text2);margin-top:4px">${T.lzBoyutNote}</div>
   </div>`;
   return h;
 }
 
 function stepLezyonMorfoloji(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — Morfolojik Özellikler</div>
-  <div class="step-subtitle">Kontur, sınır, şekil ve homojenite</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzMorTitle}</div>
+  <div class="step-subtitle">${T.lzMorSub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Kontur</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzKontur}</div>
   <div class="opt-grid cols3">`;
   KONTUR_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.kontur, 'kontur'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Sınır</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzSinir}</div>
   <div class="opt-grid cols2">`;
   SINIR_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.sinir, 'sinir'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Şekil</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzSekil}</div>
   <div class="opt-grid cols3">`;
   SEKIL_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.sekil, 'sekil'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">İnternal Yapı / Homojenite</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzHomo}</div>
   <div class="opt-grid cols2">`;
   HOMOJENITE_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.homojenite, 'homojenite'); });
   h+=`</div></div>`;
@@ -788,25 +1229,25 @@ function stepLezyonMorfoloji(d){
 
 function stepLezyonT1T2(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — T1 ve T2 Sinyal Özellikleri</div>
-  <div class="step-subtitle">Sinyal intensitesi ve homojenite değerlendirmesi</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzT1T2Title}</div>
+  <div class="step-subtitle">${T.lzT1T2Sub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">T1 Ağırlıklı Görüntü — Sinyal</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzT1}</div>
   <div class="opt-grid cols3">`;
   T1_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.t1, 't1'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">T1 — Sinyal Homojenitesi</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzT1Homo}</div>
   <div class="opt-grid cols2">`;
   ['Homojen','Heterojen'].forEach(o=>{ h+=mkRadioLesion(o, lz.t1Homo, 't1Homo'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">T2 Ağırlıklı Görüntü — Sinyal</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzT2}</div>
   <div class="opt-grid cols3">`;
   T2_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.t2, 't2'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">T2 — Sinyal Homojenitesi</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzT2Homo}</div>
   <div class="opt-grid cols2">`;
   ['Homojen','Heterojen'].forEach(o=>{ h+=mkRadioLesion(o, lz.t2Homo, 't2Homo'); });
   h+=`</div></div>`;
@@ -815,17 +1256,17 @@ function stepLezyonT1T2(d){
 
 function stepLezyonFlairOP(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — FLAIR ve Chemical Shift</div>
-  <div class="step-subtitle">FLAIR sinyali ve out-phase/in-phase değerlendirmesi</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzFlairTitle}</div>
+  <div class="step-subtitle">${T.lzFlairSub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">FLAIR Sinyali</div>
-  <div class="info-note">💡 FLAIR: BOS baskılanır (hipointens), yağ baskılanmaz. Epidermoid kist FLAIR'de hiperintens kalır (araknoid kistten ayırıcı), lipom FLAIR'de baskılanır.</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzFlair}</div>
+  <div class="info-note">${T.lzFlairNote}</div>
   <div class="opt-grid cols2">`;
   FLAIR_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.flair, 'flair'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Out-Phase / Chemical Shift</div>
-  <div class="info-note">💡 Out-phase sinyal kaybı intrasellüler yağ varlığını gösterir. Lipomda belirgin sinyal kaybı beklenir.</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzOP}</div>
+  <div class="info-note">${T.lzOPNote}</div>
   <div class="opt-grid cols3">`;
   OUTPHASE_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.outphase, 'outphase'); });
   h+=`</div></div>`;
@@ -834,16 +1275,16 @@ function stepLezyonFlairOP(d){
 
 function stepLezyonDWI(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — Difüzyon (DWI / ADC)</div>
-  <div class="step-subtitle">Difüzyon kısıtlaması ve ADC değerlendirmesi</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzDWITitle}</div>
+  <div class="step-subtitle">${T.lzDWISub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">DWI Bulgusu</div>
-  <div class="info-note">💡 Non-EPI DWI kolesteatom/epidermoid tanısında kritik önemdedir. Belirgin restriksiyon + ADC düşük = gerçek difüzyon kısıtlaması.</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzDWI}</div>
+  <div class="info-note">${T.lzDWINote}</div>
   <div class="opt-grid cols2">`;
   DWI_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.dwi, 'dwi'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">ADC Haritası</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzADC}</div>
   <div class="opt-grid cols3">`;
   ADC_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.adc, 'adc'); });
   h+=`</div></div>`;
@@ -852,35 +1293,35 @@ function stepLezyonDWI(d){
 
 function stepLezyonKontrast(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — Kontrastlanma Özellikleri</div>
-  <div class="step-subtitle">Arterial faz, venöz/geç faz ve kontrastlanma paterni</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzKontTitle}</div>
+  <div class="step-subtitle">${T.lzKontSub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Arterial / Erken Faz</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzArterial}</div>
   <div class="opt-grid cols2">`;
   ARTERIAL_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.arterial, 'arterial'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Venöz / Geç Faz</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzVenoz}</div>
   <div class="opt-grid cols3">`;
   VENOZ_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.venoz, 'venoz'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Kontrastlanma Paterni</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzEnhPat}</div>
   <div class="opt-grid cols3">`;
   ENH_PATTERN_OPTS.forEach(o=>{ h+=mkRadioLesion(o, lz.enhPattern, 'enhPattern'); });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Kontrastlanma Notu</div>
-  <textarea class="free-input" id="inp_kontrastNot" rows="2" placeholder="Kontrastlanma ile ilgili ek detay...">${lz.kontrastNot||''}</textarea></div>`;
+  h+=`<div class="field-group"><div class="field-label">${T.lzKontNot}</div>
+  <textarea class="free-input" id="inp_kontrastNot" rows="2" placeholder="${T.lzKontNotPh}">${lz.kontrastNot||''}</textarea></div>`;
   return h;
 }
 
 function stepLezyonInvazyon(d){
   const lz=getLesion();
-  let h=`<div class="step-title">Lezyon ${currentLesionIdx+1} — İnvazyon ve Komşuluk İlişkisi</div>
-  <div class="step-subtitle">Çevre yapılara invazyon, erozyon ve ilişki bulguları</div>`;
+  let h=`<div class="step-title">${T.lesionBadge} ${currentLesionIdx+1} — ${T.lzInvTitle}</div>
+  <div class="step-subtitle">${T.lzInvSub}</div>`;
 
-  h+=`<div class="field-group"><div class="field-label">İnvazyon / Erozyon Bulguları (çoklu seçim)</div>
+  h+=`<div class="field-group"><div class="field-label">${T.lzInv}</div>
   <div class="opt-grid cols2">`;
   INVAZYON_OPTS.forEach(e=>{
     const chk=lz.invazyonlar.includes(e)?'checked':'';
@@ -889,8 +1330,8 @@ function stepLezyonInvazyon(d){
   });
   h+=`</div></div>`;
 
-  h+=`<div class="field-group"><div class="field-label">Lezyon Serbest Not</div>
-  <textarea class="free-input" id="inp_lezyonNot" rows="2" placeholder="Lezyona ait ek gözlemler...">${lz.lezyonNot||''}</textarea></div>`;
+  h+=`<div class="field-group"><div class="field-label">${T.lzNotLabel}</div>
+  <textarea class="free-input" id="inp_lezyonNot" rows="2" placeholder="${T.lzNotPh}">${lz.lezyonNot||''}</textarea></div>`;
   return h;
 }
 
@@ -899,31 +1340,31 @@ function stepLezyonInvazyon(d){
 // =====================================================
 function stepLezyonPost(d){
   // Finalize current lesion
-  let h=`<div class="step-title">Lezyon Değerlendirmesi</div>
-  <div class="step-subtitle">Lezyon ${currentLesionIdx+1} kaydedildi. Başka lezyon var mı?</div>`;
+  let h=`<div class="step-title">${T.lzPostTitle}</div>
+  <div class="step-subtitle">${T.lzPostSub1}${currentLesionIdx+1}${T.lzPostSub2}</div>`;
 
   // Summary of current
   const lz=getLesion();
   if(lz){
-    const locStr=lz.lokalizasyonlar.join(', ')||'—';
-    const sizeStr=[lz.boyutAP,lz.boyutML,lz.boyutCC].filter(x=>x).join('×')||'—';
+    const locStr=lz.lokalizasyonlar.join(', ')||T.lzSummarySizeNone;
+    const sizeStr=[lz.boyutAP,lz.boyutML,lz.boyutCC].filter(x=>x).join('×')||T.lzSummarySizeNone;
     h+=`<div class="lesion-summary" style="margin-bottom:16px">
-      <div class="ls-info"><strong>Lezyon ${currentLesionIdx+1}:</strong> ${locStr} — ${sizeStr} mm — ${lz.kontur||'?'} kontur, ${lz.homojenite||'?'}</div>
+      <div class="ls-info"><strong>${T.lesionBadge} ${currentLesionIdx+1}:</strong> ${locStr} — ${sizeStr} mm — ${lz.kontur||'?'} kontur, ${lz.homojenite||'?'}</div>
     </div>`;
   }
 
   // All lesions summary
   if(d.lezyonlar.length>1){
-    h+=`<div class="section-label">Tüm Lezyonlar</div>`;
+    h+=`<div class="section-label">${T.lzPostAllLabel}</div>`;
     d.lezyonlar.forEach((l,i)=>{
-      const loc2=l.lokalizasyonlar.join(', ')||'—';
-      h+=`<div style="font-size:.8em;color:var(--text2);padding:3px 0">• Lezyon ${i+1}: ${loc2}</div>`;
+      const loc2=l.lokalizasyonlar.join(', ')||T.lzSummarySizeNone;
+      h+=`<div style="font-size:.8em;color:var(--text2);padding:3px 0">• ${T.lesionBadge} ${i+1}: ${loc2}</div>`;
     });
   }
 
   h+=`<div style="margin-top:16px" class="opt-grid cols2">
-    <button class="opt-btn" style="text-align:center;padding:14px;font-weight:600;color:var(--green);border-color:var(--green)" onclick="addAnotherLesion()">➕ Başka Lezyon Ekle</button>
-    <button class="opt-btn" style="text-align:center;padding:14px" onclick="finishLesions()">Lezyonlar Tamam → Devam Et</button>
+    <button class="opt-btn" style="text-align:center;padding:14px;font-weight:600;color:var(--green);border-color:var(--green)" onclick="addAnotherLesion()">${T.lzAddAnother}</button>
+    <button class="opt-btn" style="text-align:center;padding:14px" onclick="finishLesions()">${T.lzFinish}</button>
   </div>`;
   return h;
 }
@@ -948,8 +1389,8 @@ function finishLesions(){
 // EK BULGULAR & DIAGNOSIS STEPS
 // =====================================================
 function stepEkBulgular(d){
-  let h=`<div class="step-title">Ek Bulgular ve Eşlik Eden Patolojiler</div>
-  <div class="step-subtitle">Genel ek bulgular (çoklu seçim)</div>
+  let h=`<div class="step-title">${T.s17Title}</div>
+  <div class="step-subtitle">${T.s17Sub}</div>
   <div class="opt-grid cols2">`;
   EK_BULGULAR.forEach(e=>{
     const chk=d.ekBulgular.includes(e)?'checked':'';
@@ -957,8 +1398,8 @@ function stepEkBulgular(d){
       <span class="ek-box">${d.ekBulgular.includes(e)?'☑':'☐'}</span><span>${e}</span></button>`;
   });
   h+=`</div>
-  <div class="section-label" style="margin-top:14px">Serbest Not</div>
-  <textarea class="free-input" id="inp_eknot" rows="3" placeholder="Ek gözlemler, klinik korelasyon notları...">${d.ekNot||''}</textarea>`;
+  <div class="section-label" style="margin-top:14px">${T.s17NotLabel}</div>
+  <textarea class="free-input" id="inp_eknot" rows="3" placeholder="${T.s17NotPh}">${d.ekNot||''}</textarea>`;
   return h;
 }
 
@@ -966,7 +1407,7 @@ function stepDiagnosis(d){
   calculateScores(d);
   const sorted=[...d.scores].sort((a,b)=>b.score-a.score);
   const maxScore=Math.max(sorted[0]?.score||1,1);
-  let h=`<div class="step-title">Ayırıcı Tanı Sonuçları</div>
+  let h=`<div class="step-title">${T.s18Title}</div>
   <div class="step-subtitle">${sideLabel(currentSide)} — Kapsamlı analiz sonucu olasılık sıralaması</div>`;
 
   sorted.forEach(s=>{
@@ -983,7 +1424,7 @@ function stepDiagnosis(d){
   // Key features for top 3
   const top3=sorted.slice(0,3).filter(s=>s.score>0);
   if(top3.length){
-    h+=`<div class="section-label" style="margin-top:18px">Kritik MRI İpuçları</div>`;
+    h+=`<div class="section-label" style="margin-top:18px">${T.s18KeyLabel}</div>`;
     top3.forEach(s=>{
       const p=PATHOLOGIES.find(x=>x.name===s.name);
       if(p) h+=`<div style="font-size:.82em;color:var(--text2);padding:4px 0">• <strong style="color:var(--accent-light)">${p.name}:</strong> ${p.keyFeature}</div>`;
@@ -992,9 +1433,9 @@ function stepDiagnosis(d){
 
   // Lesion-specific match details
   if(d.lezyonlar.length>0){
-    h+=`<div class="section-label" style="margin-top:12px">Lezyon Bazlı Eşleşme</div>`;
+    h+=`<div class="section-label" style="margin-top:12px">${T.s18LesionLabel}</div>`;
     d.lezyonlar.forEach((lz,i)=>{
-      h+=`<div style="font-size:.8em;color:var(--text2);padding:2px 0"><strong>Lezyon ${i+1}</strong> (${lz.lokalizasyonlar.join(', ')||'—'}): T1=${lz.t1||'—'}, T2=${lz.t2||'—'}, DWI=${lz.dwi||'—'}, Kontur=${lz.kontur||'—'}</div>`;
+      h+=`<div style="font-size:.8em;color:var(--text2);padding:2px 0"><strong>${T.lesionBadge} ${i+1}</strong> (${lz.lokalizasyonlar.join(', ')||'—'}): T1=${lz.t1||'—'}, T2=${lz.t2||'—'}, DWI=${lz.dwi||'—'}, Kontur=${lz.kontur||'—'}</div>`;
     });
   }
   return h;
@@ -1351,7 +1792,7 @@ function renderResults(area){
     const maxScore=Math.max(sorted[0]?.score||1,1);
     html+=`<div class="step-card active" style="margin-bottom:14px">
     <div class="side-badge">${sideLabel(s)}</div>
-    <div class="step-title">Ayırıcı Tanı Sonuçları</div>`;
+    <div class="step-title">${T.resTitle}</div>`;
     sorted.forEach(sc=>{
       if(sc.score<=0) return;
       const pct=Math.min(Math.round(sc.score/maxScore*100),100);
@@ -1365,7 +1806,7 @@ function renderResults(area){
     // Key features
     const top3=sorted.slice(0,3).filter(x=>x.score>0);
     if(top3.length){
-      html+=`<div class="section-label" style="margin-top:12px">Kritik İpuçları</div>`;
+      html+=`<div class="section-label" style="margin-top:12px">${T.resKeyLabel}</div>`;
       top3.forEach(sc=>{
         const p=PATHOLOGIES.find(x=>x.name===sc.name);
         if(p) html+=`<div style="font-size:.8em;color:var(--text2);padding:3px 0">• <strong style="color:var(--accent-light)">${p.name}:</strong> ${p.keyFeature}</div>`;
@@ -1380,14 +1821,14 @@ function renderResults(area){
     if(!sides[missSide]){
       html+=`<div class="step-card active" style="margin-bottom:14px;border-color:var(--border)">
         <div class="side-badge" style="background:var(--surface2)">${sideLabel(missSide)}</div>
-        <p style="color:var(--text2);font-size:.86em">Bu taraf değerlendirilmemiştir.</p>
+        <p style="color:var(--text2);font-size:.86em">${T.notAssessed}</p>
       </div>`;
     }
   }
 
   html+=`<div class="nav-row" style="justify-content:center;gap:12px;flex-wrap:wrap">
-    <button class="nav-btn next" onclick="showReport()">📄 Rapor Oluştur</button>
-    <button class="nav-btn prev" onclick="resetAll()">🔄 Yeni İnceleme</button>
+    <button class="nav-btn next" onclick="showReport()">${T.resShowReport}</button>
+    <button class="nav-btn prev" onclick="resetAll()">${T.resNewScan}</button>
   </div>`;
   area.innerHTML=html;
 }
@@ -1397,7 +1838,7 @@ function renderResults(area){
 // =====================================================
 function showReport(){
   const sheet=document.getElementById('reportSheet');
-  let h=`<h2>KULAK VE TEMPORAL KEMİK MRI İNCELEMESİ</h2>`;
+  let h=`<h2>${T.rptH2}</h2>`;
   const availableSides=Object.keys(sides);
 
   availableSides.forEach(s=>{
@@ -1407,103 +1848,103 @@ function showReport(){
     const maxS=Math.max(sorted[0]?.score||1,1);
 
     h+=`<h3 style="margin-top:16px;font-size:12pt;color:#222;border-bottom:2px solid #333;padding-bottom:4px">${sideLabel(s).toUpperCase()}</h3>`;
-    if(d.endikasyon) h+=`<p><strong>Klinik Bilgi:</strong> ${d.endikasyon}</p>`;
+    if(d.endikasyon) h+=`<p><strong>${T.rptKlinik}:</strong> ${d.endikasyon}</p>`;
 
     // === ANATOMICAL FINDINGS ===
-    h+=`<h4>Anatomik Değerlendirme</h4>`;
+    h+=`<h4>${T.rptAnatomik}</h4>`;
     h+=`<table>
-    <tr><th style="width:40%">Yapı</th><th>Bulgu</th></tr>
-    <tr><td>Dış Kulak Yolu</td><td>${d.disKulak||'Değerlendirilmedi'}${d.disKulakNot?' — '+d.disKulakNot:''}</td></tr>
-    <tr><td>Orta Kulak — Havalanma</td><td>${d.ortaKulakHavalanma||'Değerlendirilmedi'}</td></tr>
-    <tr><td>Orta Kulak — Kemikçik Zinciri</td><td>${d.ortaKulakKemikçik||'Değerlendirilmedi'}${d.ortaKulakKemikçikHangi?' ('+d.ortaKulakKemikçikHangi+')':''}</td></tr>
-    <tr><td>Orta Kulak — Kitle/Granülasyon</td><td>${d.ortaKulakKitle||'Değerlendirilmedi'}${d.ortaKulakKitleNot?' — '+d.ortaKulakKitleNot:''}</td></tr>
-    <tr><td>Mastoid — Pnömatizasyon</td><td>${d.mastoidPnomatizasyon||'Değerlendirilmedi'}</td></tr>
-    <tr><td>Mastoid — Sıvı/Efüzyon</td><td>${d.mastoidSivi||'Değerlendirilmedi'}${d.mastoidNot?' — '+d.mastoidNot:''}</td></tr>
-    <tr><td>Koklea</td><td>${d.koklea||'Değerlendirilmedi'}${d.kokleaNot?' — '+d.kokleaNot:''}</td></tr>
-    <tr><td>Vestibül</td><td>${d.vestibul||'Değerlendirilmedi'}${d.vestibulNot?' — '+d.vestibulNot:''}</td></tr>
-    <tr><td>Semisirküler Kanallar</td><td>${d.ssk||'Değerlendirilmedi'}${d.sskNot?' — '+d.sskNot:''}</td></tr>
-    <tr><td>İç Kulak Anomali</td><td>${d.icKulakAnomali||'Değerlendirilmedi'}${d.icKulakAnomaliNot?' — '+d.icKulakAnomaliNot:''}</td></tr>
-    <tr><td>IAC Genişliği</td><td>${d.iacGenislik||'Değerlendirilmedi'}</td></tr>
-    <tr><td>VII–VIII. Sinir Kompleksi</td><td>${d.sinirKompleks||'Değerlendirilmedi'}${d.sinirKompleksNot?' — '+d.sinirKompleksNot:''}</td></tr>
-    <tr><td>IAC Kitle</td><td>${d.iacKitle||'Değerlendirilmedi'}${d.iacKitleNot?' — '+d.iacKitleNot:''}</td></tr>
-    <tr><td>Serebellopontin Köşe</td><td>${d.cpaPatoloji||'Değerlendirilmedi'}${d.cpaPatolojiNot?' — '+d.cpaPatolojiNot:''}</td></tr>
-    <tr><td>Çevre Yumuşak Dokular</td><td>${d.yumusakDoku||'Değerlendirilmedi'}${d.yumusakDokuNot?' — '+d.yumusakDokuNot:''}</td></tr>
+    <tr><th style="width:40%">${T.rptYapi}</th><th>${T.rptBulgu}</th></tr>
+    <tr><td>${T.rptDisKulak}</td><td>${d.disKulak||T.rptNaValue}${d.disKulakNot?' — '+d.disKulakNot:''}</td></tr>
+    <tr><td>${T.rptOrtaHav}</td><td>${d.ortaKulakHavalanma||T.rptNaValue}</td></tr>
+    <tr><td>${T.rptOrtaKemik}</td><td>${d.ortaKulakKemikçik||T.rptNaValue}${d.ortaKulakKemikçikHangi?' ('+d.ortaKulakKemikçikHangi+')':''}</td></tr>
+    <tr><td>${T.rptOrtaKitle}</td><td>${d.ortaKulakKitle||T.rptNaValue}${d.ortaKulakKitleNot?' — '+d.ortaKulakKitleNot:''}</td></tr>
+    <tr><td>${T.rptMastoidPno}</td><td>${d.mastoidPnomatizasyon||T.rptNaValue}</td></tr>
+    <tr><td>${T.rptMastoidSivi}</td><td>${d.mastoidSivi||T.rptNaValue}${d.mastoidNot?' — '+d.mastoidNot:''}</td></tr>
+    <tr><td>${T.rptKoklea}</td><td>${d.koklea||T.rptNaValue}${d.kokleaNot?' — '+d.kokleaNot:''}</td></tr>
+    <tr><td>${T.rptVestibul}</td><td>${d.vestibul||T.rptNaValue}${d.vestibulNot?' — '+d.vestibulNot:''}</td></tr>
+    <tr><td>${T.rptSSK}</td><td>${d.ssk||T.rptNaValue}${d.sskNot?' — '+d.sskNot:''}</td></tr>
+    <tr><td>${T.rptIcKulakAnomali}</td><td>${d.icKulakAnomali||T.rptNaValue}${d.icKulakAnomaliNot?' — '+d.icKulakAnomaliNot:''}</td></tr>
+    <tr><td>${T.rptIACGenislik}</td><td>${d.iacGenislik||T.rptNaValue}</td></tr>
+    <tr><td>${T.rptSinirKompleks}</td><td>${d.sinirKompleks||T.rptNaValue}${d.sinirKompleksNot?' — '+d.sinirKompleksNot:''}</td></tr>
+    <tr><td>${T.rptIACKitle}</td><td>${d.iacKitle||T.rptNaValue}${d.iacKitleNot?' — '+d.iacKitleNot:''}</td></tr>
+    <tr><td>${T.rptCPA}</td><td>${d.cpaPatoloji||T.rptNaValue}${d.cpaPatolojiNot?' — '+d.cpaPatolojiNot:''}</td></tr>
+    <tr><td>${T.rptYumusak}</td><td>${d.yumusakDoku||T.rptNaValue}${d.yumusakDokuNot?' — '+d.yumusakDokuNot:''}</td></tr>
     </table>`;
 
     // === LESION DETAILS ===
     if(d.lezyonlar.length>0){
-      h+=`<h4>Lezyon Detayları</h4>`;
+      h+=`<h4>${T.rptLezyonTitle}</h4>`;
       d.lezyonlar.forEach((lz,i)=>{
-        const sizeStr=[lz.boyutAP&&`AP: ${lz.boyutAP}`,lz.boyutML&&`ML: ${lz.boyutML}`,lz.boyutCC&&`CC: ${lz.boyutCC}`].filter(Boolean).join(', ')||'Belirtilmedi';
-        h+=`<p style="margin-top:8px;font-weight:700;font-size:10.5pt">Lezyon ${i+1}</p>`;
+        const sizeStr=[lz.boyutAP&&`AP: ${lz.boyutAP}`,lz.boyutML&&`ML: ${lz.boyutML}`,lz.boyutCC&&`CC: ${lz.boyutCC}`].filter(Boolean).join(', ')||T.rptInvYok;
+        h+=`<p style="margin-top:8px;font-weight:700;font-size:10.5pt">${T.rptLezyonN} ${i+1}</p>`;
         h+=`<table>
-        <tr><th style="width:40%">Parametre</th><th>Bulgu</th></tr>
-        <tr><td>Lokalizasyon</td><td>${lz.lokalizasyonlar.join(', ')||'—'}</td></tr>
-        <tr><td>Boyut (mm)</td><td>${sizeStr}</td></tr>
-        <tr><td>Kontur</td><td>${lz.kontur||'—'}</td></tr>
-        <tr><td>Sınır</td><td>${lz.sinir||'—'}</td></tr>
-        <tr><td>Şekil</td><td>${lz.sekil||'—'}</td></tr>
-        <tr><td>İnternal Yapı</td><td>${lz.homojenite||'—'}</td></tr>
-        <tr><td>T1 Sinyal</td><td>${lz.t1||'—'} ${lz.t1Homo?'('+lz.t1Homo+')':''}</td></tr>
-        <tr><td>T2 Sinyal</td><td>${lz.t2||'—'} ${lz.t2Homo?'('+lz.t2Homo+')':''}</td></tr>
-        <tr><td>FLAIR</td><td>${lz.flair||'—'}</td></tr>
-        <tr><td>Out-Phase</td><td>${lz.outphase||'—'}</td></tr>
-        <tr><td>DWI</td><td>${lz.dwi||'—'}</td></tr>
-        <tr><td>ADC</td><td>${lz.adc||'—'}</td></tr>
-        <tr><td>Arterial Faz</td><td>${lz.arterial||'—'}</td></tr>
-        <tr><td>Venöz / Geç Faz</td><td>${lz.venoz||'—'}</td></tr>
-        <tr><td>Kontrastlanma Paterni</td><td>${lz.enhPattern||'—'}</td></tr>
-        ${lz.kontrastNot?`<tr><td>Kontrastlanma Notu</td><td>${lz.kontrastNot}</td></tr>`:''}
-        <tr><td>İnvazyon Bulguları</td><td>${lz.invazyonlar.join(', ')||'Yok'}</td></tr>
-        ${lz.lezyonNot?`<tr><td>Lezyon Notu</td><td>${lz.lezyonNot}</td></tr>`:''}
+        <tr><th style="width:40%">${T.rptParam}</th><th>${T.rptBulgu}</th></tr>
+        <tr><td>${T.rptLok}</td><td>${lz.lokalizasyonlar.join(', ')||'—'}</td></tr>
+        <tr><td>${T.rptBoyutMm}</td><td>${sizeStr}</td></tr>
+        <tr><td>${T.rptKontur}</td><td>${lz.kontur||'—'}</td></tr>
+        <tr><td>${T.rptSinir}</td><td>${lz.sinir||'—'}</td></tr>
+        <tr><td>${T.rptSekil}</td><td>${lz.sekil||'—'}</td></tr>
+        <tr><td>${T.rptInternal}</td><td>${lz.homojenite||'—'}</td></tr>
+        <tr><td>${T.rptT1}</td><td>${lz.t1||'—'} ${lz.t1Homo?'('+lz.t1Homo+')':''}</td></tr>
+        <tr><td>${T.rptT2}</td><td>${lz.t2||'—'} ${lz.t2Homo?'('+lz.t2Homo+')':''}</td></tr>
+        <tr><td>${T.rptFlair}</td><td>${lz.flair||'—'}</td></tr>
+        <tr><td>${T.rptOutphase}</td><td>${lz.outphase||'—'}</td></tr>
+        <tr><td>${T.rptDWI}</td><td>${lz.dwi||'—'}</td></tr>
+        <tr><td>${T.rptADC}</td><td>${lz.adc||'—'}</td></tr>
+        <tr><td>${T.rptArterial}</td><td>${lz.arterial||'—'}</td></tr>
+        <tr><td>${T.rptVenoz}</td><td>${lz.venoz||'—'}</td></tr>
+        <tr><td>${T.rptEnhPat}</td><td>${lz.enhPattern||'—'}</td></tr>
+        ${lz.kontrastNot?`<tr><td>${T.rptKontNot}</td><td>${lz.kontrastNot}</td></tr>`:''}
+        <tr><td>${T.rptInvazyon}</td><td>${lz.invazyonlar.join(', ')||T.rptInvYok}</td></tr>
+        ${lz.lezyonNot?`<tr><td>${T.rptLezyonNot}</td><td>${lz.lezyonNot}</td></tr>`:''}
         </table>`;
       });
     } else {
-      h+=`<p style="margin-top:8px"><em>Yer kaplayan lezyon / kitle izlenmemiştir.</em></p>`;
+      h+=`<p style="margin-top:8px"><em>${T.rptNoLesion}</em></p>`;
     }
 
     // Ek bulgular
     if(d.ekBulgular.length>0 || d.ekNot){
-      h+=`<h4>Ek Bulgular</h4>`;
+      h+=`<h4>${T.rptEkBulgular}</h4>`;
       if(d.ekBulgular.length>0) h+=`<p>${d.ekBulgular.join(', ')}</p>`;
       if(d.ekNot) h+=`<p>${d.ekNot}</p>`;
     }
 
     // Differential diagnosis table
-    h+=`<h4>Ayırıcı Tanı</h4>`;
-    h+=`<table><tr><th>Tanı</th><th>Uyum Skoru</th></tr>`;
+    h+=`<h4>${T.rptAyirici}</h4>`;
+    h+=`<table><tr><th>${T.rptTani}</th><th>${T.rptUyumSkoru}</th></tr>`;
     sorted.forEach(sc=>{
       const pct=Math.min(Math.round(sc.score/maxS*100),100);
       h+=`<tr><td>${sc.name}</td><td>${pct}%</td></tr>`;
     });
     h+=`</table>`;
 
-    // YORUM
+    // YORUM / IMPRESSION
     const top=sorted[0];
     if(top){
       const p=PATHOLOGIES.find(x=>x.name===top.name);
-      h+=`<div class="report-yorum"><strong>YORUM (${sideLabel(s)}):</strong><br>`;
-      h+=`Tanımlanan anatomik bulgular ve sinyal özellikleri değerlendirildiğinde, bulgular en çok <strong>${top.name}</strong> ile uyumludur.`;
-      if(p) h+=`<br>Anahtar bulgu: ${p.keyFeature}.`;
+      h+=`<div class="report-yorum"><strong>${T.rptYorumLabel} (${sideLabel(s)}):</strong><br>`;
+      h+=`${T.rptYorumText1}<strong>${top.name}</strong>${T.rptYorumText2}`;
+      if(p) h+=`<br>${T.rptKeyFeature}${p.keyFeature}.`;
       if(sorted.length>1){
-        h+=`<br>Ayırıcı tanıda `;
+        h+=`<br>${T.rptDiffText}`;
         h+=sorted.slice(1,4).map(x=>`<strong>${x.name}</strong> (%${Math.min(Math.round(x.score/maxS*100),100)})`).join(', ');
-        h+=` düşünülmelidir.`;
+        h+=`${T.rptDiffTextEnd}`;
       }
       // Anatomy-specific comments
       const anatComments=[];
-      if(d.ortaKulakKemikçik && d.ortaKulakKemikçik.includes('Destrüksiyon')) anatComments.push('Kemikçik zincirinde destrüksiyon bulgusu mevcuttur');
-      if(d.mastoidSivi && d.mastoidSivi!=='Yok') anatComments.push('Mastoid hücrelerde efüzyon/sıvı sinyali izlenmektedir');
-      if(d.mastoidPnomatizasyon && d.mastoidPnomatizasyon.includes('Sklerotik')) anatComments.push('Mastoid hücreler sklerotiktir');
-      if(d.iacGenislik==='Genişlemiş') anatComments.push('İnternal akustik kanal genişlemiştir');
-      if(d.koklea && d.koklea!=='Normal') anatComments.push('Kokleada patolojik bulgu mevcuttur');
+      if(d.ortaKulakKemikçik && d.ortaKulakKemikçik.includes('Destrüksiyon')) anatComments.push(T.rptAnatomikComm[0][1]);
+      if(d.mastoidSivi && d.mastoidSivi!=='Yok') anatComments.push(T.rptAnatomikComm[1][1]);
+      if(d.mastoidPnomatizasyon && d.mastoidPnomatizasyon.includes('Sklerotik')) anatComments.push(T.rptAnatomikComm[2][1]);
+      if(d.iacGenislik==='Genişlemiş') anatComments.push(T.rptAnatomikComm[3][1]);
+      if(d.koklea && d.koklea!=='Normal') anatComments.push(T.rptAnatomikComm[4][1]);
       if(anatComments.length>0){
-        h+=`<br><br>Ek anatomik bulgular: ${anatComments.join('. ')}.`;
+        h+=`<br><br>${T.rptAddAnat}${anatComments.join('. ')}.`;
       }
       if(d.lezyonlar.length>1){
-        h+=`<br><br>Toplam ${d.lezyonlar.length} adet lezyon tanımlanmıştır.`;
+        h+=`<br><br>${T.rptMultiLesion}${d.lezyonlar.length}${T.rptMultiLesion2}`;
       }
-      h+=`<br><br><em>Klinik bilgiler ve laboratuvar bulguları ile korelasyon önerilir.</em>`;
+      h+=`<br><br><em>${T.rptCorr}</em>`;
       h+=`</div>`;
     }
   });
@@ -1511,10 +1952,10 @@ function showReport(){
   // Non-examined side
   const missSide=availableSides[0]==='sag'?'sol':'sag';
   if(!sides[missSide]){
-    h+=`<p style="margin-top:10px"><strong>${sideLabel(missSide)}:</strong> Bu taraf değerlendirilmemiştir.</p>`;
+    h+=`<p style="margin-top:10px"><strong>${sideLabel(missSide)}:</strong> ${T.rptNotExamined}</p>`;
   }
 
-  h+=`<p style="margin-top:18px;font-size:9pt;color:#888;text-align:center">Kulak ve Temporal Kemik MRI Karar Destek Sistemi v2.0 — Otomatik Rapor</p>`;
+  h+=`<p style="margin-top:18px;font-size:9pt;color:#888;text-align:center">${T.rptFooter}</p>`;
   sheet.innerHTML=h;
   document.getElementById('reportOverlay').classList.add('show');
 }
@@ -1527,14 +1968,14 @@ function copyReport(){
   range.selectNodeContents(sheet);
   const sel=window.getSelection();
   sel.removeAllRanges();sel.addRange(range);
-  try{document.execCommand('copy');alert('Rapor panoya kopyalandı (Word\'e yapıştırılabilir)');}
-  catch(e){alert('Kopyalama başarısız. Lütfen manuel seçim yapın.')}
+  try{document.execCommand('copy');alert(T.rptCopyOk);}
+  catch(e){alert(T.rptCopyFail)}
   sel.removeAllRanges();
 }
 
 function downloadReport(){
   const sheet=document.getElementById('reportSheet');
-  const htmlContent=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Temporal MRI Rapor</title>
+  const htmlContent=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${T.rptDownloadTitle}</title>
   <style>body{font-family:'Times New Roman',serif;font-size:11pt;line-height:1.6;padding:20mm;color:#1a1a1a}
   h2{text-align:center;border-bottom:2px solid #333;padding-bottom:6px}h3{border-bottom:1px solid #ccc;padding-bottom:3px}
   h4{margin:10px 0 4px}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #999;padding:4px 8px;font-size:10pt}

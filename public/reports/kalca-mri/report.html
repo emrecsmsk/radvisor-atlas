@@ -439,6 +439,261 @@
 
 const { useState, useMemo, useEffect, useRef } = React;
 
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    brand: { title: "Kalça MR Karar Destek Sistemi", sub: "Multilezyon Ayırıcı Tanı & Yapılandırılmış Rapor" },
+    stepChip: (cur, tot) => `Adım ${cur} / ${tot}`,
+    nav: { back: "← Geri", next: "İleri →", generate: "Raporu Oluştur →", buildReport: "Raporu Oluştur" },
+    toolbar: { back: "← Geri", copy: "📋 Metni Kopyala", download: "⬇ HTML indir", print: "🖨 Yazdır / PDF" },
+    alertCopied: "Rapor panoya kopyalandı.",
+    alertCopyFail: (m) => "Kopyalama başarısız: " + m,
+    stepTitles: [
+      "Hasta & Klinik Bilgi",
+      "Sekans ve Teknik",
+      "Kemik İliği — Femur Başı / Boynu",
+      "AVN Detay Değerlendirmesi",
+      "Femoral Morfoloji (CAM)",
+      "Asetabuler Morfoloji (Pincer / Displazi)",
+      "Kıkırdak & Dejeneratif Değişiklikler",
+      "Asetabuler Labrum",
+      "Paralabral Kist & Ligamentum Teres",
+      "Kapsül ve Kapsüler Ligamanlar",
+      "İskiofemoral & Kuadratus Femoris Mesafe",
+      "Sinovyum, Efüzyon & Sinoviyal Patoloji",
+      "Kas / Tendon Değerlendirmesi",
+      "Bursa Değerlendirmesi",
+      "Nörovasküler Yapılar",
+      "Pubik Simfiz & Enthesiyal Yapılar",
+      "Kemik Lezyonlar / Tümör / Diğer",
+      "Serbest Metin / Ek Notlar",
+      "Bulgu İncelemesi",
+      "Ayırıcı Tanı Paneli",
+      "Final İnceleme",
+      "Rapor"
+    ],
+    stepDescs: [
+      "Hasta temel bilgisi, klinik sorgu ve risk faktörleri.",
+      "Uygulanan sekansları işaretleyin.",
+      "Kemik iliği sinyali ve AVN ön taraması.",
+      "AVN şüphesi varlığında detay değerlendirme.",
+      "CAM tip FAI ön değerlendirmesi — alpha açısı ve baş-boyun morfolojisi.",
+      "Pincer tip FAI ve displazi değerlendirmesi — LCEA, asetabuler indeks, wall sign.",
+      "Kıkırdak yüzeyler (4 zon) ve OA bulguları.",
+      "Labrum değerlendirmesi — her yırtık için ayrı döngü.",
+      "Paralabral kist ve ligamentum teres.",
+      "Eklem kapsülü ve kapsüler ligamanlar.",
+      "İskiofemoral ve kuadratus femoris mesafeleri.",
+      "Efüzyon, sinoviyal ve hemorajik patolojiler.",
+      "Kas/tendon değerlendirmesi — her patolojik yapı için ayrı döngü.",
+      "Bursa değerlendirmesi.",
+      "Nörovasküler yapıların kısa taranması.",
+      "Pubik simfiz ve enthesiyal yapılar (atletik pubalji).",
+      "Kemik lezyonlar, tümör, heterotopik ossifikasyon.",
+      "Opsiyonel ek metin.",
+      "Veri özeti ve kontrol.",
+      "Ayırıcı tanı olasılıkları.",
+      "Raporu oluşturun."
+    ],
+    side: { sağ: "Sağ", sol: "Sol", bilat: "Bilateral" },
+    sex:  { erkek: "Erkek", kadın: "Kadın" },
+    yesNo: { var: "Var", yok: "Yok" },
+    muscle: {
+      glut_med: "Gluteus medius", glut_min: "Gluteus minimus", glut_max: "Gluteus maximus",
+      iliopsoas: "İliopsoas", rf: "Rektus femoris", hamstring: "Proksimal hamstring",
+      adductor: "Adduktor grup", piriformis: "Piriformis", qf: "Kuadratus femoris"
+    },
+    lesionType: {
+      tendinopati: "Tendinopati", parsiyel: "Parsiyel kat yırtık", tam: "Tam kat yırtık / rüptür",
+      strain1: "Grade 1 strain", strain2: "Grade 2 strain", strain3: "Grade 3 strain", enthezit: "Entezopati / entezit"
+    },
+    lesionLoc: {
+      myotendinous: "Miyotendinöz bileşke", tendon: "Tendon mid-substance",
+      entez: "Enthesis", belly: "Kas karnı", retinaculum: "Retinaküler"
+    },
+    labQuad: {
+      anterosup: "Anterosuperior", sup: "Superior", posterosup: "Posterosuperior",
+      post: "Posterior", posteroinf: "Posteroinferior", anterior: "Anterior",
+      anteroinf: "Anteroinferior", global: "Global / multifokal"
+    },
+    labCat: {
+      fraying: "Fimbrillasyon / saçaklı kenar", partial: "Parsiyel kat yırtık", full: "Tam kat yırtık",
+      bucket: "Kova-sapı (bucket handle)", complex: "Kompleks / multifokal",
+      ossif: "Ossifiye labrum", detach: "Labral detachment"
+    },
+    czerny: {
+      "I": "Czerny Tip I (intrasubstance)", "IIA": "Czerny Tip IIA (fokal parsiyel)",
+      "IIB": "Czerny Tip IIB (fokal komplet)", "IIIA": "Czerny Tip IIIA (yaygın parsiyel)",
+      "IIIB": "Czerny Tip IIIB (yaygın komplet)"
+    },
+    cat: {
+      "sıkışma": "Sıkışma", "labrum": "Labrum", "kemik": "Kemik",
+      "dejeneratif": "Dejeneratif", "morfolojik": "Morfolojik", "kas-tendon": "Kas-Tendon",
+      "bursa": "Bursa", "sinoviyal": "Sinoviyal", "inflamatuar": "İnflamatuar", "diğer": "Diğer"
+    },
+    patho: {
+      fai_cam: "CAM tip Femoroasetabuler Sıkışma (FAI)", fai_pincer: "Pincer tip FAI",
+      fai_mixed: "Mikst tip FAI", labral_tear: "Asetabuler Labrum Yırtığı",
+      paralab_cyst: "Paralabral Kist", avn: "Femur Başı Avasküler Nekrozu (AVN)",
+      subchondral_fx: "Subkondral Yetmezlik Fraktürü", stress_fx: "Femur Boynu Stres Fraktürü",
+      transient_op: "Geçici Osteoporoz / Kemik İliği Ödemi Sendromu", oa_hip: "Kalça Osteoartriti",
+      ddh: "Asetabuler Displazi (DDH varyantı)", ischiofem_imp: "İskiofemoral Sıkışma Sendromu",
+      glut_tendinopathy: "Gluteal Tendinopati (Glut. med/min)", glut_tear: "Gluteal Tendon Yırtığı (Glut. med/min)",
+      troch_bursitis: "Trokanterik Bursit / Büyük Trokanter Ağrı Sendromu",
+      iliopsoas_tendinop: "İliopsoas Tendinopatisi", iliopsoas_bursit: "İliopsoas Bursiti",
+      snapping_int: "İç Kaynaklı Snapping Hip (İliopsoas)", snapping_ext: "Dış Kaynaklı Snapping Hip (ITB)",
+      hamstring_inj: "Proksimal Hamstring Yaralanması", adductor_inj: "Adduktor Yaralanması",
+      rf_inj: "Rektus Femoris Yaralanması", athletic_pubalgia: "Atletik Pubalji / Spor Hernisi",
+      piriformis_synd: "Piriformis Sendromu", synovitis: "Sinovit / Kapsülit",
+      pvns: "PVNS / Tenosinoviyal Dev Hücreli Tümör", septic: "Septik Artrit",
+      het_oss: "Heterotopik Ossifikasyon / Miyozitis Ossifikans"
+    },
+    report: {
+      title: "KALÇA MANYETİK REZONANS GÖRÜNTÜLEME",
+      subTitle: (side, date) => `${side} KALÇA \u00a0•\u00a0 ${date}`,
+      clinicalInfo: "Klinik Bilgi", technical: "Teknik", boneStructures: "Kemik Yapılar — Femur Başı / Boynu",
+      morphology: "Morfolojik Değerlendirme", cartilage: "Kıkırdak & Dejeneratif Değişiklikler",
+      labrum: "Asetabuler Labrum", paralabral: "Paralabral / Ligamentum Teres",
+      capsule: "Kapsül ve Ligamanlar", ischiofemoral: "İskiofemoral & Kuadratus Femoris Mesafe",
+      synovium: "Sinovyum & Efüzyon", muscletendon: "Kas / Tendon Değerlendirmesi",
+      bursa: "Bursa Değerlendirmesi", neurovascular: "Nörovasküler Yapılar",
+      pubic: "Pubik Bölge & Enthesiyal Yapılar", other: "Ek / Diğer Bulgular",
+      freeNotes: "Ek Notlar", diffDx: "Ayırıcı Tanı Özeti", commentary: "YORUM",
+      footer: (date) => `Kalça MR Karar Destek • ${date}`,
+      page: "Sayfa 1/1",
+      side: "Taraf", ageGender: "Yaş / Cinsiyet", clinical: "Klinik", exam: "Muayene",
+      riskFactors: "Risk Faktörleri",
+      rank: "Sıra", diagnosis: "Tanı", category: "Kategori", probability: "Olasılık"
+    }
+  },
+  en: {
+    brand: { title: "Hip MRI Decision Support System", sub: "Multi-Lesion Differential Diagnosis & Structured Report" },
+    stepChip: (cur, tot) => `Step ${cur} / ${tot}`,
+    nav: { back: "← Back", next: "Next →", generate: "Generate Report →", buildReport: "Generate Report" },
+    toolbar: { back: "← Back", copy: "📋 Copy Text", download: "⬇ Download HTML", print: "🖨 Print / PDF" },
+    alertCopied: "Report copied to clipboard.",
+    alertCopyFail: (m) => "Copy failed: " + m,
+    stepTitles: [
+      "Patient & Clinical Info",
+      "Sequences & Technique",
+      "Bone Marrow — Femoral Head / Neck",
+      "AVN Detailed Assessment",
+      "Femoral Morphology (CAM)",
+      "Acetabular Morphology (Pincer / Dysplasia)",
+      "Cartilage & Degenerative Changes",
+      "Acetabular Labrum",
+      "Paralabral Cyst & Ligamentum Teres",
+      "Joint Capsule & Capsular Ligaments",
+      "Ischiofemoral & Quadratus Femoris Space",
+      "Synovium, Effusion & Synovial Pathology",
+      "Muscle / Tendon Assessment",
+      "Bursa Assessment",
+      "Neurovascular Structures",
+      "Pubic Symphysis & Entheseal Structures",
+      "Bone Lesions / Tumour / Other",
+      "Free Text / Additional Notes",
+      "Findings Review",
+      "Differential Diagnosis Panel",
+      "Final Review",
+      "Report"
+    ],
+    stepDescs: [
+      "Patient demographics, clinical query and risk factors.",
+      "Mark the sequences applied.",
+      "Bone marrow signal and AVN screening.",
+      "Detailed AVN assessment when suspected.",
+      "CAM-type FAI pre-assessment — alpha angle and femoral head-neck morphology.",
+      "Pincer-type FAI and dysplasia assessment — LCEA, acetabular index, wall sign.",
+      "Cartilage surfaces (4 zones) and OA findings.",
+      "Labral assessment — a separate loop for each tear.",
+      "Paralabral cyst and ligamentum teres.",
+      "Joint capsule and capsular ligaments.",
+      "Ischiofemoral and quadratus femoris spaces.",
+      "Effusion, synovial and haemorrhagic pathologies.",
+      "Muscle/tendon assessment — a separate loop for each pathological structure.",
+      "Bursa assessment.",
+      "Brief neurovascular survey.",
+      "Pubic symphysis and entheseal structures (athletic pubalgia).",
+      "Bone lesions, tumour, heterotopic ossification.",
+      "Optional additional text.",
+      "Data summary and review.",
+      "Differential diagnosis probabilities.",
+      "Generate the report."
+    ],
+    side: { sağ: "Right", sol: "Left", bilat: "Bilateral" },
+    sex:  { erkek: "Male", kadın: "Female" },
+    yesNo: { var: "Present", yok: "Absent" },
+    muscle: {
+      glut_med: "Gluteus medius", glut_min: "Gluteus minimus", glut_max: "Gluteus maximus",
+      iliopsoas: "Iliopsoas", rf: "Rectus femoris", hamstring: "Proximal hamstring",
+      adductor: "Adductor group", piriformis: "Piriformis", qf: "Quadratus femoris"
+    },
+    lesionType: {
+      tendinopati: "Tendinopathy", parsiyel: "Partial-thickness tear", tam: "Full-thickness tear / rupture",
+      strain1: "Grade 1 strain", strain2: "Grade 2 strain", strain3: "Grade 3 strain", enthezit: "Enthesopathy / enthesitis"
+    },
+    lesionLoc: {
+      myotendinous: "Myotendinous junction", tendon: "Tendon mid-substance",
+      entez: "Enthesis", belly: "Muscle belly", retinaculum: "Retinacular"
+    },
+    labQuad: {
+      anterosup: "Anterosuperior", sup: "Superior", posterosup: "Posterosuperior",
+      post: "Posterior", posteroinf: "Posteroinferior", anterior: "Anterior",
+      anteroinf: "Anteroinferior", global: "Global / multifocal"
+    },
+    labCat: {
+      fraying: "Fraying / frayed margin", partial: "Partial-thickness tear", full: "Full-thickness tear",
+      bucket: "Bucket-handle tear", complex: "Complex / multifocal",
+      ossif: "Ossified labrum", detach: "Labral detachment"
+    },
+    czerny: {
+      "I": "Czerny Type I (intrasubstance)", "IIA": "Czerny Type IIA (focal partial)",
+      "IIB": "Czerny Type IIB (focal complete)", "IIIA": "Czerny Type IIIA (diffuse partial)",
+      "IIIB": "Czerny Type IIIB (diffuse complete)"
+    },
+    cat: {
+      "sıkışma": "Impingement", "labrum": "Labrum", "kemik": "Bone",
+      "dejeneratif": "Degenerative", "morfolojik": "Morphological", "kas-tendon": "Muscle-Tendon",
+      "bursa": "Bursa", "sinoviyal": "Synovial", "inflamatuar": "Inflammatory", "diğer": "Other"
+    },
+    patho: {
+      fai_cam: "CAM-type Femoroacetabular Impingement (FAI)", fai_pincer: "Pincer-type FAI",
+      fai_mixed: "Mixed-type FAI", labral_tear: "Acetabular Labral Tear",
+      paralab_cyst: "Paralabral Cyst", avn: "Femoral Head Avascular Necrosis (AVN)",
+      subchondral_fx: "Subchondral Insufficiency Fracture", stress_fx: "Femoral Neck Stress Fracture",
+      transient_op: "Transient Osteoporosis / Bone Marrow Edema Syndrome", oa_hip: "Hip Osteoarthritis",
+      ddh: "Acetabular Dysplasia (DDH variant)", ischiofem_imp: "Ischiofemoral Impingement Syndrome",
+      glut_tendinopathy: "Gluteal Tendinopathy (Glut. med/min)", glut_tear: "Gluteal Tendon Tear (Glut. med/min)",
+      troch_bursitis: "Trochanteric Bursitis / Greater Trochanteric Pain Syndrome",
+      iliopsoas_tendinop: "Iliopsoas Tendinopathy", iliopsoas_bursit: "Iliopsoas Bursitis",
+      snapping_int: "Internal Snapping Hip (Iliopsoas)", snapping_ext: "External Snapping Hip (ITB)",
+      hamstring_inj: "Proximal Hamstring Injury", adductor_inj: "Adductor Injury",
+      rf_inj: "Rectus Femoris Injury", athletic_pubalgia: "Athletic Pubalgia / Sports Hernia",
+      piriformis_synd: "Piriformis Syndrome", synovitis: "Synovitis / Capsulitis",
+      pvns: "PVNS / Tenosynovial Giant Cell Tumour", septic: "Septic Arthritis",
+      het_oss: "Heterotopic Ossification / Myositis Ossificans"
+    },
+    report: {
+      title: "HIP MAGNETIC RESONANCE IMAGING",
+      subTitle: (side, date) => `${side} HIP \u00a0•\u00a0 ${date}`,
+      clinicalInfo: "Clinical Information", technical: "Technique",
+      boneStructures: "Bone Structures — Femoral Head / Neck",
+      morphology: "Morphological Assessment", cartilage: "Cartilage & Degenerative Changes",
+      labrum: "Acetabular Labrum", paralabral: "Paralabral / Ligamentum Teres",
+      capsule: "Capsule & Ligaments", ischiofemoral: "Ischiofemoral & Quadratus Femoris Space",
+      synovium: "Synovium & Effusion", muscletendon: "Muscle / Tendon Assessment",
+      bursa: "Bursa Assessment", neurovascular: "Neurovascular Structures",
+      pubic: "Pubic Region & Entheseal Structures", other: "Additional / Other Findings",
+      freeNotes: "Additional Notes", diffDx: "Differential Diagnosis Summary", commentary: "IMPRESSION",
+      footer: (date) => `Hip MRI Decision Support • ${date}`,
+      page: "Page 1/1",
+      side: "Side", ageGender: "Age / Sex", clinical: "Clinical", exam: "Examination",
+      riskFactors: "Risk Factors",
+      rank: "Rank", diagnosis: "Diagnosis", category: "Category", probability: "Probability"
+    }
+  }
+})[RV_LOCALE];
+
 const TOTAL_STEPS = 22;
 const MT_SUBSTEPS  = 4; // kas/tendon (muscle-tendon)
 const LAB_SUBSTEPS = 3; // labral
@@ -945,90 +1200,19 @@ function todayStr() {
 }
 function ageText(a) {
   const n = parseInt(a||"0");
+  if (RV_LOCALE === 'en') return n > 0 ? (n + " y/o") : "—";
   return n > 0 ? (n + " yaş") : "—";
 }
-function sideTR(s) {
-  if (s === "sağ")  return "Sağ";
-  if (s === "sol")  return "Sol";
-  if (s === "bilat") return "Bilateral";
-  return "—";
-}
-function sexTR(s) {
-  if (s === "erkek") return "Erkek";
-  if (s === "kadın") return "Kadın";
-  return "—";
-}
-function muscleTR(m) {
-  const map = {
-    glut_med: "Gluteus medius",
-    glut_min: "Gluteus minimus",
-    glut_max: "Gluteus maximus",
-    iliopsoas: "İliopsoas",
-    rf: "Rektus femoris",
-    hamstring: "Proksimal hamstring",
-    adductor: "Adduktor grup",
-    piriformis: "Piriformis",
-    qf: "Kuadratus femoris"
-  };
-  return map[m] || m;
-}
-function typeTR(t) {
-  const map = {
-    tendinopati: "Tendinopati",
-    parsiyel:    "Parsiyel kat yırtık",
-    tam:         "Tam kat yırtık / rüptür",
-    strain1:     "Grade 1 strain",
-    strain2:     "Grade 2 strain",
-    strain3:     "Grade 3 strain",
-    enthezit:    "Entezopati / entezit"
-  };
-  return map[t] || t;
-}
-function locTR(l) {
-  const map = {
-    myotendinous: "Miyotendinöz bileşke",
-    tendon:       "Tendon mid-substance",
-    entez:        "Enthesis",
-    belly:        "Kas karnı",
-    retinaculum:  "Retinaküler"
-  };
-  return map[l] || l || "—";
-}
-function labQuadTR(q) {
-  const map = {
-    anterosup:  "Anterosuperior",
-    sup:        "Superior",
-    posterosup: "Posterosuperior",
-    post:       "Posterior",
-    posteroinf: "Posteroinferior",
-    anterior:   "Anterior",
-    anteroinf:  "Anteroinferior",
-    global:     "Global / multifokal"
-  };
-  return map[q] || q;
-}
-function labCatTR(c) {
-  const map = {
-    fraying: "Fimbrillasyon / saçaklı kenar",
-    partial: "Parsiyel kat yırtık",
-    full:    "Tam kat yırtık",
-    bucket:  "Kova-sapı (bucket handle)",
-    complex: "Kompleks / multifokal",
-    ossif:   "Ossifiye labrum",
-    detach:  "Labral detachment"
-  };
-  return map[c] || c;
-}
-function czernyTR(s) {
-  const map = {
-    "I":   "Czerny Tip I (intrasubstance)",
-    "IIA": "Czerny Tip IIA (fokal parsiyel)",
-    "IIB": "Czerny Tip IIB (fokal komplet)",
-    "IIIA":"Czerny Tip IIIA (yaygın parsiyel)",
-    "IIIB":"Czerny Tip IIIB (yaygın komplet)"
-  };
-  return map[s] || "—";
-}
+function sideTR(s) { return T.side[s] || "—"; }
+function sexTR(s)  { return T.sex[s]  || "—"; }
+function muscleTR(m)   { return T.muscle[m]      || m; }
+function typeTR(t)     { return T.lesionType[t]  || t; }
+function locTR(l)      { return T.lesionLoc[l]   || l || "—"; }
+function labQuadTR(q)  { return T.labQuad[q]     || q; }
+function labCatTR(c)   { return T.labCat[c]      || c; }
+function czernyTR(s)   { return T.czerny[s]      || "—"; }
+function pathoLabel(p) { return T.patho[p.id]    || p.adi; }
+function catLabel(k)   { return T.cat[k]         || k; }
 
 /* =========================================================
    ANA BİLEŞEN
@@ -1241,231 +1425,377 @@ function App() {
 
     const lines = [];
     lines.push(`<div class="report-header">`);
-    lines.push(`<h1>KALÇA MANYETİK REZONANS GÖRÜNTÜLEME</h1>`);
-    lines.push(`<div class="sub">${sideTR(data.side).toUpperCase()} KALÇA &nbsp;•&nbsp; ${todayStr()}</div>`);
+    lines.push(`<h1>${T.report.title}</h1>`);
+    lines.push(`<div class="sub">${T.report.subTitle(sideTR(data.side).toUpperCase(), todayStr())}</div>`);
     lines.push(`</div>`);
 
     // Klinik bilgi
-    lines.push(`<div class="rbox"><div class="rbox-head slate">Klinik Bilgi</div><div class="rbox-body">`);
-    lines.push(`<div class="zrow"><div class="k">Taraf</div><div class="v">${sideTR(data.side)}</div></div>`);
-    lines.push(`<div class="zrow"><div class="k">Yaş / Cinsiyet</div><div class="v">${ageText(data.age)} • ${sexTR(data.sex)}</div></div>`);
-    if (data.clinical) lines.push(`<div class="zrow"><div class="k">Klinik</div><div class="v">${data.clinical}</div></div>`);
-    if (data.ex) lines.push(`<div class="zrow"><div class="k">Muayene</div><div class="v">${data.ex}</div></div>`);
+    const riskLabels = RV_LOCALE === 'en'
+      ? { pregnant:"pregnancy", athlete:"athlete", osteoporosis:"osteoporosis",
+          avn_risk:"AVN risk factor (steroid/alcohol/haemoglobinopathy)",
+          trauma:"trauma", infection:"infection suspicion" }
+      : { pregnant:"gebelik", athlete:"sporcu", osteoporosis:"osteoporoz",
+          avn_risk:"AVN risk faktörü (steroid/alkol/hemoglobinopati)",
+          trauma:"travma", infection:"enfeksiyon şüphesi" };
+    lines.push(`<div class="rbox"><div class="rbox-head slate">${T.report.clinicalInfo}</div><div class="rbox-body">`);
+    lines.push(`<div class="zrow"><div class="k">${T.report.side}</div><div class="v">${sideTR(data.side)}</div></div>`);
+    lines.push(`<div class="zrow"><div class="k">${T.report.ageGender}</div><div class="v">${ageText(data.age)} • ${sexTR(data.sex)}</div></div>`);
+    if (data.clinical) lines.push(`<div class="zrow"><div class="k">${T.report.clinical}</div><div class="v">${data.clinical}</div></div>`);
+    if (data.ex) lines.push(`<div class="zrow"><div class="k">${T.report.exam}</div><div class="v">${data.ex}</div></div>`);
     const risks = [];
-    if (data.pregnant === "var") risks.push("gebelik");
-    if (data.athlete === "var") risks.push("sporcu");
-    if (data.osteoporosis === "var") risks.push("osteoporoz");
-    if (data.avn_risk === "var") risks.push("AVN risk faktörü (steroid/alkol/hemoglobinopati)");
-    if (data.trauma === "var") risks.push("travma");
-    if (data.clinical_infection === "var") risks.push("enfeksiyon şüphesi");
-    if (risks.length) lines.push(`<div class="zrow"><div class="k">Risk Faktörleri</div><div class="v">${risks.join(", ")}</div></div>`);
+    if (data.pregnant === "var") risks.push(riskLabels.pregnant);
+    if (data.athlete === "var") risks.push(riskLabels.athlete);
+    if (data.osteoporosis === "var") risks.push(riskLabels.osteoporosis);
+    if (data.avn_risk === "var") risks.push(riskLabels.avn_risk);
+    if (data.trauma === "var") risks.push(riskLabels.trauma);
+    if (data.clinical_infection === "var") risks.push(riskLabels.infection);
+    if (risks.length) lines.push(`<div class="zrow"><div class="k">${T.report.riskFactors}</div><div class="v">${risks.join(", ")}</div></div>`);
     lines.push(`</div></div>`);
 
     // Teknik
+    const seqLabels = RV_LOCALE === 'en'
+      ? { pdfs:"PD fat-saturated", cor:"Coronal T2 FS", ax:"Axial T2 FS",
+          obl:"Radial/Oblique T1", post:"Post-contrast T1 FS", arthro:"MRI arthrography",
+          std:"standard protocol",
+          sentence:(side,seqs) => `Sequences were performed over the ${side} hip joint: ${seqs}.` }
+      : { pdfs:"PD yağ baskılı", cor:"Koronal T2 FS", ax:"Aksiyel T2 FS",
+          obl:"Radyal/Oblique T1", post:"Post-kontrast T1 FS", arthro:"MR artrografi",
+          std:"standart protokol",
+          sentence:(side,seqs) => `${side} kalça eklemi üzerinde sekanslar uygulandı: ${seqs}.` };
     const seqs = [];
     if (data.seq.t1) seqs.push("T1");
     if (data.seq.t2) seqs.push("T2");
     if (data.seq.pd) seqs.push("PD");
-    if (data.seq.pdfs) seqs.push("PD yağ baskılı");
-    if (data.seq.t2fs_cor) seqs.push("Koronal T2 FS");
-    if (data.seq.t2fs_ax) seqs.push("Aksiyel T2 FS");
-    if (data.seq.t1_obl) seqs.push("Radyal/Oblique T1");
-    if (data.seq.t1fs_post) seqs.push("Post-kontrast T1 FS");
-    if (data.seq.arthro) seqs.push("MR artrografi" + (data.arthro_detail ? ` (${data.arthro_detail})` : ""));
-    lines.push(`<div class="rbox"><div class="rbox-head">Teknik</div><div class="rbox-body">`);
-    lines.push(`<p>${sideTR(data.side)} kalça eklemi üzerinde sekanslar uygulandı: ${seqs.join(", ") || "standart protokol"}.</p>`);
+    if (data.seq.pdfs) seqs.push(seqLabels.pdfs);
+    if (data.seq.t2fs_cor) seqs.push(seqLabels.cor);
+    if (data.seq.t2fs_ax) seqs.push(seqLabels.ax);
+    if (data.seq.t1_obl) seqs.push(seqLabels.obl);
+    if (data.seq.t1fs_post) seqs.push(seqLabels.post);
+    if (data.seq.arthro) seqs.push(seqLabels.arthro + (data.arthro_detail ? ` (${data.arthro_detail})` : ""));
+    lines.push(`<div class="rbox"><div class="rbox-head">${T.report.technical}</div><div class="rbox-body">`);
+    lines.push(`<p>${seqLabels.sentence(sideTR(data.side), seqs.join(", ") || seqLabels.std)}</p>`);
     lines.push(`</div></div>`);
 
     // Kemik yapılar
     const boneFindings = [];
-    if (data.head_bme === "var") {
-      let s = "Femur başında kemik iliği ödemi";
-      if (data.head_bme_pattern === "fokal") s += " (fokal patern)";
-      else if (data.head_bme_pattern === "diffuz") s += " (yaygın patern)";
-      boneFindings.push(s);
+    if (RV_LOCALE === 'en') {
+      if (data.head_bme === "var") {
+        let s = "Bone marrow edema in the femoral head";
+        if (data.head_bme_pattern === "fokal") s += " (focal pattern)";
+        else if (data.head_bme_pattern === "diffuz") s += " (diffuse pattern)";
+        boneFindings.push(s);
+      }
+      if (data.neck_bme === "var") boneFindings.push("Bone marrow edema in the femoral neck");
+      if (data.avn_suspicion === "var") {
+        let avnLine = "Findings consistent with AVN in the femoral head";
+        const avnDet = [];
+        if (data.avn_double_line === "var") avnDet.push("double line sign (+)");
+        if (data.avn_crescent === "var") avnDet.push("crescent sign (+)");
+        if (data.avn_collapse === "var") avnDet.push("subchondral collapse");
+        if (data.avn_stage) avnDet.push(`ARCO Stage ${data.avn_stage}`);
+        if (data.avn_ficat) avnDet.push(`Ficat Stage ${data.avn_ficat}`);
+        if (data.avn_lesion_pct) avnDet.push(`lesion extent ~${data.avn_lesion_pct}%`);
+        if (avnDet.length) avnLine += ": " + avnDet.join(", ");
+        boneFindings.push(avnLine);
+      }
+      if (data.fx_line === "var") {
+        let fl = "Fracture line identified";
+        if (data.fx_location === "femoral_neck") fl += " (femoral neck — stress fracture type)";
+        else if (data.fx_location === "subchondral") fl += " (subchondral)";
+        boneFindings.push(fl);
+      }
+      if (data.subchondral_fx === "var") boneFindings.push("Line/band consistent with subchondral insufficiency fracture");
+      if (boneFindings.length === 0) boneFindings.push("Femoral head and neck bone marrow signal is within normal limits. No significant bone marrow edema, AVN finding, or fracture line detected.");
+    } else {
+      if (data.head_bme === "var") {
+        let s = "Femur başında kemik iliği ödemi";
+        if (data.head_bme_pattern === "fokal") s += " (fokal patern)";
+        else if (data.head_bme_pattern === "diffuz") s += " (yaygın patern)";
+        boneFindings.push(s);
+      }
+      if (data.neck_bme === "var") boneFindings.push("Femur boynunda kemik iliği ödemi");
+      if (data.avn_suspicion === "var") {
+        let avnLine = "Femur başında AVN ile uyumlu bulgular";
+        const avnDet = [];
+        if (data.avn_double_line === "var") avnDet.push("double line sign (+)");
+        if (data.avn_crescent === "var") avnDet.push("crescent sign (+)");
+        if (data.avn_collapse === "var") avnDet.push("subkondral çökme");
+        if (data.avn_stage) avnDet.push(`ARCO Evre ${data.avn_stage}`);
+        if (data.avn_ficat) avnDet.push(`Ficat Evre ${data.avn_ficat}`);
+        if (data.avn_lesion_pct) avnDet.push(`lezyon yüzdesi ~%${data.avn_lesion_pct}`);
+        if (avnDet.length) avnLine += ": " + avnDet.join(", ");
+        boneFindings.push(avnLine);
+      }
+      if (data.fx_line === "var") {
+        let fl = "Fraktür hattı izlenmekte";
+        if (data.fx_location === "femoral_neck") fl += " (femur boynu — stres fraktür tipi)";
+        else if (data.fx_location === "subchondral") fl += " (subkondral)";
+        boneFindings.push(fl);
+      }
+      if (data.subchondral_fx === "var") boneFindings.push("Subkondral yetmezlik fraktürü ile uyumlu hat/çizgi izlenmekte");
+      if (boneFindings.length === 0) boneFindings.push("Femur başı ve boynu kemik iliği sinyali normal sınırlardadır. Belirgin kemik iliği ödemi, AVN bulgusu ya da fraktür hattı saptanmamıştır.");
     }
-    if (data.neck_bme === "var") boneFindings.push("Femur boynunda kemik iliği ödemi");
-    if (data.avn_suspicion === "var") {
-      let avnLine = "Femur başında AVN ile uyumlu bulgular";
-      const avnDet = [];
-      if (data.avn_double_line === "var") avnDet.push("double line sign (+)");
-      if (data.avn_crescent === "var") avnDet.push("crescent sign (+)");
-      if (data.avn_collapse === "var") avnDet.push("subkondral çökme");
-      if (data.avn_stage) avnDet.push(`ARCO Evre ${data.avn_stage}`);
-      if (data.avn_ficat) avnDet.push(`Ficat Evre ${data.avn_ficat}`);
-      if (data.avn_lesion_pct) avnDet.push(`lezyon yüzdesi ~%${data.avn_lesion_pct}`);
-      if (avnDet.length) avnLine += ": " + avnDet.join(", ");
-      boneFindings.push(avnLine);
-    }
-    if (data.fx_line === "var") {
-      let fl = "Fraktür hattı izlenmekte";
-      if (data.fx_location === "femoral_neck") fl += " (femur boynu — stres fraktür tipi)";
-      else if (data.fx_location === "subchondral") fl += " (subkondral)";
-      boneFindings.push(fl);
-    }
-    if (data.subchondral_fx === "var") boneFindings.push("Subkondral yetmezlik fraktürü ile uyumlu hat/çizgi izlenmekte");
-    if (boneFindings.length === 0) boneFindings.push("Femur başı ve boynu kemik iliği sinyali normal sınırlardadır. Belirgin kemik iliği ödemi, AVN bulgusu ya da fraktür hattı saptanmamıştır.");
-    lines.push(`<div class="rbox"><div class="rbox-head rose">Kemik Yapılar — Femur Başı / Boynu</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head rose">${T.report.boneStructures}</div><div class="rbox-body">`);
     boneFindings.forEach((f,i) => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Morfolojik bulgular
     const morphFindings = [];
-    if (data.alpha_angle) {
-      const a = parseFloat(data.alpha_angle);
-      let s = `Alpha açısı: ${data.alpha_angle}°`;
-      if (a > 60) s += " (belirgin artmış — CAM morfolojisi ile uyumlu)";
-      else if (a > 55) s += " (sınırda-artmış — CAM morfolojisi)";
-      else s += " (normal sınırlarda)";
-      morphFindings.push(s);
+    if (RV_LOCALE === 'en') {
+      if (data.alpha_angle) {
+        const a = parseFloat(data.alpha_angle);
+        let s = `Alpha angle: ${data.alpha_angle}°`;
+        if (a > 60) s += " (significantly elevated — consistent with CAM morphology)";
+        else if (a > 55) s += " (borderline elevated — CAM morphology)";
+        else s += " (within normal limits)";
+        morphFindings.push(s);
+      }
+      if (data.hn_offset === "azalmış") morphFindings.push("Femoral head-neck offset is reduced (CAM morphology pattern)");
+      if (data.cam_morphology === "var") morphFindings.push("Increased convexity at the anterosuperior femoral head-neck junction (pistol-grip deformity)");
+      if (data.head_shape === "asimetrik") morphFindings.push("Asymmetry of the femoral head contour is noted");
+      if (data.lcea) {
+        const l = parseFloat(data.lcea);
+        let s = `Lateral Center Edge Angle (LCEA): ${data.lcea}°`;
+        if (l > 40) s += " (elevated — acetabular overcoverage / pincer)";
+        else if (l < 25) s += " (reduced — suggestive of acetabular dysplasia)";
+        else s += " (within normal limits)";
+        morphFindings.push(s);
+      }
+      if (data.acet_index) morphFindings.push(`Acetabular index: ${data.acet_index}°` + (parseFloat(data.acet_index) > 10 ? " (elevated)" : ""));
+      if (data.cross_over === "var") morphFindings.push("Cross-over (overlap) sign present — suggestive of acetabular retroversion");
+      if (data.pincer_focal === "var") morphFindings.push("Focal anterior acetabular overcoverage (focal pincer)");
+      if (data.acet_coverage === "azalmış") morphFindings.push("Insufficient acetabular weight-bearing surface / reduced coverage");
+      if (data.wall_sign === "pozitif") morphFindings.push("Posterior wall sign positive");
+      if (morphFindings.length === 0) morphFindings.push("Hip joint morphology within normal limits. No significant CAM/pincer morphology or acetabular dysplasia.");
+    } else {
+      if (data.alpha_angle) {
+        const a = parseFloat(data.alpha_angle);
+        let s = `Alpha açısı: ${data.alpha_angle}°`;
+        if (a > 60) s += " (belirgin artmış — CAM morfolojisi ile uyumlu)";
+        else if (a > 55) s += " (sınırda-artmış — CAM morfolojisi)";
+        else s += " (normal sınırlarda)";
+        morphFindings.push(s);
+      }
+      if (data.hn_offset === "azalmış") morphFindings.push("Femoral baş-boyun offset'i azalmıştır (CAM morfoloji paterni)");
+      if (data.cam_morphology === "var") morphFindings.push("Anterosuperior femoral baş-boyun bileşkesinde konveksite artışı (pistol-grip deformite) izlenmektedir");
+      if (data.head_shape === "asimetrik") morphFindings.push("Femoral baş konturunda asimetri dikkati çekmektedir");
+      if (data.lcea) {
+        const l = parseFloat(data.lcea);
+        let s = `Lateral Center Edge Angle (LCEA): ${data.lcea}°`;
+        if (l > 40) s += " (artmış — asetabuler overcoverage / pincer)";
+        else if (l < 25) s += " (azalmış — asetabuler displazi lehine)";
+        else s += " (normal sınırlarda)";
+        morphFindings.push(s);
+      }
+      if (data.acet_index) morphFindings.push(`Asetabuler indeks: ${data.acet_index}°` + (parseFloat(data.acet_index) > 10 ? " (artmış)" : ""));
+      if (data.cross_over === "var") morphFindings.push("Cross-over (overlap) bulgusu izlenmekte — asetabuler retroversiyon lehine");
+      if (data.pincer_focal === "var") morphFindings.push("Fokal anterior asetabuler overcoverage (fokal pincer)");
+      if (data.acet_coverage === "azalmış") morphFindings.push("Asetabuler yük taşıma yüzeyinde yetersizlik / azalmış örtünme");
+      if (data.wall_sign === "pozitif") morphFindings.push("Posterior wall sign pozitif");
+      if (morphFindings.length === 0) morphFindings.push("Kalça eklem morfolojisi normal sınırlarda. Belirgin CAM/pincer morfolojisi ya da asetabuler displazi bulgusu yoktur.");
     }
-    if (data.hn_offset === "azalmış") morphFindings.push("Femoral baş-boyun offset'i azalmıştır (CAM morfoloji paterni)");
-    if (data.cam_morphology === "var") morphFindings.push("Anterosuperior femoral baş-boyun bileşkesinde konveksite artışı (pistol-grip deformite) izlenmektedir");
-    if (data.head_shape === "asimetrik") morphFindings.push("Femoral baş konturunda asimetri dikkati çekmektedir");
-    if (data.lcea) {
-      const l = parseFloat(data.lcea);
-      let s = `Lateral Center Edge Angle (LCEA): ${data.lcea}°`;
-      if (l > 40) s += " (artmış — asetabuler overcoverage / pincer)";
-      else if (l < 25) s += " (azalmış — asetabuler displazi lehine)";
-      else s += " (normal sınırlarda)";
-      morphFindings.push(s);
-    }
-    if (data.acet_index) morphFindings.push(`Asetabuler indeks: ${data.acet_index}°` + (parseFloat(data.acet_index) > 10 ? " (artmış)" : ""));
-    if (data.cross_over === "var") morphFindings.push("Cross-over (overlap) bulgusu izlenmekte — asetabuler retroversiyon lehine");
-    if (data.pincer_focal === "var") morphFindings.push("Fokal anterior asetabuler overcoverage (fokal pincer)");
-    if (data.acet_coverage === "azalmış") morphFindings.push("Asetabuler yük taşıma yüzeyinde yetersizlik / azalmış örtünme");
-    if (data.wall_sign === "pozitif") morphFindings.push("Posterior wall sign pozitif");
-    if (morphFindings.length === 0) morphFindings.push("Kalça eklem morfolojisi normal sınırlarda. Belirgin CAM/pincer morfolojisi ya da asetabuler displazi bulgusu yoktur.");
-    lines.push(`<div class="rbox"><div class="rbox-head cyan">Morfolojik Değerlendirme</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head cyan">${T.report.morphology}</div><div class="rbox-body">`);
     morphFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Kıkırdak
     const cartFindings = [];
-    function cartText(zone, val, zoneName) {
-      if (!val || val === "intakt") return null;
-      const gmap = {"grade1":"Grade 1 (sinyal değişikliği)", "grade2":"Grade 2 (parsiyel kalınlık)", "grade3":"Grade 3 (subkondrale ulaşan)", "grade4":"Grade 4 (tam kat / kemik ekspoze)"};
-      return `${zoneName}: ${gmap[val] || val}`;
+    if (RV_LOCALE === 'en') {
+      function cartText(zone, val, zoneName) {
+        if (!val || val === "intakt") return null;
+        const gmap = {"grade1":"Grade 1 (signal change)", "grade2":"Grade 2 (partial thickness)", "grade3":"Grade 3 (reaching subchondral bone)", "grade4":"Grade 4 (full thickness / bone exposed)"};
+        return `${zoneName}: ${gmap[val] || val}`;
+      }
+      [
+        ["Anterior acetabular zone", data.cart_acet_ant],
+        ["Superior acetabular zone", data.cart_acet_sup],
+        ["Posterior acetabular zone", data.cart_acet_post],
+        ["Femoral head cartilage", data.cart_fem]
+      ].forEach(([n,v]) => { const t = cartText(null, v, n); if (t) cartFindings.push(t); });
+      if (data.osteophyte === "var") cartFindings.push("Osteophyte formation present");
+      if (data.joint_narrowing === "var") cartFindings.push("Joint space narrowing");
+      if (data.subchondral_cyst === "var") cartFindings.push("Subchondral cystic changes");
+      if (data.subchondral_sclerosis === "var") cartFindings.push("Subchondral sclerosis");
+      if (data.tonnis_grade) cartFindings.push(`Tönnis grade: ${data.tonnis_grade}`);
+      if (cartFindings.length === 0) cartFindings.push("Acetabular and femoral head cartilage surfaces are intact with preserved thickness and signal characteristics. No degenerative changes identified.");
+    } else {
+      function cartText(zone, val, zoneName) {
+        if (!val || val === "intakt") return null;
+        const gmap = {"grade1":"Grade 1 (sinyal değişikliği)", "grade2":"Grade 2 (parsiyel kalınlık)", "grade3":"Grade 3 (subkondrale ulaşan)", "grade4":"Grade 4 (tam kat / kemik ekspoze)"};
+        return `${zoneName}: ${gmap[val] || val}`;
+      }
+      [
+        ["anterior asetabuler zon", data.cart_acet_ant],
+        ["superior asetabuler zon", data.cart_acet_sup],
+        ["posterior asetabuler zon", data.cart_acet_post],
+        ["femoral baş kıkırdağı", data.cart_fem]
+      ].forEach(([n,v]) => { const t = cartText(null, v, n); if (t) cartFindings.push(t); });
+      if (data.osteophyte === "var") cartFindings.push("Osteofit oluşumları mevcuttur");
+      if (data.joint_narrowing === "var") cartFindings.push("Eklem aralığında daralma");
+      if (data.subchondral_cyst === "var") cartFindings.push("Subkondral kistik değişiklikler");
+      if (data.subchondral_sclerosis === "var") cartFindings.push("Subkondral skleroz");
+      if (data.tonnis_grade) cartFindings.push(`Tönnis derecesi: ${data.tonnis_grade}`);
+      if (cartFindings.length === 0) cartFindings.push("Asetabuler ve femoral baş kıkırdak yüzeyleri intakt, kalınlık ve sinyal özellikleri korunmuştur. Dejeneratif değişiklik saptanmamıştır.");
     }
-    [
-      ["anterior asetabuler zon", data.cart_acet_ant],
-      ["superior asetabuler zon", data.cart_acet_sup],
-      ["posterior asetabuler zon", data.cart_acet_post],
-      ["femoral baş kıkırdağı", data.cart_fem]
-    ].forEach(([n,v]) => {
-      const t = cartText(null, v, n);
-      if (t) cartFindings.push(t);
-    });
-    if (data.osteophyte === "var") cartFindings.push("Osteofit oluşumları mevcuttur");
-    if (data.joint_narrowing === "var") cartFindings.push("Eklem aralığında daralma");
-    if (data.subchondral_cyst === "var") cartFindings.push("Subkondral kistik değişiklikler");
-    if (data.subchondral_sclerosis === "var") cartFindings.push("Subkondral skleroz");
-    if (data.tonnis_grade) cartFindings.push(`Tönnis derecesi: ${data.tonnis_grade}`);
-    if (cartFindings.length === 0) cartFindings.push("Asetabuler ve femoral baş kıkırdak yüzeyleri intakt, kalınlık ve sinyal özellikleri korunmuştur. Dejeneratif değişiklik saptanmamıştır.");
-    lines.push(`<div class="rbox"><div class="rbox-head">Kıkırdak & Dejeneratif Değişiklikler</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head">${T.report.cartilage}</div><div class="rbox-body">`);
     cartFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Labrum
-    lines.push(`<div class="rbox"><div class="rbox-head amber">Asetabuler Labrum</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head amber">${T.report.labrum}</div><div class="rbox-body">`);
     if (data.labrum_evaluated === "hayır") {
-      lines.push(`<div class="zbullet">Labrum değerlendirmeye uygun görüntülenmemiştir / değerlendirilmemiştir.</div>`);
+      lines.push(`<div class="zbullet">${RV_LOCALE === 'en' ? "Labrum could not be adequately assessed / was not evaluated." : "Labrum değerlendirmeye uygun görüntülenmemiştir / değerlendirilmemiştir."}</div>`);
     } else if ((data.labralTears||[]).length === 0) {
-      let s = "Asetabuler labrum normal üçgen konfigürasyonda, kenarları düzgün, sinyal intensitesi korunmuş olup yırtık bulgusu saptanmamıştır.";
-      if (data.labrum_hypertrophy === "var") s += " Labral hipertrofi dikkat çekicidir.";
-      if (data.labrum_degeneration === "var") s += " Labral intrasubstans dejeneratif sinyal değişiklikleri izlenmektedir.";
+      let s = RV_LOCALE === 'en'
+        ? "The acetabular labrum demonstrates normal triangular configuration with smooth margins and preserved signal intensity; no labral tear identified."
+        : "Asetabuler labrum normal üçgen konfigürasyonda, kenarları düzgün, sinyal intensitesi korunmuş olup yırtık bulgusu saptanmamıştır.";
+      if (data.labrum_hypertrophy === "var") s += RV_LOCALE === 'en' ? " Labral hypertrophy is noted." : " Labral hipertrofi dikkat çekicidir.";
+      if (data.labrum_degeneration === "var") s += RV_LOCALE === 'en' ? " Labral intrasubstance degenerative signal changes are present." : " Labral intrasubstans dejeneratif sinyal değişiklikleri izlenmektedir.";
       lines.push(`<div class="zbullet">${s}</div>`);
     } else {
+      const tearLabel = RV_LOCALE === 'en' ? "Tear" : "Yırtık";
+      const paralabralLabel = RV_LOCALE === 'en' ? "paralabral cyst (+)" : "paralabral kist (+)";
       (data.labralTears||[]).forEach((L,i) => {
-        let s = `<b>Yırtık ${i+1}:</b> ${labQuadTR(L.quadrant)} kadranda ${labCatTR(L.category).toLowerCase()}`;
+        let s = `<b>${tearLabel} ${i+1}:</b> ${labQuadTR(L.quadrant)} ${RV_LOCALE === 'en' ? 'quadrant' : 'kadranda'} ${labCatTR(L.category).toLowerCase()}`;
         if (L.subtype && L.category !== "fraying") s += ` — ${czernyTR(L.subtype)}`;
-        if (L.paralabralCyst) s += ` <span class="ek-bulgu">paralabral kist (+)</span>`;
+        if (L.paralabralCyst) s += ` <span class="ek-bulgu">${paralabralLabel}</span>`;
         lines.push(`<div class="zbullet">${s}</div>`);
       });
-      if (data.labrum_hypertrophy === "var") lines.push(`<div class="zbullet">Eşlik eden labral hipertrofi.</div>`);
+      if (data.labrum_hypertrophy === "var") lines.push(`<div class="zbullet">${RV_LOCALE === 'en' ? "Associated labral hypertrophy." : "Eşlik eden labral hipertrofi."}</div>`);
     }
     lines.push(`</div></div>`);
 
     // Paralabral kist + lig teres
     const ltFindings = [];
     if (data.paralab_cyst === "var" && !(data.labralTears||[]).some(t => t.paralabralCyst)) {
-      let s = "Paralabral kist formasyonu";
+      let s = RV_LOCALE === 'en' ? "Paralabral cyst formation" : "Paralabral kist formasyonu";
       if (data.paralab_cyst_loc) s += ` (${data.paralab_cyst_loc})`;
-      if (data.paralab_cyst_size) s += `, yaklaşık ${data.paralab_cyst_size} mm boyutunda`;
+      if (data.paralab_cyst_size) s += RV_LOCALE === 'en' ? `, approximately ${data.paralab_cyst_size} mm` : `, yaklaşık ${data.paralab_cyst_size} mm boyutunda`;
       ltFindings.push(s);
     }
     if (data.ligteres && data.ligteres !== "intakt") {
-      const ltMap = {parsiyel:"parsiyel yırtık", komplet:"komplet yırtık", dejeneratif:"dejeneratif sinyal değişikliği", hipertrofik:"hipertrofi"};
+      const ltMap = RV_LOCALE === 'en'
+        ? {parsiyel:"partial tear", komplet:"complete tear", dejeneratif:"degenerative signal change", hipertrofik:"hypertrophy"}
+        : {parsiyel:"parsiyel yırtık", komplet:"komplet yırtık", dejeneratif:"dejeneratif sinyal değişikliği", hipertrofik:"hipertrofi"};
       let s = `Ligamentum teres: ${ltMap[data.ligteres] || data.ligteres}`;
       if (data.ligteres_detail) s += ` (${data.ligteres_detail})`;
       ltFindings.push(s);
     } else {
-      ltFindings.push("Ligamentum teres intakt izlenmektedir.");
+      ltFindings.push(RV_LOCALE === 'en' ? "Ligamentum teres appears intact." : "Ligamentum teres intakt izlenmektedir.");
     }
-    lines.push(`<div class="rbox"><div class="rbox-head">Paralabral / Ligamentum Teres</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head">${T.report.paralabral}</div><div class="rbox-body">`);
     ltFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Kapsül ve ligamanlar
     const capFindings = [];
-    if (data.capsule_thick === "var") capFindings.push("Eklem kapsülünde diffüz kalınlaşma");
-    if (data.capsule_edema === "var") capFindings.push("Kapsüler ödem / inflamatuar değişiklikler");
-    if (data.iliofem_thick === "var") capFindings.push("İliofemoral ligaman (Y ligaman) kalınlaşmıştır");
-    if (data.ischiofem_lig && data.ischiofem_lig !== "intakt") capFindings.push(`İskiofemoral ligamanda ${data.ischiofem_lig}`);
-    if (data.pubofem_lig && data.pubofem_lig !== "intakt") capFindings.push(`Pubofemoral ligamanda ${data.pubofem_lig}`);
-    if (capFindings.length === 0) capFindings.push("Eklem kapsülü ve kapsüler ligamanlar (iliofemoral, iskiofemoral, pubofemoral) normal kalınlık ve sinyal özelliklerinde izlenmektedir.");
-    lines.push(`<div class="rbox"><div class="rbox-head">Kapsül ve Ligamanlar</div><div class="rbox-body">`);
+    if (RV_LOCALE === 'en') {
+      const ligMap = {kalınlaşma:"thickening", yırtık:"tear"};
+      if (data.capsule_thick === "var") capFindings.push("Diffuse thickening of the joint capsule");
+      if (data.capsule_edema === "var") capFindings.push("Capsular edema / inflammatory changes");
+      if (data.iliofem_thick === "var") capFindings.push("Iliofemoral ligament (Y-ligament) thickening");
+      if (data.ischiofem_lig && data.ischiofem_lig !== "intakt") capFindings.push(`Ischiofemoral ligament: ${ligMap[data.ischiofem_lig] || data.ischiofem_lig}`);
+      if (data.pubofem_lig && data.pubofem_lig !== "intakt") capFindings.push(`Pubofemoral ligament: ${ligMap[data.pubofem_lig] || data.pubofem_lig}`);
+      if (capFindings.length === 0) capFindings.push("Joint capsule and capsular ligaments (iliofemoral, ischiofemoral, pubofemoral) show normal thickness and signal characteristics.");
+    } else {
+      if (data.capsule_thick === "var") capFindings.push("Eklem kapsülünde diffüz kalınlaşma");
+      if (data.capsule_edema === "var") capFindings.push("Kapsüler ödem / inflamatuar değişiklikler");
+      if (data.iliofem_thick === "var") capFindings.push("İliofemoral ligaman (Y ligaman) kalınlaşmıştır");
+      if (data.ischiofem_lig && data.ischiofem_lig !== "intakt") capFindings.push(`İskiofemoral ligamanda ${data.ischiofem_lig}`);
+      if (data.pubofem_lig && data.pubofem_lig !== "intakt") capFindings.push(`Pubofemoral ligamanda ${data.pubofem_lig}`);
+      if (capFindings.length === 0) capFindings.push("Eklem kapsülü ve kapsüler ligamanlar (iliofemoral, iskiofemoral, pubofemoral) normal kalınlık ve sinyal özelliklerinde izlenmektedir.");
+    }
+    lines.push(`<div class="rbox"><div class="rbox-head">${T.report.capsule}</div><div class="rbox-body">`);
     capFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // İskiofemoral / QF
     const ifsFindings = [];
-    if (data.ischiofem_space) {
-      const n = parseFloat(data.ischiofem_space);
-      let s = `İskiofemoral mesafe: ${data.ischiofem_space} mm`;
-      if (n < 13) s += " (belirgin dar — iskiofemoral sıkışma yönünden yüksek ilişki)";
-      else if (n < 17) s += " (daralmış)";
-      else s += " (normal)";
-      ifsFindings.push(s);
+    if (RV_LOCALE === 'en') {
+      if (data.ischiofem_space) {
+        const n = parseFloat(data.ischiofem_space);
+        let s = `Ischiofemoral space: ${data.ischiofem_space} mm`;
+        if (n < 13) s += " (significantly narrowed — high association with ischiofemoral impingement)";
+        else if (n < 17) s += " (narrowed)";
+        else s += " (normal)";
+        ifsFindings.push(s);
+      }
+      if (data.qf_space) {
+        const n = parseFloat(data.qf_space);
+        let s = `Quadratus femoris space: ${data.qf_space} mm`;
+        if (n < 8) s += " (narrowed)";
+        ifsFindings.push(s);
+      }
+      if (data.qf_edema === "var") ifsFindings.push("Edema / signal change in quadratus femoris muscle");
+      if (data.qf_atrophy === "var") ifsFindings.push("Atrophy / fatty degeneration of quadratus femoris muscle");
+    } else {
+      if (data.ischiofem_space) {
+        const n = parseFloat(data.ischiofem_space);
+        let s = `İskiofemoral mesafe: ${data.ischiofem_space} mm`;
+        if (n < 13) s += " (belirgin dar — iskiofemoral sıkışma yönünden yüksek ilişki)";
+        else if (n < 17) s += " (daralmış)";
+        else s += " (normal)";
+        ifsFindings.push(s);
+      }
+      if (data.qf_space) {
+        const n = parseFloat(data.qf_space);
+        let s = `Kuadratus femoris mesafesi: ${data.qf_space} mm`;
+        if (n < 8) s += " (daralmış)";
+        ifsFindings.push(s);
+      }
+      if (data.qf_edema === "var") ifsFindings.push("Kuadratus femoris kasında ödem / sinyal değişikliği");
+      if (data.qf_atrophy === "var") ifsFindings.push("Kuadratus femoris kasında atrofi / yağlı dejenerasyon");
     }
-    if (data.qf_space) {
-      const n = parseFloat(data.qf_space);
-      let s = `Kuadratus femoris mesafesi: ${data.qf_space} mm`;
-      if (n < 8) s += " (daralmış)";
-      ifsFindings.push(s);
-    }
-    if (data.qf_edema === "var") ifsFindings.push("Kuadratus femoris kasında ödem / sinyal değişikliği");
-    if (data.qf_atrophy === "var") ifsFindings.push("Kuadratus femoris kasında atrofi / yağlı dejenerasyon");
     if (ifsFindings.length > 0) {
-      lines.push(`<div class="rbox"><div class="rbox-head">İskiofemoral & Kuadratus Femoris Mesafe</div><div class="rbox-body">`);
+      lines.push(`<div class="rbox"><div class="rbox-head">${T.report.ischiofemoral}</div><div class="rbox-body">`);
       ifsFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
       lines.push(`</div></div>`);
     }
 
     // Sinovyum / efüzyon
     const synFindings = [];
-    if (data.effusion && data.effusion !== "yok") {
-      const m = {minimal:"minimal", orta:"orta miktarda", belirgin:"belirgin miktarda"};
-      synFindings.push(`Eklem içi efüzyon: ${m[data.effusion] || data.effusion}`);
+    if (RV_LOCALE === 'en') {
+      if (data.effusion && data.effusion !== "yok") {
+        const m = {minimal:"minimal", orta:"moderate", belirgin:"significant"};
+        synFindings.push(`Joint effusion: ${m[data.effusion] || data.effusion}`);
+      }
+      if (data.hem_effusion === "var") synFindings.push("Heterogeneous signal in effusion — haemorrhagic component suspected");
+      if (data.synovial_thick === "var") synFindings.push("Synovial thickening");
+      if (data.synovial_enhance === "var") synFindings.push("Marked synovial enhancement on post-contrast sequences");
+      if (data.low_signal_synovium === "var") synFindings.push("Low-signal areas in synovium on T2/GRE sequences — suggestive of haemosiderin deposition");
+      if (data.blooming === "var") synFindings.push("Blooming artefact on GRE/SWI sequences (+) <span class='ek-bulgu'>PVNS suspected</span>");
+      if (data.erosion === "var") synFindings.push("Erosive changes of the articular surface");
+      if (data.soft_tissue_edema === "var") synFindings.push("Diffuse periarticular soft tissue edema");
+      if (synFindings.length === 0) synFindings.push("No joint effusion or synovial pathology identified.");
+    } else {
+      if (data.effusion && data.effusion !== "yok") {
+        const m = {minimal:"minimal", orta:"orta miktarda", belirgin:"belirgin miktarda"};
+        synFindings.push(`Eklem içi efüzyon: ${m[data.effusion] || data.effusion}`);
+      }
+      if (data.hem_effusion === "var") synFindings.push("Efüzyon heterojen sinyalli — hemorajik komponent düşündürmekte");
+      if (data.synovial_thick === "var") synFindings.push("Sinoviyal kalınlaşma");
+      if (data.synovial_enhance === "var") synFindings.push("Post-kontrastta belirgin sinoviyal kontrastlanma");
+      if (data.low_signal_synovium === "var") synFindings.push("Sinoviyumda T2/GRE tüm sekanslarda düşük sinyal alanları — hemosiderin içeriği lehine");
+      if (data.blooming === "var") synFindings.push("GRE/SWI sekanslarında blooming artefakt (+) <span class='ek-bulgu'>PVNS şüphesi</span>");
+      if (data.erosion === "var") synFindings.push("Eklem yüzünde erozif değişiklikler");
+      if (data.soft_tissue_edema === "var") synFindings.push("Eklem çevresi yumuşak dokularda yaygın ödem");
+      if (synFindings.length === 0) synFindings.push("Eklem içi efüzyon ve sinoviyal patoloji izlenmemektedir.");
     }
-    if (data.hem_effusion === "var") synFindings.push("Efüzyon heterojen sinyalli — hemorajik komponent düşündürmekte");
-    if (data.synovial_thick === "var") synFindings.push("Sinoviyal kalınlaşma");
-    if (data.synovial_enhance === "var") synFindings.push("Post-kontrastta belirgin sinoviyal kontrastlanma");
-    if (data.low_signal_synovium === "var") synFindings.push("Sinoviyumda T2/GRE tüm sekanslarda düşük sinyal alanları — hemosiderin içeriği lehine");
-    if (data.blooming === "var") synFindings.push("GRE/SWI sekanslarında blooming artefakt (+) <span class='ek-bulgu'>PVNS şüphesi</span>");
-    if (data.erosion === "var") synFindings.push("Eklem yüzünde erozif değişiklikler");
-    if (data.soft_tissue_edema === "var") synFindings.push("Eklem çevresi yumuşak dokularda yaygın ödem");
-    if (synFindings.length === 0) synFindings.push("Eklem içi efüzyon ve sinoviyal patoloji izlenmemektedir.");
-    lines.push(`<div class="rbox"><div class="rbox-head rose">Sinovyum & Efüzyon</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head rose">${T.report.synovium}</div><div class="rbox-body">`);
     synFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Kas-tendon
-    lines.push(`<div class="rbox"><div class="rbox-head cyan">Kas / Tendon Değerlendirmesi</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head cyan">${T.report.muscletendon}</div><div class="rbox-body">`);
     if (mtLesions.length === 0) {
-      lines.push(`<div class="zbullet">Gluteus medius/minimus/maksimus, iliopsoas, rektus femoris, proksimal hamstring, adduktor grup, piriformis ve kuadratus femoris kas/tendon yapıları normal kalınlık ve sinyal özelliklerinde olup patolojik değişiklik saptanmamıştır.</div>`);
+      lines.push(`<div class="zbullet">${RV_LOCALE === 'en'
+        ? "Gluteus medius/minimus/maximus, iliopsoas, rectus femoris, proximal hamstring, adductor group, piriformis and quadratus femoris muscle/tendon structures show normal thickness and signal characteristics with no pathological changes identified."
+        : "Gluteus medius/minimus/maksimus, iliopsoas, rektus femoris, proksimal hamstring, adduktor grup, piriformis ve kuadratus femoris kas/tendon yapıları normal kalınlık ve sinyal özelliklerinde olup patolojik değişiklik saptanmamıştır."
+      }</div>`);
     } else {
-      // Kaslar bazında gruplayıp zebra gridi
+      const lesionLabel = RV_LOCALE === 'en' ? "lesion" : "lezyon";
+      const retrLabel   = RV_LOCALE === 'en' ? "cm retraction" : "cm retraksiyon";
+      const bursaLabel  = RV_LOCALE === 'en' ? "bursa-related" : "bursa ilişkili";
       const grouped = {};
       mtLesions.forEach(L => {
         grouped[L.muscle] = grouped[L.muscle] || [];
@@ -1473,13 +1803,13 @@ function App() {
       });
       Object.keys(grouped).forEach(m => {
         grouped[m].forEach((L,i) => {
-          let s = `${muscleTR(m)}${grouped[m].length > 1 ? ` (lezyon ${i+1})` : ""}: ${typeTR(L.type).toLowerCase()}, ${locTR(L.location).toLowerCase()}`;
-          if (L.retraction && parseFloat(L.retraction) > 0) s += `, ${L.retraction} cm retraksiyon`;
+          let s = `${muscleTR(m)}${grouped[m].length > 1 ? ` (${lesionLabel} ${i+1})` : ""}: ${typeTR(L.type).toLowerCase()}, ${locTR(L.location).toLowerCase()}`;
+          if (L.retraction && parseFloat(L.retraction) > 0) s += `, ${L.retraction} ${retrLabel}`;
           if (L.goutallier) {
             const gmap = {"0":"Goutallier 0", "1":"Goutallier 1", "2":"Goutallier 2", "3":"Goutallier 3", "4":"Goutallier 4"};
             s += `, ${gmap[L.goutallier] || L.goutallier}`;
           }
-          if (L.bursa_rel) s += " <span class='ek-bulgu'>bursa ilişkili</span>";
+          if (L.bursa_rel) s += ` <span class='ek-bulgu'>${bursaLabel}</span>`;
           lines.push(`<div class="zbullet">${s}</div>`);
         });
       });
@@ -1488,133 +1818,217 @@ function App() {
 
     // Bursa
     const bursaFindings = [];
-    if (data.troch_bursa && data.troch_bursa !== "yok") {
-      const m = {sıvı:"sıvı birikimi", belirgin:"belirgin sıvı ve inflamatuar değişiklikler"};
-      bursaFindings.push(`Trokanterik bursada ${m[data.troch_bursa] || data.troch_bursa}`);
+    if (RV_LOCALE === 'en') {
+      if (data.troch_bursa && data.troch_bursa !== "yok") {
+        const m = {sıvı:"fluid accumulation", belirgin:"marked fluid and inflammatory changes"};
+        bursaFindings.push(`Trochanteric bursa: ${m[data.troch_bursa] || data.troch_bursa}`);
+      }
+      if (data.peritroch_edema === "var") bursaFindings.push("Edema in peritrochanteric soft tissues");
+      if (data.iliopsoas_bursa && data.iliopsoas_bursa !== "yok") {
+        const m = {sıvı:"fluid", belirgin:"marked distension"};
+        bursaFindings.push(`Iliopsoas bursa: ${m[data.iliopsoas_bursa] || data.iliopsoas_bursa}`);
+      }
+      if (data.ischiogluteal_bursa === "var") bursaFindings.push("Ischiogluteal bursa fluid / inflammation");
+      if (data.itb_thick === "var") bursaFindings.push("Thickening at the proximal iliotibial band");
+      if (bursaFindings.length === 0) bursaFindings.push("No pathological fluid accumulation in trochanteric, iliopsoas or ischiogluteal bursae.");
+    } else {
+      if (data.troch_bursa && data.troch_bursa !== "yok") {
+        const m = {sıvı:"sıvı birikimi", belirgin:"belirgin sıvı ve inflamatuar değişiklikler"};
+        bursaFindings.push(`Trokanterik bursada ${m[data.troch_bursa] || data.troch_bursa}`);
+      }
+      if (data.peritroch_edema === "var") bursaFindings.push("Peritrokanterik yumuşak dokularda ödem");
+      if (data.iliopsoas_bursa && data.iliopsoas_bursa !== "yok") {
+        const m = {sıvı:"sıvı", belirgin:"belirgin distansiyon"};
+        bursaFindings.push(`İliopsoas bursasında ${m[data.iliopsoas_bursa] || data.iliopsoas_bursa}`);
+      }
+      if (data.ischiogluteal_bursa === "var") bursaFindings.push("İskiogluteal bursada sıvı / inflamasyon");
+      if (data.itb_thick === "var") bursaFindings.push("İliotibial bant proksimalinde kalınlaşma");
+      if (bursaFindings.length === 0) bursaFindings.push("Trokanterik, iliopsoas ve iskiogluteal bursalarda patolojik sıvı birikimi izlenmemiştir.");
     }
-    if (data.peritroch_edema === "var") bursaFindings.push("Peritrokanterik yumuşak dokularda ödem");
-    if (data.iliopsoas_bursa && data.iliopsoas_bursa !== "yok") {
-      const m = {sıvı:"sıvı", belirgin:"belirgin distansiyon"};
-      bursaFindings.push(`İliopsoas bursasında ${m[data.iliopsoas_bursa] || data.iliopsoas_bursa}`);
-    }
-    if (data.ischiogluteal_bursa === "var") bursaFindings.push("İskiogluteal bursada sıvı / inflamasyon");
-    if (data.itb_thick === "var") bursaFindings.push("İliotibial bant proksimalinde kalınlaşma");
-    if (bursaFindings.length === 0) bursaFindings.push("Trokanterik, iliopsoas ve iskiogluteal bursalarda patolojik sıvı birikimi izlenmemiştir.");
-    lines.push(`<div class="rbox"><div class="rbox-head amber">Bursa Değerlendirmesi</div><div class="rbox-body">`);
+    lines.push(`<div class="rbox"><div class="rbox-head amber">${T.report.bursa}</div><div class="rbox-body">`);
     bursaFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
     lines.push(`</div></div>`);
 
     // Nörovasküler
     const nvFindings = [];
-    if (data.sciatic_edema === "var") nvFindings.push("Siyatik sinir trasesinde sinyal artışı / ödem");
-    if (data.piriformis_asymm === "var") nvFindings.push("Piriformis kasında asimetri / hipertrofi");
-    if (data.femoral_nerve === "anormal") nvFindings.push("Femoral sinirde sinyal değişikliği");
-    if (data.obturator_nerve === "anormal") nvFindings.push("Obturator sinirde sinyal değişikliği");
-    if (data.lfcn === "anormal") nvFindings.push("Lateral femoral kutanöz sinirde sinyal değişikliği (meralgia paresthetica ilişkili olabilir)");
+    if (RV_LOCALE === 'en') {
+      if (data.sciatic_edema === "var") nvFindings.push("Signal increase / edema along the sciatic nerve course");
+      if (data.piriformis_asymm === "var") nvFindings.push("Piriformis muscle asymmetry / hypertrophy");
+      if (data.femoral_nerve === "anormal") nvFindings.push("Signal change in the femoral nerve");
+      if (data.obturator_nerve === "anormal") nvFindings.push("Signal change in the obturator nerve");
+      if (data.lfcn === "anormal") nvFindings.push("Signal change in the lateral femoral cutaneous nerve (may be related to meralgia paresthetica)");
+    } else {
+      if (data.sciatic_edema === "var") nvFindings.push("Siyatik sinir trasesinde sinyal artışı / ödem");
+      if (data.piriformis_asymm === "var") nvFindings.push("Piriformis kasında asimetri / hipertrofi");
+      if (data.femoral_nerve === "anormal") nvFindings.push("Femoral sinirde sinyal değişikliği");
+      if (data.obturator_nerve === "anormal") nvFindings.push("Obturator sinirde sinyal değişikliği");
+      if (data.lfcn === "anormal") nvFindings.push("Lateral femoral kutanöz sinirde sinyal değişikliği (meralgia paresthetica ilişkili olabilir)");
+    }
     if (nvFindings.length > 0) {
-      lines.push(`<div class="rbox"><div class="rbox-head">Nörovasküler Yapılar</div><div class="rbox-body">`);
+      lines.push(`<div class="rbox"><div class="rbox-head">${T.report.neurovascular}</div><div class="rbox-body">`);
       nvFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
       lines.push(`</div></div>`);
     }
 
     // Pubik simfiz / atletik pubalji
     const pubFindings = [];
-    if (data.pubic_bone_edema === "var") pubFindings.push("Pubik kemikte belirgin sinyal değişikliği / kemik iliği ödemi");
-    if (data.pubic_widening === "var") pubFindings.push("Pubik simfizde genişleme / instabilite bulguları");
-    if (data.rec_add_apo === "var") pubFindings.push("Rektus abdominis-adduktor aponörozunda bütünlük bozukluğu / sinyal değişikliği");
-    if (data.ischial_tub_edema === "var") pubFindings.push("İskial tüberositte kemik iliği ödemi");
-    if (data.aiis_edema === "var") pubFindings.push("Anterior inferior iliak spinada (AIIS) kemik iliği ödemi");
+    if (RV_LOCALE === 'en') {
+      if (data.pubic_bone_edema === "var") pubFindings.push("Marked signal change / bone marrow edema in the pubic bone");
+      if (data.pubic_widening === "var") pubFindings.push("Widening / instability findings of the pubic symphysis");
+      if (data.rec_add_apo === "var") pubFindings.push("Integrity disruption / signal change in the rectus abdominis-adductor aponeurosis");
+      if (data.ischial_tub_edema === "var") pubFindings.push("Bone marrow edema at the ischial tuberosity");
+      if (data.aiis_edema === "var") pubFindings.push("Bone marrow edema at the anterior inferior iliac spine (AIIS)");
+    } else {
+      if (data.pubic_bone_edema === "var") pubFindings.push("Pubik kemikte belirgin sinyal değişikliği / kemik iliği ödemi");
+      if (data.pubic_widening === "var") pubFindings.push("Pubik simfizde genişleme / instabilite bulguları");
+      if (data.rec_add_apo === "var") pubFindings.push("Rektus abdominis-adduktor aponörozunda bütünlük bozukluğu / sinyal değişikliği");
+      if (data.ischial_tub_edema === "var") pubFindings.push("İskial tüberositte kemik iliği ödemi");
+      if (data.aiis_edema === "var") pubFindings.push("Anterior inferior iliak spinada (AIIS) kemik iliği ödemi");
+    }
     if (pubFindings.length > 0) {
-      lines.push(`<div class="rbox"><div class="rbox-head">Pubik Bölge & Enthesiyal Yapılar</div><div class="rbox-body">`);
+      lines.push(`<div class="rbox"><div class="rbox-head">${T.report.pubic}</div><div class="rbox-body">`);
       pubFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
       lines.push(`</div></div>`);
     }
 
     // Diğer (tümör, ossifikasyon)
     const otherFindings = [];
-    if (data.mass_soft === "var") otherFindings.push("Yumuşak doku kitlesel lezyon" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
-    if (data.mass_bone === "var") otherFindings.push("Kemik içi kitlesel/lezyonel değişiklik" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
-    if (data.het_ossification === "var") otherFindings.push("Periartiküler yumuşak dokularda heterotopik ossifikasyon / miyozitis ossifikans lehine matür lamellar kemik formasyonu");
+    if (RV_LOCALE === 'en') {
+      if (data.mass_soft === "var") otherFindings.push("Soft tissue mass lesion" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
+      if (data.mass_bone === "var") otherFindings.push("Intraosseous mass / lesional change" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
+      if (data.het_ossification === "var") otherFindings.push("Periarticular heterotopic ossification / mature lamellar bone formation suggestive of myositis ossificans");
+    } else {
+      if (data.mass_soft === "var") otherFindings.push("Yumuşak doku kitlesel lezyon" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
+      if (data.mass_bone === "var") otherFindings.push("Kemik içi kitlesel/lezyonel değişiklik" + (data.mass_detail ? ` (${data.mass_detail})` : ""));
+      if (data.het_ossification === "var") otherFindings.push("Periartiküler yumuşak dokularda heterotopik ossifikasyon / miyozitis ossifikans lehine matür lamellar kemik formasyonu");
+    }
     if (otherFindings.length > 0) {
-      lines.push(`<div class="rbox"><div class="rbox-head">Ek / Diğer Bulgular</div><div class="rbox-body">`);
+      lines.push(`<div class="rbox"><div class="rbox-head">${T.report.other}</div><div class="rbox-body">`);
       otherFindings.forEach(f => lines.push(`<div class="zbullet">${f}</div>`));
       lines.push(`</div></div>`);
     }
 
     if (data.free_text && data.free_text.trim()) {
-      lines.push(`<div class="rbox"><div class="rbox-head slate">Ek Notlar</div><div class="rbox-body"><p>${data.free_text.replace(/\n/g,"<br>")}</p></div></div>`);
+      lines.push(`<div class="rbox"><div class="rbox-head slate">${T.report.freeNotes}</div><div class="rbox-body"><p>${data.free_text.replace(/\n/g,"<br>")}</p></div></div>`);
     }
 
-    // YORUM bloğu — top 1-2 patolojiye göre özel tavsiyeler
+    // YORUM / IMPRESSION bloğu — top 1-2 patolojiye göre özel tavsiyeler
     const topScore = top[0]?.score || 0;
     if (topScore > 0) {
       const yorumItems = [];
       const topId = top[0].id;
-      yorumItems.push(`Mevcut bulgular en yüksek olasılıkla <b>${top[0].adi}</b> ile uyumludur (${top[0].score}%).`);
-      if (top[1] && top[1].score > 30) yorumItems.push(`Ayırıcı tanıda <b>${top[1].adi}</b> (${top[1].score}%) dikkate alınmalıdır.`);
-
-      // Patoloji-spesifik öneriler
-      if (topId === "fai_cam" || topId === "fai_mixed") {
-        yorumItems.push("Klinik FAI düşündürüyor ise dinamik muayene ve ortopedi konsültasyonu önerilir; artroskopik femoroplasti adayı olabilir.");
-        if (F.labrum_any) yorumItems.push("Eşlik eden labral yırtık artroskopik onarım/refiksasyon için ek göstergedir.");
-      }
-      if (topId === "fai_pincer") {
-        yorumItems.push("Asetabuler rim trimleme değerlendirmesi ortopedi tarafından yapılmalıdır.");
-        if (F.labrum_posterior) yorumItems.push("Posterior contrecoup lezyonu not edilmiştir.");
-      }
-      if (topId === "avn") {
-        if (F.avn_collapse || data.avn_stage === "IV" || data.avn_stage === "III") {
-          yorumItems.push("<b>İleri evre AVN</b> — cerrahi girişim (core dekompresyon etkisiz, total kalça protezi değerlendirmesi) için acil ortopedi sevki önerilir.");
-        } else {
-          yorumItems.push("Erken evre AVN — core dekompresyon ± kök hücre tedavisi için uygun aday olabilir; ortopedi konsültasyonu önerilir.");
+      if (RV_LOCALE === 'en') {
+        yorumItems.push(`The current findings are most consistent with <b>${pathoLabel(top[0])}</b> (${top[0].score}%).`);
+        if (top[1] && top[1].score > 30) yorumItems.push(`<b>${pathoLabel(top[1])}</b> (${top[1].score}%) should be considered in the differential diagnosis.`);
+        if (topId === "fai_cam" || topId === "fai_mixed") {
+          yorumItems.push("If FAI is clinically suspected, dynamic examination and orthopaedic consultation are recommended; the patient may be a candidate for arthroscopic femoroplasty.");
+          if (F.labrum_any) yorumItems.push("Associated labral tear is an additional indication for arthroscopic repair / refixation.");
+        }
+        if (topId === "fai_pincer") {
+          yorumItems.push("Acetabular rim trimming assessment should be performed by orthopaedics.");
+          if (F.labrum_posterior) yorumItems.push("Posterior contrecoup lesion is noted.");
+        }
+        if (topId === "avn") {
+          if (F.avn_collapse || data.avn_stage === "IV" || data.avn_stage === "III") {
+            yorumItems.push("<b>Advanced-stage AVN</b> — urgent orthopaedic referral for surgical intervention (core decompression likely ineffective; total hip arthroplasty evaluation) is recommended.");
+          } else {
+            yorumItems.push("Early-stage AVN — may be a suitable candidate for core decompression ± stem cell therapy; orthopaedic consultation is recommended.");
+          }
+        }
+        if (topId === "subchondral_fx" || topId === "stress_fx") {
+          yorumItems.push("Weight-bearing restriction and orthopaedic referral are recommended. In suspected stress fracture, complete rest and follow-up MRI are advised.");
+        }
+        if (topId === "transient_op") {
+          yorumItems.push("Transient bone marrow edema syndrome is a self-limiting condition; 6–12 weeks of conservative management and follow-up MRI are recommended. Clinical correlation is important to exclude AVN.");
+        }
+        if (topId === "labral_tear") {
+          yorumItems.push("Orthopaedic evaluation for labral repair or debridement is recommended. Coexistent FAI morphology must be incorporated into the treatment plan.");
+        }
+        if (topId === "ischiofem_imp") {
+          yorumItems.push("Ischiofemoral impingement — in patients unresponsive to conservative treatment, ultrasound/MRI-guided injection or surgical decompression may be considered.");
+        }
+        if (topId === "glut_tear") {
+          yorumItems.push("Gluteus medius/minimus tear — repair outcomes may be limited in the presence of Goutallier ≥2 atrophy; orthopaedic evaluation is recommended.");
+        }
+        if (topId === "hamstring_inj") {
+          if (F.hams_retraction) yorumItems.push("In proximal hamstring tear with significant retraction, surgical reinsertion evaluation is recommended.");
+        }
+        if (topId === "athletic_pubalgia") {
+          yorumItems.push("Athletic pubalgia — sports medicine / general surgery evaluation is recommended; surgical repair may be considered following conservative management.");
+        }
+        if (topId === "pvns") {
+          yorumItems.push("PVNS suspected — orthopaedic referral for arthroscopic / open synovectomy is recommended; contrast-enhanced MRI and joint space evaluation support the diagnosis.");
+        }
+        if (topId === "septic") {
+          yorumItems.push("<b>Clinical correlation and urgent joint aspiration</b> are recommended.");
+        }
+        if (topId === "oa_hip" && F.tonnis_grade >= 3) {
+          yorumItems.push("Advanced-stage hip osteoarthritis — may be a candidate for total hip arthroplasty.");
+        }
+      } else {
+        yorumItems.push(`Mevcut bulgular en yüksek olasılıkla <b>${pathoLabel(top[0])}</b> ile uyumludur (${top[0].score}%).`);
+        if (top[1] && top[1].score > 30) yorumItems.push(`Ayırıcı tanıda <b>${pathoLabel(top[1])}</b> (${top[1].score}%) dikkate alınmalıdır.`);
+        if (topId === "fai_cam" || topId === "fai_mixed") {
+          yorumItems.push("Klinik FAI düşündürüyor ise dinamik muayene ve ortopedi konsültasyonu önerilir; artroskopik femoroplasti adayı olabilir.");
+          if (F.labrum_any) yorumItems.push("Eşlik eden labral yırtık artroskopik onarım/refiksasyon için ek göstergedir.");
+        }
+        if (topId === "fai_pincer") {
+          yorumItems.push("Asetabuler rim trimleme değerlendirmesi ortopedi tarafından yapılmalıdır.");
+          if (F.labrum_posterior) yorumItems.push("Posterior contrecoup lezyonu not edilmiştir.");
+        }
+        if (topId === "avn") {
+          if (F.avn_collapse || data.avn_stage === "IV" || data.avn_stage === "III") {
+            yorumItems.push("<b>İleri evre AVN</b> — cerrahi girişim (core dekompresyon etkisiz, total kalça protezi değerlendirmesi) için acil ortopedi sevki önerilir.");
+          } else {
+            yorumItems.push("Erken evre AVN — core dekompresyon ± kök hücre tedavisi için uygun aday olabilir; ortopedi konsültasyonu önerilir.");
+          }
+        }
+        if (topId === "subchondral_fx" || topId === "stress_fx") {
+          yorumItems.push("Yük bindirmekten kaçınılması ve ortopedi sevki önerilir. Stres fraktürü şüphesinde tam istirahat ve takip MR tavsiye edilir.");
+        }
+        if (topId === "transient_op") {
+          yorumItems.push("Geçici kemik iliği ödemi sendromu kendini sınırlayan bir tablodur; 6-12 haftalık konservatif yaklaşım ve takip MR önerilir. AVN ayırıcı tanısı için klinik korelasyon önemlidir.");
+        }
+        if (topId === "labral_tear") {
+          yorumItems.push("Labral yırtık onarımı veya debridmanı için ortopedi değerlendirmesi önerilir. Eşlik eden FAI morfolojisi mutlaka tedavi planına dahil edilmelidir.");
+        }
+        if (topId === "ischiofem_imp") {
+          yorumItems.push("İskiofemoral sıkışma — konservatif tedaviye yanıtsız olgularda USG/MR kılavuzlu enjeksiyon veya cerrahi dekompresyon düşünülebilir.");
+        }
+        if (topId === "glut_tear") {
+          yorumItems.push("Gluteus medius/minimus yırtığı — Goutallier ≥2 atrofi varlığında onarım sonuçları sınırlı olabilir; ortopedi değerlendirmesi önerilir.");
+        }
+        if (topId === "hamstring_inj") {
+          if (F.hams_retraction) yorumItems.push("Belirgin retraksiyon ile giden proksimal hamstring yırtığında cerrahi reinsersiyon değerlendirmesi önerilir.");
+        }
+        if (topId === "athletic_pubalgia") {
+          yorumItems.push("Atletik pubalji — spor hekimliği / genel cerrahi değerlendirmesi önerilir; konservatif yaklaşım sonrası cerrahi onarım gündeme gelebilir.");
+        }
+        if (topId === "pvns") {
+          yorumItems.push("PVNS şüphesi — artroskopik / açık sinovektomi için ortopedi sevki önerilir; kontrastlı MR ve eklem aralığı değerlendirmesi tanıyı destekler.");
+        }
+        if (topId === "septic") {
+          yorumItems.push("<b>Klinik korelasyon ve acil eklem aspirasyonu</b> önerilir.");
+        }
+        if (topId === "oa_hip" && F.tonnis_grade >= 3) {
+          yorumItems.push("İleri evre kalça OA — total kalça artroplastisi adayı olabilir.");
         }
       }
-      if (topId === "subchondral_fx" || topId === "stress_fx") {
-        yorumItems.push("Yük bindirmekten kaçınılması ve ortopedi sevki önerilir. Stres fraktürü şüphesinde tam istirahat ve takip MR tavsiye edilir.");
-      }
-      if (topId === "transient_op") {
-        yorumItems.push("Geçici kemik iliği ödemi sendromu kendini sınırlayan bir tablodur; 6-12 haftalık konservatif yaklaşım ve takip MR önerilir. AVN ayırıcı tanısı için klinik korelasyon önemlidir.");
-      }
-      if (topId === "labral_tear") {
-        yorumItems.push("Labral yırtık onarımı veya debridmanı için ortopedi değerlendirmesi önerilir. Eşlik eden FAI morfolojisi mutlaka tedavi planına dahil edilmelidir.");
-      }
-      if (topId === "ischiofem_imp") {
-        yorumItems.push("İskiofemoral sıkışma — konservatif tedaviye yanıtsız olgularda USG/MR kılavuzlu enjeksiyon veya cerrahi dekompresyon düşünülebilir.");
-      }
-      if (topId === "glut_tear") {
-        yorumItems.push("Gluteus medius/minimus yırtığı — Goutallier ≥2 atrofi varlığında onarım sonuçları sınırlı olabilir; ortopedi değerlendirmesi önerilir.");
-      }
-      if (topId === "hamstring_inj") {
-        if (F.hams_retraction) yorumItems.push("Belirgin retraksiyon ile giden proksimal hamstring yırtığında cerrahi reinsersiyon değerlendirmesi önerilir.");
-      }
-      if (topId === "athletic_pubalgia") {
-        yorumItems.push("Atletik pubalji — spor hekimliği / genel cerrahi değerlendirmesi önerilir; konservatif yaklaşım sonrası cerrahi onarım gündeme gelebilir.");
-      }
-      if (topId === "pvns") {
-        yorumItems.push("PVNS şüphesi — artroskopik / açık sinovektomi için ortopedi sevki önerilir; kontrastlı MR ve eklem aralığı değerlendirmesi tanıyı destekler.");
-      }
-      if (topId === "septic") {
-        yorumItems.push("<b>Klinik korelasyon ve acil eklem aspirasyonu</b> önerilir.");
-      }
-      if (topId === "oa_hip" && F.tonnis_grade >= 3) {
-        yorumItems.push("İleri evre kalça OA — total kalça artroplastisi adayı olabilir.");
-      }
-
-      lines.push(`<div class="yorum"><b>YORUM:</b><ul>${yorumItems.map(y => `<li>${y}</li>`).join("")}</ul></div>`);
+      lines.push(`<div class="yorum"><b>${T.report.commentary}:</b><ul>${yorumItems.map(y => `<li>${y}</li>`).join("")}</ul></div>`);
     }
 
     // Ayırıcı tanı tablosu
-    lines.push(`<div class="rbox"><div class="rbox-head slate">Ayırıcı Tanı Özeti</div><div class="rbox-body" style="padding:0">`);
-    lines.push(`<table class="dx-table"><thead><tr><th>Sıra</th><th>Tanı</th><th>Kategori</th><th style="text-align:right">Olasılık</th></tr></thead><tbody>`);
+    lines.push(`<div class="rbox"><div class="rbox-head slate">${T.report.diffDx}</div><div class="rbox-body" style="padding:0">`);
+    lines.push(`<table class="dx-table"><thead><tr><th>${T.report.rank}</th><th>${T.report.diagnosis}</th><th>${T.report.category}</th><th style="text-align:right">${T.report.probability}</th></tr></thead><tbody>`);
     top.forEach((p,i) => {
       if (p.score > 0) {
         const color = CAT_COLOR[p.kat] || "#334155";
-        lines.push(`<tr><td>${i+1}</td><td>${p.adi}</td><td><span class="cat-badge" style="background:${color}">${p.kat}</span></td><td class="pct">${p.score}%</td></tr>`);
+        lines.push(`<tr><td>${i+1}</td><td>${pathoLabel(p)}</td><td><span class="cat-badge" style="background:${color}">${catLabel(p.kat)}</span></td><td class="pct">${p.score}%</td></tr>`);
       }
     });
     lines.push(`</tbody></table></div></div>`);
 
-    lines.push(`<div class="report-footer"><span>Kalça MR Karar Destek • ${todayStr()}</span><span>Sayfa 1/1</span></div>`);
+    lines.push(`<div class="report-footer"><span>${T.report.footer(todayStr())}</span><span>${T.report.page}</span></div>`);
 
     return lines.join("\n");
   }
@@ -1634,8 +2048,8 @@ function App() {
       sel.addRange(range);
       document.execCommand("copy");
       sel.removeAllRanges();
-      alert("Rapor panoya kopyalandı.");
-    } catch(e) { alert("Kopyalama başarısız: " + e.message); }
+      alert(T.alertCopied);
+    } catch(e) { alert(T.alertCopyFail(e.message)); }
   }
   function downloadHTML() {
     const html = document.documentElement.outerHTML;
@@ -1656,30 +2070,7 @@ function App() {
   /* =====================================================
      ADIM RENDER'ları
   ===================================================== */
-  const STEP_TITLES = [
-    "Hasta & Klinik Bilgi",
-    "Sekans ve Teknik",
-    "Kemik İliği — Femur Başı / Boynu",
-    "AVN Detay Değerlendirmesi",
-    "Femoral Morfoloji (CAM)",
-    "Asetabuler Morfoloji (Pincer / Displazi)",
-    "Kıkırdak & Dejeneratif Değişiklikler",
-    "Asetabuler Labrum",
-    "Paralabral Kist & Ligamentum Teres",
-    "Kapsül ve Kapsüler Ligamanlar",
-    "İskiofemoral & Kuadratus Femoris Mesafe",
-    "Sinovyum, Efüzyon & Sinoviyal Patoloji",
-    "Kas / Tendon Değerlendirmesi",
-    "Bursa Değerlendirmesi",
-    "Nörovasküler Yapılar",
-    "Pubik Simfiz & Enthesiyal Yapılar",
-    "Kemik Lezyonlar / Tümör / Diğer",
-    "Serbest Metin / Ek Notlar",
-    "Bulgu İncelemesi",
-    "Ayırıcı Tanı Paneli",
-    "Final İnceleme",
-    "Rapor"
-  ];
+  const STEP_TITLES = T.stepTitles;
 
   function renderStep() {
     if (step === 0) return renderStep0();
@@ -1708,46 +2099,68 @@ function App() {
 
   // ========= STEP 0 =========
   function renderStep0() {
+    const sideOpts = RV_LOCALE === 'en'
+      ? [["sağ","Right"],["sol","Left"],["bilat","Bilateral"]]
+      : [["sağ","Sağ"],["sol","Sol"],["bilat","Bilateral"]];
+    const sexOpts = RV_LOCALE === 'en'
+      ? [["erkek","Male"],["kadın","Female"]]
+      : [["erkek","Erkek"],["kadın","Kadın"]];
+    const lbl = RV_LOCALE === 'en'
+      ? { side:"Side", age:"Age", sex:"Sex", clinical:"Clinical Info",
+          exam:"Examination / Tests (optional)", risks:"Risk Factors",
+          pregnant:"Pregnancy", athlete:"Athlete", osteo:"Osteoporosis",
+          avn:"Steroid / Alcohol / Haemoglobinopathy", trauma:"History of trauma",
+          infection:"Clinical infection suspicion",
+          agePh:"e.g. 45", clinicalPh:"E.g. mechanical groin pain, FABER +, 6-month history...",
+          examPh:"FADIR, FABER, log-roll, resisted SLR, Stinchfield..." }
+      : { side:"Taraf", age:"Yaş", sex:"Cinsiyet", clinical:"Klinik Bilgi",
+          exam:"Muayene / Testler (isteğe bağlı)", risks:"Risk Faktörleri",
+          pregnant:"Gebelik", athlete:"Sporcu", osteo:"Osteoporoz",
+          avn:"Steroid / Alkol / Hemoglobinopati", trauma:"Travma öyküsü",
+          infection:"Klinik enfeksiyon şüphesi",
+          agePh:"örn. 45", clinicalPh:"Örn. inguinal bölgeye yansıyan mekanik ağrı, FABER +, 6 aylık öykü...",
+          examPh:"FADIR, FABER, log-roll, resisted SLR, Stinchfield..." };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Taraf</div>
+          <div className="grp-label">{lbl.side}</div>
           <div className="chips">
-            {[["sağ","Sağ"],["sol","Sol"],["bilat","Bilateral"]].map(([v,l]) =>
+            {sideOpts.map(([v,l]) =>
               <div key={v} className={"chip" + (data.side===v ? " on" : "")} onClick={() => update("side", v)}>{l}</div>
             )}
           </div>
         </div>
         <div className="two-col">
           <div className="field">
-            <label className="grp-label" style={{marginBottom:0}}>Yaş</label>
-            <input type="number" value={data.age} onChange={e=>update("age", e.target.value)} placeholder="örn. 45" />
+            <label className="grp-label" style={{marginBottom:0}}>{lbl.age}</label>
+            <input type="number" value={data.age} onChange={e=>update("age", e.target.value)} placeholder={lbl.agePh} />
           </div>
           <div className="field">
-            <label className="grp-label" style={{marginBottom:0}}>Cinsiyet</label>
+            <label className="grp-label" style={{marginBottom:0}}>{lbl.sex}</label>
             <div className="chips">
-              <div className={"chip" + (data.sex==="erkek" ? " on" : "")} onClick={() => update("sex","erkek")}>Erkek</div>
-              <div className={"chip" + (data.sex==="kadın" ? " on" : "")} onClick={() => update("sex","kadın")}>Kadın</div>
+              {sexOpts.map(([v,l]) =>
+                <div key={v} className={"chip" + (data.sex===v ? " on" : "")} onClick={() => update("sex", v)}>{l}</div>
+              )}
             </div>
           </div>
         </div>
         <div className="grp" style={{marginTop:14}}>
-          <div className="grp-label">Klinik Bilgi</div>
-          <textarea value={data.clinical} onChange={e=>update("clinical", e.target.value)} placeholder="Örn. inguinal bölgeye yansıyan mekanik ağrı, FABER +, 6 aylık öykü..." />
+          <div className="grp-label">{lbl.clinical}</div>
+          <textarea value={data.clinical} onChange={e=>update("clinical", e.target.value)} placeholder={lbl.clinicalPh} />
         </div>
         <div className="grp">
-          <div className="grp-label">Muayene / Testler (isteğe bağlı)</div>
-          <input type="text" value={data.ex} onChange={e=>update("ex", e.target.value)} placeholder="FADIR, FABER, log-roll, resisted SLR, Stinchfield..." />
+          <div className="grp-label">{lbl.exam}</div>
+          <input type="text" value={data.ex} onChange={e=>update("ex", e.target.value)} placeholder={lbl.examPh} />
         </div>
         <div className="grp">
-          <div className="grp-label">Risk Faktörleri</div>
+          <div className="grp-label">{lbl.risks}</div>
           <div className="chips">
-            <div className={"chip" + (data.pregnant==="var"?" on":"")} onClick={()=>update("pregnant", data.pregnant==="var"?"":"var")}>Gebelik</div>
-            <div className={"chip" + (data.athlete==="var"?" on":"")} onClick={()=>update("athlete", data.athlete==="var"?"":"var")}>Sporcu</div>
-            <div className={"chip" + (data.osteoporosis==="var"?" on":"")} onClick={()=>update("osteoporosis", data.osteoporosis==="var"?"":"var")}>Osteoporoz</div>
-            <div className={"chip" + (data.avn_risk==="var"?" on":"")} onClick={()=>update("avn_risk", data.avn_risk==="var"?"":"var")}>Steroid / Alkol / Hemoglobinopati</div>
-            <div className={"chip" + (data.trauma==="var"?" on":"")} onClick={()=>update("trauma", data.trauma==="var"?"":"var")}>Travma öyküsü</div>
-            <div className={"chip danger" + (data.clinical_infection==="var"?" on":"")} onClick={()=>update("clinical_infection", data.clinical_infection==="var"?"":"var")}>Klinik enfeksiyon şüphesi</div>
+            <div className={"chip" + (data.pregnant==="var"?" on":"")} onClick={()=>update("pregnant", data.pregnant==="var"?"":"var")}>{lbl.pregnant}</div>
+            <div className={"chip" + (data.athlete==="var"?" on":"")} onClick={()=>update("athlete", data.athlete==="var"?"":"var")}>{lbl.athlete}</div>
+            <div className={"chip" + (data.osteoporosis==="var"?" on":"")} onClick={()=>update("osteoporosis", data.osteoporosis==="var"?"":"var")}>{lbl.osteo}</div>
+            <div className={"chip" + (data.avn_risk==="var"?" on":"")} onClick={()=>update("avn_risk", data.avn_risk==="var"?"":"var")}>{lbl.avn}</div>
+            <div className={"chip" + (data.trauma==="var"?" on":"")} onClick={()=>update("trauma", data.trauma==="var"?"":"var")}>{lbl.trauma}</div>
+            <div className={"chip danger" + (data.clinical_infection==="var"?" on":"")} onClick={()=>update("clinical_infection", data.clinical_infection==="var"?"":"var")}>{lbl.infection}</div>
           </div>
         </div>
       </>
@@ -1756,18 +2169,17 @@ function App() {
 
   // ========= STEP 1 =========
   function renderStep1() {
-    const seqs = [
-      ["t1","T1"], ["t2","T2"], ["pd","PD"], ["pdfs","PD FS"],
-      ["t2fs_cor","Koronal T2 FS"], ["t2fs_ax","Aksiyel T2 FS"],
-      ["t1_obl","Radyal/Oblique"], ["t1fs_post","Post-kontrast T1 FS"],
-      ["arthro","MR artrografi"]
-    ];
+    const seqLabel = RV_LOCALE === 'en'
+      ? { lbl:"Applied Sequences", arthroLbl:"Arthrography Detail", arthroPh:"E.g. direct MRI arthrography, dilute gadolinium",
+          seqs:[["t1","T1"],["t2","T2"],["pd","PD"],["pdfs","PD FS"],["t2fs_cor","Coronal T2 FS"],["t2fs_ax","Axial T2 FS"],["t1_obl","Radial/Oblique"],["t1fs_post","Post-contrast T1 FS"],["arthro","MRI arthrography"]] }
+      : { lbl:"Uygulanan Sekanslar", arthroLbl:"Artrografi Detayı", arthroPh:"Örn. direkt MR artrografi, dilüe gadolinyum",
+          seqs:[["t1","T1"],["t2","T2"],["pd","PD"],["pdfs","PD FS"],["t2fs_cor","Koronal T2 FS"],["t2fs_ax","Aksiyel T2 FS"],["t1_obl","Radyal/Oblique"],["t1fs_post","Post-kontrast T1 FS"],["arthro","MR artrografi"]] };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Uygulanan Sekanslar</div>
+          <div className="grp-label">{seqLabel.lbl}</div>
           <div className="chips">
-            {seqs.map(([k,l]) =>
+            {seqLabel.seqs.map(([k,l]) =>
               <div key={k} className={"chip" + (data.seq[k] ? " on" : "")}
                 onClick={() => update("seq."+k, !data.seq[k])}>{l}</div>
             )}
@@ -1775,8 +2187,8 @@ function App() {
         </div>
         {data.seq.arthro &&
           <div className="grp">
-            <div className="grp-label">Artrografi Detayı</div>
-            <input type="text" value={data.arthro_detail} onChange={e=>update("arthro_detail", e.target.value)} placeholder="Örn. direkt MR artrografi, dilüe gadolinyum" />
+            <div className="grp-label">{seqLabel.arthroLbl}</div>
+            <input type="text" value={data.arthro_detail} onChange={e=>update("arthro_detail", e.target.value)} placeholder={seqLabel.arthroPh} />
           </div>
         }
       </>
@@ -1785,39 +2197,54 @@ function App() {
 
   // ========= STEP 2 =========
   function renderStep2() {
+    const lbl = RV_LOCALE === 'en'
+      ? { headBme:"Femoral Head Bone Marrow Edema (BME)", bmePattern:"BME Pattern",
+          focalPat:"Focal (suggestive of AVN/fracture)", diffuse:"Diffuse",
+          subchondralPat:"Subchondral", neckBme:"Femoral Neck BME",
+          absent:"Absent", present:"Present",
+          avnSusp:"AVN Suspicion",
+          avnSuspSub:"If suspected, the next step routes to detailed assessment; otherwise automatically skipped.",
+          avnNo:"Absent — skip AVN detail", avnYes:"Present — assess in detail" }
+      : { headBme:"Femur Başında Kemik İliği Ödemi (BME)", bmePattern:"BME Paterni",
+          focalPat:"Fokal (AVN/fraktür düşündürücü)", diffuse:"Yaygın / Diffüz",
+          subchondralPat:"Subkondral", neckBme:"Femur Boynunda BME",
+          absent:"Yok", present:"Var",
+          avnSusp:"AVN Şüphesi",
+          avnSuspSub:"Şüphe varsa bir sonraki adım detay değerlendirmeye yönlendirir; yoksa otomatik atlanır.",
+          avnNo:"Yok — AVN detayını atla", avnYes:"Var — detay değerlendir" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Femur Başında Kemik İliği Ödemi (BME)</div>
+          <div className="grp-label">{lbl.headBme}</div>
           <div className="chips">
-            <div className={"chip" + (data.head_bme==="yok"?" on":"")} onClick={()=>update("head_bme","yok")}>Yok</div>
-            <div className={"chip" + (data.head_bme==="var"?" on":"")} onClick={()=>update("head_bme","var")}>Var</div>
+            <div className={"chip" + (data.head_bme==="yok"?" on":"")} onClick={()=>update("head_bme","yok")}>{lbl.absent}</div>
+            <div className={"chip" + (data.head_bme==="var"?" on":"")} onClick={()=>update("head_bme","var")}>{lbl.present}</div>
           </div>
         </div>
         {data.head_bme === "var" &&
           <div className="grp">
-            <div className="grp-label">BME Paterni</div>
+            <div className="grp-label">{lbl.bmePattern}</div>
             <div className="chips">
-              <div className={"chip" + (data.head_bme_pattern==="fokal"?" on":"")} onClick={()=>update("head_bme_pattern","fokal")}>Fokal (AVN/fraktür düşündürücü)</div>
-              <div className={"chip" + (data.head_bme_pattern==="diffuz"?" on":"")} onClick={()=>update("head_bme_pattern","diffuz")}>Yaygın / Diffüz</div>
-              <div className={"chip" + (data.head_bme_pattern==="subkondral"?" on":"")} onClick={()=>update("head_bme_pattern","subkondral")}>Subkondral</div>
+              <div className={"chip" + (data.head_bme_pattern==="fokal"?" on":"")} onClick={()=>update("head_bme_pattern","fokal")}>{lbl.focalPat}</div>
+              <div className={"chip" + (data.head_bme_pattern==="diffuz"?" on":"")} onClick={()=>update("head_bme_pattern","diffuz")}>{lbl.diffuse}</div>
+              <div className={"chip" + (data.head_bme_pattern==="subkondral"?" on":"")} onClick={()=>update("head_bme_pattern","subkondral")}>{lbl.subchondralPat}</div>
             </div>
           </div>
         }
         <div className="grp">
-          <div className="grp-label">Femur Boynunda BME</div>
+          <div className="grp-label">{lbl.neckBme}</div>
           <div className="chips">
-            <div className={"chip" + (data.neck_bme==="yok"?" on":"")} onClick={()=>update("neck_bme","yok")}>Yok</div>
-            <div className={"chip" + (data.neck_bme==="var"?" on":"")} onClick={()=>update("neck_bme","var")}>Var</div>
+            <div className={"chip" + (data.neck_bme==="yok"?" on":"")} onClick={()=>update("neck_bme","yok")}>{lbl.absent}</div>
+            <div className={"chip" + (data.neck_bme==="var"?" on":"")} onClick={()=>update("neck_bme","var")}>{lbl.present}</div>
           </div>
         </div>
         <div className="divider"/>
         <div className="grp">
-          <div className="grp-label">AVN Şüphesi</div>
-          <div className="grp-sub">Şüphe varsa bir sonraki adım detay değerlendirmeye yönlendirir; yoksa otomatik atlanır.</div>
+          <div className="grp-label">{lbl.avnSusp}</div>
+          <div className="grp-sub">{lbl.avnSuspSub}</div>
           <div className="chips">
-            <div className={"chip" + (data.avn_suspicion==="yok"?" on":"")} onClick={()=>update("avn_suspicion","yok")}>Yok — AVN detayını atla</div>
-            <div className={"chip" + (data.avn_suspicion==="var"?" on":"")} onClick={()=>update("avn_suspicion","var")}>Var — detay değerlendir</div>
+            <div className={"chip" + (data.avn_suspicion==="yok"?" on":"")} onClick={()=>update("avn_suspicion","yok")}>{lbl.avnNo}</div>
+            <div className={"chip" + (data.avn_suspicion==="var"?" on":"")} onClick={()=>update("avn_suspicion","var")}>{lbl.avnYes}</div>
           </div>
         </div>
       </>
@@ -1826,56 +2253,73 @@ function App() {
 
   // ========= STEP 3 AVN detay =========
   function renderStep3() {
+    const lbl = RV_LOCALE === 'en'
+      ? { warn:"Specific findings for AVN / osteonecrosis are documented below.",
+          dls:"Double Line Sign (T2 double line)", dlsY:"Present (pathognomonic)", dlsN:"Absent",
+          cres:"Crescent Sign (Subchondral crescent)", cresY:"Present", cresN:"Absent",
+          coll:"Subchondral Collapse", collY:"Present", collN:"Absent",
+          arco:"ARCO Stage", arcoPrefix:"Stage",
+          ficat:"Ficat Stage (optional)", ficatPrefix:"Ficat",
+          lesionPct:"Lesion Extent (%)", lesionPh:"e.g. 30",
+          extent:"Extent / Localisation", extentPh:"anterosuperior, central..." }
+      : { warn:"AVN/osteonekroz için spesifik bulgular aşağıda belgelenmektedir.",
+          dls:"Double Line Sign (T2 çift çizgi)", dlsY:"Var (patognomonik)", dlsN:"Yok",
+          cres:"Crescent Sign (Subkondral hilal)", cresY:"Var", cresN:"Yok",
+          coll:"Subkondral Çökme", collY:"Var", collN:"Yok",
+          arco:"ARCO Evre", arcoPrefix:"Evre",
+          ficat:"Ficat Evre (opsiyonel)", ficatPrefix:"Ficat",
+          lesionPct:"Lezyon Yüzdesi (%)", lesionPh:"örn. 30",
+          extent:"Yayılım / Lokalizasyon", extentPh:"anterosuperior, santral..." };
     return (
       <>
-        <div className="warn-note">AVN/osteonekroz için spesifik bulgular aşağıda belgelenmektedir.</div>
+        <div className="warn-note">{lbl.warn}</div>
         <div className="grp">
-          <div className="grp-label">Double Line Sign (T2 çift çizgi)</div>
+          <div className="grp-label">{lbl.dls}</div>
           <div className="chips">
-            <div className={"chip" + (data.avn_double_line==="yok"?" on":"")} onClick={()=>update("avn_double_line","yok")}>Yok</div>
-            <div className={"chip" + (data.avn_double_line==="var"?" on":"")} onClick={()=>update("avn_double_line","var")}>Var (patognomonik)</div>
+            <div className={"chip" + (data.avn_double_line==="yok"?" on":"")} onClick={()=>update("avn_double_line","yok")}>{lbl.dlsN}</div>
+            <div className={"chip" + (data.avn_double_line==="var"?" on":"")} onClick={()=>update("avn_double_line","var")}>{lbl.dlsY}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Crescent Sign (Subkondral hilal)</div>
+          <div className="grp-label">{lbl.cres}</div>
           <div className="chips">
-            <div className={"chip" + (data.avn_crescent==="yok"?" on":"")} onClick={()=>update("avn_crescent","yok")}>Yok</div>
-            <div className={"chip" + (data.avn_crescent==="var"?" on":"")} onClick={()=>update("avn_crescent","var")}>Var</div>
+            <div className={"chip" + (data.avn_crescent==="yok"?" on":"")} onClick={()=>update("avn_crescent","yok")}>{lbl.cresN}</div>
+            <div className={"chip" + (data.avn_crescent==="var"?" on":"")} onClick={()=>update("avn_crescent","var")}>{lbl.cresY}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Subkondral Çökme</div>
+          <div className="grp-label">{lbl.coll}</div>
           <div className="chips">
-            <div className={"chip" + (data.avn_collapse==="yok"?" on":"")} onClick={()=>update("avn_collapse","yok")}>Yok</div>
-            <div className={"chip" + (data.avn_collapse==="var"?" on":"")} onClick={()=>update("avn_collapse","var")}>Var</div>
+            <div className={"chip" + (data.avn_collapse==="yok"?" on":"")} onClick={()=>update("avn_collapse","yok")}>{lbl.collN}</div>
+            <div className={"chip" + (data.avn_collapse==="var"?" on":"")} onClick={()=>update("avn_collapse","var")}>{lbl.collY}</div>
           </div>
         </div>
         <div className="two-col">
           <div className="grp">
-            <div className="grp-label">ARCO Evre</div>
+            <div className="grp-label">{lbl.arco}</div>
             <div className="chips">
               {["0","I","II","III","IV"].map(s =>
-                <div key={s} className={"chip small" + (data.avn_stage===s?" on":"")} onClick={()=>update("avn_stage", s)}>Evre {s}</div>
+                <div key={s} className={"chip small" + (data.avn_stage===s?" on":"")} onClick={()=>update("avn_stage", s)}>{lbl.arcoPrefix} {s}</div>
               )}
             </div>
           </div>
           <div className="grp">
-            <div className="grp-label">Ficat Evre (opsiyonel)</div>
+            <div className="grp-label">{lbl.ficat}</div>
             <div className="chips">
               {["I","II","III","IV"].map(s =>
-                <div key={s} className={"chip small" + (data.avn_ficat===s?" on":"")} onClick={()=>update("avn_ficat", s)}>Ficat {s}</div>
+                <div key={s} className={"chip small" + (data.avn_ficat===s?" on":"")} onClick={()=>update("avn_ficat", s)}>{lbl.ficatPrefix} {s}</div>
               )}
             </div>
           </div>
         </div>
         <div className="two-col">
           <div className="field">
-            <label className="grp-label" style={{marginBottom:0}}>Lezyon Yüzdesi (%)</label>
-            <input type="number" value={data.avn_lesion_pct} onChange={e=>update("avn_lesion_pct", e.target.value)} placeholder="örn. 30" />
+            <label className="grp-label" style={{marginBottom:0}}>{lbl.lesionPct}</label>
+            <input type="number" value={data.avn_lesion_pct} onChange={e=>update("avn_lesion_pct", e.target.value)} placeholder={lbl.lesionPh} />
           </div>
           <div className="field">
-            <label className="grp-label" style={{marginBottom:0}}>Yayılım / Lokalizasyon</label>
-            <input type="text" value={data.avn_extent} onChange={e=>update("avn_extent", e.target.value)} placeholder="anterosuperior, santral..." />
+            <label className="grp-label" style={{marginBottom:0}}>{lbl.extent}</label>
+            <input type="text" value={data.avn_extent} onChange={e=>update("avn_extent", e.target.value)} placeholder={lbl.extentPh} />
           </div>
         </div>
       </>
@@ -1884,41 +2328,52 @@ function App() {
 
   // ========= STEP 4 femoral morfoloji =========
   function renderStep4() {
+    const lbl = RV_LOCALE === 'en'
+      ? { alpha:"Alpha Angle", alphaUnit:"degrees",
+          offset:"Femoral Head-Neck Offset", offsetNorm:"Normal", offsetReduced:"Reduced",
+          cam:"CAM Morphology (pistol-grip deformity)", camN:"Absent", camY:"Present",
+          headShape:"Femoral Head Shape", spheric:"Spheric", asymm:"Asymmetric / non-spheric",
+          bump:"Head-Neck Junction (anterosuperior bump)", bumpN:"Absent", bumpY:"Present" }
+      : { alpha:"Alpha Açısı", alphaUnit:"derece",
+          offset:"Femoral Baş-Boyun Offset", offsetNorm:"Normal", offsetReduced:"Azalmış",
+          cam:"CAM Morfolojisi (pistol-grip deformitesi)", camN:"Yok", camY:"Var",
+          headShape:"Femoral Baş Şekli", spheric:"Sferik", asymm:"Asimetrik / non-sferik",
+          bump:"Baş-Boyun Bileşkesi (anterosuperior bump)", bumpN:"Yok", bumpY:"Var" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Alpha Açısı <span className="measure-hint">normal &lt;55° • CAM &gt;55°</span></div>
+          <div className="grp-label">{lbl.alpha} <span className="measure-hint">normal &lt;55° • CAM &gt;55°</span></div>
           <div className="inline-num">
             <input type="number" value={data.alpha_angle} onChange={e=>update("alpha_angle", e.target.value)} placeholder="0-90" />
-            <span className="inline-num-lbl">derece</span>
+            <span className="inline-num-lbl">{lbl.alphaUnit}</span>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Femoral Baş-Boyun Offset</div>
+          <div className="grp-label">{lbl.offset}</div>
           <div className="chips">
-            <div className={"chip" + (data.hn_offset==="normal"?" on":"")} onClick={()=>update("hn_offset","normal")}>Normal</div>
-            <div className={"chip" + (data.hn_offset==="azalmış"?" on":"")} onClick={()=>update("hn_offset","azalmış")}>Azalmış</div>
+            <div className={"chip" + (data.hn_offset==="normal"?" on":"")} onClick={()=>update("hn_offset","normal")}>{lbl.offsetNorm}</div>
+            <div className={"chip" + (data.hn_offset==="azalmış"?" on":"")} onClick={()=>update("hn_offset","azalmış")}>{lbl.offsetReduced}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">CAM Morfolojisi (pistol-grip deformitesi)</div>
+          <div className="grp-label">{lbl.cam}</div>
           <div className="chips">
-            <div className={"chip" + (data.cam_morphology==="yok"?" on":"")} onClick={()=>update("cam_morphology","yok")}>Yok</div>
-            <div className={"chip" + (data.cam_morphology==="var"?" on":"")} onClick={()=>update("cam_morphology","var")}>Var</div>
+            <div className={"chip" + (data.cam_morphology==="yok"?" on":"")} onClick={()=>update("cam_morphology","yok")}>{lbl.camN}</div>
+            <div className={"chip" + (data.cam_morphology==="var"?" on":"")} onClick={()=>update("cam_morphology","var")}>{lbl.camY}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Femoral Baş Şekli</div>
+          <div className="grp-label">{lbl.headShape}</div>
           <div className="chips">
-            <div className={"chip" + (data.head_shape==="sferik"?" on":"")} onClick={()=>update("head_shape","sferik")}>Sferik</div>
-            <div className={"chip" + (data.head_shape==="asimetrik"?" on":"")} onClick={()=>update("head_shape","asimetrik")}>Asimetrik / non-sferik</div>
+            <div className={"chip" + (data.head_shape==="sferik"?" on":"")} onClick={()=>update("head_shape","sferik")}>{lbl.spheric}</div>
+            <div className={"chip" + (data.head_shape==="asimetrik"?" on":"")} onClick={()=>update("head_shape","asimetrik")}>{lbl.asymm}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Baş-Boyun Bileşkesi (anterosuperior bump)</div>
+          <div className="grp-label">{lbl.bump}</div>
           <div className="chips">
-            <div className={"chip" + (data.neck_shape_bump==="yok"?" on":"")} onClick={()=>update("neck_shape_bump","yok")}>Yok</div>
-            <div className={"chip" + (data.neck_shape_bump==="var"?" on":"")} onClick={()=>update("neck_shape_bump","var")}>Var</div>
+            <div className={"chip" + (data.neck_shape_bump==="yok"?" on":"")} onClick={()=>update("neck_shape_bump","yok")}>{lbl.bumpN}</div>
+            <div className={"chip" + (data.neck_shape_bump==="var"?" on":"")} onClick={()=>update("neck_shape_bump","var")}>{lbl.bumpY}</div>
           </div>
         </div>
       </>
@@ -1927,49 +2382,62 @@ function App() {
 
   // ========= STEP 5 asetabuler morfoloji =========
   function renderStep5() {
+    const lbl = RV_LOCALE === 'en'
+      ? { lcea:"Lateral Center Edge Angle (LCEA)", lceaPh:"degrees",
+          acetIdx:"Acetabular Index", acetIdxHint:"&gt;10° elevated",
+          crossover:"Cross-over (Overlap) Sign", crossN:"Absent", crossY:"Present (retroversion)",
+          focalPincer:"Focal Pincer (Anterior overcoverage)", focalN:"Absent", focalY:"Present",
+          coverage:"Acetabular Coverage", covNorm:"Normal", covRed:"Reduced (undercoverage)", covInc:"Increased (overcoverage)",
+          wallSign:"Posterior Wall Sign", wallN:"Negative", wallP:"Positive" }
+      : { lcea:"Lateral Center Edge Angle (LCEA)", lceaPh:"derece",
+          acetIdx:"Asetabuler İndeks", acetIdxHint:"&gt;10° artmış",
+          crossover:"Cross-over (Overlap) Bulgusu", crossN:"Yok", crossY:"Var (retroversiyon)",
+          focalPincer:"Fokal Pincer (Anterior overcoverage)", focalN:"Yok", focalY:"Var",
+          coverage:"Asetabuler Yük Örtünme", covNorm:"Normal", covRed:"Azalmış (undercoverage)", covInc:"Artmış (overcoverage)",
+          wallSign:"Posterior Wall Sign", wallN:"Negatif", wallP:"Pozitif" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Lateral Center Edge Angle (LCEA) <span className="measure-hint">&lt;25° displazi • 25-40° normal • &gt;40° pincer</span></div>
+          <div className="grp-label">{lbl.lcea} <span className="measure-hint">&lt;25° displazi • 25-40° normal • &gt;40° pincer</span></div>
           <div className="inline-num">
-            <input type="number" value={data.lcea} onChange={e=>update("lcea", e.target.value)} placeholder="derece" />
+            <input type="number" value={data.lcea} onChange={e=>update("lcea", e.target.value)} placeholder={lbl.lceaPh} />
             <span className="inline-num-lbl">°</span>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Asetabuler İndeks <span className="measure-hint">&gt;10° artmış</span></div>
+          <div className="grp-label">{lbl.acetIdx} <span className="measure-hint" dangerouslySetInnerHTML={{__html: lbl.acetIdxHint}}/></div>
           <div className="inline-num">
-            <input type="number" value={data.acet_index} onChange={e=>update("acet_index", e.target.value)} placeholder="derece" />
+            <input type="number" value={data.acet_index} onChange={e=>update("acet_index", e.target.value)} placeholder={lbl.lceaPh} />
             <span className="inline-num-lbl">°</span>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Cross-over (Overlap) Bulgusu</div>
+          <div className="grp-label">{lbl.crossover}</div>
           <div className="chips">
-            <div className={"chip" + (data.cross_over==="yok"?" on":"")} onClick={()=>update("cross_over","yok")}>Yok</div>
-            <div className={"chip" + (data.cross_over==="var"?" on":"")} onClick={()=>update("cross_over","var")}>Var (retroversiyon)</div>
+            <div className={"chip" + (data.cross_over==="yok"?" on":"")} onClick={()=>update("cross_over","yok")}>{lbl.crossN}</div>
+            <div className={"chip" + (data.cross_over==="var"?" on":"")} onClick={()=>update("cross_over","var")}>{lbl.crossY}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Fokal Pincer (Anterior overcoverage)</div>
+          <div className="grp-label">{lbl.focalPincer}</div>
           <div className="chips">
-            <div className={"chip" + (data.pincer_focal==="yok"?" on":"")} onClick={()=>update("pincer_focal","yok")}>Yok</div>
-            <div className={"chip" + (data.pincer_focal==="var"?" on":"")} onClick={()=>update("pincer_focal","var")}>Var</div>
+            <div className={"chip" + (data.pincer_focal==="yok"?" on":"")} onClick={()=>update("pincer_focal","yok")}>{lbl.focalN}</div>
+            <div className={"chip" + (data.pincer_focal==="var"?" on":"")} onClick={()=>update("pincer_focal","var")}>{lbl.focalY}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Asetabuler Yük Örtünme</div>
+          <div className="grp-label">{lbl.coverage}</div>
           <div className="chips">
-            <div className={"chip" + (data.acet_coverage==="normal"?" on":"")} onClick={()=>update("acet_coverage","normal")}>Normal</div>
-            <div className={"chip" + (data.acet_coverage==="azalmış"?" on":"")} onClick={()=>update("acet_coverage","azalmış")}>Azalmış (undercoverage)</div>
-            <div className={"chip" + (data.acet_coverage==="artmış"?" on":"")} onClick={()=>update("acet_coverage","artmış")}>Artmış (overcoverage)</div>
+            <div className={"chip" + (data.acet_coverage==="normal"?" on":"")} onClick={()=>update("acet_coverage","normal")}>{lbl.covNorm}</div>
+            <div className={"chip" + (data.acet_coverage==="azalmış"?" on":"")} onClick={()=>update("acet_coverage","azalmış")}>{lbl.covRed}</div>
+            <div className={"chip" + (data.acet_coverage==="artmış"?" on":"")} onClick={()=>update("acet_coverage","artmış")}>{lbl.covInc}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Posterior Wall Sign</div>
+          <div className="grp-label">{lbl.wallSign}</div>
           <div className="chips">
-            <div className={"chip" + (data.wall_sign==="negatif"?" on":"")} onClick={()=>update("wall_sign","negatif")}>Negatif</div>
-            <div className={"chip" + (data.wall_sign==="pozitif"?" on":"")} onClick={()=>update("wall_sign","pozitif")}>Pozitif</div>
+            <div className={"chip" + (data.wall_sign==="negatif"?" on":"")} onClick={()=>update("wall_sign","negatif")}>{lbl.wallN}</div>
+            <div className={"chip" + (data.wall_sign==="pozitif"?" on":"")} onClick={()=>update("wall_sign","pozitif")}>{lbl.wallP}</div>
           </div>
         </div>
       </>
@@ -1978,10 +2446,23 @@ function App() {
 
   // ========= STEP 6 kıkırdak =========
   function renderStep6() {
+    const intaktLabel = RV_LOCALE === 'en' ? "Intact" : "İntakt";
     const grades = [
-      ["intakt","İntakt"],
+      ["intakt", intaktLabel],
       ["grade1","G1"], ["grade2","G2"], ["grade3","G3"], ["grade4","G4"]
     ];
+    const zoneNames = RV_LOCALE === 'en'
+      ? { ant:"Anterior Acetabular Zone", sup:"Superior Acetabular Zone",
+          post:"Posterior Acetabular Zone", fem:"Femoral Head Cartilage" }
+      : { ant:"Anterior Asetabuler Zon", sup:"Superior Asetabuler Zon",
+          post:"Posterior Asetabuler Zon", fem:"Femoral Baş Kıkırdağı" };
+    const degLbl = RV_LOCALE === 'en'
+      ? { osteo:"Osteophyte", narrow:"Joint space narrowing",
+          subcyst:"Subchondral cyst", subscl:"Subchondral sclerosis",
+          tonnis:"Tönnis Grade", tonnisPrefix:"Tönnis" }
+      : { osteo:"Osteofit", narrow:"Eklem aralığı daralması",
+          subcyst:"Subkondral kist", subscl:"Subkondral skleroz",
+          tonnis:"Tönnis Derecesi", tonnisPrefix:"Tönnis" };
     function zoneRow(keyName, label) {
       return (
         <div className="grp">
@@ -1996,22 +2477,22 @@ function App() {
     }
     return (
       <>
-        {zoneRow("cart_acet_ant", "Anterior Asetabuler Zon")}
-        {zoneRow("cart_acet_sup", "Superior Asetabuler Zon")}
-        {zoneRow("cart_acet_post", "Posterior Asetabuler Zon")}
-        {zoneRow("cart_fem", "Femoral Baş Kıkırdağı")}
+        {zoneRow("cart_acet_ant", zoneNames.ant)}
+        {zoneRow("cart_acet_sup", zoneNames.sup)}
+        {zoneRow("cart_acet_post", zoneNames.post)}
+        {zoneRow("cart_fem", zoneNames.fem)}
         <div className="divider"/>
         <div className="chips">
-          <div className={"chip" + (data.osteophyte==="var"?" on":"")} onClick={()=>update("osteophyte", data.osteophyte==="var"?"":"var")}>Osteofit</div>
-          <div className={"chip" + (data.joint_narrowing==="var"?" on":"")} onClick={()=>update("joint_narrowing", data.joint_narrowing==="var"?"":"var")}>Eklem aralığı daralması</div>
-          <div className={"chip" + (data.subchondral_cyst==="var"?" on":"")} onClick={()=>update("subchondral_cyst", data.subchondral_cyst==="var"?"":"var")}>Subkondral kist</div>
-          <div className={"chip" + (data.subchondral_sclerosis==="var"?" on":"")} onClick={()=>update("subchondral_sclerosis", data.subchondral_sclerosis==="var"?"":"var")}>Subkondral skleroz</div>
+          <div className={"chip" + (data.osteophyte==="var"?" on":"")} onClick={()=>update("osteophyte", data.osteophyte==="var"?"":"var")}>{degLbl.osteo}</div>
+          <div className={"chip" + (data.joint_narrowing==="var"?" on":"")} onClick={()=>update("joint_narrowing", data.joint_narrowing==="var"?"":"var")}>{degLbl.narrow}</div>
+          <div className={"chip" + (data.subchondral_cyst==="var"?" on":"")} onClick={()=>update("subchondral_cyst", data.subchondral_cyst==="var"?"":"var")}>{degLbl.subcyst}</div>
+          <div className={"chip" + (data.subchondral_sclerosis==="var"?" on":"")} onClick={()=>update("subchondral_sclerosis", data.subchondral_sclerosis==="var"?"":"var")}>{degLbl.subscl}</div>
         </div>
         <div className="grp" style={{marginTop:14}}>
-          <div className="grp-label">Tönnis Derecesi</div>
+          <div className="grp-label">{degLbl.tonnis}</div>
           <div className="chips">
             {["0","1","2","3"].map(g =>
-              <div key={g} className={"chip" + (data.tonnis_grade===g?" on":"")} onClick={()=>update("tonnis_grade", g)}>Tönnis {g}</div>
+              <div key={g} className={"chip" + (data.tonnis_grade===g?" on":"")} onClick={()=>update("tonnis_grade", g)}>{degLbl.tonnisPrefix} {g}</div>
             )}
           </div>
         </div>
@@ -2021,43 +2502,84 @@ function App() {
 
   // ========= STEP 7 labrum =========
   function renderStep7() {
+    const lbl = RV_LOCALE === 'en'
+      ? { evalQ:"Is the Labrum Assessable?", evalY:"Yes", evalN:"No / Skip",
+          morphLbl:"Additional Morphological Findings",
+          hypertrophy:"Labral hypertrophy", degeneration:"Intrasubstance degeneration",
+          tearsLbl:"Labral Tears",
+          tearsSub:<>For each identified tear click <b>+ Add Tear</b>. 3 sub-steps: quadrant → type → Czerny + paralabral cyst.</>,
+          tearN:(i) => `Tear ${i+1}`, paralabCyst:"paralabral cyst +",
+          delBtn:"Delete", addTear:"+ Add Tear",
+          loopChip:(idx,sub,tot) => `Tear ${idx+1} • Sub-step ${sub+1}/${tot}`,
+          quadrant:"Quadrant / Localisation",
+          quadOpts:[["anterosup","Anterosuperior"],["sup","Superior"],["posterosup","Posterosuperior"],
+            ["post","Posterior"],["posteroinf","Posteroinferior"],["anteroinf","Anteroinferior"],
+            ["anterior","Anterior"],["global","Global/Multifocal"]],
+          typeLabel:"Tear Type",
+          typeOpts:[["fraying","Fraying (frayed margin)"],["partial","Partial-thickness"],["full","Full-thickness / complete"],
+            ["bucket","Bucket-handle"],["complex","Complex / multifocal"],
+            ["ossif","Ossified"],["detach","Labral detachment"]],
+          czernyLabel:"Czerny Classification",
+          czernyPrefix:"Czerny",
+          paralabLabel:"Paralabral Cyst",
+          paralabCheck:"Paralabral cyst associated with this tear" }
+      : { evalQ:"Labrum Değerlendirmeye Uygun mu?", evalY:"Evet", evalN:"Hayır / Atla",
+          morphLbl:"Ek Morfolojik Bulgular",
+          hypertrophy:"Labral hipertrofi", degeneration:"İntrasubstans dejenerasyon",
+          tearsLbl:"Labral Yırtıklar",
+          tearsSub:<>Tespit edilen her yırtık için <b>+ Lezyon Ekle</b> tıklayın. 3 altstep: kadran → tip → Czerny + paralabral kist.</>,
+          tearN:(i) => `Yırtık ${i+1}`, paralabCyst:"paralabral kist +",
+          delBtn:"Sil", addTear:"+ Yırtık Ekle",
+          loopChip:(idx,sub,tot) => `Yırtık ${idx+1} • Altstep ${sub+1}/${tot}`,
+          quadrant:"Kadran / Lokalizasyon",
+          quadOpts:[["anterosup","Anterosuperior"],["sup","Superior"],["posterosup","Posterosuperior"],
+            ["post","Posterior"],["posteroinf","Posteroinferior"],["anteroinf","Anteroinferior"],
+            ["anterior","Anterior"],["global","Global/Multifokal"]],
+          typeLabel:"Yırtık Tipi",
+          typeOpts:[["fraying","Fimbrillasyon (saçaklı kenar)"],["partial","Parsiyel kat"],["full","Tam kat / komplet"],
+            ["bucket","Kova-sapı (bucket handle)"],["complex","Kompleks / multifokal"],
+            ["ossif","Ossifiye"],["detach","Labral detachment"]],
+          czernyLabel:"Czerny Sınıflaması",
+          czernyPrefix:"Czerny",
+          paralabLabel:"Paralabral Kist",
+          paralabCheck:"Bu yırtıkla ilişkili paralabral kist var" };
     if (labralIdx === -1) {
       return (
         <>
           <div className="grp">
-            <div className="grp-label">Labrum Değerlendirmeye Uygun mu?</div>
+            <div className="grp-label">{lbl.evalQ}</div>
             <div className="chips">
-              <div className={"chip" + (data.labrum_evaluated==="evet"?" on":"")} onClick={()=>update("labrum_evaluated","evet")}>Evet</div>
-              <div className={"chip" + (data.labrum_evaluated==="hayır"?" on":"")} onClick={()=>update("labrum_evaluated","hayır")}>Hayır / Atla</div>
+              <div className={"chip" + (data.labrum_evaluated==="evet"?" on":"")} onClick={()=>update("labrum_evaluated","evet")}>{lbl.evalY}</div>
+              <div className={"chip" + (data.labrum_evaluated==="hayır"?" on":"")} onClick={()=>update("labrum_evaluated","hayır")}>{lbl.evalN}</div>
             </div>
           </div>
           {data.labrum_evaluated === "evet" && <>
             <div className="grp">
-              <div className="grp-label">Ek Morfolojik Bulgular</div>
+              <div className="grp-label">{lbl.morphLbl}</div>
               <div className="chips">
-                <div className={"chip" + (data.labrum_hypertrophy==="var"?" on":"")} onClick={()=>update("labrum_hypertrophy", data.labrum_hypertrophy==="var"?"":"var")}>Labral hipertrofi</div>
-                <div className={"chip" + (data.labrum_degeneration==="var"?" on":"")} onClick={()=>update("labrum_degeneration", data.labrum_degeneration==="var"?"":"var")}>İntrasubstans dejenerasyon</div>
+                <div className={"chip" + (data.labrum_hypertrophy==="var"?" on":"")} onClick={()=>update("labrum_hypertrophy", data.labrum_hypertrophy==="var"?"":"var")}>{lbl.hypertrophy}</div>
+                <div className={"chip" + (data.labrum_degeneration==="var"?" on":"")} onClick={()=>update("labrum_degeneration", data.labrum_degeneration==="var"?"":"var")}>{lbl.degeneration}</div>
               </div>
             </div>
             <div className="divider"/>
             <div className="grp">
-              <div className="grp-label">Labral Yırtıklar</div>
-              <div className="grp-sub">Tespit edilen her yırtık için <b>+ Lezyon Ekle</b> tıklayın. 3 altstep: kadran → tip → Czerny + paralabral kist.</div>
+              <div className="grp-label">{lbl.tearsLbl}</div>
+              <div className="grp-sub">{lbl.tearsSub}</div>
               {(data.labralTears||[]).length > 0 &&
                 <div className="lesion-list">
                   {(data.labralTears||[]).map((L,i) =>
                     <div key={L.id} className="lesion-item b">
                       <div className="lesion-meta">
-                        <b>Yırtık {i+1}:</b> {labQuadTR(L.quadrant)} — {labCatTR(L.category)}
+                        <b>{lbl.tearN(i)}:</b> {labQuadTR(L.quadrant)} — {labCatTR(L.category)}
                         {L.subtype && L.category !== "fraying" && ` (${L.subtype})`}
-                        {L.paralabralCyst && " • paralabral kist +"}
+                        {L.paralabralCyst && ` • ${lbl.paralabCyst}`}
                       </div>
-                      <button className="del-btn" onClick={()=>removeLabral(i)}>Sil</button>
+                      <button className="del-btn" onClick={()=>removeLabral(i)}>{lbl.delBtn}</button>
                     </div>
                   )}
                 </div>
               }
-              <button className="btn btn-sm" onClick={startLabral}>+ Yırtık Ekle</button>
+              <button className="btn btn-sm" onClick={startLabral}>{lbl.addTear}</button>
             </div>
           </>}
         </>
@@ -2068,14 +2590,12 @@ function App() {
     if (!L) return null;
     return (
       <>
-        <div className="sub-chip-row b">Yırtık {labralIdx+1} • Altstep {labralSub+1}/{LAB_SUBSTEPS}</div>
+        <div className="sub-chip-row b">{lbl.loopChip(labralIdx, labralSub, LAB_SUBSTEPS)}</div>
         {labralSub === 0 && (
           <div className="grp">
-            <div className="grp-label">Kadran / Lokalizasyon</div>
+            <div className="grp-label">{lbl.quadrant}</div>
             <div className="chips">
-              {[["anterosup","Anterosuperior"],["sup","Superior"],["posterosup","Posterosuperior"],
-                ["post","Posterior"],["posteroinf","Posteroinferior"],["anteroinf","Anteroinferior"],
-                ["anterior","Anterior"],["global","Global/Multifokal"]].map(([v,l]) =>
+              {lbl.quadOpts.map(([v,l]) =>
                 <div key={v} className={"chip" + (L.quadrant===v?" on-b":"")} onClick={()=>updateCurrentLabral({quadrant:v})}>{l}</div>
               )}
             </div>
@@ -2083,11 +2603,9 @@ function App() {
         )}
         {labralSub === 1 && (
           <div className="grp">
-            <div className="grp-label">Yırtık Tipi</div>
+            <div className="grp-label">{lbl.typeLabel}</div>
             <div className="chips">
-              {[["fraying","Fimbrillasyon (saçaklı kenar)"],["partial","Parsiyel kat"],["full","Tam kat / komplet"],
-                ["bucket","Kova-sapı (bucket handle)"],["complex","Kompleks / multifokal"],
-                ["ossif","Ossifiye"],["detach","Labral detachment"]].map(([v,l]) =>
+              {lbl.typeOpts.map(([v,l]) =>
                 <div key={v} className={"chip" + (L.category===v?" on-b":"")} onClick={()=>updateCurrentLabral({category:v})}>{l}</div>
               )}
             </div>
@@ -2097,19 +2615,19 @@ function App() {
           <>
             {L.category !== "fraying" && (
               <div className="grp">
-                <div className="grp-label">Czerny Sınıflaması</div>
+                <div className="grp-label">{lbl.czernyLabel}</div>
                 <div className="chips">
                   {["I","IIA","IIB","IIIA","IIIB"].map(s =>
-                    <div key={s} className={"chip small" + (L.subtype===s?" on-b":"")} onClick={()=>updateCurrentLabral({subtype:s})}>Czerny {s}</div>
+                    <div key={s} className={"chip small" + (L.subtype===s?" on-b":"")} onClick={()=>updateCurrentLabral({subtype:s})}>{lbl.czernyPrefix} {s}</div>
                   )}
                 </div>
               </div>
             )}
             <div className="grp">
-              <div className="grp-label">Paralabral Kist</div>
+              <div className="grp-label">{lbl.paralabLabel}</div>
               <div className={"checkbox" + (L.paralabralCyst?" on":"")} onClick={()=>updateCurrentLabral({paralabralCyst: !L.paralabralCyst})}>
                 <div className="checkbox-box"/>
-                <div>Bu yırtıkla ilişkili paralabral kist var</div>
+                <div>{lbl.paralabCheck}</div>
               </div>
             </div>
           </>
@@ -2120,42 +2638,59 @@ function App() {
 
   // ========= STEP 8 paralabral + lig teres =========
   function renderStep8() {
+    const lbl = RV_LOCALE === 'en'
+      ? { paralabLbl:"Independent Paralabral Cyst (if not marked in labrum loop)",
+          n:"Absent", y:"Present",
+          loc:"Localisation", locPh:"anterosuperior, superior...",
+          size:"Size (mm)",
+          ltLbl:"Ligamentum Teres",
+          intact:"Intact", partial:"Partial tear", komplet:"Complete tear",
+          degen:"Degenerative signal", hypert:"Hypertrophy",
+          detailLbl:"Detail", detailPh:"fibril continuity, retraction..." }
+      : { paralabLbl:"Bağımsız Paralabral Kist (labrum döngüsünde işaretlenmemişse)",
+          n:"Yok", y:"Var",
+          loc:"Lokalizasyon", locPh:"anterosuperior, süperior...",
+          size:"Boyut (mm)",
+          ltLbl:"Ligamentum Teres",
+          intact:"İntakt", partial:"Parsiyel yırtık", komplet:"Komplet yırtık",
+          degen:"Dejeneratif sinyal", hypert:"Hipertrofi",
+          detailLbl:"Detay", detailPh:"fibril devamlılığı, retraksiyon..." };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Bağımsız Paralabral Kist (labrum döngüsünde işaretlenmemişse)</div>
+          <div className="grp-label">{lbl.paralabLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.paralab_cyst==="yok"?" on":"")} onClick={()=>update("paralab_cyst","yok")}>Yok</div>
-            <div className={"chip" + (data.paralab_cyst==="var"?" on":"")} onClick={()=>update("paralab_cyst","var")}>Var</div>
+            <div className={"chip" + (data.paralab_cyst==="yok"?" on":"")} onClick={()=>update("paralab_cyst","yok")}>{lbl.n}</div>
+            <div className={"chip" + (data.paralab_cyst==="var"?" on":"")} onClick={()=>update("paralab_cyst","var")}>{lbl.y}</div>
           </div>
         </div>
         {data.paralab_cyst === "var" && <>
           <div className="two-col">
             <div className="field">
-              <label className="grp-label" style={{marginBottom:0}}>Lokalizasyon</label>
-              <input type="text" value={data.paralab_cyst_loc} onChange={e=>update("paralab_cyst_loc", e.target.value)} placeholder="anterosuperior, süperior..." />
+              <label className="grp-label" style={{marginBottom:0}}>{lbl.loc}</label>
+              <input type="text" value={data.paralab_cyst_loc} onChange={e=>update("paralab_cyst_loc", e.target.value)} placeholder={lbl.locPh} />
             </div>
             <div className="field">
-              <label className="grp-label" style={{marginBottom:0}}>Boyut (mm)</label>
+              <label className="grp-label" style={{marginBottom:0}}>{lbl.size}</label>
               <input type="number" value={data.paralab_cyst_size} onChange={e=>update("paralab_cyst_size", e.target.value)} placeholder="mm" />
             </div>
           </div>
         </>}
         <div className="divider"/>
         <div className="grp">
-          <div className="grp-label">Ligamentum Teres</div>
+          <div className="grp-label">{lbl.ltLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.ligteres==="intakt"?" on":"")} onClick={()=>update("ligteres","intakt")}>İntakt</div>
-            <div className={"chip" + (data.ligteres==="parsiyel"?" on":"")} onClick={()=>update("ligteres","parsiyel")}>Parsiyel yırtık</div>
-            <div className={"chip" + (data.ligteres==="komplet"?" on":"")} onClick={()=>update("ligteres","komplet")}>Komplet yırtık</div>
-            <div className={"chip" + (data.ligteres==="dejeneratif"?" on":"")} onClick={()=>update("ligteres","dejeneratif")}>Dejeneratif sinyal</div>
-            <div className={"chip" + (data.ligteres==="hipertrofik"?" on":"")} onClick={()=>update("ligteres","hipertrofik")}>Hipertrofi</div>
+            <div className={"chip" + (data.ligteres==="intakt"?" on":"")} onClick={()=>update("ligteres","intakt")}>{lbl.intact}</div>
+            <div className={"chip" + (data.ligteres==="parsiyel"?" on":"")} onClick={()=>update("ligteres","parsiyel")}>{lbl.partial}</div>
+            <div className={"chip" + (data.ligteres==="komplet"?" on":"")} onClick={()=>update("ligteres","komplet")}>{lbl.komplet}</div>
+            <div className={"chip" + (data.ligteres==="dejeneratif"?" on":"")} onClick={()=>update("ligteres","dejeneratif")}>{lbl.degen}</div>
+            <div className={"chip" + (data.ligteres==="hipertrofik"?" on":"")} onClick={()=>update("ligteres","hipertrofik")}>{lbl.hypert}</div>
           </div>
         </div>
         {data.ligteres && data.ligteres !== "intakt" &&
           <div className="grp">
-            <div className="grp-label">Detay</div>
-            <input type="text" value={data.ligteres_detail} onChange={e=>update("ligteres_detail", e.target.value)} placeholder="fibril devamlılığı, retraksiyon..." />
+            <div className="grp-label">{lbl.detailLbl}</div>
+            <input type="text" value={data.ligteres_detail} onChange={e=>update("ligteres_detail", e.target.value)} placeholder={lbl.detailPh} />
           </div>
         }
       </>
@@ -2164,27 +2699,36 @@ function App() {
 
   // ========= STEP 9 kapsül =========
   function renderStep9() {
+    const lbl = RV_LOCALE === 'en'
+      ? { capsThick:"Capsular thickening", capsEdema:"Capsular edema",
+          iliofem:"Iliofemoral ligament thickening",
+          ischioLig:"Ischiofemoral Ligament", puboLig:"Pubofemoral Ligament",
+          intact:"Intact", thicken:"Thickening", tear:"Tear" }
+      : { capsThick:"Kapsül kalınlaşması", capsEdema:"Kapsüler ödem",
+          iliofem:"İliofemoral ligaman kalın",
+          ischioLig:"İskiofemoral Ligaman", puboLig:"Pubofemoral Ligaman",
+          intact:"İntakt", thicken:"Kalınlaşma", tear:"Yırtık" };
     return (
       <>
         <div className="chips">
-          <div className={"chip" + (data.capsule_thick==="var"?" on":"")} onClick={()=>update("capsule_thick", data.capsule_thick==="var"?"":"var")}>Kapsül kalınlaşması</div>
-          <div className={"chip" + (data.capsule_edema==="var"?" on":"")} onClick={()=>update("capsule_edema", data.capsule_edema==="var"?"":"var")}>Kapsüler ödem</div>
-          <div className={"chip" + (data.iliofem_thick==="var"?" on":"")} onClick={()=>update("iliofem_thick", data.iliofem_thick==="var"?"":"var")}>İliofemoral ligaman kalın</div>
+          <div className={"chip" + (data.capsule_thick==="var"?" on":"")} onClick={()=>update("capsule_thick", data.capsule_thick==="var"?"":"var")}>{lbl.capsThick}</div>
+          <div className={"chip" + (data.capsule_edema==="var"?" on":"")} onClick={()=>update("capsule_edema", data.capsule_edema==="var"?"":"var")}>{lbl.capsEdema}</div>
+          <div className={"chip" + (data.iliofem_thick==="var"?" on":"")} onClick={()=>update("iliofem_thick", data.iliofem_thick==="var"?"":"var")}>{lbl.iliofem}</div>
         </div>
         <div className="grp" style={{marginTop:14}}>
-          <div className="grp-label">İskiofemoral Ligaman</div>
+          <div className="grp-label">{lbl.ischioLig}</div>
           <div className="chips">
-            <div className={"chip" + (data.ischiofem_lig==="intakt"?" on":"")} onClick={()=>update("ischiofem_lig","intakt")}>İntakt</div>
-            <div className={"chip" + (data.ischiofem_lig==="kalınlaşma"?" on":"")} onClick={()=>update("ischiofem_lig","kalınlaşma")}>Kalınlaşma</div>
-            <div className={"chip" + (data.ischiofem_lig==="yırtık"?" on":"")} onClick={()=>update("ischiofem_lig","yırtık")}>Yırtık</div>
+            <div className={"chip" + (data.ischiofem_lig==="intakt"?" on":"")} onClick={()=>update("ischiofem_lig","intakt")}>{lbl.intact}</div>
+            <div className={"chip" + (data.ischiofem_lig==="kalınlaşma"?" on":"")} onClick={()=>update("ischiofem_lig","kalınlaşma")}>{lbl.thicken}</div>
+            <div className={"chip" + (data.ischiofem_lig==="yırtık"?" on":"")} onClick={()=>update("ischiofem_lig","yırtık")}>{lbl.tear}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Pubofemoral Ligaman</div>
+          <div className="grp-label">{lbl.puboLig}</div>
           <div className="chips">
-            <div className={"chip" + (data.pubofem_lig==="intakt"?" on":"")} onClick={()=>update("pubofem_lig","intakt")}>İntakt</div>
-            <div className={"chip" + (data.pubofem_lig==="kalınlaşma"?" on":"")} onClick={()=>update("pubofem_lig","kalınlaşma")}>Kalınlaşma</div>
-            <div className={"chip" + (data.pubofem_lig==="yırtık"?" on":"")} onClick={()=>update("pubofem_lig","yırtık")}>Yırtık</div>
+            <div className={"chip" + (data.pubofem_lig==="intakt"?" on":"")} onClick={()=>update("pubofem_lig","intakt")}>{lbl.intact}</div>
+            <div className={"chip" + (data.pubofem_lig==="kalınlaşma"?" on":"")} onClick={()=>update("pubofem_lig","kalınlaşma")}>{lbl.thicken}</div>
+            <div className={"chip" + (data.pubofem_lig==="yırtık"?" on":"")} onClick={()=>update("pubofem_lig","yırtık")}>{lbl.tear}</div>
           </div>
         </div>
       </>
@@ -2193,27 +2737,34 @@ function App() {
 
   // ========= STEP 10 iskiofemoral mesafe =========
   function renderStep10() {
+    const lbl = RV_LOCALE === 'en'
+      ? { ifsLbl:"Ischiofemoral Space", qfsLbl:"Quadratus Femoris Space",
+          qfMuscle:"Quadratus Femoris Muscle",
+          edema:"Edema / signal increase", atrophy:"Atrophy / fatty degeneration" }
+      : { ifsLbl:"İskiofemoral Mesafe", qfsLbl:"Kuadratus Femoris Mesafesi",
+          qfMuscle:"Kuadratus Femoris Kası",
+          edema:"Ödem / sinyal artışı", atrophy:"Atrofi / yağlı dejenerasyon" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">İskiofemoral Mesafe <span className="measure-hint">&lt;17 mm daralmış • &lt;13 mm sıkışma</span></div>
+          <div className="grp-label">{lbl.ifsLbl} <span className="measure-hint">&lt;17 mm daralmış • &lt;13 mm sıkışma</span></div>
           <div className="inline-num">
             <input type="number" value={data.ischiofem_space} onChange={e=>update("ischiofem_space", e.target.value)} />
             <span className="inline-num-lbl">mm</span>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Kuadratus Femoris Mesafesi <span className="measure-hint">&lt;8 mm daralmış</span></div>
+          <div className="grp-label">{lbl.qfsLbl} <span className="measure-hint">&lt;8 mm daralmış</span></div>
           <div className="inline-num">
             <input type="number" value={data.qf_space} onChange={e=>update("qf_space", e.target.value)} />
             <span className="inline-num-lbl">mm</span>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Kuadratus Femoris Kası</div>
+          <div className="grp-label">{lbl.qfMuscle}</div>
           <div className="chips">
-            <div className={"chip" + (data.qf_edema==="var"?" on":"")} onClick={()=>update("qf_edema", data.qf_edema==="var"?"":"var")}>Ödem / sinyal artışı</div>
-            <div className={"chip" + (data.qf_atrophy==="var"?" on":"")} onClick={()=>update("qf_atrophy", data.qf_atrophy==="var"?"":"var")}>Atrofi / yağlı dejenerasyon</div>
+            <div className={"chip" + (data.qf_edema==="var"?" on":"")} onClick={()=>update("qf_edema", data.qf_edema==="var"?"":"var")}>{lbl.edema}</div>
+            <div className={"chip" + (data.qf_atrophy==="var"?" on":"")} onClick={()=>update("qf_atrophy", data.qf_atrophy==="var"?"":"var")}>{lbl.atrophy}</div>
           </div>
         </div>
       </>
@@ -2222,27 +2773,38 @@ function App() {
 
   // ========= STEP 11 sinovyum =========
   function renderStep11() {
+    const lbl = RV_LOCALE === 'en'
+      ? { effusion:"Joint Effusion", effNone:"Absent", effMin:"Minimal", effMod:"Moderate", effLarge:"Marked",
+          synPathLbl:"Synovial & Haemorrhagic Pathology",
+          synThick:"Synovial thickening", synEnhance:"Synovial enhancement",
+          lowSig:"Low-signal synovium", blooming:"GRE blooming",
+          erosion:"Erosions", hemEff:"Haemorrhagic effusion", softEdema:"Soft tissue edema" }
+      : { effusion:"Eklem İçi Efüzyon", effNone:"Yok", effMin:"Minimal", effMod:"Orta", effLarge:"Belirgin",
+          synPathLbl:"Sinoviyal & Hemorajik Patoloji",
+          synThick:"Sinoviyal kalınlaşma", synEnhance:"Sinoviyal kontrastlanma",
+          lowSig:"Düşük sinyal sinovyum", blooming:"GRE blooming",
+          erosion:"Erozyonlar", hemEff:"Hemorajik efüzyon", softEdema:"Yumuşak doku ödemi" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Eklem İçi Efüzyon</div>
+          <div className="grp-label">{lbl.effusion}</div>
           <div className="chips">
-            <div className={"chip" + (data.effusion==="yok"?" on":"")} onClick={()=>update("effusion","yok")}>Yok</div>
-            <div className={"chip" + (data.effusion==="minimal"?" on":"")} onClick={()=>update("effusion","minimal")}>Minimal</div>
-            <div className={"chip" + (data.effusion==="orta"?" on":"")} onClick={()=>update("effusion","orta")}>Orta</div>
-            <div className={"chip" + (data.effusion==="belirgin"?" on":"")} onClick={()=>update("effusion","belirgin")}>Belirgin</div>
+            <div className={"chip" + (data.effusion==="yok"?" on":"")} onClick={()=>update("effusion","yok")}>{lbl.effNone}</div>
+            <div className={"chip" + (data.effusion==="minimal"?" on":"")} onClick={()=>update("effusion","minimal")}>{lbl.effMin}</div>
+            <div className={"chip" + (data.effusion==="orta"?" on":"")} onClick={()=>update("effusion","orta")}>{lbl.effMod}</div>
+            <div className={"chip" + (data.effusion==="belirgin"?" on":"")} onClick={()=>update("effusion","belirgin")}>{lbl.effLarge}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Sinoviyal & Hemorajik Patoloji</div>
+          <div className="grp-label">{lbl.synPathLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.synovial_thick==="var"?" on":"")} onClick={()=>update("synovial_thick", data.synovial_thick==="var"?"":"var")}>Sinoviyal kalınlaşma</div>
-            <div className={"chip" + (data.synovial_enhance==="var"?" on":"")} onClick={()=>update("synovial_enhance", data.synovial_enhance==="var"?"":"var")}>Sinoviyal kontrastlanma</div>
-            <div className={"chip" + (data.low_signal_synovium==="var"?" on":"")} onClick={()=>update("low_signal_synovium", data.low_signal_synovium==="var"?"":"var")}>Düşük sinyal sinovyum</div>
-            <div className={"chip" + (data.blooming==="var"?" on":"")} onClick={()=>update("blooming", data.blooming==="var"?"":"var")}>GRE blooming</div>
-            <div className={"chip" + (data.erosion==="var"?" on":"")} onClick={()=>update("erosion", data.erosion==="var"?"":"var")}>Erozyonlar</div>
-            <div className={"chip" + (data.hem_effusion==="var"?" on":"")} onClick={()=>update("hem_effusion", data.hem_effusion==="var"?"":"var")}>Hemorajik efüzyon</div>
-            <div className={"chip" + (data.soft_tissue_edema==="var"?" on":"")} onClick={()=>update("soft_tissue_edema", data.soft_tissue_edema==="var"?"":"var")}>Yumuşak doku ödemi</div>
+            <div className={"chip" + (data.synovial_thick==="var"?" on":"")} onClick={()=>update("synovial_thick", data.synovial_thick==="var"?"":"var")}>{lbl.synThick}</div>
+            <div className={"chip" + (data.synovial_enhance==="var"?" on":"")} onClick={()=>update("synovial_enhance", data.synovial_enhance==="var"?"":"var")}>{lbl.synEnhance}</div>
+            <div className={"chip" + (data.low_signal_synovium==="var"?" on":"")} onClick={()=>update("low_signal_synovium", data.low_signal_synovium==="var"?"":"var")}>{lbl.lowSig}</div>
+            <div className={"chip" + (data.blooming==="var"?" on":"")} onClick={()=>update("blooming", data.blooming==="var"?"":"var")}>{lbl.blooming}</div>
+            <div className={"chip" + (data.erosion==="var"?" on":"")} onClick={()=>update("erosion", data.erosion==="var"?"":"var")}>{lbl.erosion}</div>
+            <div className={"chip" + (data.hem_effusion==="var"?" on":"")} onClick={()=>update("hem_effusion", data.hem_effusion==="var"?"":"var")}>{lbl.hemEff}</div>
+            <div className={"chip" + (data.soft_tissue_edema==="var"?" on":"")} onClick={()=>update("soft_tissue_edema", data.soft_tissue_edema==="var"?"":"var")}>{lbl.softEdema}</div>
           </div>
         </div>
       </>
@@ -2251,27 +2813,64 @@ function App() {
 
   // ========= STEP 12 kas/tendon =========
   function renderStep12() {
+    const lbl = RV_LOCALE === 'en'
+      ? { grpLbl:"Muscle / Tendon Assessment",
+          grpSub:<>Gluteal group, iliopsoas, rectus femoris, proximal hamstring, adductor, piriformis, quadratus femoris. Use a separate <b>+ Add Lesion</b> for each pathological muscle. 4 sub-steps: muscle → location → type → detail.</>,
+          retractLabel:"retraction", goutLabel:"Goutallier",
+          delBtn:"Delete", addBtn:"+ Add Muscle/Tendon Lesion",
+          loopChip:(idx,sub,tot) => `Lesion ${idx+1} • Sub-step ${sub+1}/${tot}`,
+          muscleLbl:"Muscle / Tendon",
+          muscleOpts:[["glut_med","Gluteus medius"],["glut_min","Gluteus minimus"],["glut_max","Gluteus maximus"],
+            ["iliopsoas","Iliopsoas"],["rf","Rectus femoris"],["hamstring","Proximal hamstring"],
+            ["adductor","Adductor group"],["piriformis","Piriformis"],["qf","Quadratus femoris"]],
+          locLbl:"Location",
+          locOpts:[["myotendinous","Myotendinous junction"],["tendon","Tendon mid-substance"],
+            ["entez","Enthesis"],["belly","Muscle belly"],["retinaculum","Retinacular"]],
+          typeLbl:"Lesion Type",
+          typeOpts:[["tendinopati","Tendinopathy"],["strain1","Grade 1 strain"],["strain2","Grade 2 strain"],
+            ["strain3","Grade 3 strain"],["parsiyel","Partial-thickness tear"],
+            ["tam","Full-thickness / rupture"],["enthezit","Enthesopathy"]],
+          retraction:"Retraction (cm)", goutallier:"Goutallier Grade",
+          bursaCheck:"Related to adjacent bursa / accompanied by bursitis" }
+      : { grpLbl:"Kas / Tendon Değerlendirmesi",
+          grpSub:<>Gluteal grup, iliopsoas, rektus femoris, proksimal hamstring, adduktor, piriformis, kuadratus femoris. Her patolojik kas için ayrı <b>+ Lezyon Ekle</b> kullanın. 4 altstep: kas → lokalizasyon → tip → detay.</>,
+          retractLabel:"cm retraksiyon", goutLabel:"Goutallier",
+          delBtn:"Sil", addBtn:"+ Kas/Tendon Lezyonu Ekle",
+          loopChip:(idx,sub,tot) => `Lezyon ${idx+1} • Altstep ${sub+1}/${tot}`,
+          muscleLbl:"Kas / Tendon",
+          muscleOpts:[["glut_med","Gluteus medius"],["glut_min","Gluteus minimus"],["glut_max","Gluteus maximus"],
+            ["iliopsoas","İliopsoas"],["rf","Rektus femoris"],["hamstring","Proksimal hamstring"],
+            ["adductor","Adduktor grup"],["piriformis","Piriformis"],["qf","Kuadratus femoris"]],
+          locLbl:"Lokalizasyon",
+          locOpts:[["myotendinous","Miyotendinöz bileşke"],["tendon","Tendon mid-substance"],
+            ["entez","Enthesis"],["belly","Kas karnı"],["retinaculum","Retinaküler"]],
+          typeLbl:"Lezyon Tipi",
+          typeOpts:[["tendinopati","Tendinopati"],["strain1","Grade 1 strain"],["strain2","Grade 2 strain"],
+            ["strain3","Grade 3 strain"],["parsiyel","Parsiyel kat yırtık"],
+            ["tam","Tam kat / rüptür"],["enthezit","Entezopati"]],
+          retraction:"Retraksiyon (cm)", goutallier:"Goutallier Sınıfı",
+          bursaCheck:"Komşu bursa ile ilişkili / bursit eşlik ediyor" };
     if (mtIdx === -1) {
       return (
         <>
           <div className="grp">
-            <div className="grp-label">Kas / Tendon Değerlendirmesi</div>
-            <div className="grp-sub">Gluteal grup, iliopsoas, rektus femoris, proksimal hamstring, adduktor, piriformis, kuadratus femoris. Her patolojik kas için ayrı <b>+ Lezyon Ekle</b> kullanın. 4 altstep: kas → lokalizasyon → tip → detay.</div>
+            <div className="grp-label">{lbl.grpLbl}</div>
+            <div className="grp-sub">{lbl.grpSub}</div>
             {mtLesions.length > 0 &&
               <div className="lesion-list">
                 {mtLesions.map((L,i) =>
                   <div key={L.id} className="lesion-item">
                     <div className="lesion-meta">
                       <b>{muscleTR(L.muscle)}:</b> {typeTR(L.type)}{L.location ? " • " + locTR(L.location) : ""}
-                      {L.retraction && parseFloat(L.retraction)>0 && ` • ${L.retraction} cm retraksiyon`}
-                      {L.goutallier && ` • Goutallier ${L.goutallier}`}
+                      {L.retraction && parseFloat(L.retraction)>0 && ` • ${L.retraction} ${lbl.retractLabel}`}
+                      {L.goutallier && ` • ${lbl.goutLabel} ${L.goutallier}`}
                     </div>
-                    <button className="del-btn" onClick={()=>removeMT(i)}>Sil</button>
+                    <button className="del-btn" onClick={()=>removeMT(i)}>{lbl.delBtn}</button>
                   </div>
                 )}
               </div>
             }
-            <button className="btn btn-sm" onClick={startMT}>+ Kas/Tendon Lezyonu Ekle</button>
+            <button className="btn btn-sm" onClick={startMT}>{lbl.addBtn}</button>
           </div>
         </>
       );
@@ -2280,14 +2879,12 @@ function App() {
     if (!L) return null;
     return (
       <>
-        <div className="sub-chip-row">Lezyon {mtIdx+1} • Altstep {mtSub+1}/{MT_SUBSTEPS}</div>
+        <div className="sub-chip-row">{lbl.loopChip(mtIdx, mtSub, MT_SUBSTEPS)}</div>
         {mtSub === 0 && (
           <div className="grp">
-            <div className="grp-label">Kas / Tendon</div>
+            <div className="grp-label">{lbl.muscleLbl}</div>
             <div className="chips">
-              {[["glut_med","Gluteus medius"],["glut_min","Gluteus minimus"],["glut_max","Gluteus maximus"],
-                ["iliopsoas","İliopsoas"],["rf","Rektus femoris"],["hamstring","Proksimal hamstring"],
-                ["adductor","Adduktor grup"],["piriformis","Piriformis"],["qf","Kuadratus femoris"]].map(([v,l]) =>
+              {lbl.muscleOpts.map(([v,l]) =>
                 <div key={v} className={"chip" + (L.muscle===v?" on":"")} onClick={()=>updateCurrentMT({muscle:v})}>{l}</div>
               )}
             </div>
@@ -2295,10 +2892,9 @@ function App() {
         )}
         {mtSub === 1 && (
           <div className="grp">
-            <div className="grp-label">Lokalizasyon</div>
+            <div className="grp-label">{lbl.locLbl}</div>
             <div className="chips">
-              {[["myotendinous","Miyotendinöz bileşke"],["tendon","Tendon mid-substance"],
-                ["entez","Enthesis"],["belly","Kas karnı"],["retinaculum","Retinaküler"]].map(([v,l]) =>
+              {lbl.locOpts.map(([v,l]) =>
                 <div key={v} className={"chip" + (L.location===v?" on":"")} onClick={()=>updateCurrentMT({location:v})}>{l}</div>
               )}
             </div>
@@ -2306,11 +2902,9 @@ function App() {
         )}
         {mtSub === 2 && (
           <div className="grp">
-            <div className="grp-label">Lezyon Tipi</div>
+            <div className="grp-label">{lbl.typeLbl}</div>
             <div className="chips">
-              {[["tendinopati","Tendinopati"],["strain1","Grade 1 strain"],["strain2","Grade 2 strain"],
-                ["strain3","Grade 3 strain"],["parsiyel","Parsiyel kat yırtık"],
-                ["tam","Tam kat / rüptür"],["enthezit","Entezopati"]].map(([v,l]) =>
+              {lbl.typeOpts.map(([v,l]) =>
                 <div key={v} className={"chip" + (L.type===v?" on":"")} onClick={()=>updateCurrentMT({type:v})}>{l}</div>
               )}
             </div>
@@ -2320,11 +2914,11 @@ function App() {
           <>
             <div className="two-col">
               <div className="field">
-                <label className="grp-label" style={{marginBottom:0}}>Retraksiyon (cm)</label>
+                <label className="grp-label" style={{marginBottom:0}}>{lbl.retraction}</label>
                 <input type="number" step="0.5" value={L.retraction} onChange={e=>updateCurrentMT({retraction:e.target.value})} placeholder="0" />
               </div>
               <div className="field">
-                <label className="grp-label" style={{marginBottom:0}}>Goutallier Sınıfı</label>
+                <label className="grp-label" style={{marginBottom:0}}>{lbl.goutallier}</label>
                 <div className="chips">
                   {["0","1","2","3","4"].map(g =>
                     <div key={g} className={"chip small" + (L.goutallier===g?" on":"")} onClick={()=>updateCurrentMT({goutallier:g})}>{g}</div>
@@ -2335,7 +2929,7 @@ function App() {
             <div className="grp" style={{marginTop:14}}>
               <div className={"checkbox" + (L.bursa_rel?" on":"")} onClick={()=>updateCurrentMT({bursa_rel: !L.bursa_rel})}>
                 <div className="checkbox-box"/>
-                <div>Komşu bursa ile ilişkili / bursit eşlik ediyor</div>
+                <div>{lbl.bursaCheck}</div>
               </div>
             </div>
           </>
@@ -2346,35 +2940,44 @@ function App() {
 
   // ========= STEP 13 bursa =========
   function renderStep13() {
+    const lbl = RV_LOCALE === 'en'
+      ? { trochLbl:"Trochanteric Bursa", trochN:"Absent", trochFluid:"Fluid accumulation", trochLarge:"Marked (bursitis)",
+          periEdema:"Peritrochanteric edema", itbThick:"ITB thickening",
+          ilioLbl:"Iliopsoas Bursa", ilioN:"Absent", ilioFluid:"Fluid", ilioLarge:"Marked distension",
+          ischioLbl:"Ischiogluteal Bursa", ischioN:"Absent", ischioY:"Fluid / inflammation" }
+      : { trochLbl:"Trokanterik Bursa", trochN:"Yok", trochFluid:"Sıvı birikimi", trochLarge:"Belirgin (bursit)",
+          periEdema:"Peritrokanterik ödem", itbThick:"ITB kalınlaşması",
+          ilioLbl:"İliopsoas Bursası", ilioN:"Yok", ilioFluid:"Sıvı", ilioLarge:"Belirgin distansiyon",
+          ischioLbl:"İskiogluteal Bursa", ischioN:"Yok", ischioY:"Sıvı / inflamasyon" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Trokanterik Bursa</div>
+          <div className="grp-label">{lbl.trochLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.troch_bursa==="yok"?" on":"")} onClick={()=>update("troch_bursa","yok")}>Yok</div>
-            <div className={"chip" + (data.troch_bursa==="sıvı"?" on":"")} onClick={()=>update("troch_bursa","sıvı")}>Sıvı birikimi</div>
-            <div className={"chip" + (data.troch_bursa==="belirgin"?" on":"")} onClick={()=>update("troch_bursa","belirgin")}>Belirgin (bursit)</div>
+            <div className={"chip" + (data.troch_bursa==="yok"?" on":"")} onClick={()=>update("troch_bursa","yok")}>{lbl.trochN}</div>
+            <div className={"chip" + (data.troch_bursa==="sıvı"?" on":"")} onClick={()=>update("troch_bursa","sıvı")}>{lbl.trochFluid}</div>
+            <div className={"chip" + (data.troch_bursa==="belirgin"?" on":"")} onClick={()=>update("troch_bursa","belirgin")}>{lbl.trochLarge}</div>
           </div>
         </div>
         <div className="grp">
           <div className="chips">
-            <div className={"chip" + (data.peritroch_edema==="var"?" on":"")} onClick={()=>update("peritroch_edema", data.peritroch_edema==="var"?"":"var")}>Peritrokanterik ödem</div>
-            <div className={"chip" + (data.itb_thick==="var"?" on":"")} onClick={()=>update("itb_thick", data.itb_thick==="var"?"":"var")}>ITB kalınlaşması</div>
+            <div className={"chip" + (data.peritroch_edema==="var"?" on":"")} onClick={()=>update("peritroch_edema", data.peritroch_edema==="var"?"":"var")}>{lbl.periEdema}</div>
+            <div className={"chip" + (data.itb_thick==="var"?" on":"")} onClick={()=>update("itb_thick", data.itb_thick==="var"?"":"var")}>{lbl.itbThick}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">İliopsoas Bursası</div>
+          <div className="grp-label">{lbl.ilioLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.iliopsoas_bursa==="yok"?" on":"")} onClick={()=>update("iliopsoas_bursa","yok")}>Yok</div>
-            <div className={"chip" + (data.iliopsoas_bursa==="sıvı"?" on":"")} onClick={()=>update("iliopsoas_bursa","sıvı")}>Sıvı</div>
-            <div className={"chip" + (data.iliopsoas_bursa==="belirgin"?" on":"")} onClick={()=>update("iliopsoas_bursa","belirgin")}>Belirgin distansiyon</div>
+            <div className={"chip" + (data.iliopsoas_bursa==="yok"?" on":"")} onClick={()=>update("iliopsoas_bursa","yok")}>{lbl.ilioN}</div>
+            <div className={"chip" + (data.iliopsoas_bursa==="sıvı"?" on":"")} onClick={()=>update("iliopsoas_bursa","sıvı")}>{lbl.ilioFluid}</div>
+            <div className={"chip" + (data.iliopsoas_bursa==="belirgin"?" on":"")} onClick={()=>update("iliopsoas_bursa","belirgin")}>{lbl.ilioLarge}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">İskiogluteal Bursa</div>
+          <div className="grp-label">{lbl.ischioLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.ischiogluteal_bursa==="yok"?" on":"")} onClick={()=>update("ischiogluteal_bursa","yok")}>Yok</div>
-            <div className={"chip" + (data.ischiogluteal_bursa==="var"?" on":"")} onClick={()=>update("ischiogluteal_bursa","var")}>Sıvı / inflamasyon</div>
+            <div className={"chip" + (data.ischiogluteal_bursa==="yok"?" on":"")} onClick={()=>update("ischiogluteal_bursa","yok")}>{lbl.ischioN}</div>
+            <div className={"chip" + (data.ischiogluteal_bursa==="var"?" on":"")} onClick={()=>update("ischiogluteal_bursa","var")}>{lbl.ischioY}</div>
           </div>
         </div>
       </>
@@ -2383,33 +2986,40 @@ function App() {
 
   // ========= STEP 14 nörovasküler =========
   function renderStep14() {
+    const lbl = RV_LOCALE === 'en'
+      ? { sciaticEdema:"Sciatic nerve edema", pirAsymm:"Piriformis asymmetry",
+          femNerve:"Femoral Nerve", obtNerve:"Obturator Nerve", lfcn:"Lateral Femoral Cutaneous Nerve (LFCN)",
+          norm:"Normal", abnorm:"Abnormal", abnormLfcn:"Abnormal (meralgia paresthetica)" }
+      : { sciaticEdema:"Siyatik sinir ödemi", pirAsymm:"Piriformis asimetri",
+          femNerve:"Femoral Sinir", obtNerve:"Obturator Sinir", lfcn:"Lateral Femoral Kutanöz Sinir (LFCN)",
+          norm:"Normal", abnorm:"Anormal", abnormLfcn:"Anormal (meralgia paresthetica)" };
     return (
       <>
         <div className="grp">
           <div className="chips">
-            <div className={"chip" + (data.sciatic_edema==="var"?" on":"")} onClick={()=>update("sciatic_edema", data.sciatic_edema==="var"?"":"var")}>Siyatik sinir ödemi</div>
-            <div className={"chip" + (data.piriformis_asymm==="var"?" on":"")} onClick={()=>update("piriformis_asymm", data.piriformis_asymm==="var"?"":"var")}>Piriformis asimetri</div>
+            <div className={"chip" + (data.sciatic_edema==="var"?" on":"")} onClick={()=>update("sciatic_edema", data.sciatic_edema==="var"?"":"var")}>{lbl.sciaticEdema}</div>
+            <div className={"chip" + (data.piriformis_asymm==="var"?" on":"")} onClick={()=>update("piriformis_asymm", data.piriformis_asymm==="var"?"":"var")}>{lbl.pirAsymm}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Femoral Sinir</div>
+          <div className="grp-label">{lbl.femNerve}</div>
           <div className="chips">
-            <div className={"chip" + (data.femoral_nerve==="normal"?" on":"")} onClick={()=>update("femoral_nerve","normal")}>Normal</div>
-            <div className={"chip" + (data.femoral_nerve==="anormal"?" on":"")} onClick={()=>update("femoral_nerve","anormal")}>Anormal</div>
+            <div className={"chip" + (data.femoral_nerve==="normal"?" on":"")} onClick={()=>update("femoral_nerve","normal")}>{lbl.norm}</div>
+            <div className={"chip" + (data.femoral_nerve==="anormal"?" on":"")} onClick={()=>update("femoral_nerve","anormal")}>{lbl.abnorm}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Obturator Sinir</div>
+          <div className="grp-label">{lbl.obtNerve}</div>
           <div className="chips">
-            <div className={"chip" + (data.obturator_nerve==="normal"?" on":"")} onClick={()=>update("obturator_nerve","normal")}>Normal</div>
-            <div className={"chip" + (data.obturator_nerve==="anormal"?" on":"")} onClick={()=>update("obturator_nerve","anormal")}>Anormal</div>
+            <div className={"chip" + (data.obturator_nerve==="normal"?" on":"")} onClick={()=>update("obturator_nerve","normal")}>{lbl.norm}</div>
+            <div className={"chip" + (data.obturator_nerve==="anormal"?" on":"")} onClick={()=>update("obturator_nerve","anormal")}>{lbl.abnorm}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Lateral Femoral Kutanöz Sinir (LFCN)</div>
+          <div className="grp-label">{lbl.lfcn}</div>
           <div className="chips">
-            <div className={"chip" + (data.lfcn==="normal"?" on":"")} onClick={()=>update("lfcn","normal")}>Normal</div>
-            <div className={"chip" + (data.lfcn==="anormal"?" on":"")} onClick={()=>update("lfcn","anormal")}>Anormal (meralgia paresthetica)</div>
+            <div className={"chip" + (data.lfcn==="normal"?" on":"")} onClick={()=>update("lfcn","normal")}>{lbl.norm}</div>
+            <div className={"chip" + (data.lfcn==="anormal"?" on":"")} onClick={()=>update("lfcn","anormal")}>{lbl.abnormLfcn}</div>
           </div>
         </div>
       </>
@@ -2418,21 +3028,32 @@ function App() {
 
   // ========= STEP 15 pubik simfiz =========
   function renderStep15() {
+    const lbl = RV_LOCALE === 'en'
+      ? { symphLbl:"Pubic Symphysis & Entheseal",
+          pubEdema:"Pubic bone edema", pubWide:"Pubic symphysis widening",
+          recAdd:"Rectus-adductor aponeurosis tear",
+          entheseal:"Entheseal Bone Marrow Edema",
+          ischial:"Ischial tuberosity", aiis:"AIIS" }
+      : { symphLbl:"Pubik Simfiz & Enthesiyal",
+          pubEdema:"Pubik kemik ödemi", pubWide:"Pubik simfiz genişlemesi",
+          recAdd:"Rektus-adduktor aponöroz yırtığı",
+          entheseal:"Enthesiyal Kemik İliği Ödemi",
+          ischial:"İskial tüberosit", aiis:"AIIS" };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Pubik Simfiz & Enthesiyal</div>
+          <div className="grp-label">{lbl.symphLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.pubic_bone_edema==="var"?" on":"")} onClick={()=>update("pubic_bone_edema", data.pubic_bone_edema==="var"?"":"var")}>Pubik kemik ödemi</div>
-            <div className={"chip" + (data.pubic_widening==="var"?" on":"")} onClick={()=>update("pubic_widening", data.pubic_widening==="var"?"":"var")}>Pubik simfiz genişlemesi</div>
-            <div className={"chip" + (data.rec_add_apo==="var"?" on":"")} onClick={()=>update("rec_add_apo", data.rec_add_apo==="var"?"":"var")}>Rektus-adduktor aponöroz yırtığı</div>
+            <div className={"chip" + (data.pubic_bone_edema==="var"?" on":"")} onClick={()=>update("pubic_bone_edema", data.pubic_bone_edema==="var"?"":"var")}>{lbl.pubEdema}</div>
+            <div className={"chip" + (data.pubic_widening==="var"?" on":"")} onClick={()=>update("pubic_widening", data.pubic_widening==="var"?"":"var")}>{lbl.pubWide}</div>
+            <div className={"chip" + (data.rec_add_apo==="var"?" on":"")} onClick={()=>update("rec_add_apo", data.rec_add_apo==="var"?"":"var")}>{lbl.recAdd}</div>
           </div>
         </div>
         <div className="grp">
-          <div className="grp-label">Enthesiyal Kemik İliği Ödemi</div>
+          <div className="grp-label">{lbl.entheseal}</div>
           <div className="chips">
-            <div className={"chip" + (data.ischial_tub_edema==="var"?" on":"")} onClick={()=>update("ischial_tub_edema", data.ischial_tub_edema==="var"?"":"var")}>İskial tüberosit</div>
-            <div className={"chip" + (data.aiis_edema==="var"?" on":"")} onClick={()=>update("aiis_edema", data.aiis_edema==="var"?"":"var")}>AIIS</div>
+            <div className={"chip" + (data.ischial_tub_edema==="var"?" on":"")} onClick={()=>update("ischial_tub_edema", data.ischial_tub_edema==="var"?"":"var")}>{lbl.ischial}</div>
+            <div className={"chip" + (data.aiis_edema==="var"?" on":"")} onClick={()=>update("aiis_edema", data.aiis_edema==="var"?"":"var")}>{lbl.aiis}</div>
           </div>
         </div>
       </>
@@ -2441,44 +3062,59 @@ function App() {
 
   // ========= STEP 16 kemik/tümör =========
   function renderStep16() {
+    const lbl = RV_LOCALE === 'en'
+      ? { fxLbl:"Fracture", fxN:"Absent", fxY:"Present",
+          fxLocLbl:"Fracture Localisation",
+          fxNeck:"Femoral neck (stress)", fxSub:"Subchondral", fxTroch:"Trochanteric", fxOther:"Other",
+          subchFx:"Subchondral Insufficiency Fracture",
+          masssoft:"Soft tissue mass", massbone:"Bone lesion / tumour",
+          hetOss:"Heterotopic ossification / myositis ossificans",
+          detailLbl:"Detail", detailPh:"size, signal, enhancement..." }
+      : { fxLbl:"Fraktür", fxN:"Yok", fxY:"Var",
+          fxLocLbl:"Fraktür Lokalizasyonu",
+          fxNeck:"Femur boynu (stres)", fxSub:"Subkondral", fxTroch:"Trokanterik", fxOther:"Diğer",
+          subchFx:"Subkondral Yetmezlik Fraktürü",
+          masssoft:"Yumuşak doku kitlesi", massbone:"Kemik lezyonu / tümör",
+          hetOss:"Heterotopik ossifikasyon / miyozitis ossifikans",
+          detailLbl:"Detay", detailPh:"boyut, sinyal, kontrastlanma..." };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Fraktür</div>
+          <div className="grp-label">{lbl.fxLbl}</div>
           <div className="chips">
-            <div className={"chip" + (data.fx_line==="yok"?" on":"")} onClick={()=>update("fx_line","yok")}>Yok</div>
-            <div className={"chip" + (data.fx_line==="var"?" on":"")} onClick={()=>update("fx_line","var")}>Var</div>
+            <div className={"chip" + (data.fx_line==="yok"?" on":"")} onClick={()=>update("fx_line","yok")}>{lbl.fxN}</div>
+            <div className={"chip" + (data.fx_line==="var"?" on":"")} onClick={()=>update("fx_line","var")}>{lbl.fxY}</div>
           </div>
         </div>
         {data.fx_line === "var" &&
           <div className="grp">
-            <div className="grp-label">Fraktür Lokalizasyonu</div>
+            <div className="grp-label">{lbl.fxLocLbl}</div>
             <div className="chips">
-              <div className={"chip" + (data.fx_location==="femoral_neck"?" on":"")} onClick={()=>update("fx_location","femoral_neck")}>Femur boynu (stres)</div>
-              <div className={"chip" + (data.fx_location==="subchondral"?" on":"")} onClick={()=>update("fx_location","subchondral")}>Subkondral</div>
-              <div className={"chip" + (data.fx_location==="troch"?" on":"")} onClick={()=>update("fx_location","troch")}>Trokanterik</div>
-              <div className={"chip" + (data.fx_location==="diger"?" on":"")} onClick={()=>update("fx_location","diger")}>Diğer</div>
+              <div className={"chip" + (data.fx_location==="femoral_neck"?" on":"")} onClick={()=>update("fx_location","femoral_neck")}>{lbl.fxNeck}</div>
+              <div className={"chip" + (data.fx_location==="subchondral"?" on":"")} onClick={()=>update("fx_location","subchondral")}>{lbl.fxSub}</div>
+              <div className={"chip" + (data.fx_location==="troch"?" on":"")} onClick={()=>update("fx_location","troch")}>{lbl.fxTroch}</div>
+              <div className={"chip" + (data.fx_location==="diger"?" on":"")} onClick={()=>update("fx_location","diger")}>{lbl.fxOther}</div>
             </div>
           </div>
         }
         <div className="grp">
-          <div className="grp-label">Subkondral Yetmezlik Fraktürü</div>
+          <div className="grp-label">{lbl.subchFx}</div>
           <div className="chips">
-            <div className={"chip" + (data.subchondral_fx==="yok"?" on":"")} onClick={()=>update("subchondral_fx","yok")}>Yok</div>
-            <div className={"chip" + (data.subchondral_fx==="var"?" on":"")} onClick={()=>update("subchondral_fx","var")}>Var</div>
+            <div className={"chip" + (data.subchondral_fx==="yok"?" on":"")} onClick={()=>update("subchondral_fx","yok")}>{lbl.fxN}</div>
+            <div className={"chip" + (data.subchondral_fx==="var"?" on":"")} onClick={()=>update("subchondral_fx","var")}>{lbl.fxY}</div>
           </div>
         </div>
         <div className="grp">
           <div className="chips">
-            <div className={"chip" + (data.mass_soft==="var"?" on":"")} onClick={()=>update("mass_soft", data.mass_soft==="var"?"":"var")}>Yumuşak doku kitlesi</div>
-            <div className={"chip" + (data.mass_bone==="var"?" on":"")} onClick={()=>update("mass_bone", data.mass_bone==="var"?"":"var")}>Kemik lezyonu / tümör</div>
-            <div className={"chip" + (data.het_ossification==="var"?" on":"")} onClick={()=>update("het_ossification", data.het_ossification==="var"?"":"var")}>Heterotopik ossifikasyon / miyozitis ossifikans</div>
+            <div className={"chip" + (data.mass_soft==="var"?" on":"")} onClick={()=>update("mass_soft", data.mass_soft==="var"?"":"var")}>{lbl.masssoft}</div>
+            <div className={"chip" + (data.mass_bone==="var"?" on":"")} onClick={()=>update("mass_bone", data.mass_bone==="var"?"":"var")}>{lbl.massbone}</div>
+            <div className={"chip" + (data.het_ossification==="var"?" on":"")} onClick={()=>update("het_ossification", data.het_ossification==="var"?"":"var")}>{lbl.hetOss}</div>
           </div>
         </div>
         {(data.mass_soft === "var" || data.mass_bone === "var") &&
           <div className="grp">
-            <div className="grp-label">Detay</div>
-            <input type="text" value={data.mass_detail} onChange={e=>update("mass_detail", e.target.value)} placeholder="boyut, sinyal, kontrastlanma..." />
+            <div className="grp-label">{lbl.detailLbl}</div>
+            <input type="text" value={data.mass_detail} onChange={e=>update("mass_detail", e.target.value)} placeholder={lbl.detailPh} />
           </div>
         }
       </>
@@ -2487,11 +3123,14 @@ function App() {
 
   // ========= STEP 17 serbest metin =========
   function renderStep17() {
+    const lbl = RV_LOCALE === 'en'
+      ? { lbl:"Additional Notes / Free Text", ph:"Additional findings, clinical comments, follow-up recommendations..." }
+      : { lbl:"Ek Notlar / Serbest Metin", ph:"Rapora eklemek istediğiniz ek bulgular, klinik yorumlar, takip önerileri..." };
     return (
       <>
         <div className="grp">
-          <div className="grp-label">Ek Notlar / Serbest Metin</div>
-          <textarea value={data.free_text} onChange={e=>update("free_text", e.target.value)} placeholder="Rapora eklemek istediğiniz ek bulgular, klinik yorumlar, takip önerileri..." style={{minHeight:140}}/>
+          <div className="grp-label">{lbl.lbl}</div>
+          <textarea value={data.free_text} onChange={e=>update("free_text", e.target.value)} placeholder={lbl.ph} style={{minHeight:140}}/>
         </div>
       </>
     );
@@ -2499,17 +3138,24 @@ function App() {
 
   // ========= STEP 18 inceleme =========
   function renderStep18() {
+    const lbl = RV_LOCALE === 'en'
+      ? { sub:"Data summary (you can go back to correct):",
+          side:"Side", avn:"AVN assessment", alpha:"Alpha angle",
+          ifs:"Ischiofemoral space", labTears:"Labral tears", mtLes:"Muscle/tendon lesions" }
+      : { sub:"Doldurulan veri özeti (düzeltmek için geri gidebilirsiniz):",
+          side:"Taraf", avn:"AVN değerlendirmesi", alpha:"Alpha açısı",
+          ifs:"İskiofemoral mesafe", labTears:"Labral yırtık sayısı", mtLes:"Kas/tendon lezyon sayısı" };
     const summary = [];
-    summary.push(`Taraf: ${sideTR(data.side)} • ${ageText(data.age)} • ${sexTR(data.sex)}`);
-    if (data.avn_suspicion === "var") summary.push(`AVN değerlendirmesi: ARCO ${data.avn_stage || "?"}`);
-    if (data.alpha_angle) summary.push(`Alpha açısı: ${data.alpha_angle}°`);
+    summary.push(`${lbl.side}: ${sideTR(data.side)} • ${ageText(data.age)} • ${sexTR(data.sex)}`);
+    if (data.avn_suspicion === "var") summary.push(`${lbl.avn}: ARCO ${data.avn_stage || "?"}`);
+    if (data.alpha_angle) summary.push(`${lbl.alpha}: ${data.alpha_angle}°`);
     if (data.lcea) summary.push(`LCEA: ${data.lcea}°`);
-    if (data.ischiofem_space) summary.push(`İskiofemoral mesafe: ${data.ischiofem_space} mm`);
-    summary.push(`Labral yırtık sayısı: ${(data.labralTears||[]).length}`);
-    summary.push(`Kas/tendon lezyon sayısı: ${mtLesions.length}`);
+    if (data.ischiofem_space) summary.push(`${lbl.ifs}: ${data.ischiofem_space} mm`);
+    summary.push(`${lbl.labTears}: ${(data.labralTears||[]).length}`);
+    summary.push(`${lbl.mtLes}: ${mtLesions.length}`);
     return (
       <>
-        <div className="grp-sub" style={{marginLeft:0}}>Doldurulan veri özeti (düzeltmek için geri gidebilirsiniz):</div>
+        <div className="grp-sub" style={{marginLeft:0}}>{lbl.sub}</div>
         <div className="lesion-list">
           {summary.map((s,i) => <div key={i} className="lesion-item">{s}</div>)}
         </div>
@@ -2520,13 +3166,16 @@ function App() {
   // ========= STEP 19 ayırıcı tanı paneli =========
   function renderStep19() {
     const top = scores.slice(0, 8);
+    const sub = RV_LOCALE === 'en'
+      ? "Top 8 differential diagnosis probabilities based on entered data. This panel is used for clinical decision-making."
+      : "Girilen verilere göre ilk 8 ayırıcı tanı olasılığı. Klinik karar için bu panel kullanılır.";
     return (
       <>
-        <div className="grp-sub" style={{marginLeft:0}}>Girilen verilere göre ilk 8 ayırıcı tanı olasılığı. Klinik karar için bu panel kullanılır.</div>
+        <div className="grp-sub" style={{marginLeft:0}}>{sub}</div>
         <div className="dx-preview">
           {top.map((p,i) => (
             <div key={p.id} className="dx-row">
-              <div className="dx-name">{i+1}. {p.adi}</div>
+              <div className="dx-name">{i+1}. {pathoLabel(p)}</div>
               <div className="dx-bar"><div className="dx-bar-fill" style={{width: p.score+"%"}}/></div>
               <div className="dx-score">{p.score}%</div>
             </div>
@@ -2540,9 +3189,9 @@ function App() {
   function renderStep20() {
     return (
       <>
-        <div className="grp-sub" style={{marginLeft:0}}>Rapor oluşturmak için <b>Raporu Oluştur</b>'a tıklayın.</div>
+        <div className="grp-sub" style={{marginLeft:0}}>{RV_LOCALE === 'en' ? <>Click <b>Generate Report</b> to generate.</> : <>Rapor oluşturmak için <b>Raporu Oluştur</b>'a tıklayın.</>}</div>
         <div style={{textAlign:"center", padding:"20px 0"}}>
-          <button className="btn btn-primary" onClick={()=>setShowReport(true)}>Raporu Oluştur →</button>
+          <button className="btn btn-primary" onClick={()=>setShowReport(true)}>{T.nav.generate}</button>
         </div>
       </>
     );
@@ -2559,10 +3208,10 @@ function App() {
       <div className="report-overlay" onClick={(e) => { if (e.target.className === "report-overlay") setShowReport(false); }}>
         <div className="report-sheet" onClick={e=>e.stopPropagation()}>
           <div className="report-toolbar">
-            <button className="btn" onClick={()=>setShowReport(false)}>← Geri</button>
-            <button className="btn" onClick={copyReportText}>📋 Metni Kopyala</button>
-            <button className="btn" onClick={downloadHTML}>⬇ HTML indir</button>
-            <button className="btn btn-primary" onClick={printReport}>🖨 Yazdır / PDF</button>
+            <button className="btn" onClick={()=>setShowReport(false)}>{T.toolbar.back}</button>
+            <button className="btn" onClick={copyReportText}>{T.toolbar.copy}</button>
+            <button className="btn" onClick={downloadHTML}>{T.toolbar.download}</button>
+            <button className="btn btn-primary" onClick={printReport}>{T.toolbar.print}</button>
           </div>
           <div className="report-body" id="report-body-content" dangerouslySetInnerHTML={{__html: generateReport()}}/>
         </div>
@@ -2579,11 +3228,11 @@ function App() {
         <div className="brand">
           <div className="brand-icon">K</div>
           <div>
-            <div className="brand-title">Kalça MR Karar Destek Sistemi</div>
-            <div className="brand-sub">Multilezyon Ayırıcı Tanı & Yapılandırılmış Rapor</div>
+            <div className="brand-title">{T.brand.title}</div>
+            <div className="brand-sub">{T.brand.sub}</div>
           </div>
         </div>
-        <div className="step-chip">Adım {step+1} / {TOTAL_STEPS}</div>
+        <div className="step-chip">{T.stepChip(step+1, TOTAL_STEPS)}</div>
       </div>
 
       <div className="progress"><div className="progress-fill" style={{width: progressPct + "%"}}/></div>
@@ -2591,33 +3240,13 @@ function App() {
       <div className="card">
         <h2 className="step-title">{STEP_TITLES[step]}</h2>
         <div className="step-desc">
-          {step === 0 && "Hasta temel bilgisi, klinik sorgu ve risk faktörleri."}
-          {step === 1 && "Uygulanan sekansları işaretleyin."}
-          {step === 2 && "Kemik iliği sinyali ve AVN ön taraması."}
-          {step === 3 && "AVN şüphesi varlığında detay değerlendirme."}
-          {step === 4 && "CAM tip FAI ön değerlendirmesi — alpha açısı ve baş-boyun morfolojisi."}
-          {step === 5 && "Pincer tip FAI ve displazi değerlendirmesi — LCEA, asetabuler indeks, wall sign."}
-          {step === 6 && "Kıkırdak yüzeyler (4 zon) ve OA bulguları."}
-          {step === 7 && "Labrum değerlendirmesi — her yırtık için ayrı döngü."}
-          {step === 8 && "Paralabral kist ve ligamentum teres."}
-          {step === 9 && "Eklem kapsülü ve kapsüler ligamanlar."}
-          {step === 10 && "İskiofemoral ve kuadratus femoris mesafeleri."}
-          {step === 11 && "Efüzyon, sinoviyal ve hemorajik patolojiler."}
-          {step === 12 && "Kas/tendon değerlendirmesi — her patolojik yapı için ayrı döngü."}
-          {step === 13 && "Bursa değerlendirmesi."}
-          {step === 14 && "Nörovasküler yapıların kısa taranması."}
-          {step === 15 && "Pubik simfiz ve enthesiyal yapılar (atletik pubalji)."}
-          {step === 16 && "Kemik lezyonlar, tümör, heterotopik ossifikasyon."}
-          {step === 17 && "Opsiyonel ek metin."}
-          {step === 18 && "Veri özeti ve kontrol."}
-          {step === 19 && "Ayırıcı tanı olasılıkları."}
-          {step === 20 && "Raporu oluşturun."}
+          {T.stepDescs[step]}
         </div>
         {renderStep()}
         <div className="nav">
-          <button className="btn" onClick={goPrev} disabled={step === 0 && labralIdx === -1 && mtIdx === -1}>← Geri</button>
+          <button className="btn" onClick={goPrev} disabled={step === 0 && labralIdx === -1 && mtIdx === -1}>{T.nav.back}</button>
           <button className="btn btn-primary" onClick={goNext} disabled={!canNext()}>
-            {step === TOTAL_STEPS - 2 ? "Raporu Oluştur →" : "İleri →"}
+            {step === TOTAL_STEPS - 2 ? T.nav.generate : T.nav.next}
           </button>
         </div>
       </div>

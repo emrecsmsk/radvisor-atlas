@@ -272,6 +272,933 @@
 const { useState, useMemo, useRef } = React;
 
 /* ============================================================
+   LOCALE
+   ============================================================ */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    // Header
+    header_title: 'MR Enterografi Değerlendirme Sistemi',
+    header_sub: 'Structured multilezyon yorumu • 35+ patolojili ağırlıklı ayırıcı tanı skorlaması',
+    step_label: 'Adım',
+    lesion_label: 'Lezyon',
+    total_lesions: 'Toplam lezyon',
+    nav_back: '‹ Geri',
+    nav_next: 'İleri ›',
+    nav_view_report: 'Raporu Görüntüle →',
+    scan_phase: 'Tarama aşaması',
+    summary_phase: 'Özet aşama',
+    // Step 1
+    s1_title: 'Klinik Bilgi ve İnceleme Kalitesi',
+    s1_sub: 'Hastanın klinik durumu ve MR enterografi kalite parametreleri',
+    s1_indication_hdr: 'Klinik Endikasyon',
+    s1_indications: ['Crohn ön tanısı/takibi','İBH ayırıcı tanı','Malabsorpsiyon','Kronik karın ağrısı','Gastrointestinal kanama','Kronik ishal','Obstrüksiyon/subileus','İnce barsak tümörü','Postop değerlendirme','Çölyak komplikasyonu','Behçet takibi','Diğer'],
+    s1_notes_placeholder: 'Ek klinik notlar, semptom süresi, laboratuvar bulguları...',
+    s1_modifiers_hdr: 'Klinik Modifiye Edici Faktörler',
+    s1_modifiers: [
+      {k:'immunsupresif', l:'İmmünsüpresyon (HIV/transplant/kemoterapi)'},
+      {k:'knownMalignancy', l:'Bilinen malignite'},
+      {k:'nsaidUse', l:'Kronik NSAID kullanımı'},
+      {k:'anticoagulant', l:'Antikoagülan kullanımı'},
+      {k:'radyoterapi', l:'Pelvik/abdominal radyoterapi öyküsü'},
+      {k:'biyopsi', l:'Önceki tanı biyopsi ile desteklenmiş'},
+    ],
+    s1_malignancy_placeholder: 'Bilinen malignite tipi (örn: melanom, meme ca...)',
+    s1_clin_flags_hdr: 'Klinik İşaretleyiciler (ayırıcı tanı için)',
+    s1_clin_flags: [
+      {k:'clinical_orogenital', l:'Orogenital ülserler (Behçet)'},
+      {k:'clinical_malabsorption', l:'Malabsorpsiyon klinik bulgusu'},
+      {k:'clinical_carcinoid_syndrome', l:'Karsinoid sendrom semptomları'},
+      {k:'clinical_celiac_history', l:'Çölyak hastalığı öyküsü'},
+      {k:'clinical_posttransplant', l:'Posttransplant / kök hücre nakli'},
+      {k:'clinical_scleroderma', l:'Bilinen skleroderma/CREST'},
+      {k:'clinical_igg4', l:'IgG4-ilişkili hastalık öyküsü'},
+      {k:'clinical_fap', l:'FAP / familyal polipozis'},
+      {k:'clinical_pigmentation', l:'Mukokutanöz pigmentasyon (P-J)'},
+      {k:'clinical_female_repro', l:'Reprodüktif dönem kadın (endometrioz ayırıcı)'},
+      {k:'cyclical_sx', l:'Siklik semptomlar (endometrioz)'},
+      {k:'clinical_hpylori', l:'H. pylori pozitif'},
+      {k:'clinical_allergy', l:'Atopi/eozinofili öyküsü'},
+      {k:'endemic', l:'Endemik bölge (TB riski)'},
+      {k:'post_gastric_bypass', l:'Gastrik bypass öyküsü'},
+      {k:'clinical_hypercoag', l:'Hiperkoagülabilite durumu'},
+    ],
+    s1_quality_hdr: 'İnceleme Kalitesi',
+    s1_oral_contrast: 'Oral kontrast ajan',
+    s1_oral_contrast_opts: ['Mannitol %2.5','PEG','VoLumen (düşük-dansite baryum)','Su','Oral kontrast yok'],
+    s1_distention_label: 'Barsak distansiyonu',
+    s1_distention_opts: ['Yeterli (>2 cm lümen)','Kısmen yeterli','Yetersiz','Çok dilate'],
+    s1_artifact_label: 'Hareket artefaktı',
+    s1_artifact_opts: ['Yok','Hafif','Orta','Belirgin (yorumu etkileyen)'],
+    s1_antispasmodic: 'Antispasmotik (Buscopan/Glukagon)',
+    s1_iv_contrast: 'IV Gd kontrast verildi',
+    // Step 2
+    s2_title: 'Anatomik Segment Taraması',
+    s2_sub: "Her segmenti sistematik olarak işaretle; patolojik segmentleri lezyon loop'unda detaylandıracaksın",
+    s2_tip_strong: 'İpucu:',
+    s2_tip: "Bu adımda sadece anatomik tarama yapılır. Patolojik lezyonların detaylı MRG karakteristikleri ayırıcı tanı için lezyon loop'unda belirlenir.",
+    s2_seg_normal: 'Normal',
+    s2_seg_suspect: 'Şüpheli',
+    s2_seg_patologic: 'Patolojik',
+    s2_segs: [
+      {k:'mide', l:'Mide'},
+      {k:'duodenum', l:'Duodenum'},
+      {k:'jejunum', l:'Jejunum'},
+      {k:'ileum', l:'İleum (proksimal-orta)'},
+      {k:'terminal_ileum', l:'Terminal ileum'},
+      {k:'iliocecal', l:'İleoçekal valv'},
+      {k:'cecum', l:'Çekum'},
+      {k:'kolon', l:'Kolon (diğer segmentler)'},
+      {k:'apendiks', l:'Apendiks'},
+      {k:'rektum', l:'Rektum / anal kanal'},
+    ],
+    // Step 3
+    s3_title: 'Ekstraintestinal Bulgular',
+    s3_sub: 'Mezenter, LAP, peritoneum, vasküler yapılar, solid organlar',
+    s3_extra_hdr: 'Mezenter, LAP, Peritoneum ve Vasküler Bulgular',
+    s3_solid_hdr: 'Solid Organlar / Vasküler Yapılar',
+    s3_solid_placeholder: 'Karaciğer, dalak, pankreas, böbrekler, adrenaller. Vasküler yapılar (SMA, SMV, portal ven, aorta). İnsidental bulgular...',
+    s3_pelvis_hdr: 'Pelvis',
+    s3_pelvis_placeholder: 'Uterus, overler, mesane, safra ve safra yolları, peritoneal dağılım...',
+    // Step 4
+    s4_title: 'Patoloji Tespit Kararı',
+    s4_sub: 'İnce barsak / gastrointestinal sistemde değerlendirilecek patolojik lezyon var mı?',
+    s4_yes_strong: 'Patoloji var',
+    s4_yes_tag: "Lezyon loop'una geç",
+    s4_no_strong: 'Normal MR enterografi',
+    s4_no_tag: 'Lezyon analizini atla',
+    s4_suspect_strong: 'Şüpheli bulgu',
+    s4_suspect_tag: 'Yine de lezyon olarak işle',
+    s4_lesion_list_hdr: 'Lezyon Listesi',
+    s4_no_lesion_info: '"İleri" tuşu ile ilk lezyonu eklemeye başlayabilirsin.',
+    s4_no_lesion_info_pre: 'Henüz lezyon eklenmedi.',
+    s4_location_empty: '(lokalizasyon girilmedi)',
+    s4_delete: 'Sil',
+    s4_add_lesion: "+ Yeni Lezyon Ekle ve Loop'a Başla",
+    s4_normal_info: '"İleri" tuşu ile lezyon analizini atlayıp özet aşamasına geçeceksin.',
+    s4_normal_info_pre: 'Normal MR enterografi olarak kaydedilecek.',
+    // Lesion step A (5)
+    la_title: 'Lezyon #{n}: Lokalizasyon ve Morfoloji',
+    la_sub: 'Lezyonun anatomik yerleşimi, uzunluk ve dağılım paterni',
+    la_loading: 'Lezyon yükleniyor...',
+    la_loc_hdr: 'Anatomik Lokalizasyon (birden fazla seçilebilir)',
+    la_loc_note_label: 'Lokalizasyon notu (rapor için)',
+    la_loc_note_placeholder: 'örn: ileoçekal valva 5 cm proksimalde, terminal ileum distal segmenti...',
+    la_name_hdr: 'Lezyon Adı (rapor için, opsiyonel)',
+    la_name_placeholder: 'örn: Aktif Crohn lezyonu, obstrüktif kitle...',
+    la_length_hdr: 'Uzunluk',
+    la_lengths: [
+      {k:'short',l:'Kısa (<5 cm)'},
+      {k:'medium',l:'Orta (5–10 cm)'},
+      {k:'long',l:'Uzun (>10 cm)'},
+      {k:'diffuse',l:'Diffüz / tüm barsak'},
+    ],
+    la_length_placeholder: 'Uzunluk ölçümü (cm, rapor için)',
+    la_dist_hdr: 'Dağılım Paterni',
+    la_dists: [
+      {k:'focal',l:'Fokal (tek segment)'},
+      {k:'segmental',l:'Segmental'},
+      {k:'skip',l:'Skip lezyon (atlamalı)'},
+      {k:'continuous',l:'Kontinü (kesintisiz)'},
+      {k:'multifocal',l:'Multifokal'},
+      {k:'diffuse',l:'Diffüz'},
+      {k:'multiple',l:'Multiple ayrık'},
+    ],
+    // Lesion step B (6)
+    lb_title: 'Lezyon #{n}: Duvar ve Sinyal Özellikleri',
+    lb_sub: 'Duvar kalınlığı, T2 sinyali, DWI/ADC, mukozal yüzey',
+    lb_wall_hdr: 'Duvar Kalınlığı',
+    lb_walls: [
+      {k:'',l:'Normal (<3 mm)'},
+      {k:'mild',l:'Hafif (3–5 mm)'},
+      {k:'moderate',l:'Orta (5–10 mm)'},
+      {k:'marked',l:'Belirgin (>10 mm)'},
+      {k:'aneurysmal',l:'Anevrizmal dilatasyon'},
+    ],
+    lb_wall_measure_placeholder: 'Ölçüm (mm, rapor için)',
+    lb_wall_pattern_hdr: 'Duvar Tutulum Paterni',
+    lb_wall_patterns: [
+      {k:'',l:'Tanımlanamadı'},
+      {k:'concentric',l:'Konsantrik'},
+      {k:'eccentric',l:'Ekzantrik'},
+      {k:'circumferential',l:'Sirkumferensiyal'},
+    ],
+    lb_t2_hdr: 'T2 Sinyal Özelliği (duvar)',
+    lb_t2s: [
+      {k:'edema',l:'Ödem (hiperintens – aktif inflamasyon)'},
+      {k:'intermediate',l:'İntermediyer sinyal'},
+      {k:'hypointense',l:'Hipointens (fibrozis)'},
+      {k:'heterogeneous',l:'Heterojen'},
+      {k:'normal',l:'Normal'},
+    ],
+    lb_dwi_hdr: 'DWI / ADC (difüzyon)',
+    lb_dwis: [
+      {k:'yes',l:'Belirgin restriksiyon (düşük ADC)'},
+      {k:'mild',l:'Hafif restriksiyon'},
+      {k:'no',l:'Restriksiyon yok'},
+    ],
+    lb_adc_placeholder: 'ADC değeri (×10⁻³ mm²/sn, rapor için)',
+    lb_mucosa_hdr: 'Mukozal / Morfolojik Bulgular',
+    lb_specific_hdr: 'Özel Morfolojik İşaretçiler (kitle/lezyon özellikleri)',
+    // Lesion step C (7)
+    lc_title: 'Lezyon #{n}: Kontrastlanma ve Lümen',
+    lc_sub: 'Gd-kontrast paterni, kontrastlanma derecesi, luminal değişiklikler',
+    lc_enh_pattern_hdr: 'Kontrastlanma Paterni',
+    lc_enh_patterns: [
+      {k:'stratified',l:'Mural stratifikasyon (tabakalı)'},
+      {k:'target',l:'Target işareti'},
+      {k:'homogeneous',l:'Homojen transmural'},
+      {k:'mucosal',l:'Sadece mukozal'},
+      {k:'heterogeneous',l:'Heterojen'},
+      {k:'peripheral',l:'Periferik (rim)'},
+      {k:'delayed',l:'Geç kontrastlanma (fibrozis/IgG4)'},
+      {k:'reduced',l:'Azalmış (iskemi)'},
+      {k:'absent',l:'Kontrastlanma yok'},
+      {k:'none',l:'Değerlendirilemedi'},
+    ],
+    lc_enh_degree_hdr: 'Kontrastlanma Derecesi',
+    lc_enh_degrees: [
+      {k:'mild',l:'Hafif'},
+      {k:'moderate',l:'Orta'},
+      {k:'intense',l:'Belirgin / avid'},
+      {k:'absent',l:'Yok'},
+    ],
+    lc_tip_strong: 'İpucu:',
+    lc_tip: 'Karsinoid/NET tipik olarak arteriyel fazda avid kontrastlanır. Crohn aktif lezyonda mural stratifikasyon + target paterni sık. Lenfomada homojen hafif-orta kontrastlanma karakteristik.',
+    lc_avid: 'Arteriyel faz avid kontrastlanma (karsinoid/NET paterni)',
+    lc_lumen_hdr: 'Lümen',
+    lc_lumens: [
+      {k:'',l:'Normal'},
+      {k:'mildstenosis',l:'Hafif luminal daralma'},
+      {k:'stenosis',l:'Belirgin stenoz'},
+      {k:'prestenotic',l:'Prestenotik dilatasyon mevcut'},
+      {k:'annular',l:'Annuler stenoz + "shouldering" (adenoca)'},
+      {k:'dilatation',l:'Segment dilatasyonu'},
+      {k:'aneurysmal',l:'Anevrizmal dilatasyon (lenfoma)'},
+    ],
+    // Lesion step D (8)
+    ld_title: 'Lezyon #{n}: Mezenter, LAP ve Komplikasyonlar',
+    ld_sub: 'Mezenter bulguları, lenfadenopati paterni, Crohn komplikasyonları',
+    ld_mes_hdr: 'Mezenter Bulguları',
+    ld_lymph_hdr: 'Lenf Nodu Paterni',
+    ld_lymph_opts: [
+      {k:'', l:'Normal / LAP yok'},
+      {k:'reactive', l:'Reaktif (küçük, multiple)'},
+      {k:'moderate', l:'Orta büyüklükte'},
+      {k:'bulky', l:'Bulky (>1.5 cm)'},
+      {k:'necrotic', l:'Nekrotik santrali (TB)'},
+      {k:'calcified', l:'Kalsifiye'},
+      {k:'conglomerate', l:'Konglomere'},
+    ],
+    ld_lymph_note_placeholder: 'Lenf nodu lokalizasyon/sayı/boyut notu',
+    ld_cx_hdr: 'Komplikasyonlar',
+    ld_notes_hdr: 'Lezyon için Ek Not',
+    ld_notes_placeholder: 'Rapora girecek ek açıklamalar...',
+    // Lesion step E (9)
+    le_title: 'Lezyon #{n}: Ayırıcı Tanı Sonucu',
+    le_sub: 'Girilen MRG ve klinik bulgulara göre ağırlıklı ayırıcı tanı skorlaması',
+    le_no_diff: 'Ayırıcı tanı hesaplanamadı. Daha fazla bulgu işaretlemen gerekli.',
+    le_diff_hdr: 'Ağırlıklı Olasılıklar (ilk 10)',
+    le_note_strong: 'Yorum:',
+    le_note: 'Skorlama ağırlıklı özellik eşleşmesine dayanır (top-8 feature normalizasyonu). Klinik bağlam ve histopatoloji ile korelasyon esastır. Düşük % değerli patolojiler de ayırıcı tanıda akılda tutulmalıdır.',
+    le_add_another: '+ Başka Lezyon Ekle',
+    le_finalize: 'Lezyonları Bitir → Özet',
+    le_lesion_count_pre: 'Şu ana kadar eklenen lezyonlar:',
+    // Step 10
+    s10_title: 'Genel Özet ve Ayırıcı Tanı',
+    s10_sub: 'Tüm lezyonların kombine analizi ve klinik sonuç',
+    s10_total_lesions: 'Toplam Lezyon',
+    s10_indication: 'Klinik Endikasyon',
+    s10_extra_count: 'Ekstra Bulgu Sayısı',
+    s10_cx: 'Komplikasyon',
+    s10_combined_diff: 'Kombine Ayırıcı Tanı (tüm lezyonların ortalaması)',
+    s10_conclusion_hdr: 'Rapor Sonuç Notu (radyolog değerlendirmesi)',
+    s10_conclusion_placeholder: 'Örn: Terminal ileal Crohn hastalığı ile uyumlu aktif inflamatuar bulgular izlenmektedir. Penetran komplikasyon mevcut değil...',
+    // Step 11
+    s11_title: 'Gözden Geçirme ve Rapor',
+    s11_sub: 'Tüm girdileri gözden geçir, hazırsan rapor çıktısına geç',
+    s11_indication: 'Endikasyon',
+    s11_distention: 'Distansiyon',
+    s11_lesion_count: 'Lezyon Sayısı',
+    s11_extra: 'Ekstra Bulgu',
+    s11_lesion_summaries: 'Lezyon Özetleri',
+    s11_loc_empty: '(lokalizasyon girilmedi)',
+    s11_ready_strong: 'Hazırsan:',
+    s11_ready: 'Aşağıdaki "Raporu Görüntüle" butonuna basarak yapılandırılmış radyoloji raporunu oluşturabilirsin. Rapor yeni pencerede açılacak, yazdırma/kopyalama/indirme seçenekleri sunulacaktır.',
+    s11_view_report: '📄 Raporu Görüntüle ve Dışa Aktar',
+    // Report overlay
+    rpt_print: '🖨 Yazdır / PDF',
+    rpt_copy: '📋 Kopyala (zengin)',
+    rpt_download: '⬇ HTML İndir',
+    rpt_download_title: 'MR Enterografi Raporu',
+    rpt_close: '✕ Kapat',
+    rpt_title: 'MR ENTEROGRAFİ RAPORU',
+    rpt_date: 'Rapor tarihi',
+    rpt_clinical_hdr: 'Klinik Bilgi',
+    rpt_indication_row: 'Endikasyon',
+    rpt_extra_clinical_row: 'Ek klinik',
+    rpt_risk_row: 'Risk faktörleri',
+    rpt_risk_immunosup: 'immünsüpresyon',
+    rpt_risk_malignancy: 'bilinen malignite',
+    rpt_risk_nsaid: 'kronik NSAID kullanımı',
+    rpt_risk_anticoag: 'antikoagülan kullanımı',
+    rpt_risk_rt: 'pelvik/abdominal radyoterapi öyküsü',
+    rpt_clin_markers_row: 'Klinik işaretçiler',
+    rpt_technique_hdr: 'İnceleme Tekniği',
+    rpt_oral_contrast_row: 'Oral kontrast',
+    rpt_distention_row: 'Barsak distansiyonu',
+    rpt_artifact_row: 'Hareket artefaktı',
+    rpt_antispasmodic_row: 'Antispasmotik',
+    rpt_antispasmodic_yes: 'Verildi',
+    rpt_antispasmodic_no: 'Verilmedi',
+    rpt_iv_row: 'IV Gd kontrast',
+    rpt_iv_yes: 'Verildi (pre/post serileri alındı)',
+    rpt_iv_no: 'Verilmedi',
+    rpt_sequences_row: 'Sekanslar',
+    rpt_sequences: 'Koronal ve aksiyel T2 HASTE, T2 yağ baskılı, DWI (b 50-800), cine MRI, pre/post IV kontrast sonrası T1 VIBE/LAVA (erken ve geç fazlar)',
+    rpt_findings_hdr: 'BULGULAR',
+    rpt_anat_survey_hdr: 'Anatomik Segment Taraması',
+    rpt_mide: 'Mide',
+    rpt_duodenum: 'Duodenum',
+    rpt_jejunum: 'Jejunum',
+    rpt_ileum: 'İleum',
+    rpt_ti: 'Terminal ileum',
+    rpt_ileocecal: 'İleoçekal valv',
+    rpt_cecum: 'Çekum',
+    rpt_colon: 'Kolon (diğer)',
+    rpt_appendix: 'Apendiks',
+    rpt_rectum: 'Rektum',
+    rpt_lesion: 'Lezyon',
+    rpt_loc_row: 'Lokalizasyon',
+    rpt_length_row: 'Uzunluk',
+    rpt_dist_row: 'Dağılım',
+    rpt_wall_row: 'Duvar kalınlığı',
+    rpt_wall_pattern_row: 'Duvar paterni',
+    rpt_t2_row: 'T2 sinyali (duvar)',
+    rpt_dwi_row: 'DWI',
+    rpt_enh_row: 'Kontrastlanma',
+    rpt_lumen_row: 'Lümen',
+    rpt_mucosa_row: 'Mukozal bulgular',
+    rpt_specific_row: 'Özel morfolojik işaretçiler',
+    rpt_mes_row: 'Mezenter bulguları',
+    rpt_lymph_row: 'Lenf nodları',
+    rpt_cx_row: 'Komplikasyonlar',
+    rpt_notes_row: 'Ek not',
+    rpt_interp_t: 'YORUM — Lezyon',
+    rpt_interp_diff: 'Ayırıcı Tanı',
+    rpt_normal_interp_t: 'YORUM — Normal MR Enterografi',
+    rpt_normal_interp: 'İncelenen ince barsak segmentlerinde patolojik duvar kalınlaşması, anormal kontrastlanma, stenoz, fistül, abse veya mezenter patolojisi izlenmemiştir.',
+    rpt_extra_hdr: 'Ekstraintestinal Bulgular',
+    rpt_mes_lap_peritoneum: 'Mezenter / LAP / Peritoneum / Vasküler',
+    rpt_systemic_cx: 'Sistemik komplikasyonlar',
+    rpt_solid_pelvis_hdr: 'Solid Organlar / Pelvis',
+    rpt_abdominal_organs: 'Karın içi organlar',
+    rpt_pelvis: 'Pelvis',
+    rpt_combined_diff_hdr: 'Kombine Ayırıcı Tanı',
+    rpt_conclusion_t: 'SONUÇ',
+    rpt_conclusion_normal: 'Normal MR enterografi incelemesi. Klinik endikasyona yönelik ek değerlendirme gerekirse klinisyenle korelasyon önerilir.',
+    rpt_conclusion_auto_1: 'Tanımlanan bulgular göz önüne alındığında en olası ayırıcı tanı',
+    rpt_conclusion_auto_2: 'olup,',
+    rpt_conclusion_auto_3: 'da ayırıcı tanıda akılda tutulmalıdır. Klinik, laboratuvar ve gerektiğinde endoskopik/histopatolojik korelasyon önerilir.',
+    rpt_conclusion_empty: 'Sonuç notu girilmedi.',
+    rpt_footer: 'Bu rapor MR enterografi structured reporting şablonu ile oluşturulmuştur. Ağırlıklı ayırıcı tanı algoritması klinik karar destek amacıyla kullanılmakta olup klinisyenin değerlendirmesinin yerine geçmez.',
+    rpt_copy_success: 'Rapor panoya kopyalandı (zengin metin).',
+    rpt_copy_fallback: 'Düz metin olarak panoya kopyalandı.',
+    rpt_copy_fail: 'Kopyalama başarısız: ',
+    rpt_locale: 'tr-TR',
+    // label translator functions
+    walT: {mild:'hafif (3–5 mm)',moderate:'orta (5–10 mm)',marked:'belirgin (>10 mm)',aneurysmal:'anevrizmal dilatasyon'},
+    walT_default: 'normal (<3 mm)',
+    distT: {focal:'fokal',segmental:'segmental',skip:'skip/atlamalı',continuous:'kontinü',multifocal:'multifokal',diffuse:'diffüz',multiple:'multiple ayrık'},
+    lenT: {short:'kısa (<5 cm)',medium:'orta (5–10 cm)',long:'uzun (>10 cm)',diffuse:'diffüz'},
+    t2T: {edema:'ödem (hiperintens, aktif)',intermediate:'intermediyer',hypointense:'hipointens (fibrotik)',heterogeneous:'heterojen',normal:'normal'},
+    dwiT: {yes:'belirgin restriksiyon',mild:'hafif restriksiyon',no:'restriksiyon yok'},
+    enhP: {stratified:'mural stratifikasyon',target:'target',homogeneous:'homojen',mucosal:'mukozal',heterogeneous:'heterojen',peripheral:'periferik',delayed:'geç',reduced:'azalmış',absent:'yok',none:'değerlendirilemedi'},
+    enhD: {mild:'hafif',moderate:'orta',intense:'belirgin',absent:'yok'},
+    lumT: {mildstenosis:'hafif luminal daralma',stenosis:'belirgin stenoz',prestenotic:'stenoz + prestenotik dilatasyon',annular:'annüler stenoz (+shouldering)',dilatation:'dilatasyon',aneurysmal:'anevrizmal dilatasyon'},
+    lumT_default: 'normal',
+    wallPat: {concentric:'konsantrik',eccentric:'ekzantrik',circumferential:'sirkumferensiyal'},
+    lapT: {reactive:'reaktif küçük LAP',moderate:'orta boy LAP',bulky:'bulky LAP (>1.5 cm)',necrotic:'nekrotik santrali LAP',calcified:'kalsifiye LAP',conglomerate:'konglomere LAP'},
+    lapT_default: 'normal',
+    cx_none: 'Yok',
+    // LABELS dict
+    LABELS: {
+      loc_stomach:'mide', loc_duodenum:'duodenum', loc_jejunum:'jejunum',
+      loc_ileum:'ileum', loc_ti:'terminal ileum', loc_distalileum:'distal ileum',
+      loc_iliocecal:'ileoçekal valv', loc_cecum:'çekum', loc_colon:'kolon',
+      loc_colon_continuous:'kolon (rektumdan kontinü)', loc_sigmoid:'sigmoid',
+      loc_rectosigmoid:'rektosigmoid', loc_smallbowel_diffuse:'ince barsak (diffüz)',
+      loc_smallbowel_multifocal:'ince barsak (multifokal)', loc_multifocal:'multifokal',
+      loc_pelvis_ileum:'pelvik ileum', loc_vascular_dist:'vasküler dağılım',
+      loc_mesentery:'mezenter', loc_multiple_polyps:'çoklu polip odakları',
+      loc_ileum_terminal:'terminal ileum', loc_ileum_fold_increase:'ileum (fold sıklaşması)',
+      loc_smallbowel:'ince barsak',
+      duodenum_third_part_compression:'duodenum D3 kompresyonu',
+      mucosa_cobble:'kaldırım taşı', mucosa_ulcer_aphthous:'aftöz ülser',
+      mucosa_ulcer_deep:'derin ülser', mucosa_ulcer_punched:'"punched-out" ülser',
+      mucosa_granular:'granüler mukoza', mucosa_pseudopolyp:'pseudopolip',
+      mucosa_nodular_fold:'nodüler fold kalınlaşması', mucosa_smooth:'düz mukoza',
+      mucosa_diaphragm:'mukozal diyafragma', fold_reversal:'jejunum-ileum fold reversal',
+      fold_loss_jejunum:'jejunum fold kaybı', fold_increase_ileum:'ileum fold sıklaşması',
+      packed_valves:'packed-valves', hidebound:'hidebound görünüm',
+      mucosal_thickening:'mukozal kalınlaşma', mucosal_sloughing:'mukozal dökülme',
+      mucosal_invasion:'tümöral mukoza invazyonu',
+      ribbon_bowel:'ribbon bowel',
+      mes_comb:'comb sign', mes_fibrofat:'fibrofatty proliferasyon',
+      mes_mass:'mezenter kitle', mes_radiating_strands:'desmoplastik ışınlanan bantlar',
+      mes_calcification:'mezenter kalsifikasyonu', mes_desmoplastic:'desmoplastik reaksiyon',
+      mes_retraction:'mezenter retraksiyonu', mes_sandwich:'sandviç işareti',
+      mes_conglomerate_lap:'konglomere LAP', mes_fibrosis:'mezenter fibrozisi',
+      mes_vascular:'mezenter vasküler inflamasyonu', mes_adenitis:'mezenterik adenit',
+      mes_normal:'mezenter normal', mes_fatty_lap:'yağlı karakterde LAP',
+      mes_lap_bulky:'bulky mezenterik LAP', mes_lap_lowattenuation:'düşük sinyalli LAP',
+      mes_infiltration:'mezenterik infiltrasyon', mes_lap_small:'küçük reaktif LAP',
+      mesentery_displacement:'mezenter yer değişikliği', whirl_sign:'whirl sign',
+      clustered_bowel:'kümelenmiş barsak lupları', abnormal_location:'anormal lokalizasyonda barsak',
+      vascular_engorgement:'vasküler kongesyon', closed_loop:'kapalı loop obstrüksiyonu',
+      mesenteric_edema:'mezenterik ödem',
+      omentum_focal_mass:'omentumda fokal kitle', fat_stranding_omental:'omental yağ stranding',
+      triangular_shape:'üçgen şekilli kitle', central_dot_sign:'central dot sign',
+      hyperattenuating_rim:'hiperdens kenar', fat_density_mass:'yağ dansiteli kitle',
+      pericolic_fat_stranding:'perikolik yağ stranding',
+      cx_fistula:'fistül', cx_abscess:'abse', cx_sinus:'sinüs trakt',
+      cx_perforation:'perforasyon', obstr_partial:'parsiyel obstrüksiyon',
+      obstr_complete:'komple obstrüksiyon', cx_fistula_tumor:'tümör kaynaklı kaviteye açılım',
+      ascites:'asit', peritoneum_thickening:'peritoneal kalınlaşma',
+      peritoneal_nodules:'peritoneal nodüller', omentum_caked:'omental caking',
+      pneumatosis:'pneumatosis intestinalis', portal_venous_gas:'portal venöz gaz',
+      smv_thrombus:'SMV trombozu', sma_occlusion:'SMA oklüzyonu/stenozu',
+      organomegaly:'hepatosplenomegali', liver_mets_hypervascular:'hipervasküler karaciğer metastazları',
+      spleen_small:'atrofik dalak', lap_necrotic:'nekrotik LAP',
+      exophytic:'ekzofitik kitle', submucosal_mass:'submukozal kitle',
+      submucosal_targetoid:'submukozal target metastaz', mass_heterogeneous:'heterojen kitle',
+      mass_necrotic:'nekrotik kitle', mass_hemorrhagic:'hemorajik kitle',
+      mass_welldefined:'sınırları düzgün kitle', mass_infiltrative:'infiltratif kitle',
+      mass_homogeneous:'homojen kitle', mass_serosal:'seroza merkezli kitle',
+      wall_serosal:'seroza tutulumu', primary_small:'küçük primer',
+      size_large:'büyük kitle (>5 cm)', size_small:'küçük kitle (<3 cm)',
+      cavitation:'kavitasyon', cecum_pulledup:'yukarı çekilmiş çekum',
+      caseation:'kazeöz görünüm', blind_ending_pouch:'kör sonlanan divertiküler poş',
+      antimesenteric:'antimezenterik kenar', umbilical_distance:'umbilikusa yakın mesafe',
+      t1_hyperintense_melanoma:'T1 hiperintens (melanom)', t1_hyperintense_foci:'T1 hiperintens foküs',
+      t1_hyperintense_fat:'T1 hiperintens yağ', t1_hyperintense_wall:'T1 hiperintens duvar',
+      t2_hyperintense:'T2 hiperintens', fat_suppression:'yağ baskılamada kayıp',
+      t2_hypointense:'T2 hipointens', t2_hypointense_fibrosis:'T2 hipointens fibrotik odak',
+      target_sign:'target sign', sausage_mass:'sosis şekli kitle',
+      bowel_in_bowel:'barsak-içinde-barsak', mes_fat_within:'kitle içinde mezenter yağı',
+      lead_point_mass:'lead-point kitle', intussusception:'invajinasyon',
+      intussusception_transient:'geçici invajinasyon', fecalization:'feces işareti',
+      feces_sign_prox:'obstrüksiyon feces işareti',
+      enh_avid_arterial:'arteriyel avid kontrastlanma',
+      clinical_orogenital:'orogenital ülser öyküsü',
+      clinical_malabsorption:'malabsorpsiyon klinik bulgusu',
+      clinical_carcinoid_syndrome:'karsinoid sendrom semptomları',
+      clinical_celiac_history:'çölyak öyküsü',
+      clinical_posttransplant:'posttransplant durum',
+      clinical_scleroderma:'bilinen skleroderma',
+      clinical_igg4:'IgG4-ilişkili hastalık öyküsü',
+      clinical_fap:'FAP/familyal polipozis',
+      clinical_pigmentation:'mukokutanöz pigmentasyon',
+      clinical_female_repro:'reprodüktif dönem kadın',
+      cyclical_sx:'siklik semptomlar',
+      clinical_hpylori:'H. pylori pozitif',
+      clinical_allergy:'atopi/eozinofili',
+      endemic:'endemik bölge',
+      post_gastric_bypass:'gastrik bypass öyküsü',
+      clinical_hypercoag:'hiperkoagülabilite',
+    },
+  },
+  en: {
+    // Header
+    header_title: 'MRI Enterography Assessment System',
+    header_sub: 'Structured multi-lesion reporting • Weighted differential scoring with 35+ pathologies',
+    step_label: 'Step',
+    lesion_label: 'Lesion',
+    total_lesions: 'Total lesions',
+    nav_back: '‹ Back',
+    nav_next: 'Next ›',
+    nav_view_report: 'View Report →',
+    scan_phase: 'Survey phase',
+    summary_phase: 'Summary phase',
+    // Step 1
+    s1_title: 'Clinical Information & Scan Quality',
+    s1_sub: "Patient's clinical status and MRI enterography quality parameters",
+    s1_indication_hdr: 'Clinical Indication',
+    s1_indications: ['Crohn disease – initial/follow-up','IBD differential diagnosis','Malabsorption','Chronic abdominal pain','Gastrointestinal bleeding','Chronic diarrhea','Obstruction/subileus','Small bowel tumor','Postoperative evaluation','Celiac complication','Behçet follow-up','Other'],
+    s1_notes_placeholder: 'Additional clinical notes, symptom duration, laboratory findings...',
+    s1_modifiers_hdr: 'Clinical Modifying Factors',
+    s1_modifiers: [
+      {k:'immunsupresif', l:'Immunosuppression (HIV/transplant/chemotherapy)'},
+      {k:'knownMalignancy', l:'Known malignancy'},
+      {k:'nsaidUse', l:'Chronic NSAID use'},
+      {k:'anticoagulant', l:'Anticoagulant use'},
+      {k:'radyoterapi', l:'History of pelvic/abdominal radiotherapy'},
+      {k:'biyopsi', l:'Prior diagnostic biopsy confirmed'},
+    ],
+    s1_malignancy_placeholder: 'Known malignancy type (e.g. melanoma, breast ca...)',
+    s1_clin_flags_hdr: 'Clinical Markers (for differential diagnosis)',
+    s1_clin_flags: [
+      {k:'clinical_orogenital', l:'Orogenital ulcers (Behçet)'},
+      {k:'clinical_malabsorption', l:'Clinical malabsorption findings'},
+      {k:'clinical_carcinoid_syndrome', l:'Carcinoid syndrome symptoms'},
+      {k:'clinical_celiac_history', l:'History of celiac disease'},
+      {k:'clinical_posttransplant', l:'Post-transplant / stem cell transplant'},
+      {k:'clinical_scleroderma', l:'Known scleroderma/CREST'},
+      {k:'clinical_igg4', l:'History of IgG4-related disease'},
+      {k:'clinical_fap', l:'FAP / familial polyposis'},
+      {k:'clinical_pigmentation', l:'Mucocutaneous pigmentation (P-J)'},
+      {k:'clinical_female_repro', l:'Female of reproductive age (endometriosis differential)'},
+      {k:'cyclical_sx', l:'Cyclical symptoms (endometriosis)'},
+      {k:'clinical_hpylori', l:'H. pylori positive'},
+      {k:'clinical_allergy', l:'History of atopy/eosinophilia'},
+      {k:'endemic', l:'Endemic region (TB risk)'},
+      {k:'post_gastric_bypass', l:'History of gastric bypass'},
+      {k:'clinical_hypercoag', l:'Hypercoagulable state'},
+    ],
+    s1_quality_hdr: 'Scan Quality',
+    s1_oral_contrast: 'Oral contrast agent',
+    s1_oral_contrast_opts: ['Mannitol 2.5%','PEG','VoLumen (low-density barium)','Water','No oral contrast'],
+    s1_distention_label: 'Bowel distention',
+    s1_distention_opts: ['Adequate (>2 cm lumen)','Partially adequate','Inadequate','Markedly dilated'],
+    s1_artifact_label: 'Motion artifact',
+    s1_artifact_opts: ['None','Mild','Moderate','Significant (affecting interpretation)'],
+    s1_antispasmodic: 'Antispasmodic (Buscopan/Glucagon)',
+    s1_iv_contrast: 'IV Gd contrast administered',
+    // Step 2
+    s2_title: 'Anatomic Segment Survey',
+    s2_sub: 'Mark each segment systematically; pathological segments will be detailed in the lesion loop',
+    s2_tip_strong: 'Tip:',
+    s2_tip: 'This step performs anatomic survey only. Detailed MRI characteristics of pathological lesions are determined in the lesion loop for differential diagnosis.',
+    s2_seg_normal: 'Normal',
+    s2_seg_suspect: 'Suspicious',
+    s2_seg_patologic: 'Pathological',
+    s2_segs: [
+      {k:'mide', l:'Stomach'},
+      {k:'duodenum', l:'Duodenum'},
+      {k:'jejunum', l:'Jejunum'},
+      {k:'ileum', l:'Ileum (proximal-mid)'},
+      {k:'terminal_ileum', l:'Terminal ileum'},
+      {k:'iliocecal', l:'Ileocecal valve'},
+      {k:'cecum', l:'Cecum'},
+      {k:'kolon', l:'Colon (other segments)'},
+      {k:'apendiks', l:'Appendix'},
+      {k:'rektum', l:'Rectum / anal canal'},
+    ],
+    // Step 3
+    s3_title: 'Extra-intestinal Findings',
+    s3_sub: 'Mesentery, lymph nodes, peritoneum, vascular structures, solid organs',
+    s3_extra_hdr: 'Mesentery, Lymph Nodes, Peritoneum & Vascular Findings',
+    s3_solid_hdr: 'Solid Organs / Vascular Structures',
+    s3_solid_placeholder: 'Liver, spleen, pancreas, kidneys, adrenals. Vascular structures (SMA, SMV, portal vein, aorta). Incidental findings...',
+    s3_pelvis_hdr: 'Pelvis',
+    s3_pelvis_placeholder: 'Uterus, ovaries, bladder, biliary system, peritoneal distribution...',
+    // Step 4
+    s4_title: 'Pathology Detection Decision',
+    s4_sub: 'Is there a pathological lesion in the small bowel / gastrointestinal system to evaluate?',
+    s4_yes_strong: 'Pathology present',
+    s4_yes_tag: 'Proceed to lesion loop',
+    s4_no_strong: 'Normal MRI enterography',
+    s4_no_tag: 'Skip lesion analysis',
+    s4_suspect_strong: 'Suspicious finding',
+    s4_suspect_tag: 'Process as lesion anyway',
+    s4_lesion_list_hdr: 'Lesion List',
+    s4_no_lesion_info: 'Press "Next" to start adding the first lesion.',
+    s4_no_lesion_info_pre: 'No lesions added yet.',
+    s4_location_empty: '(no location entered)',
+    s4_delete: 'Delete',
+    s4_add_lesion: '+ Add New Lesion & Start Loop',
+    s4_normal_info: 'Press "Next" to skip lesion analysis and proceed to summary.',
+    s4_normal_info_pre: 'Will be recorded as normal MRI enterography.',
+    // Lesion step A (5)
+    la_title: 'Lesion #{n}: Location & Morphology',
+    la_sub: 'Anatomic location, lesion length and distribution pattern',
+    la_loading: 'Loading lesion...',
+    la_loc_hdr: 'Anatomic Location (multiple selection allowed)',
+    la_loc_note_label: 'Location note (for report)',
+    la_loc_note_placeholder: 'e.g. 5 cm proximal to the ileocecal valve, distal segment of terminal ileum...',
+    la_name_hdr: 'Lesion Name (for report, optional)',
+    la_name_placeholder: 'e.g. Active Crohn lesion, obstructive mass...',
+    la_length_hdr: 'Length',
+    la_lengths: [
+      {k:'short',l:'Short (<5 cm)'},
+      {k:'medium',l:'Medium (5–10 cm)'},
+      {k:'long',l:'Long (>10 cm)'},
+      {k:'diffuse',l:'Diffuse / entire bowel'},
+    ],
+    la_length_placeholder: 'Length measurement (cm, for report)',
+    la_dist_hdr: 'Distribution Pattern',
+    la_dists: [
+      {k:'focal',l:'Focal (single segment)'},
+      {k:'segmental',l:'Segmental'},
+      {k:'skip',l:'Skip lesion'},
+      {k:'continuous',l:'Continuous'},
+      {k:'multifocal',l:'Multifocal'},
+      {k:'diffuse',l:'Diffuse'},
+      {k:'multiple',l:'Multiple discrete'},
+    ],
+    // Lesion step B (6)
+    lb_title: 'Lesion #{n}: Wall & Signal Characteristics',
+    lb_sub: 'Wall thickness, T2 signal, DWI/ADC, mucosal surface',
+    lb_wall_hdr: 'Wall Thickness',
+    lb_walls: [
+      {k:'',l:'Normal (<3 mm)'},
+      {k:'mild',l:'Mild (3–5 mm)'},
+      {k:'moderate',l:'Moderate (5–10 mm)'},
+      {k:'marked',l:'Marked (>10 mm)'},
+      {k:'aneurysmal',l:'Aneurysmal dilatation'},
+    ],
+    lb_wall_measure_placeholder: 'Measurement (mm, for report)',
+    lb_wall_pattern_hdr: 'Wall Involvement Pattern',
+    lb_wall_patterns: [
+      {k:'',l:'Not defined'},
+      {k:'concentric',l:'Concentric'},
+      {k:'eccentric',l:'Eccentric'},
+      {k:'circumferential',l:'Circumferential'},
+    ],
+    lb_t2_hdr: 'T2 Signal Characteristic (wall)',
+    lb_t2s: [
+      {k:'edema',l:'Edema (hyperintense – active inflammation)'},
+      {k:'intermediate',l:'Intermediate signal'},
+      {k:'hypointense',l:'Hypointense (fibrosis)'},
+      {k:'heterogeneous',l:'Heterogeneous'},
+      {k:'normal',l:'Normal'},
+    ],
+    lb_dwi_hdr: 'DWI / ADC (diffusion)',
+    lb_dwis: [
+      {k:'yes',l:'Significant restricted diffusion (low ADC)'},
+      {k:'mild',l:'Mild restricted diffusion'},
+      {k:'no',l:'No restricted diffusion'},
+    ],
+    lb_adc_placeholder: 'ADC value (×10⁻³ mm²/s, for report)',
+    lb_mucosa_hdr: 'Mucosal / Morphological Findings',
+    lb_specific_hdr: 'Special Morphological Markers (mass/lesion characteristics)',
+    // Lesion step C (7)
+    lc_title: 'Lesion #{n}: Enhancement & Lumen',
+    lc_sub: 'Gd-contrast pattern, enhancement degree, luminal changes',
+    lc_enh_pattern_hdr: 'Enhancement Pattern',
+    lc_enh_patterns: [
+      {k:'stratified',l:'Mural stratification (layered)'},
+      {k:'target',l:'Target sign'},
+      {k:'homogeneous',l:'Homogeneous transmural'},
+      {k:'mucosal',l:'Mucosal only'},
+      {k:'heterogeneous',l:'Heterogeneous'},
+      {k:'peripheral',l:'Peripheral (rim)'},
+      {k:'delayed',l:'Delayed enhancement (fibrosis/IgG4)'},
+      {k:'reduced',l:'Reduced (ischemia)'},
+      {k:'absent',l:'No enhancement'},
+      {k:'none',l:'Not evaluable'},
+    ],
+    lc_enh_degree_hdr: 'Enhancement Degree',
+    lc_enh_degrees: [
+      {k:'mild',l:'Mild'},
+      {k:'moderate',l:'Moderate'},
+      {k:'intense',l:'Marked / avid'},
+      {k:'absent',l:'Absent'},
+    ],
+    lc_tip_strong: 'Tip:',
+    lc_tip: 'Carcinoid/NET typically shows avid arterial-phase enhancement. Active Crohn lesions often show mural stratification + target pattern. Lymphoma characteristically shows homogeneous mild-moderate enhancement.',
+    lc_avid: 'Arterial-phase avid enhancement (carcinoid/NET pattern)',
+    lc_lumen_hdr: 'Lumen',
+    lc_lumens: [
+      {k:'',l:'Normal'},
+      {k:'mildstenosis',l:'Mild luminal narrowing'},
+      {k:'stenosis',l:'Significant stricture'},
+      {k:'prestenotic',l:'Prestenotic dilatation present'},
+      {k:'annular',l:'Annular stricture + "shouldering" (adenoca)'},
+      {k:'dilatation',l:'Segmental dilatation'},
+      {k:'aneurysmal',l:'Aneurysmal dilatation (lymphoma)'},
+    ],
+    // Lesion step D (8)
+    ld_title: 'Lesion #{n}: Mesentery, Lymph Nodes & Complications',
+    ld_sub: 'Mesenteric findings, lymphadenopathy pattern, Crohn complications',
+    ld_mes_hdr: 'Mesenteric Findings',
+    ld_lymph_hdr: 'Lymph Node Pattern',
+    ld_lymph_opts: [
+      {k:'', l:'Normal / no lymphadenopathy'},
+      {k:'reactive', l:'Reactive (small, multiple)'},
+      {k:'moderate', l:'Moderate size'},
+      {k:'bulky', l:'Bulky (>1.5 cm)'},
+      {k:'necrotic', l:'Necrotic center (TB)'},
+      {k:'calcified', l:'Calcified'},
+      {k:'conglomerate', l:'Conglomerate'},
+    ],
+    ld_lymph_note_placeholder: 'Lymph node location/count/size note',
+    ld_cx_hdr: 'Complications',
+    ld_notes_hdr: 'Additional Note for Lesion',
+    ld_notes_placeholder: 'Additional comments to be included in report...',
+    // Lesion step E (9)
+    le_title: 'Lesion #{n}: Differential Diagnosis Result',
+    le_sub: 'Weighted differential scoring based on entered MRI and clinical findings',
+    le_no_diff: 'Differential diagnosis could not be calculated. More findings need to be selected.',
+    le_diff_hdr: 'Weighted Probabilities (top 10)',
+    le_note_strong: 'Note:',
+    le_note: 'Scoring is based on weighted feature matching (top-8 feature normalization). Correlation with clinical context and histopathology is essential. Pathologies with low % values should also be kept in mind.',
+    le_add_another: '+ Add Another Lesion',
+    le_finalize: 'Finalize Lesions → Summary',
+    le_lesion_count_pre: 'Lesions added so far:',
+    // Step 10
+    s10_title: 'Overall Summary & Differential Diagnosis',
+    s10_sub: 'Combined analysis of all lesions and clinical conclusion',
+    s10_total_lesions: 'Total Lesions',
+    s10_indication: 'Clinical Indication',
+    s10_extra_count: 'Extra Finding Count',
+    s10_cx: 'Complications',
+    s10_combined_diff: 'Combined Differential Diagnosis (average of all lesions)',
+    s10_conclusion_hdr: 'Report Conclusion Note (radiologist assessment)',
+    s10_conclusion_placeholder: 'E.g. Active inflammatory findings consistent with terminal ileal Crohn disease. No penetrating complications identified...',
+    // Step 11
+    s11_title: 'Review & Report',
+    s11_sub: 'Review all entries; proceed to report output when ready',
+    s11_indication: 'Indication',
+    s11_distention: 'Distention',
+    s11_lesion_count: 'Lesion Count',
+    s11_extra: 'Extra Findings',
+    s11_lesion_summaries: 'Lesion Summaries',
+    s11_loc_empty: '(no location entered)',
+    s11_ready_strong: 'When ready:',
+    s11_ready: 'Click the "View Report" button below to generate a structured radiology report. The report will include print/copy/download options.',
+    s11_view_report: '📄 View & Export Report',
+    // Report overlay
+    rpt_print: '🖨 Print / PDF',
+    rpt_copy: '📋 Copy (rich text)',
+    rpt_download: '⬇ Download HTML',
+    rpt_download_title: 'MRI Enterography Report',
+    rpt_close: '✕ Close',
+    rpt_title: 'MRI ENTEROGRAPHY REPORT',
+    rpt_date: 'Report date',
+    rpt_clinical_hdr: 'Clinical Information',
+    rpt_indication_row: 'Indication',
+    rpt_extra_clinical_row: 'Additional clinical',
+    rpt_risk_row: 'Risk factors',
+    rpt_risk_immunosup: 'immunosuppression',
+    rpt_risk_malignancy: 'known malignancy',
+    rpt_risk_nsaid: 'chronic NSAID use',
+    rpt_risk_anticoag: 'anticoagulant use',
+    rpt_risk_rt: 'history of pelvic/abdominal radiotherapy',
+    rpt_clin_markers_row: 'Clinical markers',
+    rpt_technique_hdr: 'Technique',
+    rpt_oral_contrast_row: 'Oral contrast',
+    rpt_distention_row: 'Bowel distention',
+    rpt_artifact_row: 'Motion artifact',
+    rpt_antispasmodic_row: 'Antispasmodic',
+    rpt_antispasmodic_yes: 'Administered',
+    rpt_antispasmodic_no: 'Not administered',
+    rpt_iv_row: 'IV Gd contrast',
+    rpt_iv_yes: 'Administered (pre/post series acquired)',
+    rpt_iv_no: 'Not administered',
+    rpt_sequences_row: 'Sequences',
+    rpt_sequences: 'Coronal and axial T2 HASTE, fat-saturated T2, DWI (b 50-800), cine MRI, pre/post IV contrast T1 VIBE/LAVA (early and late phases)',
+    rpt_findings_hdr: 'FINDINGS',
+    rpt_anat_survey_hdr: 'Anatomic Segment Survey',
+    rpt_mide: 'Stomach',
+    rpt_duodenum: 'Duodenum',
+    rpt_jejunum: 'Jejunum',
+    rpt_ileum: 'Ileum',
+    rpt_ti: 'Terminal ileum',
+    rpt_ileocecal: 'Ileocecal valve',
+    rpt_cecum: 'Cecum',
+    rpt_colon: 'Colon (other)',
+    rpt_appendix: 'Appendix',
+    rpt_rectum: 'Rectum',
+    rpt_lesion: 'Lesion',
+    rpt_loc_row: 'Location',
+    rpt_length_row: 'Length',
+    rpt_dist_row: 'Distribution',
+    rpt_wall_row: 'Wall thickness',
+    rpt_wall_pattern_row: 'Wall pattern',
+    rpt_t2_row: 'T2 signal (wall)',
+    rpt_dwi_row: 'DWI',
+    rpt_enh_row: 'Enhancement',
+    rpt_lumen_row: 'Lumen',
+    rpt_mucosa_row: 'Mucosal findings',
+    rpt_specific_row: 'Special morphological markers',
+    rpt_mes_row: 'Mesenteric findings',
+    rpt_lymph_row: 'Lymph nodes',
+    rpt_cx_row: 'Complications',
+    rpt_notes_row: 'Additional note',
+    rpt_interp_t: 'INTERPRETATION — Lesion',
+    rpt_interp_diff: 'Differential Diagnosis',
+    rpt_normal_interp_t: 'INTERPRETATION — Normal MRI Enterography',
+    rpt_normal_interp: 'No pathological wall thickening, abnormal enhancement, stricture, fistula, abscess or mesenteric pathology was identified in the examined small bowel segments.',
+    rpt_extra_hdr: 'Extra-intestinal Findings',
+    rpt_mes_lap_peritoneum: 'Mesentery / Lymph Nodes / Peritoneum / Vascular',
+    rpt_systemic_cx: 'Systemic complications',
+    rpt_solid_pelvis_hdr: 'Solid Organs / Pelvis',
+    rpt_abdominal_organs: 'Abdominal organs',
+    rpt_pelvis: 'Pelvis',
+    rpt_combined_diff_hdr: 'Combined Differential Diagnosis',
+    rpt_conclusion_t: 'IMPRESSION',
+    rpt_conclusion_normal: 'Normal MRI enterography. Clinical correlation is recommended if further evaluation is needed.',
+    rpt_conclusion_auto_1: 'Based on the identified findings, the most likely differential diagnosis is',
+    rpt_conclusion_auto_2: 'while',
+    rpt_conclusion_auto_3: 'should also be considered. Clinical, laboratory and, if necessary, endoscopic/histopathological correlation is recommended.',
+    rpt_conclusion_empty: 'No conclusion note entered.',
+    rpt_footer: 'This report was generated using an MRI enterography structured reporting template. The weighted differential diagnosis algorithm is intended for clinical decision support and does not replace the clinician\'s assessment.',
+    rpt_copy_success: 'Report copied to clipboard (rich text).',
+    rpt_copy_fallback: 'Copied to clipboard as plain text.',
+    rpt_copy_fail: 'Copy failed: ',
+    rpt_locale: 'en-US',
+    // label translator functions
+    walT: {mild:'mild (3–5 mm)',moderate:'moderate (5–10 mm)',marked:'marked (>10 mm)',aneurysmal:'aneurysmal dilatation'},
+    walT_default: 'normal (<3 mm)',
+    distT: {focal:'focal',segmental:'segmental',skip:'skip',continuous:'continuous',multifocal:'multifocal',diffuse:'diffuse',multiple:'multiple discrete'},
+    lenT: {short:'short (<5 cm)',medium:'medium (5–10 cm)',long:'long (>10 cm)',diffuse:'diffuse'},
+    t2T: {edema:'edema (hyperintense, active)',intermediate:'intermediate',hypointense:'hypointense (fibrotic)',heterogeneous:'heterogeneous',normal:'normal'},
+    dwiT: {yes:'significant restricted diffusion',mild:'mild restricted diffusion',no:'no restricted diffusion'},
+    enhP: {stratified:'mural stratification',target:'target',homogeneous:'homogeneous',mucosal:'mucosal',heterogeneous:'heterogeneous',peripheral:'peripheral',delayed:'delayed',reduced:'reduced',absent:'absent',none:'not evaluable'},
+    enhD: {mild:'mild',moderate:'moderate',intense:'marked',absent:'absent'},
+    lumT: {mildstenosis:'mild luminal narrowing',stenosis:'significant stricture',prestenotic:'stricture + prestenotic dilatation',annular:'annular stricture (+shouldering)',dilatation:'dilatation',aneurysmal:'aneurysmal dilatation'},
+    lumT_default: 'normal',
+    wallPat: {concentric:'concentric',eccentric:'eccentric',circumferential:'circumferential'},
+    lapT: {reactive:'reactive small lymphadenopathy',moderate:'moderate-size lymphadenopathy',bulky:'bulky lymphadenopathy (>1.5 cm)',necrotic:'necrotic center lymphadenopathy',calcified:'calcified lymphadenopathy',conglomerate:'conglomerate lymphadenopathy'},
+    lapT_default: 'normal',
+    cx_none: 'None',
+    // LABELS dict
+    LABELS: {
+      loc_stomach:'stomach', loc_duodenum:'duodenum', loc_jejunum:'jejunum',
+      loc_ileum:'ileum', loc_ti:'terminal ileum', loc_distalileum:'distal ileum',
+      loc_iliocecal:'ileocecal valve', loc_cecum:'cecum', loc_colon:'colon',
+      loc_colon_continuous:'colon (continuous from rectum)', loc_sigmoid:'sigmoid',
+      loc_rectosigmoid:'rectosigmoid', loc_smallbowel_diffuse:'small bowel (diffuse)',
+      loc_smallbowel_multifocal:'small bowel (multifocal)', loc_multifocal:'multifocal',
+      loc_pelvis_ileum:'pelvic ileum', loc_vascular_dist:'vascular distribution',
+      loc_mesentery:'mesentery', loc_multiple_polyps:'multiple polyp foci',
+      loc_ileum_terminal:'terminal ileum', loc_ileum_fold_increase:'ileum (fold crowding)',
+      loc_smallbowel:'small bowel',
+      duodenum_third_part_compression:'duodenum D3 compression',
+      mucosa_cobble:'cobblestone', mucosa_ulcer_aphthous:'aphthous ulcer',
+      mucosa_ulcer_deep:'deep ulcer', mucosa_ulcer_punched:'"punched-out" ulcer',
+      mucosa_granular:'granular mucosa', mucosa_pseudopolyp:'pseudopolyp',
+      mucosa_nodular_fold:'nodular fold thickening', mucosa_smooth:'smooth mucosa',
+      mucosa_diaphragm:'mucosal diaphragm', fold_reversal:'jejunum-ileum fold reversal',
+      fold_loss_jejunum:'jejunum fold loss', fold_increase_ileum:'ileum fold crowding',
+      packed_valves:'packed valves', hidebound:'hidebound appearance',
+      mucosal_thickening:'mucosal thickening', mucosal_sloughing:'mucosal sloughing',
+      mucosal_invasion:'tumoral mucosal invasion',
+      ribbon_bowel:'ribbon bowel',
+      mes_comb:'comb sign', mes_fibrofat:'fibrofatty proliferation (creeping fat)',
+      mes_mass:'mesenteric mass', mes_radiating_strands:'desmoplastic radiating strands',
+      mes_calcification:'mesenteric calcification', mes_desmoplastic:'desmoplastic reaction',
+      mes_retraction:'mesenteric retraction', mes_sandwich:'sandwich sign',
+      mes_conglomerate_lap:'conglomerate lymphadenopathy', mes_fibrosis:'mesenteric fibrosis',
+      mes_vascular:'mesenteric vascular inflammation', mes_adenitis:'mesenteric adenitis',
+      mes_normal:'mesentery normal', mes_fatty_lap:'fatty-type lymphadenopathy (Whipple)',
+      mes_lap_bulky:'bulky mesenteric lymphadenopathy', mes_lap_lowattenuation:'low-signal lymphadenopathy',
+      mes_infiltration:'mesenteric infiltration', mes_lap_small:'small reactive lymphadenopathy',
+      mesentery_displacement:'mesenteric displacement', whirl_sign:'whirl sign',
+      clustered_bowel:'clustered bowel loops', abnormal_location:'abnormally located bowel',
+      vascular_engorgement:'vascular engorgement', closed_loop:'closed-loop obstruction',
+      mesenteric_edema:'mesenteric edema',
+      omentum_focal_mass:'focal omental mass', fat_stranding_omental:'omental fat stranding',
+      triangular_shape:'triangular-shaped mass', central_dot_sign:'central dot sign',
+      hyperattenuating_rim:'hyperattenuating rim', fat_density_mass:'fat-density mass',
+      pericolic_fat_stranding:'pericolic fat stranding',
+      cx_fistula:'fistula', cx_abscess:'abscess', cx_sinus:'sinus tract',
+      cx_perforation:'perforation', obstr_partial:'partial obstruction',
+      obstr_complete:'complete obstruction', cx_fistula_tumor:'tumor-related cavity communication',
+      ascites:'ascites', peritoneum_thickening:'peritoneal thickening',
+      peritoneal_nodules:'peritoneal nodules', omentum_caked:'omental caking',
+      pneumatosis:'pneumatosis intestinalis', portal_venous_gas:'portal venous gas',
+      smv_thrombus:'SMV thrombosis', sma_occlusion:'SMA occlusion/stenosis',
+      organomegaly:'hepatosplenomegaly', liver_mets_hypervascular:'hypervascular hepatic metastases',
+      spleen_small:'atrophic spleen (suggesting celiac)', lap_necrotic:'necrotic lymphadenopathy',
+      exophytic:'exophytic mass', submucosal_mass:'submucosal mass',
+      submucosal_targetoid:'submucosal target metastasis', mass_heterogeneous:'heterogeneous mass',
+      mass_necrotic:'necrotic mass', mass_hemorrhagic:'hemorrhagic mass',
+      mass_welldefined:'well-defined mass', mass_infiltrative:'infiltrative mass',
+      mass_homogeneous:'homogeneous mass', mass_serosal:'serosal-based mass (endometriosis)',
+      wall_serosal:'serosal wall involvement', primary_small:'small primary lesion',
+      size_large:'large mass (>5 cm)', size_small:'small mass (<3 cm)',
+      cavitation:'cavitation', cecum_pulledup:'pulled-up cecum (TB)',
+      caseation:'caseous appearance', blind_ending_pouch:'blind-ending diverticular pouch (Meckel)',
+      antimesenteric:'antimesenteric border', umbilical_distance:'near umbilical distance (40–100 cm)',
+      t1_hyperintense_melanoma:'T1 hyperintense (melanoma)', t1_hyperintense_foci:'T1 hyperintense focus',
+      t1_hyperintense_fat:'T1 hyperintense fat', t1_hyperintense_wall:'T1 hyperintense wall (hematoma)',
+      t2_hyperintense:'T2 hyperintense', fat_suppression:'fat suppression loss',
+      t2_hypointense:'T2 hypointense', t2_hypointense_fibrosis:'T2 hypointense fibrotic focus',
+      target_sign:'target sign', sausage_mass:'sausage-shaped mass',
+      bowel_in_bowel:'bowel-within-bowel', mes_fat_within:'mesenteric fat within mass',
+      lead_point_mass:'lead-point mass', intussusception:'intussusception',
+      intussusception_transient:'transient intussusception', fecalization:'fecalization sign',
+      feces_sign_prox:'obstruction feces sign',
+      enh_avid_arterial:'arterial avid enhancement',
+      clinical_orogenital:'history of orogenital ulcers',
+      clinical_malabsorption:'clinical malabsorption findings',
+      clinical_carcinoid_syndrome:'carcinoid syndrome symptoms',
+      clinical_celiac_history:'history of celiac disease',
+      clinical_posttransplant:'post-transplant status',
+      clinical_scleroderma:'known scleroderma',
+      clinical_igg4:'history of IgG4-related disease',
+      clinical_fap:'FAP/familial polyposis',
+      clinical_pigmentation:'mucocutaneous pigmentation',
+      clinical_female_repro:'female of reproductive age',
+      cyclical_sx:'cyclical symptoms',
+      clinical_hpylori:'H. pylori positive',
+      clinical_allergy:'atopy/eosinophilia',
+      endemic:'endemic region',
+      post_gastric_bypass:'history of gastric bypass',
+      clinical_hypercoag:'hypercoagulable state',
+    },
+    // Pathology display names (shown in differential results)
+    pathNames: {
+      crohn_active:'Crohn disease – Active inflammatory',
+      crohn_fibrostenotic:'Crohn disease – Fibrostenotic type',
+      crohn_penetrating:'Crohn disease – Penetrating type',
+      uc:'Ulcerative colitis (backwash ileitis)',
+      behcet:'Behçet disease – Intestinal',
+      tb_intestinal:'Intestinal tuberculosis',
+      yersinia:'Yersinia enteritis',
+      whipple:'Whipple disease',
+      celiac:'Celiac disease / Sprue',
+      eatl:'Enteropathy-associated T-cell lymphoma (EATL)',
+      eosinophilic:'Eosinophilic enteritis',
+      gvhd:'Graft-versus-Host Disease (GVHD)',
+      radiation:'Radiation enteritis',
+      nsaid_enteropathy:'NSAID enteropathy',
+      ischemic:'Ischemic enteritis / Bowel ischemia',
+      msv_thrombosis:'Mesenteric venous thrombosis',
+      intramural_hematoma:'Intramural hematoma (trauma/anticoagulant)',
+      adenocarcinoma:'Small bowel adenocarcinoma',
+      carcinoid:'Carcinoid tumor / Neuroendocrine tumor',
+      lymphoma_diffuse:'Intestinal lymphoma (DLBCL, diffuse type)',
+      malt:'MALT lymphoma',
+      gist:'GIST (Gastrointestinal stromal tumor)',
+      metastasis:'Intestinal metastasis (melanoma/breast)',
+      peutz_jeghers:'Peutz-Jeghers polyps / Hamartomatous',
+      desmoid:'Mesenteric desmoid tumor',
+      lipoma:'Lipoma (intestinal)',
+      scleroderma:'Scleroderma (intestinal)',
+      amyloidosis:'Intestinal amyloidosis',
+      endometriosis:'Intestinal endometriosis',
+      meckel:'Meckel diverticulum / Meckel diverticulitis',
+      sbo_adhesive:'Adhesive small bowel obstruction',
+      internal_hernia:'Internal hernia',
+      intussusception:'Intussusception',
+      mesenteric_adenitis:'Mesenteric adenitis',
+      appendicitis:'Appendicitis',
+      epiploic_appendagitis:'Epiploic appendagitis',
+      omental_infarct:'Omental infarction',
+      sma_syndrome:'SMA syndrome (Wilkie)',
+      igg4_related:'IgG4-related mesenteric/intestinal disease',
+      ipeed:'Inflammatory bowel disease – unclassified/Ileocolitis',
+    },
+  },
+})[RV_LOCALE];
+function pathLabel(id, fallbackName){ return (RV_LOCALE === 'en' && T.pathNames && T.pathNames[id]) ? T.pathNames[id] : fallbackName; }
+const CAT_LABELS_EN = {
+  'İBH':'IBD','İnfeksiyöz':'Infectious','Neoplazi':'Neoplasm',
+  'Neoplazi benign':'Neoplasm (benign)','Neoplazi benign agresif':'Neoplasm (benign aggressive)',
+  'Vasküler':'Vascular','Vasküler/Travma':'Vascular/Trauma',
+  'İatrojenik':'Iatrogenic','İnflamatuar':'Inflammatory',
+  'Malabsorbsiyon':'Malabsorption','Mekanik':'Mechanical',
+  'Konjenital':'Congenital','Sistemik':'Systemic',
+  'Bağ doku/Motilite':'Connective tissue/Motility',
+  'Diğer':'Other','Anatomik':'Anatomic',
+};
+function catLabel(cat){ return RV_LOCALE === 'en' ? (CAT_LABELS_EN[cat]||cat) : cat; }
+function segLabel(v){ return ({normal:T.s2_seg_normal,şüpheli:T.s2_seg_suspect,patolojik:T.s2_seg_patologic})[v]||v; }
+
+/* ============================================================
    35+ PATHOLOGY DIFFERENTIAL DATABASE WITH WEIGHTED FEATURES
    ============================================================ */
 const PATHOLOGIES = [
@@ -456,14 +1383,14 @@ function scoreDifferential(selectedFeatures){
     for(const [k,w] of Object.entries(p.neg||{})){
       if(selectedFeatures.has(k)) score += w; // w is negative
     }
-    if(maxPossible === 0) return {id:p.id, name:p.name, cat:p.cat, pct:0, raw:0};
+    if(maxPossible === 0) return {id:p.id, name:pathLabel(p.id,p.name), cat:p.cat, pct:0, raw:0};
     // top-N-feature normalization to avoid bias by DB size
     // use top 8 highest weights as the denominator
     const weights = Object.values(p.pos||{}).sort((a,b)=>b-a);
     const topWeightSum = weights.slice(0,8).reduce((a,b)=>a+b,0);
     const denom = topWeightSum || maxPossible;
     const pct = Math.max(0, Math.min(100, Math.round((score/denom)*100)));
-    return {id:p.id, name:p.name, cat:p.cat, pct, raw:score};
+    return {id:p.id, name:pathLabel(p.id,p.name), cat:p.cat, pct, raw:score};
   });
   return scored.sort((a,b)=>b.pct - a.pct);
 }
@@ -776,8 +1703,8 @@ function App(){
     <div className="container">
       <header>
         <div>
-          <h1>MR Enterografi Değerlendirme Sistemi</h1>
-          <div className="sub">Structured multilezyon yorumu • 35+ patolojili ağırlıklı ayırıcı tanı skorlaması</div>
+          <h1>{T.header_title}</h1>
+          <div className="sub">{T.header_sub}</div>
         </div>
         <span className="badge">v1.0</span>
       </header>
@@ -789,25 +1716,25 @@ function App(){
         ))}
       </div>
       <div style={{marginBottom:8,fontSize:'0.78rem',color:'var(--text-mute)',display:'flex',justifyContent:'space-between'}}>
-        <span>Adım {step} / {TOTAL_STEPS}</span>
-        {currentIdx >= 0 && <span>Lezyon #{currentIdx+1}</span>}
-        {lesions.length > 0 && <span>Toplam lezyon: {lesions.length}</span>}
+        <span>{T.step_label} {step} / {TOTAL_STEPS}</span>
+        {currentIdx >= 0 && <span>{T.lesion_label} #{currentIdx+1}</span>}
+        {lesions.length > 0 && <span>{T.total_lesions}: {lesions.length}</span>}
       </div>
       {renderStep()}
       <div className="nav">
-        <button className="btn btn-ghost" onClick={goPrev} disabled={step===1}>‹ Geri</button>
+        <button className="btn btn-ghost" onClick={goPrev} disabled={step===1}>{T.nav_back}</button>
         <div style={{display:'flex',gap:10,alignItems:'center'}}>
-          {step >=2 && step <=3 && <span style={{fontSize:'0.78rem',color:'var(--text-mute)'}}>Tarama aşaması</span>}
-          {step === POST_LOOP_STEP && <span style={{fontSize:'0.78rem',color:'var(--text-mute)'}}>Özet aşama</span>}
+          {step >=2 && step <=3 && <span style={{fontSize:'0.78rem',color:'var(--text-mute)'}}>{T.scan_phase}</span>}
+          {step === POST_LOOP_STEP && <span style={{fontSize:'0.78rem',color:'var(--text-mute)'}}>{T.summary_phase}</span>}
         </div>
         {step < TOTAL_STEPS && step !== LOOP_END && (
           <button className="btn btn-primary" onClick={goNext}>
-            İleri ›
+            {T.nav_next}
           </button>
         )}
         {step === TOTAL_STEPS && (
           <button className="btn btn-success" onClick={()=>setShowReport(true)}>
-            Raporu Görüntüle →
+            {T.nav_view_report}
           </button>
         )}
       </div>
@@ -825,63 +1752,39 @@ function App(){
 function Step1({global, upd}){
   return (
     <div className="card">
-      <div className="step-title"><span className="num">1</span>Klinik Bilgi ve İnceleme Kalitesi</div>
-      <div className="step-subtitle">Hastanın klinik durumu ve MR enterografi kalite parametreleri</div>
-      
+      <div className="step-title"><span className="num">1</span>{T.s1_title}</div>
+      <div className="step-subtitle">{T.s1_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Klinik Endikasyon</div>
+        <div className="section-hdr">{T.s1_indication_hdr}</div>
         <div className="grid grid-3">
-          {['Crohn ön tanısı/takibi','İBH ayırıcı tanı','Malabsorpsiyon','Kronik karın ağrısı','Gastrointestinal kanama','Kronik ishal','Obstrüksiyon/subileus','İnce barsak tümörü','Postop değerlendirme','Çölyak komplikasyonu','Behçet takibi','Diğer'].map(x=>(
-            <button key={x} className={'btn-opt '+(global.indikasyon===x?'selected':'')}
+          {T.s1_indications.map((x,xi)=>(
+            <button key={xi} className={'btn-opt '+(global.indikasyon===x?'selected':'')}
               onClick={()=>upd({indikasyon:x})}>{x}</button>
           ))}
         </div>
-        <textarea className="input" style={{marginTop:10}} placeholder="Ek klinik notlar, semptom süresi, laboratuvar bulguları..."
+        <textarea className="input" style={{marginTop:10}} placeholder={T.s1_notes_placeholder}
           value={global.klinikNote} onChange={e=>upd({klinikNote:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Klinik Modifiye Edici Faktörler</div>
+        <div className="section-hdr">{T.s1_modifiers_hdr}</div>
         <div className="grid grid-2">
-          {[
-            {k:'immunsupresif', l:'İmmünsüpresyon (HIV/transplant/kemoterapi)'},
-            {k:'knownMalignancy', l:'Bilinen malignite'},
-            {k:'nsaidUse', l:'Kronik NSAID kullanımı'},
-            {k:'anticoagulant', l:'Antikoagülan kullanımı'},
-            {k:'radyoterapi', l:'Pelvik/abdominal radyoterapi öyküsü'},
-            {k:'biyopsi', l:'Önceki tanı biyopsi ile desteklenmiş'},
-          ].map(x=>(
+          {T.s1_modifiers.map(x=>(
             <button key={x.k} className={'btn-opt '+(global[x.k]?'selected':'')}
               onClick={()=>upd({[x.k]:!global[x.k]})}>{x.l}</button>
           ))}
         </div>
         {global.knownMalignancy && (
-          <input className="input" style={{marginTop:10}} placeholder="Bilinen malignite tipi (örn: melanom, meme ca...)"
+          <input className="input" style={{marginTop:10}} placeholder={T.s1_malignancy_placeholder}
             value={global.knownMalignancyType} onChange={e=>upd({knownMalignancyType:e.target.value})} />
         )}
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Klinik İşaretleyiciler (ayırıcı tanı için)</div>
+        <div className="section-hdr">{T.s1_clin_flags_hdr}</div>
         <div className="grid grid-2">
-          {[
-            {k:'clinical_orogenital', l:'Orogenital ülserler (Behçet)'},
-            {k:'clinical_malabsorption', l:'Malabsorpsiyon klinik bulgusu'},
-            {k:'clinical_carcinoid_syndrome', l:'Karsinoid sendrom semptomları'},
-            {k:'clinical_celiac_history', l:'Çölyak hastalığı öyküsü'},
-            {k:'clinical_posttransplant', l:'Posttransplant / kök hücre nakli'},
-            {k:'clinical_scleroderma', l:'Bilinen skleroderma/CREST'},
-            {k:'clinical_igg4', l:'IgG4-ilişkili hastalık öyküsü'},
-            {k:'clinical_fap', l:'FAP / familyal polipozis'},
-            {k:'clinical_pigmentation', l:'Mukokutanöz pigmentasyon (P-J)'},
-            {k:'clinical_female_repro', l:'Reprodüktif dönem kadın (endometrioz ayırıcı)'},
-            {k:'cyclical_sx', l:'Siklik semptomlar (endometrioz)'},
-            {k:'clinical_hpylori', l:'H. pylori pozitif'},
-            {k:'clinical_allergy', l:'Atopi/eozinofili öyküsü'},
-            {k:'endemic', l:'Endemik bölge (TB riski)'},
-            {k:'post_gastric_bypass', l:'Gastrik bypass öyküsü'},
-            {k:'clinical_hypercoag', l:'Hiperkoagülabilite durumu'},
-          ].map(x=>(
+          {T.s1_clin_flags.map(x=>(
             <button key={x.k} className={'btn-opt '+(global.clinicalFlags.has(x.k)?'selected':'')}
               onClick={()=>{
                 const n = new Set(global.clinicalFlags);
@@ -891,35 +1794,35 @@ function Step1({global, upd}){
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">İnceleme Kalitesi</div>
-        <label className="label">Oral kontrast ajan</label>
+        <div className="section-hdr">{T.s1_quality_hdr}</div>
+        <label className="label">{T.s1_oral_contrast}</label>
         <div className="grid grid-4">
-          {['Mannitol %2.5','PEG','VoLumen (düşük-dansite baryum)','Su','Oral kontrast yok'].map(x=>(
+          {T.s1_oral_contrast_opts.map(x=>(
             <button key={x} className={'btn-opt '+(global.oralContrast===x?'selected':'')}
               onClick={()=>upd({oralContrast:x})}>{x}</button>
           ))}
         </div>
-        <label className="label" style={{marginTop:12}}>Barsak distansiyonu</label>
+        <label className="label" style={{marginTop:12}}>{T.s1_distention_label}</label>
         <div className="grid grid-4">
-          {['Yeterli (>2 cm lümen)','Kısmen yeterli','Yetersiz','Çok dilate'].map(x=>(
+          {T.s1_distention_opts.map(x=>(
             <button key={x} className={'btn-opt '+(global.distention===x?'selected':'')}
               onClick={()=>upd({distention:x})}>{x}</button>
           ))}
         </div>
-        <label className="label" style={{marginTop:12}}>Hareket artefaktı</label>
+        <label className="label" style={{marginTop:12}}>{T.s1_artifact_label}</label>
         <div className="grid grid-4">
-          {['Yok','Hafif','Orta','Belirgin (yorumu etkileyen)'].map(x=>(
+          {T.s1_artifact_opts.map(x=>(
             <button key={x} className={'btn-opt '+(global.artefakt===x?'selected':'')}
               onClick={()=>upd({artefakt:x})}>{x}</button>
           ))}
         </div>
         <div className="grid grid-2" style={{marginTop:12}}>
           <button className={'btn-opt '+(global.antispasmodic?'selected':'')}
-            onClick={()=>upd({antispasmodic:!global.antispasmodic})}>Antispasmotik (Buscopan/Glukagon)</button>
+            onClick={()=>upd({antispasmodic:!global.antispasmodic})}>{T.s1_antispasmodic}</button>
           <button className={'btn-opt '+(global.ivContrast?'selected':'')}
-            onClick={()=>upd({ivContrast:!global.ivContrast})}>IV Gd kontrast verildi</button>
+            onClick={()=>upd({ivContrast:!global.ivContrast})}>{T.s1_iv_contrast}</button>
         </div>
       </div>
     </div>
@@ -930,7 +1833,7 @@ function Step1({global, upd}){
    STEP 2: ANATOMIC SEGMENT SURVEY
    ============================================================ */
 function SegmentRow({title, val, onChange, options=['normal','şüpheli','patolojik']}){
-  const labels = {normal:'Normal', şüpheli:'Şüpheli', patolojik:'Patolojik'};
+  const labels = {normal:T.s2_seg_normal, şüpheli:T.s2_seg_suspect, patolojik:T.s2_seg_patologic};
   return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:'var(--bg-3)',borderRadius:8,marginBottom:8}}>
       <span style={{fontWeight:600,fontSize:'0.9rem'}}>{title}</span>
@@ -946,26 +1849,14 @@ function SegmentRow({title, val, onChange, options=['normal','şüpheli','patolo
 }
 
 function Step2({global, upd}){
-  const segs = [
-    {k:'mide', l:'Mide'},
-    {k:'duodenum', l:'Duodenum'},
-    {k:'jejunum', l:'Jejunum'},
-    {k:'ileum', l:'İleum (proksimal-orta)'},
-    {k:'terminal_ileum', l:'Terminal ileum'},
-    {k:'iliocecal', l:'İleoçekal valv'},
-    {k:'cecum', l:'Çekum'},
-    {k:'kolon', l:'Kolon (diğer segmentler)'},
-    {k:'apendiks', l:'Apendiks'},
-    {k:'rektum', l:'Rektum / anal kanal'},
-  ];
   return (
     <div className="card">
-      <div className="step-title"><span className="num">2</span>Anatomik Segment Taraması</div>
-      <div className="step-subtitle">Her segmenti sistematik olarak işaretle; patolojik segmentleri lezyon loop'unda detaylandıracaksın</div>
+      <div className="step-title"><span className="num">2</span>{T.s2_title}</div>
+      <div className="step-subtitle">{T.s2_sub}</div>
       <div className="info-box">
-        <strong>İpucu:</strong> Bu adımda sadece anatomik tarama yapılır. Patolojik lezyonların detaylı MRG karakteristikleri ayırıcı tanı için lezyon loop'unda belirlenir.
+        <strong>{T.s2_tip_strong}</strong> {T.s2_tip}
       </div>
-      {segs.map(s=>(
+      {T.s2_segs.map(s=>(
         <SegmentRow key={s.k} title={s.l} val={global[s.k]}
           onChange={v=>upd({[s.k]:v})} />
       ))}
@@ -979,28 +1870,28 @@ function Step2({global, upd}){
 function Step3({global, upd, toggleExtra, toggleCx, toggleClin}){
   return (
     <div className="card">
-      <div className="step-title"><span className="num">3</span>Ekstraintestinal Bulgular</div>
-      <div className="step-subtitle">Mezenter, LAP, peritoneum, vasküler yapılar, solid organlar</div>
-      
+      <div className="step-title"><span className="num">3</span>{T.s3_title}</div>
+      <div className="step-subtitle">{T.s3_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Mezenter, LAP, Peritoneum ve Vasküler Bulgular</div>
+        <div className="section-hdr">{T.s3_extra_hdr}</div>
         <div className="grid grid-2">
           {EXTRAINTESTINAL_FINDINGS.map(x=>(
             <button key={x.id} className={'btn-opt '+(global.extraFindings.has(x.id)?'selected':'')}
-              onClick={()=>toggleExtra(x.id)}>{x.label}</button>
+              onClick={()=>toggleExtra(x.id)}>{lbl(x.id)}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Solid Organlar / Vasküler Yapılar</div>
-        <textarea className="input" placeholder="Karaciğer, dalak, pankreas, böbrekler, adrenaller. Vasküler yapılar (SMA, SMV, portal ven, aorta). İnsidental bulgular..."
+        <div className="section-hdr">{T.s3_solid_hdr}</div>
+        <textarea className="input" placeholder={T.s3_solid_placeholder}
           value={global.solidOrgans} onChange={e=>upd({solidOrgans:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Pelvis</div>
-        <textarea className="input" placeholder="Uterus, overler, mesane, safra ve safra yolları, peritoneal dağılım..."
+        <div className="section-hdr">{T.s3_pelvis_hdr}</div>
+        <textarea className="input" placeholder={T.s3_pelvis_placeholder}
           value={global.pelvisBulgu} onChange={e=>upd({pelvisBulgu:e.target.value})} />
       </div>
     </div>
@@ -1013,33 +1904,33 @@ function Step3({global, upd, toggleExtra, toggleCx, toggleClin}){
 function Step4Decision({global, upd, lesions, onAddFirst, onDeleteLesion}){
   return (
     <div className="card">
-      <div className="step-title"><span className="num">4</span>Patoloji Tespit Kararı</div>
-      <div className="step-subtitle">İnce barsak / gastrointestinal sistemde değerlendirilecek patolojik lezyon var mı?</div>
-      
+      <div className="step-title"><span className="num">4</span>{T.s4_title}</div>
+      <div className="step-subtitle">{T.s4_sub}</div>
+
       <div className="grid grid-3" style={{marginBottom:20}}>
         <button className={'btn-opt '+(global.patolojiVarMi===true?'selected':'')}
           onClick={()=>upd({patolojiVarMi:true})}>
-          <strong>Patoloji var</strong>
-          <span className="tag">Lezyon loop'una geç</span>
+          <strong>{T.s4_yes_strong}</strong>
+          <span className="tag">{T.s4_yes_tag}</span>
         </button>
         <button className={'btn-opt '+(global.patolojiVarMi===false?'selected':'')}
           onClick={()=>upd({patolojiVarMi:false})}>
-          <strong>Normal MR enterografi</strong>
-          <span className="tag">Lezyon analizini atla</span>
+          <strong>{T.s4_no_strong}</strong>
+          <span className="tag">{T.s4_no_tag}</span>
         </button>
         <button className={'btn-opt '+(global.patolojiVarMi==='suspect'?'selected':'')}
           onClick={()=>upd({patolojiVarMi:'suspect'})}>
-          <strong>Şüpheli bulgu</strong>
-          <span className="tag">Yine de lezyon olarak işle</span>
+          <strong>{T.s4_suspect_strong}</strong>
+          <span className="tag">{T.s4_suspect_tag}</span>
         </button>
       </div>
-      
+
       {(global.patolojiVarMi === true || global.patolojiVarMi === 'suspect') && (
         <>
-          <div className="section-hdr">Lezyon Listesi</div>
+          <div className="section-hdr">{T.s4_lesion_list_hdr}</div>
           {lesions.length === 0 && (
             <div className="info-box">
-              Henüz lezyon eklenmedi. "İleri" tuşu ile ilk lezyonu eklemeye başlayabilirsin.
+              {T.s4_no_lesion_info_pre} {T.s4_no_lesion_info}
             </div>
           )}
           {lesions.length > 0 && (
@@ -1047,25 +1938,25 @@ function Step4Decision({global, upd, lesions, onAddFirst, onDeleteLesion}){
               {lesions.map((l,i)=>(
                 <div key={l.id} className="lesion-row">
                   <div>
-                    <span className="lesion-chip">Lezyon {i+1}</span>
+                    <span className="lesion-chip">{T.lesion_label} {i+1}</span>
                     <span style={{marginLeft:10,fontSize:'0.85rem',color:'var(--text-dim)'}}>
-                      {l.location.length > 0 ? l.location.join(', ') : l.locationFreeText || '(lokalizasyon girilmedi)'}
+                      {l.location.length > 0 ? l.location.join(', ') : l.locationFreeText || T.s4_location_empty}
                     </span>
                   </div>
-                  <button className="btn btn-danger" onClick={()=>onDeleteLesion(i)}>Sil</button>
+                  <button className="btn btn-danger" onClick={()=>onDeleteLesion(i)}>{T.s4_delete}</button>
                 </div>
               ))}
             </div>
           )}
           <button className="btn btn-primary" style={{marginTop:14}} onClick={onAddFirst}>
-            + Yeni Lezyon Ekle ve Loop'a Başla
+            {T.s4_add_lesion}
           </button>
         </>
       )}
-      
+
       {global.patolojiVarMi === false && (
         <div className="info-box">
-          Normal MR enterografi olarak kaydedilecek. "İleri" tuşu ile lezyon analizini atlayıp özet aşamasına geçeceksin.
+          {T.s4_normal_info_pre} {T.s4_normal_info}
         </div>
       )}
     </div>
@@ -1104,14 +1995,14 @@ const LOCATION_TAGS = [
 ];
 
 function LesionStepA({lesion, idx, upd, toggleSet}){
-  if(!lesion) return <div className="card">Lezyon yükleniyor...</div>;
+  if(!lesion) return <div className="card">{T.la_loading}</div>;
   return (
     <div className="card">
-      <div className="step-title"><span className="num">5</span>Lezyon #{idx+1}: Lokalizasyon ve Morfoloji</div>
-      <div className="step-subtitle">Lezyonun anatomik yerleşimi, uzunluk ve dağılım paterni</div>
-      
+      <div className="step-title"><span className="num">5</span>{T.la_title.replace('{n}', idx+1)}</div>
+      <div className="step-subtitle">{T.la_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Anatomik Lokalizasyon (birden fazla seçilebilir)</div>
+        <div className="section-hdr">{T.la_loc_hdr}</div>
         <div className="grid grid-3">
           {LOCATION_TAGS.map(t=>(
             <button key={t.id} className={'btn-opt '+(lesion.location.includes(t.id)?'selected':'')}
@@ -1120,51 +2011,38 @@ function LesionStepA({lesion, idx, upd, toggleSet}){
                   ? lesion.location.filter(x=>x!==t.id)
                   : [...lesion.location, t.id];
                 upd({location:newLoc});
-              }}>{t.l}</button>
+              }}>{lbl(t.id)}</button>
           ))}
         </div>
-        <label className="label" style={{marginTop:10}}>Lokalizasyon notu (rapor için)</label>
-        <input className="input" placeholder="örn: ileoçekal valva 5 cm proksimalde, terminal ileum distal segmenti..."
+        <label className="label" style={{marginTop:10}}>{T.la_loc_note_label}</label>
+        <input className="input" placeholder={T.la_loc_note_placeholder}
           value={lesion.locationFreeText}
           onChange={e=>upd({locationFreeText:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Lezyon Adı (rapor için, opsiyonel)</div>
-        <input className="input" placeholder="örn: Aktif Crohn lezyonu, obstrüktif kitle..."
+        <div className="section-hdr">{T.la_name_hdr}</div>
+        <input className="input" placeholder={T.la_name_placeholder}
           value={lesion.name}
           onChange={e=>upd({name:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Uzunluk</div>
+        <div className="section-hdr">{T.la_length_hdr}</div>
         <div className="grid grid-4">
-          {[
-            {k:'short',l:'Kısa (<5 cm)'},
-            {k:'medium',l:'Orta (5–10 cm)'},
-            {k:'long',l:'Uzun (>10 cm)'},
-            {k:'diffuse',l:'Diffüz / tüm barsak'},
-          ].map(x=>(
+          {T.la_lengths.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.length===x.k?'selected':'')}
               onClick={()=>upd({length:x.k})}>{x.l}</button>
           ))}
         </div>
-        <input className="input" style={{marginTop:10}} placeholder="Uzunluk ölçümü (cm, rapor için)"
+        <input className="input" style={{marginTop:10}} placeholder={T.la_length_placeholder}
           value={lesion.lengthCm} onChange={e=>upd({lengthCm:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Dağılım Paterni</div>
+        <div className="section-hdr">{T.la_dist_hdr}</div>
         <div className="grid grid-3">
-          {[
-            {k:'focal',l:'Fokal (tek segment)'},
-            {k:'segmental',l:'Segmental'},
-            {k:'skip',l:'Skip lezyon (atlamalı)'},
-            {k:'continuous',l:'Kontinü (kesintisiz)'},
-            {k:'multifocal',l:'Multifokal'},
-            {k:'diffuse',l:'Diffüz'},
-            {k:'multiple',l:'Multiple ayrık'},
-          ].map(x=>(
+          {T.la_dists.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.distribution===x.k?'selected':'')}
               onClick={()=>upd({distribution:x.k})}>{x.l}</button>
           ))}
@@ -1237,90 +2115,69 @@ function LesionStepB({lesion, idx, upd, toggleSet}){
   ];
   return (
     <div className="card">
-      <div className="step-title"><span className="num">6</span>Lezyon #{idx+1}: Duvar ve Sinyal Özellikleri</div>
-      <div className="step-subtitle">Duvar kalınlığı, T2 sinyali, DWI/ADC, mukozal yüzey</div>
-      
+      <div className="step-title"><span className="num">6</span>{T.lb_title.replace('{n}', idx+1)}</div>
+      <div className="step-subtitle">{T.lb_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Duvar Kalınlığı</div>
+        <div className="section-hdr">{T.lb_wall_hdr}</div>
         <div className="grid grid-4">
-          {[
-            {k:'',l:'Normal (<3 mm)'},
-            {k:'mild',l:'Hafif (3–5 mm)'},
-            {k:'moderate',l:'Orta (5–10 mm)'},
-            {k:'marked',l:'Belirgin (>10 mm)'},
-            {k:'aneurysmal',l:'Anevrizmal dilatasyon'},
-          ].map(x=>(
+          {T.lb_walls.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.wallThick===x.k?'selected':'')}
               onClick={()=>upd({wallThick:x.k})}>{x.l}</button>
           ))}
         </div>
-        <input className="input" style={{marginTop:10}} placeholder="Ölçüm (mm, rapor için)"
+        <input className="input" style={{marginTop:10}} placeholder={T.lb_wall_measure_placeholder}
           value={lesion.wallMeasurement} onChange={e=>upd({wallMeasurement:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Duvar Tutulum Paterni</div>
+        <div className="section-hdr">{T.lb_wall_pattern_hdr}</div>
         <div className="grid grid-4">
-          {[
-            {k:'',l:'Tanımlanamadı'},
-            {k:'concentric',l:'Konsantrik'},
-            {k:'eccentric',l:'Ekzantrik'},
-            {k:'circumferential',l:'Sirkumferensiyal'},
-          ].map(x=>(
+          {T.lb_wall_patterns.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.wallPattern===x.k?'selected':'')}
               onClick={()=>upd({wallPattern:x.k})}>{x.l}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">T2 Sinyal Özelliği (duvar)</div>
+        <div className="section-hdr">{T.lb_t2_hdr}</div>
         <div className="grid grid-4">
-          {[
-            {k:'edema',l:'Ödem (hiperintens – aktif inflamasyon)'},
-            {k:'intermediate',l:'İntermediyer sinyal'},
-            {k:'hypointense',l:'Hipointens (fibrozis)'},
-            {k:'heterogeneous',l:'Heterojen'},
-            {k:'normal',l:'Normal'},
-          ].map(x=>(
+          {T.lb_t2s.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.t2Signal===x.k?'selected':'')}
               onClick={()=>upd({t2Signal:x.k})}>{x.l}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">DWI / ADC (difüzyon)</div>
+        <div className="section-hdr">{T.lb_dwi_hdr}</div>
         <div className="grid grid-3">
-          {[
-            {k:'yes',l:'Belirgin restriksiyon (düşük ADC)'},
-            {k:'mild',l:'Hafif restriksiyon'},
-            {k:'no',l:'Restriksiyon yok'},
-          ].map(x=>(
+          {T.lb_dwis.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.dwiRestriction===x.k?'selected':'')}
               onClick={()=>upd({dwiRestriction:x.k})}>{x.l}</button>
           ))}
         </div>
-        <input className="input" style={{marginTop:10}} placeholder="ADC değeri (×10⁻³ mm²/sn, rapor için)"
+        <input className="input" style={{marginTop:10}} placeholder={T.lb_adc_placeholder}
           value={lesion.adcValue} onChange={e=>upd({adcValue:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Mukozal / Morfolojik Bulgular</div>
+        <div className="section-hdr">{T.lb_mucosa_hdr}</div>
         <div className="grid grid-3">
           {MUCOSA.map(m=>(
             <button key={m.id} className={'btn-opt '+(lesion.mucosa.has(m.id)?'selected':'')}
-              onClick={()=>toggleSet('mucosa',m.id)}>{m.l}</button>
+              onClick={()=>toggleSet('mucosa',m.id)}>{lbl(m.id)}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Özel Morfolojik İşaretçiler (kitle/lezyon özellikleri)</div>
+        <div className="section-hdr">{T.lb_specific_hdr}</div>
         <div className="grid grid-3">
           {SPECIFIC_FLAGS.map(m=>(
             <button key={m.id} className={'btn-opt '+(lesion.specificFlags.has(m.id)?'selected':'')}
-              onClick={()=>toggleSet('specificFlags',m.id)}>{m.l}</button>
+              onClick={()=>toggleSet('specificFlags',m.id)}>{lbl(m.id)}</button>
           ))}
         </div>
       </div>
@@ -1332,67 +2189,41 @@ function LesionStepC({lesion, idx, upd, toggleSet}){
   if(!lesion) return null;
   return (
     <div className="card">
-      <div className="step-title"><span className="num">7</span>Lezyon #{idx+1}: Kontrastlanma ve Lümen</div>
-      <div className="step-subtitle">Gd-kontrast paterni, kontrastlanma derecesi, luminal değişiklikler</div>
-      
+      <div className="step-title"><span className="num">7</span>{T.lc_title.replace('{n}', idx+1)}</div>
+      <div className="step-subtitle">{T.lc_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Kontrastlanma Paterni</div>
+        <div className="section-hdr">{T.lc_enh_pattern_hdr}</div>
         <div className="grid grid-3">
-          {[
-            {k:'stratified',l:'Mural stratifikasyon (tabakalı)'},
-            {k:'target',l:'Target işareti'},
-            {k:'homogeneous',l:'Homojen transmural'},
-            {k:'mucosal',l:'Sadece mukozal'},
-            {k:'heterogeneous',l:'Heterojen'},
-            {k:'peripheral',l:'Periferik (rim)'},
-            {k:'delayed',l:'Geç kontrastlanma (fibrozis/IgG4)'},
-            {k:'reduced',l:'Azalmış (iskemi)'},
-            {k:'absent',l:'Kontrastlanma yok'},
-            {k:'none',l:'Değerlendirilemedi'},
-          ].map(x=>(
+          {T.lc_enh_patterns.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.enhancementPattern===x.k?'selected':'')}
               onClick={()=>upd({enhancementPattern:x.k})}>{x.l}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Kontrastlanma Derecesi</div>
+        <div className="section-hdr">{T.lc_enh_degree_hdr}</div>
         <div className="grid grid-4">
-          {[
-            {k:'mild',l:'Hafif'},
-            {k:'moderate',l:'Orta'},
-            {k:'intense',l:'Belirgin / avid'},
-            {k:'absent',l:'Yok'},
-          ].map(x=>(
+          {T.lc_enh_degrees.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.enhancementDegree===x.k?'selected':'')}
               onClick={()=>upd({enhancementDegree:x.k})}>{x.l}</button>
           ))}
         </div>
         <div className="warn-box" style={{marginTop:10}}>
-          <strong>İpucu:</strong> Karsinoid/NET tipik olarak <strong>arteriyel fazda avid</strong> kontrastlanır. 
-          Crohn aktif lezyonda <strong>mural stratifikasyon + target</strong> paterni sık. 
-          Lenfomada <strong>homojen hafif-orta</strong> kontrastlanma karakteristik.
+          <strong>{T.lc_tip_strong}</strong> {T.lc_tip}
         </div>
         <button className={'btn-opt '+(lesion.specificFlags.has('enh_avid_arterial')?'selected':'')}
           style={{marginTop:10}}
           onClick={()=>toggleSet('specificFlags','enh_avid_arterial')}>
-          Arteriyel faz avid kontrastlanma (karsinoid/NET paterni)
+          {T.lc_avid}
         </button>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Lümen</div>
+        <div className="section-hdr">{T.lc_lumen_hdr}</div>
         <div className="grid grid-3">
-          {[
-            {k:'',l:'Normal'},
-            {k:'mildstenosis',l:'Hafif luminal daralma'},
-            {k:'stenosis',l:'Belirgin stenoz'},
-            {k:'prestenotic',l:'Prestenotik dilatasyon mevcut'},
-            {k:'annular',l:'Annuler stenoz + "shouldering" (adenoca)'},
-            {k:'dilatation',l:'Segment dilatasyonu'},
-            {k:'aneurysmal',l:'Anevrizmal dilatasyon (lenfoma)'},
-          ].map(x=>(
+          {T.lc_lumens.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.lumen===x.k?'selected':'')}
               onClick={()=>upd({lumen:x.k})}>{x.l}</button>
           ))}
@@ -1439,55 +2270,46 @@ function LesionStepD({lesion, idx, upd, toggleSet}){
     {id:'fat_density_mass', l:'Yağ dansiteli kitle'},
     {id:'pericolic_fat_stranding', l:'Perikolik yağ stranding'},
   ];
-  const LYMPH_OPTIONS = [
-    {k:'', l:'Normal / LAP yok'},
-    {k:'reactive', l:'Reaktif (küçük, multiple)'},
-    {k:'moderate', l:'Orta büyüklükte'},
-    {k:'bulky', l:'Bulky (>1.5 cm)'},
-    {k:'necrotic', l:'Nekrotik santrali (TB)'},
-    {k:'calcified', l:'Kalsifiye'},
-    {k:'conglomerate', l:'Konglomere'},
-  ];
   return (
     <div className="card">
-      <div className="step-title"><span className="num">8</span>Lezyon #{idx+1}: Mezenter, LAP ve Komplikasyonlar</div>
-      <div className="step-subtitle">Mezenter bulguları, lenfadenopati paterni, Crohn komplikasyonları</div>
-      
+      <div className="step-title"><span className="num">8</span>{T.ld_title.replace('{n}', idx+1)}</div>
+      <div className="step-subtitle">{T.ld_sub}</div>
+
       <div className="section">
-        <div className="section-hdr">Mezenter Bulguları</div>
+        <div className="section-hdr">{T.ld_mes_hdr}</div>
         <div className="grid grid-3">
           {MES.map(m=>(
             <button key={m.id} className={'btn-opt '+(lesion.mesFindings.has(m.id)?'selected':'')}
-              onClick={()=>toggleSet('mesFindings',m.id)}>{m.l}</button>
+              onClick={()=>toggleSet('mesFindings',m.id)}>{lbl(m.id)}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Lenf Nodu Paterni</div>
+        <div className="section-hdr">{T.ld_lymph_hdr}</div>
         <div className="grid grid-3">
-          {LYMPH_OPTIONS.map(x=>(
+          {T.ld_lymph_opts.map(x=>(
             <button key={x.k} className={'btn-opt '+(lesion.lymphNodes===x.k?'selected':'')}
               onClick={()=>upd({lymphNodes:x.k})}>{x.l}</button>
           ))}
         </div>
-        <input className="input" style={{marginTop:10}} placeholder="Lenf nodu lokalizasyon/sayı/boyut notu"
+        <input className="input" style={{marginTop:10}} placeholder={T.ld_lymph_note_placeholder}
           value={lesion.lapLocationNote} onChange={e=>upd({lapLocationNote:e.target.value})} />
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Komplikasyonlar</div>
+        <div className="section-hdr">{T.ld_cx_hdr}</div>
         <div className="grid grid-2">
           {COMPLICATIONS.map(c=>(
             <button key={c.id} className={'btn-opt '+(lesion.complications.has(c.id)?'selected':'')}
-              onClick={()=>toggleSet('complications',c.id)}>{c.label}</button>
+              onClick={()=>toggleSet('complications',c.id)}>{lbl(c.id)}</button>
           ))}
         </div>
       </div>
-      
+
       <div className="section">
-        <div className="section-hdr">Lezyon için Ek Not</div>
-        <textarea className="input" placeholder="Rapora girecek ek açıklamalar..."
+        <div className="section-hdr">{T.ld_notes_hdr}</div>
+        <textarea className="input" placeholder={T.ld_notes_placeholder}
           value={lesion.notes} onChange={e=>upd({notes:e.target.value})} />
       </div>
     </div>
@@ -1516,15 +2338,15 @@ function LesionStepE({lesion, idx, diff, onAddAnother, onFinalize, lesions}){
   };
   return (
     <div className="card">
-      <div className="step-title"><span className="num">9</span>Lezyon #{idx+1}: Ayırıcı Tanı Sonucu</div>
-      <div className="step-subtitle">Girilen MRG ve klinik bulgulara göre ağırlıklı ayırıcı tanı skorlaması</div>
-      
+      <div className="step-title"><span className="num">9</span>{T.le_title.replace('{n}', idx+1)}</div>
+      <div className="step-subtitle">{T.le_sub}</div>
+
       {diff.length === 0 && (
-        <div className="warn-box">Ayırıcı tanı hesaplanamadı. Daha fazla bulgu işaretlemen gerekli.</div>
+        <div className="warn-box">{T.le_no_diff}</div>
       )}
-      
+
       <div className="section">
-        <div className="section-hdr">Ağırlıklı Olasılıklar (ilk 10)</div>
+        <div className="section-hdr">{T.le_diff_hdr}</div>
         <table className="diff-table">
           <tbody>
             {diff.map((d,i)=>(
@@ -1535,7 +2357,7 @@ function LesionStepE({lesion, idx, diff, onAddAnother, onFinalize, lesions}){
                     borderRadius:2,marginRight:8,verticalAlign:'middle'
                   }}></span>
                   <strong>{d.name}</strong>
-                  <span style={{fontSize:'0.72rem',color:'var(--text-mute)',marginLeft:6}}>({d.cat})</span>
+                  <span style={{fontSize:'0.72rem',color:'var(--text-mute)',marginLeft:6}}>({catLabel(d.cat)})</span>
                 </td>
                 <td style={{width:'35%'}}>
                   <div className="diff-bar">
@@ -1548,19 +2370,18 @@ function LesionStepE({lesion, idx, diff, onAddAnother, onFinalize, lesions}){
           </tbody>
         </table>
       </div>
-      
+
       <div className="info-box">
-        <strong>Yorum:</strong> Skorlama ağırlıklı özellik eşleşmesine dayanır (top-8 feature normalizasyonu). 
-        Klinik bağlam ve histopatoloji ile korelasyon esastır. Düşük % değerli patolojiler de ayırıcı tanıda akılda tutulmalıdır.
+        <strong>{T.le_note_strong}</strong> {T.le_note}
       </div>
-      
+
       <div style={{display:'flex',gap:10,marginTop:16,flexWrap:'wrap'}}>
-        <button className="btn btn-purple" onClick={onAddAnother}>+ Başka Lezyon Ekle</button>
-        <button className="btn btn-success" onClick={onFinalize}>Lezyonları Bitir → Özet</button>
+        <button className="btn btn-purple" onClick={onAddAnother}>{T.le_add_another}</button>
+        <button className="btn btn-success" onClick={onFinalize}>{T.le_finalize}</button>
       </div>
-      
+
       <div style={{marginTop:16,fontSize:'0.82rem',color:'var(--text-mute)'}}>
-        Şu ana kadar eklenen lezyonlar: <strong>{lesions.length}</strong>
+        {T.le_lesion_count_pre} <strong>{lesions.length}</strong>
       </div>
     </div>
   );
@@ -1591,36 +2412,36 @@ function Step10Summary({global, lesions, diffFn, upd}){
   
   return (
     <div className="card">
-      <div className="step-title"><span className="num">10</span>Genel Özet ve Ayırıcı Tanı</div>
-      <div className="step-subtitle">Tüm lezyonların kombine analizi ve klinik sonuç</div>
-      
+      <div className="step-title"><span className="num">10</span>{T.s10_title}</div>
+      <div className="step-subtitle">{T.s10_sub}</div>
+
       <div className="summary-grid">
         <div className="summary-card">
-          <div className="k">Toplam Lezyon</div>
+          <div className="k">{T.s10_total_lesions}</div>
           <div className="v">{lesions.length}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Klinik Endikasyon</div>
+          <div className="k">{T.s10_indication}</div>
           <div className="v" style={{fontSize:'0.85rem'}}>{global.indikasyon || '—'}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Ekstra Bulgu Sayısı</div>
+          <div className="k">{T.s10_extra_count}</div>
           <div className="v">{global.extraFindings.size}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Komplikasyon</div>
+          <div className="k">{T.s10_cx}</div>
           <div className="v">{global.complications.size + lesions.reduce((a,l)=>a+l.complications.size,0)}</div>
         </div>
       </div>
-      
+
       {lesions.length > 0 && (
         <div className="section">
-          <div className="section-hdr">Kombine Ayırıcı Tanı (tüm lezyonların ortalaması)</div>
+          <div className="section-hdr">{T.s10_combined_diff}</div>
           <table className="diff-table">
             <tbody>
               {aggDiff.map(d=>(
                 <tr key={d.id}>
-                  <td><strong>{d.name}</strong> <span style={{fontSize:'0.72rem',color:'var(--text-mute)'}}>({d.cat})</span></td>
+                  <td><strong>{d.name}</strong> <span style={{fontSize:'0.72rem',color:'var(--text-mute)'}}>({catLabel(d.cat)})</span></td>
                   <td style={{width:'35%'}}>
                     <div className="diff-bar"><div className="diff-bar-fill" style={{width:d.pct+'%'}}></div></div>
                   </td>
@@ -1631,11 +2452,11 @@ function Step10Summary({global, lesions, diffFn, upd}){
           </table>
         </div>
       )}
-      
+
       <div className="section">
-        <div className="section-hdr">Rapor Sonuç Notu (radyolog değerlendirmesi)</div>
+        <div className="section-hdr">{T.s10_conclusion_hdr}</div>
         <textarea className="input" style={{minHeight:120}}
-          placeholder="Örn: Terminal ileal Crohn hastalığı ile uyumlu aktif inflamatuar bulgular izlenmektedir. Penetran komplikasyon mevcut değil..."
+          placeholder={T.s10_conclusion_placeholder}
           value={global.sonucNote || ''}
           onChange={e=>upd({sonucNote:e.target.value})} />
       </div>
@@ -1649,36 +2470,36 @@ function Step10Summary({global, lesions, diffFn, upd}){
 function Step11Review({global, lesions, diffFn, onShowReport}){
   return (
     <div className="card">
-      <div className="step-title"><span className="num">11</span>Gözden Geçirme ve Rapor</div>
-      <div className="step-subtitle">Tüm girdileri gözden geçir, hazırsan rapor çıktısına geç</div>
-      
+      <div className="step-title"><span className="num">11</span>{T.s11_title}</div>
+      <div className="step-subtitle">{T.s11_sub}</div>
+
       <div className="summary-grid">
         <div className="summary-card">
-          <div className="k">Endikasyon</div>
+          <div className="k">{T.s11_indication}</div>
           <div className="v" style={{fontSize:'0.85rem'}}>{global.indikasyon || '—'}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Distansiyon</div>
+          <div className="k">{T.s11_distention}</div>
           <div className="v" style={{fontSize:'0.85rem'}}>{global.distention || '—'}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Lezyon Sayısı</div>
+          <div className="k">{T.s11_lesion_count}</div>
           <div className="v">{lesions.length}</div>
         </div>
         <div className="summary-card">
-          <div className="k">Ekstra Bulgu</div>
+          <div className="k">{T.s11_extra}</div>
           <div className="v">{global.extraFindings.size}</div>
         </div>
       </div>
-      
+
       {lesions.length > 0 && (
         <div className="section">
-          <div className="section-hdr">Lezyon Özetleri</div>
+          <div className="section-hdr">{T.s11_lesion_summaries}</div>
           {lesions.map((l,i)=>{
             const diff = diffFn(l);
             return (
               <div key={l.id} style={{padding:14,background:'var(--bg-3)',borderRadius:9,marginBottom:10,borderLeft:'3px solid var(--accent)'}}>
-                <strong>Lezyon {i+1}:</strong> {l.locationFreeText || l.location.join(', ') || '(lokalizasyon girilmedi)'}
+                <strong>{T.lesion_label} {i+1}:</strong> {l.locationFreeText || l.location.join(', ') || T.s11_loc_empty}
                 <div style={{fontSize:'0.82rem',color:'var(--text-dim)',marginTop:6}}>
                   {diff.slice(0,3).map(d=>d.name+' ('+d.pct+'%)').join(' • ')}
                 </div>
@@ -1687,15 +2508,14 @@ function Step11Review({global, lesions, diffFn, onShowReport}){
           })}
         </div>
       )}
-      
+
       <div className="danger-box">
-        <strong>Hazırsan:</strong> Aşağıdaki "Raporu Görüntüle" butonuna basarak yapılandırılmış radyoloji raporunu oluşturabilirsin. 
-        Rapor yeni pencerede açılacak, yazdırma/kopyalama/indirme seçenekleri sunulacaktır.
+        <strong>{T.s11_ready_strong}</strong> {T.s11_ready}
       </div>
-      
+
       <div style={{marginTop:14,textAlign:'center'}}>
         <button className="btn btn-success" onClick={onShowReport} style={{fontSize:'1rem',padding:'14px 28px'}}>
-          📄 Raporu Görüntüle ve Dışa Aktar
+          {T.s11_view_report}
         </button>
       </div>
     </div>
@@ -1705,91 +2525,7 @@ function Step11Review({global, lesions, diffFn, onShowReport}){
 /* ============================================================
    LABEL DICTIONARY (for report readable text)
    ============================================================ */
-const LABELS = {
-  loc_stomach:'mide', loc_duodenum:'duodenum', loc_jejunum:'jejunum',
-  loc_ileum:'ileum', loc_ti:'terminal ileum', loc_distalileum:'distal ileum',
-  loc_iliocecal:'ileoçekal valv', loc_cecum:'çekum', loc_colon:'kolon',
-  loc_colon_continuous:'kolon (rektumdan kontinü)', loc_sigmoid:'sigmoid',
-  loc_rectosigmoid:'rektosigmoid', loc_smallbowel_diffuse:'ince barsak (diffüz)',
-  loc_smallbowel_multifocal:'ince barsak (multifokal)', loc_multifocal:'multifokal',
-  loc_pelvis_ileum:'pelvik ileum', loc_vascular_dist:'vasküler dağılım',
-  loc_mesentery:'mezenter', loc_multiple_polyps:'çoklu polip odakları',
-  loc_ileum_terminal:'terminal ileum', loc_ileum_fold_increase:'ileum (fold sıklaşması)',
-  loc_smallbowel:'ince barsak',
-  duodenum_third_part_compression:'duodenum D3 kompresyonu',
-  mucosa_cobble:'kaldırım taşı', mucosa_ulcer_aphthous:'aftöz ülser',
-  mucosa_ulcer_deep:'derin ülser', mucosa_ulcer_punched:'"punched-out" ülser',
-  mucosa_granular:'granüler mukoza', mucosa_pseudopolyp:'pseudopolip',
-  mucosa_nodular_fold:'nodüler fold kalınlaşması', mucosa_smooth:'düz mukoza',
-  mucosa_diaphragm:'mukozal diyafragma', fold_reversal:'jejunum-ileum fold reversal',
-  fold_loss_jejunum:'jejunum fold kaybı', fold_increase_ileum:'ileum fold sıklaşması',
-  packed_valves:'packed-valves', hidebound:'hidebound görünüm',
-  mucosal_thickening:'mukozal kalınlaşma', mucosal_sloughing:'mukozal dökülme',
-  ribbon_bowel:'ribbon bowel',
-  mes_comb:'comb sign', mes_fibrofat:'fibrofatty proliferasyon',
-  mes_mass:'mezenter kitle', mes_radiating_strands:'desmoplastik ışınlanan bantlar',
-  mes_calcification:'mezenter kalsifikasyonu', mes_desmoplastic:'desmoplastik reaksiyon',
-  mes_retraction:'mezenter retraksiyonu', mes_sandwich:'sandviç işareti',
-  mes_conglomerate_lap:'konglomere LAP', mes_fibrosis:'mezenter fibrozisi',
-  mes_vascular:'mezenter vasküler inflamasyonu', mes_adenitis:'mezenterik adenit',
-  mes_normal:'mezenter normal', mes_fatty_lap:'yağlı karakterde LAP',
-  mes_lap_bulky:'bulky mezenterik LAP', mes_lap_lowattenuation:'düşük sinyalli LAP',
-  mes_infiltration:'mezenterik infiltrasyon', mes_lap_small:'küçük reaktif LAP',
-  mesentery_displacement:'mezenter yer değişikliği', whirl_sign:'whirl sign',
-  clustered_bowel:'kümelenmiş barsak lupları', abnormal_location:'anormal lokalizasyonda barsak',
-  vascular_engorgement:'vasküler kongesyon', closed_loop:'kapalı loop obstrüksiyonu',
-  mesenteric_edema:'mezenterik ödem',
-  omentum_focal_mass:'omentumda fokal kitle', fat_stranding_omental:'omental yağ stranding',
-  triangular_shape:'üçgen şekilli kitle', central_dot_sign:'central dot sign',
-  hyperattenuating_rim:'hiperdens kenar', fat_density_mass:'yağ dansiteli kitle',
-  pericolic_fat_stranding:'perikolik yağ stranding',
-  cx_fistula:'fistül', cx_abscess:'abse', cx_sinus:'sinüs trakt',
-  cx_perforation:'perforasyon', obstr_partial:'parsiyel obstrüksiyon',
-  obstr_complete:'komple obstrüksiyon', cx_fistula_tumor:'tümör kaynaklı kaviteye açılım',
-  ascites:'asit', peritoneum_thickening:'peritoneal kalınlaşma',
-  peritoneal_nodules:'peritoneal nodüller', omentum_caked:'omental caking',
-  pneumatosis:'pneumatosis intestinalis', portal_venous_gas:'portal venöz gaz',
-  smv_thrombus:'SMV trombozu', sma_occlusion:'SMA oklüzyonu/stenozu',
-  organomegaly:'hepatosplenomegali', liver_mets_hypervascular:'hipervasküler karaciğer metastazları',
-  spleen_small:'atrofik dalak', lap_necrotic:'nekrotik LAP',
-  exophytic:'ekzofitik kitle', submucosal_mass:'submukozal kitle',
-  submucosal_targetoid:'submukozal target metastaz', mass_heterogeneous:'heterojen kitle',
-  mass_necrotic:'nekrotik kitle', mass_hemorrhagic:'hemorajik kitle',
-  mass_welldefined:'sınırları düzgün kitle', mass_infiltrative:'infiltratif kitle',
-  mass_homogeneous:'homojen kitle', mass_serosal:'seroza merkezli kitle',
-  wall_serosal:'seroza tutulumu', primary_small:'küçük primer',
-  size_large:'büyük kitle (>5 cm)', size_small:'küçük kitle (<3 cm)',
-  cavitation:'kavitasyon', cecum_pulledup:'yukarı çekilmiş çekum',
-  caseation:'kazeöz görünüm', blind_ending_pouch:'kör sonlanan divertiküler poş',
-  antimesenteric:'antimezenterik kenar', umbilical_distance:'umbilikusa yakın mesafe',
-  t1_hyperintense_melanoma:'T1 hiperintens (melanom)', t1_hyperintense_foci:'T1 hiperintens foküs',
-  t1_hyperintense_fat:'T1 hiperintens yağ', t1_hyperintense_wall:'T1 hiperintens duvar',
-  t2_hyperintense:'T2 hiperintens', fat_suppression:'yağ baskılamada kayıp',
-  t2_hypointense:'T2 hipointens', t2_hypointense_fibrosis:'T2 hipointens fibrotik odak',
-  target_sign:'target sign', sausage_mass:'sosis şekli kitle',
-  bowel_in_bowel:'barsak-içinde-barsak', mes_fat_within:'kitle içinde mezenter yağı',
-  lead_point_mass:'lead-point kitle', intussusception:'invajinasyon',
-  intussusception_transient:'geçici invajinasyon', fecalization:'feces işareti',
-  feces_sign_prox:'obstrüksiyon feces işareti',
-  enh_avid_arterial:'arteriyel avid kontrastlanma',
-  clinical_orogenital:'orogenital ülser öyküsü',
-  clinical_malabsorption:'malabsorpsiyon klinik bulgusu',
-  clinical_carcinoid_syndrome:'karsinoid sendrom semptomları',
-  clinical_celiac_history:'çölyak öyküsü',
-  clinical_posttransplant:'posttransplant durum',
-  clinical_scleroderma:'bilinen skleroderma',
-  clinical_igg4:'IgG4-ilişkili hastalık öyküsü',
-  clinical_fap:'FAP/familyal polipozis',
-  clinical_pigmentation:'mukokutanöz pigmentasyon',
-  clinical_female_repro:'reprodüktif dönem kadın',
-  cyclical_sx:'siklik semptomlar',
-  clinical_hpylori:'H. pylori pozitif',
-  clinical_allergy:'atopi/eozinofili',
-  endemic:'endemik bölge',
-  post_gastric_bypass:'gastrik bypass öyküsü',
-  clinical_hypercoag:'hiperkoagülabilite',
-};
-function lbl(id){ return LABELS[id] || id; }
+function lbl(id){ return T.LABELS[id] || id; }
 
 /* ============================================================
    REPORT OVERLAY
@@ -1797,7 +2533,7 @@ function lbl(id){ return LABELS[id] || id; }
 function ReportOverlay({global, lesions, diffFn, onClose}){
   const rptRef = useRef(null);
   const now = new Date();
-  const tarih = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const tarih = now.toLocaleDateString(T.rpt_locale) + ' ' + now.toLocaleTimeString(T.rpt_locale,{hour:'2-digit',minute:'2-digit'});
   
   // Aggregate diff
   const aggDiff = useMemo(()=>{
@@ -1824,7 +2560,7 @@ function ReportOverlay({global, lesions, diffFn, onClose}){
     return Array.from(l.mesFindings).map(lbl).filter(Boolean).join(', ') || '—';
   }
   function lesionCxList(l){
-    return Array.from(l.complications).map(lbl).filter(Boolean).join(', ') || 'Yok';
+    return Array.from(l.complications).map(lbl).filter(Boolean).join(', ') || T.cx_none;
   }
   function lesionSpecificList(l){
     return Array.from(l.specificFlags).map(lbl).filter(Boolean).join(', ') || '—';
@@ -1833,16 +2569,16 @@ function ReportOverlay({global, lesions, diffFn, onClose}){
     if(l.locationFreeText) return l.locationFreeText;
     return l.location.map(lbl).join(', ') || '—';
   }
-  const walT = (v)=>({mild:'hafif (3–5 mm)',moderate:'orta (5–10 mm)',marked:'belirgin (>10 mm)',aneurysmal:'anevrizmal dilatasyon'})[v]||'normal (<3 mm)';
-  const distT = (v)=>({focal:'fokal',segmental:'segmental',skip:'skip/atlamalı',continuous:'kontinü',multifocal:'multifokal',diffuse:'diffüz',multiple:'multiple ayrık'})[v]||'—';
-  const lenT = (v)=>({short:'kısa (<5 cm)',medium:'orta (5–10 cm)',long:'uzun (>10 cm)',diffuse:'diffüz'})[v]||'—';
-  const t2T = (v)=>({edema:'ödem (hiperintens, aktif)',intermediate:'intermediyer',hypointense:'hipointens (fibrotik)',heterogeneous:'heterojen',normal:'normal'})[v]||'—';
-  const dwiT = (v)=>({yes:'belirgin restriksiyon',mild:'hafif restriksiyon',no:'restriksiyon yok'})[v]||'—';
-  const enhP = (v)=>({stratified:'mural stratifikasyon',target:'target',homogeneous:'homojen',mucosal:'mukozal',heterogeneous:'heterojen',peripheral:'periferik',delayed:'geç',reduced:'azalmış',absent:'yok',none:'değerlendirilemedi'})[v]||'—';
-  const enhD = (v)=>({mild:'hafif',moderate:'orta',intense:'belirgin',absent:'yok'})[v]||'—';
-  const lumT = (v)=>({mildstenosis:'hafif luminal daralma',stenosis:'belirgin stenoz',prestenotic:'stenoz + prestenotik dilatasyon',annular:'annüler stenoz (+shouldering)',dilatation:'dilatasyon',aneurysmal:'anevrizmal dilatasyon'})[v]||'normal';
-  const wallPat = (v)=>({concentric:'konsantrik',eccentric:'ekzantrik',circumferential:'sirkumferensiyal'})[v]||'—';
-  const lapT = (v)=>({reactive:'reaktif küçük LAP',moderate:'orta boy LAP',bulky:'bulky LAP (>1.5 cm)',necrotic:'nekrotik santrali LAP',calcified:'kalsifiye LAP',conglomerate:'konglomere LAP'})[v]||'normal';
+  const walT = (v)=>T.walT[v]||T.walT_default;
+  const distT = (v)=>T.distT[v]||'—';
+  const lenT = (v)=>T.lenT[v]||'—';
+  const t2T = (v)=>T.t2T[v]||'—';
+  const dwiT = (v)=>T.dwiT[v]||'—';
+  const enhP = (v)=>T.enhP[v]||'—';
+  const enhD = (v)=>T.enhD[v]||'—';
+  const lumT = (v)=>T.lumT[v]||T.lumT_default;
+  const wallPat = (v)=>T.wallPat[v]||'—';
+  const lapT = (v)=>T.lapT[v]||T.lapT_default;
   
   function handlePrint(){ window.print(); }
   function handleCopyRich(){
@@ -1854,19 +2590,19 @@ function ReportOverlay({global, lesions, diffFn, onClose}){
         const blob = new Blob([html],{type:'text/html'});
         const textBlob = new Blob([text],{type:'text/plain'});
         navigator.clipboard.write([new ClipboardItem({'text/html':blob,'text/plain':textBlob})])
-          .then(()=>alert('Rapor panoya kopyalandı (zengin metin).'))
-          .catch(()=>{ navigator.clipboard.writeText(text); alert('Düz metin olarak panoya kopyalandı.'); });
+          .then(()=>alert(T.rpt_copy_success))
+          .catch(()=>{ navigator.clipboard.writeText(text); alert(T.rpt_copy_fallback); });
       } else {
         navigator.clipboard.writeText(text);
-        alert('Düz metin olarak panoya kopyalandı.');
+        alert(T.rpt_copy_fallback);
       }
     }catch(e){
-      alert('Kopyalama başarısız: '+e.message);
+      alert(T.rpt_copy_fail+e.message);
     }
   }
   function handleDownloadHTML(){
     if(!rptRef.current) return;
-    const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>MR Enterografi Raporu</title>
+    const html = `<!DOCTYPE html><html lang="${RV_LOCALE==='en'?'en':'tr'}"><head><meta charset="UTF-8"><title>${T.rpt_download_title}</title>
     <style>
     body{font-family:Arial,sans-serif;max-width:900px;margin:20px auto;padding:30px;color:#222}
     h2{color:#0f0e17;border-bottom:2px solid #f97316;padding-bottom:8px}
@@ -1897,183 +2633,180 @@ function ReportOverlay({global, lesions, diffFn, onClose}){
     <div className="rpt-overlay" onClick={(e)=>{ if(e.target.classList.contains('rpt-overlay')) onClose(); }}>
       <div className="rpt-container" onClick={e=>e.stopPropagation()}>
         <div className="rpt-toolbar">
-          <button className="btn btn-primary" onClick={handlePrint}>🖨 Yazdır / PDF</button>
-          <button className="btn btn-purple" onClick={handleCopyRich}>📋 Kopyala (zengin)</button>
-          <button className="btn btn-ghost" onClick={handleDownloadHTML}>⬇ HTML İndir</button>
+          <button className="btn btn-primary" onClick={handlePrint}>{T.rpt_print}</button>
+          <button className="btn btn-purple" onClick={handleCopyRich}>{T.rpt_copy}</button>
+          <button className="btn btn-ghost" onClick={handleDownloadHTML}>{T.rpt_download}</button>
           <div style={{flex:1}}></div>
-          <button className="btn btn-danger" onClick={onClose}>✕ Kapat</button>
+          <button className="btn btn-danger" onClick={onClose}>{T.rpt_close}</button>
         </div>
         <div className="rpt-body" ref={rptRef}>
-          <h2>MR ENTEROGRAFİ RAPORU</h2>
-          <div className="meta">Rapor tarihi: {tarih}</div>
-          
-          <h3>Klinik Bilgi</h3>
+          <h2>{T.rpt_title}</h2>
+          <div className="meta">{T.rpt_date}: {tarih}</div>
+
+          <h3>{T.rpt_clinical_hdr}</h3>
           <table>
             <tbody>
-              <tr><td>Endikasyon</td><td>{global.indikasyon || '—'}</td></tr>
-              {global.klinikNote && <tr><td>Ek klinik</td><td>{global.klinikNote}</td></tr>}
+              <tr><td>{T.rpt_indication_row}</td><td>{global.indikasyon || '—'}</td></tr>
+              {global.klinikNote && <tr><td>{T.rpt_extra_clinical_row}</td><td>{global.klinikNote}</td></tr>}
               {(global.immunsupresif || global.knownMalignancy || global.nsaidUse || global.anticoagulant || global.radyoterapi) && (
-                <tr><td>Risk faktörleri</td><td>
+                <tr><td>{T.rpt_risk_row}</td><td>
                   {[
-                    global.immunsupresif && 'immünsüpresyon',
-                    global.knownMalignancy && ('bilinen malignite'+(global.knownMalignancyType?' ('+global.knownMalignancyType+')':'')),
-                    global.nsaidUse && 'kronik NSAID kullanımı',
-                    global.anticoagulant && 'antikoagülan kullanımı',
-                    global.radyoterapi && 'pelvik/abdominal radyoterapi öyküsü',
+                    global.immunsupresif && T.rpt_risk_immunosup,
+                    global.knownMalignancy && (T.rpt_risk_malignancy+(global.knownMalignancyType?' ('+global.knownMalignancyType+')':'')),
+                    global.nsaidUse && T.rpt_risk_nsaid,
+                    global.anticoagulant && T.rpt_risk_anticoag,
+                    global.radyoterapi && T.rpt_risk_rt,
                   ].filter(Boolean).join(', ')}
                 </td></tr>
               )}
               {global.clinicalFlags.size > 0 && (
-                <tr><td>Klinik işaretçiler</td><td>{Array.from(global.clinicalFlags).map(lbl).join(', ')}</td></tr>
+                <tr><td>{T.rpt_clin_markers_row}</td><td>{Array.from(global.clinicalFlags).map(lbl).join(', ')}</td></tr>
               )}
             </tbody>
           </table>
-          
-          <h3>İnceleme Tekniği</h3>
+
+          <h3>{T.rpt_technique_hdr}</h3>
           <table>
             <tbody>
-              <tr><td>Oral kontrast</td><td>{global.oralContrast || '—'}</td></tr>
-              <tr><td>Barsak distansiyonu</td><td>{global.distention || '—'}</td></tr>
-              <tr><td>Hareket artefaktı</td><td>{global.artefakt || '—'}</td></tr>
-              <tr><td>Antispasmotik</td><td>{global.antispasmodic ? 'Verildi' : 'Verilmedi'}</td></tr>
-              <tr><td>IV Gd kontrast</td><td>{global.ivContrast ? 'Verildi (pre/post serileri alındı)' : 'Verilmedi'}</td></tr>
-              <tr><td>Sekanslar</td><td>Koronal ve aksiyel T2 HASTE, T2 yağ baskılı, DWI (b 50-800), cine MRI, pre/post IV kontrast sonrası T1 VIBE/LAVA (erken ve geç fazlar)</td></tr>
+              <tr><td>{T.rpt_oral_contrast_row}</td><td>{global.oralContrast || '—'}</td></tr>
+              <tr><td>{T.rpt_distention_row}</td><td>{global.distention || '—'}</td></tr>
+              <tr><td>{T.rpt_artifact_row}</td><td>{global.artefakt || '—'}</td></tr>
+              <tr><td>{T.rpt_antispasmodic_row}</td><td>{global.antispasmodic ? T.rpt_antispasmodic_yes : T.rpt_antispasmodic_no}</td></tr>
+              <tr><td>{T.rpt_iv_row}</td><td>{global.ivContrast ? T.rpt_iv_yes : T.rpt_iv_no}</td></tr>
+              <tr><td>{T.rpt_sequences_row}</td><td>{T.rpt_sequences}</td></tr>
             </tbody>
           </table>
-          
-          <h3>BULGULAR</h3>
-          
-          <h3 style={{fontSize:'0.9rem',color:'#374151',borderBottom:'none',textTransform:'none',letterSpacing:0}}>Anatomik Segment Taraması</h3>
+
+          <h3>{T.rpt_findings_hdr}</h3>
+
+          <h3 style={{fontSize:'0.9rem',color:'#374151',borderBottom:'none',textTransform:'none',letterSpacing:0}}>{T.rpt_anat_survey_hdr}</h3>
           <table>
             <tbody>
-              <tr><td>Mide</td><td>{global.mide}</td></tr>
-              <tr><td>Duodenum</td><td>{global.duodenum}</td></tr>
-              <tr><td>Jejunum</td><td>{global.jejunum}</td></tr>
-              <tr><td>İleum</td><td>{global.ileum}</td></tr>
-              <tr><td>Terminal ileum</td><td>{global.terminal_ileum}</td></tr>
-              <tr><td>İleoçekal valv</td><td>{global.iliocecal}</td></tr>
-              <tr><td>Çekum</td><td>{global.cecum}</td></tr>
-              <tr><td>Kolon (diğer)</td><td>{global.kolon}</td></tr>
-              <tr><td>Apendiks</td><td>{global.apendiks}</td></tr>
-              <tr><td>Rektum</td><td>{global.rektum}</td></tr>
+              <tr><td>{T.rpt_mide}</td><td>{segLabel(global.mide)}</td></tr>
+              <tr><td>{T.rpt_duodenum}</td><td>{segLabel(global.duodenum)}</td></tr>
+              <tr><td>{T.rpt_jejunum}</td><td>{segLabel(global.jejunum)}</td></tr>
+              <tr><td>{T.rpt_ileum}</td><td>{segLabel(global.ileum)}</td></tr>
+              <tr><td>{T.rpt_ti}</td><td>{segLabel(global.terminal_ileum)}</td></tr>
+              <tr><td>{T.rpt_ileocecal}</td><td>{segLabel(global.iliocecal)}</td></tr>
+              <tr><td>{T.rpt_cecum}</td><td>{segLabel(global.cecum)}</td></tr>
+              <tr><td>{T.rpt_colon}</td><td>{segLabel(global.kolon)}</td></tr>
+              <tr><td>{T.rpt_appendix}</td><td>{segLabel(global.apendiks)}</td></tr>
+              <tr><td>{T.rpt_rectum}</td><td>{segLabel(global.rektum)}</td></tr>
             </tbody>
           </table>
-          
+
           {lesions.length > 0 && lesions.map((l,i)=>{
             const diff = diffFn(l);
             return (
               <div key={l.id}>
-                <h3>Lezyon {i+1} {l.name ? '— '+l.name : ''}</h3>
+                <h3>{T.rpt_lesion} {i+1} {l.name ? '— '+l.name : ''}</h3>
                 <table>
                   <tbody>
-                    <tr><td>Lokalizasyon</td><td>{lesionLocText(l)}</td></tr>
-                    <tr><td>Uzunluk</td><td>{l.lengthCm ? l.lengthCm+' — ' : ''}{lenT(l.length)}</td></tr>
-                    <tr><td>Dağılım</td><td>{distT(l.distribution)}</td></tr>
-                    <tr><td>Duvar kalınlığı</td><td>{l.wallMeasurement ? l.wallMeasurement+' — ' : ''}{walT(l.wallThick)}</td></tr>
-                    {l.wallPattern && <tr><td>Duvar paterni</td><td>{wallPat(l.wallPattern)}</td></tr>}
-                    <tr><td>T2 sinyali (duvar)</td><td>{t2T(l.t2Signal)}</td></tr>
-                    <tr><td>DWI</td><td>{dwiT(l.dwiRestriction)}{l.adcValue?' (ADC: '+l.adcValue+' ×10⁻³ mm²/sn)':''}</td></tr>
-                    <tr><td>Kontrastlanma</td><td>{enhP(l.enhancementPattern)}{l.enhancementDegree?', '+enhD(l.enhancementDegree)+' derece':''}</td></tr>
-                    <tr><td>Lümen</td><td>{lumT(l.lumen)}</td></tr>
-                    <tr><td>Mukozal bulgular</td><td>{lesionMuscosaList(l)}</td></tr>
+                    <tr><td>{T.rpt_loc_row}</td><td>{lesionLocText(l)}</td></tr>
+                    <tr><td>{T.rpt_length_row}</td><td>{l.lengthCm ? l.lengthCm+' — ' : ''}{lenT(l.length)}</td></tr>
+                    <tr><td>{T.rpt_dist_row}</td><td>{distT(l.distribution)}</td></tr>
+                    <tr><td>{T.rpt_wall_row}</td><td>{l.wallMeasurement ? l.wallMeasurement+' — ' : ''}{walT(l.wallThick)}</td></tr>
+                    {l.wallPattern && <tr><td>{T.rpt_wall_pattern_row}</td><td>{wallPat(l.wallPattern)}</td></tr>}
+                    <tr><td>{T.rpt_t2_row}</td><td>{t2T(l.t2Signal)}</td></tr>
+                    <tr><td>{T.rpt_dwi_row}</td><td>{dwiT(l.dwiRestriction)}{l.adcValue?' (ADC: '+l.adcValue+' ×10⁻³ mm²/s)':''}</td></tr>
+                    <tr><td>{T.rpt_enh_row}</td><td>{enhP(l.enhancementPattern)}{l.enhancementDegree?', '+enhD(l.enhancementDegree):''}</td></tr>
+                    <tr><td>{T.rpt_lumen_row}</td><td>{lumT(l.lumen)}</td></tr>
+                    <tr><td>{T.rpt_mucosa_row}</td><td>{lesionMuscosaList(l)}</td></tr>
                     {Array.from(l.specificFlags).length > 0 && (
-                      <tr><td>Özel morfolojik işaretçiler</td><td>{lesionSpecificList(l)}</td></tr>
+                      <tr><td>{T.rpt_specific_row}</td><td>{lesionSpecificList(l)}</td></tr>
                     )}
-                    <tr><td>Mezenter bulguları</td><td>{lesionMesList(l)}</td></tr>
-                    <tr><td>Lenf nodları</td><td>{lapT(l.lymphNodes)}{l.lapLocationNote?' — '+l.lapLocationNote:''}</td></tr>
-                    <tr><td>Komplikasyonlar</td><td>{lesionCxList(l)}</td></tr>
-                    {l.notes && <tr><td>Ek not</td><td>{l.notes}</td></tr>}
+                    <tr><td>{T.rpt_mes_row}</td><td>{lesionMesList(l)}</td></tr>
+                    <tr><td>{T.rpt_lymph_row}</td><td>{lapT(l.lymphNodes)}{l.lapLocationNote?' — '+l.lapLocationNote:''}</td></tr>
+                    <tr><td>{T.rpt_cx_row}</td><td>{lesionCxList(l)}</td></tr>
+                    {l.notes && <tr><td>{T.rpt_notes_row}</td><td>{l.notes}</td></tr>}
                   </tbody>
                 </table>
-                
+
                 <div className="yorum">
-                  <div className="yorum-t">YORUM — Lezyon {i+1} Ayırıcı Tanı</div>
+                  <div className="yorum-t">{T.rpt_interp_t} {i+1} — {T.rpt_interp_diff}</div>
                   <ul>
                     {diff.slice(0,5).map(d=>(
-                      <li key={d.id}><strong>{d.name}</strong> ({d.pct}%) — {d.cat}</li>
+                      <li key={d.id}><strong>{d.name}</strong> ({d.pct}%) — {catLabel(d.cat)}</li>
                     ))}
                   </ul>
                 </div>
               </div>
             );
           })}
-          
+
           {lesions.length === 0 && global.patolojiVarMi === false && (
             <div className="yorum">
-              <div className="yorum-t">YORUM — Normal MR Enterografi</div>
-              İncelenen ince barsak segmentlerinde patolojik duvar kalınlaşması, anormal kontrastlanma, 
-              stenoz, fistül, abse veya mezenter patolojisi izlenmemiştir.
+              <div className="yorum-t">{T.rpt_normal_interp_t}</div>
+              {T.rpt_normal_interp}
             </div>
           )}
-          
+
           {(global.extraFindings.size > 0 || global.complications.size > 0) && (
             <>
-              <h3>Ekstraintestinal Bulgular</h3>
+              <h3>{T.rpt_extra_hdr}</h3>
               <table>
                 <tbody>
                   {global.extraFindings.size > 0 && (
-                    <tr><td>Mezenter / LAP / Peritoneum / Vasküler</td>
+                    <tr><td>{T.rpt_mes_lap_peritoneum}</td>
                       <td>{Array.from(global.extraFindings).map(lbl).join(', ')}</td></tr>
                   )}
                   {global.complications.size > 0 && (
-                    <tr><td>Sistemik komplikasyonlar</td>
+                    <tr><td>{T.rpt_systemic_cx}</td>
                       <td>{Array.from(global.complications).map(lbl).join(', ')}</td></tr>
                   )}
                 </tbody>
               </table>
             </>
           )}
-          
+
           {(global.solidOrgans || global.pelvisBulgu) && (
             <>
-              <h3>Solid Organlar / Pelvis</h3>
+              <h3>{T.rpt_solid_pelvis_hdr}</h3>
               <table>
                 <tbody>
-                  {global.solidOrgans && <tr><td>Karın içi organlar</td><td style={{whiteSpace:'pre-wrap'}}>{global.solidOrgans}</td></tr>}
-                  {global.pelvisBulgu && <tr><td>Pelvis</td><td style={{whiteSpace:'pre-wrap'}}>{global.pelvisBulgu}</td></tr>}
+                  {global.solidOrgans && <tr><td>{T.rpt_abdominal_organs}</td><td style={{whiteSpace:'pre-wrap'}}>{global.solidOrgans}</td></tr>}
+                  {global.pelvisBulgu && <tr><td>{T.rpt_pelvis}</td><td style={{whiteSpace:'pre-wrap'}}>{global.pelvisBulgu}</td></tr>}
                 </tbody>
               </table>
             </>
           )}
-          
+
           {lesions.length > 0 && aggDiff.length > 0 && (
             <>
-              <h3>Kombine Ayırıcı Tanı</h3>
+              <h3>{T.rpt_combined_diff_hdr}</h3>
               <table>
                 <tbody>
                   {aggDiff.map(d=>(
                     <tr key={d.id}>
                       <td>{d.name}</td>
-                      <td>{d.pct}% ({d.cat})</td>
+                      <td>{d.pct}% ({catLabel(d.cat)})</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </>
           )}
-          
+
           <div className="conc">
-            <div className="conc-t">SONUÇ</div>
+            <div className="conc-t">{T.rpt_conclusion_t}</div>
             {global.sonucNote ? (
               <div style={{whiteSpace:'pre-wrap'}}>{global.sonucNote}</div>
             ) : (
               lesions.length === 0 && global.patolojiVarMi === false ? (
-                'Normal MR enterografi incelemesi. Klinik endikasyona yönelik ek değerlendirme gerekirse klinisyenle korelasyon önerilir.'
+                T.rpt_conclusion_normal
               ) : (
                 lesions.length > 0 && aggDiff.length > 0 ? (
                   <>
-                    Tanımlanan bulgular göz önüne alındığında en olası ayırıcı tanı <strong>{aggDiff[0].name}</strong> ({aggDiff[0].pct}%) 
-                    olup, {aggDiff.slice(1,3).map(d=>d.name).join(' ve ')} da ayırıcı tanıda akılda tutulmalıdır. 
-                    Klinik, laboratuvar ve gerektiğinde endoskopik/histopatolojik korelasyon önerilir.
+                    {T.rpt_conclusion_auto_1} <strong>{aggDiff[0].name}</strong> ({aggDiff[0].pct}%)
+                    {' '}{T.rpt_conclusion_auto_2} {aggDiff.slice(1,3).map(d=>d.name).join(RV_LOCALE==='en'?' and ':' ve ')} {T.rpt_conclusion_auto_3}
                   </>
-                ) : 'Sonuç notu girilmedi.'
+                ) : T.rpt_conclusion_empty
               )
             )}
           </div>
-          
+
           <div style={{marginTop:30,paddingTop:14,borderTop:'1px solid #e5e7eb',fontSize:'0.78rem',color:'#6b7280'}}>
-            Bu rapor MR enterografi structured reporting şablonu ile oluşturulmuştur. Ağırlıklı ayırıcı tanı 
-            algoritması klinik karar destek amacıyla kullanılmakta olup klinisyenin değerlendirmesinin yerine geçmez.
+            {T.rpt_footer}
           </div>
         </div>
       </div>
