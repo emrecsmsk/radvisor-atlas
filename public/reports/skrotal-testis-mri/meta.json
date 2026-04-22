@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "Skrotum · Testis MR",
+    "en": "Scrotal · Testicular MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "skrotal_testis_mri.html"
+}

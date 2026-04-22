@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "Kardiyak MR",
+    "en": "Cardiac MRI"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "kardiyak_mri (2).html"
+}

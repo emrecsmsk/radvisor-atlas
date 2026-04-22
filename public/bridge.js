@@ -5,16 +5,14 @@
  * What it does:
  *   1. Reads ?locale= and ?patient= from the iframe URL.
  *   2. Exposes window.__RADVISOR__ = { locale, patient, labels }.
- *   3. Renders a print-safe patient strip at the top of the report body.
+ *   3. Renders a **print-only** Radvisor-branded header + patient grid at the
+ *      top of the report body (invisible on screen, visible only when the
+ *      user prints / saves as PDF).
  *   4. Applies [data-i18n-{locale}] attributes to element.textContent.
  *   5. Applies [data-i18n-{locale}-{attr}] to the matching attribute
  *      (placeholder, title, aria-label, value, alt).
  *   6. Watches the DOM for new nodes (React re-renders) and re-applies i18n.
  *   7. Dispatches a "radvisor:ready" CustomEvent when the first pass is done.
- *
- * Design rule: the bridge NEVER translates plain text with a dictionary —
- * translation is always explicit via data-i18n-* attributes authored in the
- * report HTML (or via window.__RADVISOR__.locale inside the report's own JS).
  */
 (function () {
   "use strict";
@@ -44,6 +42,7 @@
 
   var L = {
     tr: {
+      tagline: "Innovative Radiology",
       genderLong: { MALE: "Erkek", FEMALE: "Kadın", OTHER: "Diğer" },
       patientType: {
         POLICLINIC: "Poliklinik",
@@ -52,13 +51,18 @@
         INTENSIVE_CARE: "Yoğun Bakım",
         CONSULTATION: "Konsültasyon",
       },
-      labels: {
+      fieldLabels: {
+        patientName: "Hasta Adı",
+        patientSurname: "Soyadı",
+        gender: "Cinsiyet",
+        patientType: "Hasta Türü",
         modality: "Modalite",
-        assignedDoctor: "Sorumlu Dr.",
-        approvingDoctor: "Onaylayan Dr.",
+        assignedDoctor: "Sorumlu Doktor",
+        approvingDoctor: "Onaylayan Doktor",
       },
     },
     en: {
+      tagline: "Innovative Radiology",
       genderLong: { MALE: "Male", FEMALE: "Female", OTHER: "Other" },
       patientType: {
         POLICLINIC: "Outpatient",
@@ -67,10 +71,14 @@
         INTENSIVE_CARE: "Intensive Care",
         CONSULTATION: "Consultation",
       },
-      labels: {
+      fieldLabels: {
+        patientName: "First Name",
+        patientSurname: "Last Name",
+        gender: "Gender",
+        patientType: "Patient Type",
         modality: "Modality",
-        assignedDoctor: "Assigned Dr.",
-        approvingDoctor: "Approving Dr.",
+        assignedDoctor: "Assigned Doctor",
+        approvingDoctor: "Approving Doctor",
       },
     },
   };
@@ -82,25 +90,78 @@
     labels: LOC,
   };
 
-  // -------- Styles (patient bar) -----------------------------------------
+  var LOGO_URL = "/brand/logo.png";
+
+  // -------- Styles (print-only Radvisor header) --------------------------
 
   var STYLE = [
-    "[data-radvisor-patient-bar],[data-radvisor-patient-bar-default]{",
-    "  display:flex;flex-wrap:wrap;gap:4px 14px;",
-    "  padding:10px 20px;",
-    "  background:#f3f5f9;border-bottom:1px solid #dee3ec;",
-    "  color:#1f2937;font-weight:400;",
-    "  font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;",
-    "  -webkit-print-color-adjust:exact;print-color-adjust:exact;",
+    // Hidden on screen
+    "[data-radvisor-print-header],",
+    "[data-radvisor-print-header-default]{",
+    "  display:none !important;",
     "}",
-    "[data-radvisor-patient-bar] .rv-name,[data-radvisor-patient-bar-default] .rv-name{",
-    "  font-weight:600;color:#0f172a;",
-    "}",
-    "[data-radvisor-patient-bar] .rv-dot,[data-radvisor-patient-bar-default] .rv-dot{",
-    "  color:#9aa3b2;",
-    "}",
-    "[data-radvisor-patient-bar] .rv-k,[data-radvisor-patient-bar-default] .rv-k{",
-    "  color:#6b7280;",
+    // Visible only in print
+    "@media print{",
+    "  [data-radvisor-print-header],",
+    "  [data-radvisor-print-header-default]{",
+    "    display:block !important;",
+    "    margin:0 0 20px;",
+    "    color:#1f2937;",
+    "    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;",
+    "    -webkit-print-color-adjust:exact !important;",
+    "    print-color-adjust:exact !important;",
+    "    page-break-inside:avoid;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-top,",
+    "  [data-radvisor-print-header-default] .rv-print-top{",
+    "    display:flex;",
+    "    align-items:center;",
+    "    justify-content:space-between;",
+    "    margin-bottom:14px;",
+    "    gap:24px;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-logo,",
+    "  [data-radvisor-print-header-default] .rv-print-logo{",
+    "    width:70px;",
+    "    height:70px;",
+    "    object-fit:contain;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-brand,",
+    "  [data-radvisor-print-header-default] .rv-print-brand{",
+    "    text-align:right;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-title,",
+    "  [data-radvisor-print-header-default] .rv-print-title{",
+    "    font-size:20px;",
+    "    font-weight:700;",
+    "    color:#da291c !important;",
+    "    letter-spacing:1px;",
+    "    margin:0;",
+    "    line-height:1.1;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-description,",
+    "  [data-radvisor-print-header-default] .rv-print-description{",
+    "    font-size:13px;",
+    "    color:#53565a !important;",
+    "    margin:3px 0 0;",
+    "    line-height:1.2;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-grid,",
+    "  [data-radvisor-print-header-default] .rv-print-grid{",
+    "    display:grid;",
+    "    grid-template-columns:1fr 1fr;",
+    "    gap:6px 24px;",
+    "    padding:12px 0;",
+    "    border-top:1px solid #c9cdd3;",
+    "    border-bottom:1px solid #c9cdd3;",
+    "    font-size:12px;",
+    "    line-height:1.5;",
+    "  }",
+    "  [data-radvisor-print-header] .rv-print-grid .rv-k,",
+    "  [data-radvisor-print-header-default] .rv-print-grid .rv-k{",
+    "    font-weight:700;",
+    "    color:#111827;",
+    "  }",
     "}",
   ].join("\n");
 
@@ -112,7 +173,7 @@
     (document.head || document.documentElement).appendChild(s);
   }
 
-  // -------- Patient strip -------------------------------------------------
+  // -------- Print header (logo + brand + patient grid) -------------------
 
   function escapeHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) {
@@ -126,75 +187,81 @@
     });
   }
 
-  function buildPatientMarkup() {
-    if (!patient) return "";
-    var parts = [];
-    var name = (
-      (patient.patientName || "") +
-      " " +
-      (patient.patientSurname || "")
-    ).trim();
-    parts.push('<span class="rv-name">' + escapeHtml(name) + "</span>");
-    if (patient.gender && LOC.genderLong[patient.gender]) {
-      parts.push(
-        '<span class="rv-dot">·</span><span>' +
-          escapeHtml(LOC.genderLong[patient.gender]) +
-          "</span>",
-      );
+  function buildPrintHeaderMarkup() {
+    var rows = [];
+    if (patient) {
+      if (patient.patientName) {
+        rows.push([LOC.fieldLabels.patientName, patient.patientName]);
+      }
+      if (patient.patientSurname) {
+        rows.push([LOC.fieldLabels.patientSurname, patient.patientSurname]);
+      }
+      if (patient.gender && LOC.genderLong[patient.gender]) {
+        rows.push([LOC.fieldLabels.gender, LOC.genderLong[patient.gender]]);
+      }
+      if (patient.patientType && LOC.patientType[patient.patientType]) {
+        rows.push([
+          LOC.fieldLabels.patientType,
+          LOC.patientType[patient.patientType],
+        ]);
+      }
+      if (patient.modality) {
+        rows.push([LOC.fieldLabels.modality, patient.modality]);
+      }
+      if (patient.assignedDoctor) {
+        rows.push([LOC.fieldLabels.assignedDoctor, patient.assignedDoctor]);
+      }
+      if (patient.approvingDoctor) {
+        rows.push([LOC.fieldLabels.approvingDoctor, patient.approvingDoctor]);
+      }
     }
-    if (patient.patientType && LOC.patientType[patient.patientType]) {
-      parts.push(
-        '<span class="rv-dot">·</span><span>' +
-          escapeHtml(LOC.patientType[patient.patientType]) +
-          "</span>",
-      );
+
+    var gridHtml = "";
+    if (rows.length) {
+      var cells = rows
+        .map(function (r) {
+          return (
+            '<div><span class="rv-k">' +
+            escapeHtml(r[0]) +
+            ":</span> " +
+            escapeHtml(r[1]) +
+            "</div>"
+          );
+        })
+        .join("");
+      gridHtml = '<div class="rv-print-grid">' + cells + "</div>";
     }
-    if (patient.modality) {
-      parts.push(
-        '<span class="rv-dot">·</span><span><span class="rv-k">' +
-          escapeHtml(LOC.labels.modality) +
-          ":</span> " +
-          escapeHtml(patient.modality) +
-          "</span>",
-      );
-    }
-    if (patient.assignedDoctor) {
-      parts.push(
-        '<span class="rv-dot">·</span><span><span class="rv-k">' +
-          escapeHtml(LOC.labels.assignedDoctor) +
-          "</span> " +
-          escapeHtml(patient.assignedDoctor) +
-          "</span>",
-      );
-    }
-    if (patient.approvingDoctor) {
-      parts.push(
-        '<span class="rv-dot">·</span><span><span class="rv-k">' +
-          escapeHtml(LOC.labels.approvingDoctor) +
-          "</span> " +
-          escapeHtml(patient.approvingDoctor) +
-          "</span>",
-      );
-    }
-    return parts.join("");
+
+    return (
+      '<div class="rv-print-top">' +
+      '<img class="rv-print-logo" src="' +
+      LOGO_URL +
+      '" alt="" />' +
+      '<div class="rv-print-brand">' +
+      '<div class="rv-print-title">RADVISOR</div>' +
+      '<div class="rv-print-description">' +
+      escapeHtml(LOC.tagline) +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      gridHtml
+    );
   }
 
-  function renderPatientBar() {
-    if (!patient) return;
-    var markup = buildPatientMarkup();
-    if (!markup) return;
-
-    var slot = document.querySelector("[data-radvisor-patient-bar]");
+  function renderPrintHeader() {
+    var markup = buildPrintHeaderMarkup();
+    // Author-provided slot takes precedence
+    var slot = document.querySelector("[data-radvisor-print-header]");
     if (slot) {
       slot.innerHTML = markup;
       slot.setAttribute("data-radvisor-filled", "true");
       return;
     }
     if (!document.body) return;
-    var bar = document.createElement("div");
-    bar.setAttribute("data-radvisor-patient-bar-default", "true");
-    bar.innerHTML = markup;
-    document.body.insertBefore(bar, document.body.firstChild);
+    var div = document.createElement("div");
+    div.setAttribute("data-radvisor-print-header-default", "true");
+    div.innerHTML = markup;
+    document.body.insertBefore(div, document.body.firstChild);
   }
 
   // -------- i18n apply (attribute-driven, explicit only) -----------------
@@ -208,7 +275,6 @@
 
     var applied = 0;
 
-    // 1) textContent: data-i18n-{locale}
     var textAttr = "data-i18n-" + locale;
     var textSel = "[" + textAttr + "]:not([" + APPLIED_FLAG + "-text])";
     var textNodes = scope.querySelectorAll
@@ -223,7 +289,6 @@
       applied++;
     }
 
-    // 2) attributes: data-i18n-{locale}-{attr}
     for (var a = 0; a < ATTR_TARGETS.length; a++) {
       var attrName = ATTR_TARGETS[a];
       var dataAttr = "data-i18n-" + locale + "-" + attrName;
@@ -279,7 +344,7 @@
   function run() {
     try {
       injectStylesOnce();
-      renderPatientBar();
+      renderPrintHeader();
       applyI18n();
       startObserver();
     } catch (e) {

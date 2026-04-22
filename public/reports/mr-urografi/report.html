@@ -1,0 +1,3744 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MR Ürografi — Multilezyon Karar Destek Sistemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --bg: #0f0e17;
+    --bg-2: #151422;
+    --card: #1a1925;
+    --card-2: #20202f;
+    --border: #2a2a3d;
+    --border-2: #353549;
+    --text: #f0eeff;
+    --text-dim: #a8a6c8;
+    --text-faint: #6e6b8f;
+    --accent: #06b6d4;     /* cyan — ürin sinyali */
+    --accent-2: #0891b2;
+    --accent-3: #22d3ee;
+    --teal: #14b8a6;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --ok: #10b981;
+    --violet: #8b5cf6;
+    --grad: linear-gradient(135deg, #06b6d4 0%, #14b8a6 55%, #8b5cf6 100%);
+    --grad-soft: linear-gradient(135deg, rgba(6,182,212,.18), rgba(139,92,246,.12));
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(6,182,212,.08), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(139,92,246,.07), transparent 60%),
+      var(--bg);
+  }
+  #root{min-height:100vh}
+  .app{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{
+    width:52px;height:52px;border-radius:14px;
+    background:var(--grad);
+    display:grid;place-items:center;
+    box-shadow:0 10px 30px -10px rgba(6,182,212,.55);
+    position:relative;overflow:hidden;
+  }
+  .logo::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 55%)}
+  .logo svg{position:relative;z-index:2}
+  .brand h1{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:.3px;line-height:1}
+  .brand h1 span{color:var(--accent-3)}
+  .brand p{color:var(--text-dim);font-size:12.5px;margin-top:4px;letter-spacing:.4px;text-transform:uppercase}
+  .hdr-right{display:flex;align-items:center;gap:10px}
+  .badge{
+    font-size:11px;letter-spacing:.8px;text-transform:uppercase;
+    padding:6px 10px;border-radius:999px;border:1px solid var(--border-2);
+    background:var(--card-2);color:var(--text-dim)
+  }
+  .badge.active{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.35);color:var(--accent-3)}
+
+  .stepbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:18px 0 22px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:16px}
+  .dot{
+    width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+    font-size:11px;font-weight:600;color:var(--text-faint);
+    border:1px solid var(--border-2);background:var(--bg-2);cursor:pointer;
+    transition:all .18s ease;
+  }
+  .dot.done{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.45);color:var(--accent-3)}
+  .dot.active{background:var(--grad);border-color:transparent;color:#08121a;box-shadow:0 0 0 4px rgba(6,182,212,.18)}
+  .dot:hover{transform:translateY(-1px)}
+  .conn{flex:1;height:2px;min-width:8px;background:var(--border);border-radius:2px}
+  .conn.done{background:linear-gradient(90deg,var(--accent),var(--teal))}
+
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:20px;
+    padding:28px 28px 24px;animation:fadeIn .35s ease;
+    box-shadow:0 20px 50px -30px rgba(0,0,0,.6);
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .card h2{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;letter-spacing:.2px;margin-bottom:4px;color:var(--text)}
+  .card .sub{color:var(--text-dim);font-size:13.5px;margin-bottom:20px}
+
+  .grid{display:grid;gap:10px}
+  .grid.c2{grid-template-columns:repeat(2,1fr)}
+  .grid.c3{grid-template-columns:repeat(3,1fr)}
+  .grid.c4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:720px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}}
+
+  .opt{
+    display:flex;align-items:center;gap:10px;padding:13px 14px;
+    background:var(--card-2);border:1px solid var(--border);border-radius:12px;
+    cursor:pointer;transition:all .15s ease;font-size:14px;color:var(--text);
+    user-select:none;
+  }
+  .opt:hover{border-color:var(--border-2);background:#252535}
+  .opt.sel{
+    background:linear-gradient(135deg, rgba(6,182,212,.16), rgba(20,184,166,.08));
+    border-color:rgba(6,182,212,.55);
+    box-shadow:inset 0 0 0 1px rgba(6,182,212,.25);
+  }
+  .opt .ck{
+    width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border-2);
+    display:grid;place-items:center;flex-shrink:0;transition:all .15s
+  }
+  .opt.sel .ck{background:var(--accent);border-color:var(--accent);color:#08121a}
+  .opt .ck svg{width:12px;height:12px;opacity:0}
+  .opt.sel .ck svg{opacity:1}
+  .opt .lbl{flex:1}
+  .opt .hint{color:var(--text-faint);font-size:12px}
+
+  .inp{
+    width:100%;padding:11px 14px;background:var(--card-2);border:1px solid var(--border);
+    border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none;
+    transition:border .15s
+  }
+  .inp:focus{border-color:var(--accent)}
+  label.fl{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;gap:10px;flex-wrap:wrap}
+  .btn{
+    padding:11px 20px;border-radius:12px;border:1px solid var(--border-2);
+    background:var(--card-2);color:var(--text);font-weight:600;font-size:14px;
+    cursor:pointer;transition:all .15s;font-family:inherit;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn:hover{background:#252535;transform:translateY(-1px)}
+  .btn.prim{
+    background:var(--grad);border-color:transparent;color:#08121a;
+    box-shadow:0 10px 24px -10px rgba(6,182,212,.6)
+  }
+  .btn.prim:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent}
+  .btn.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#fca5a5}
+  .btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Loop summary & chips */
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    font-size:11.5px;font-weight:500;background:var(--card-2);border:1px solid var(--border-2);color:var(--text-dim);
+  }
+  .chip.cy{background:rgba(6,182,212,.13);border-color:rgba(6,182,212,.4);color:var(--accent-3)}
+  .chip.tl{background:rgba(20,184,166,.13);border-color:rgba(20,184,166,.4);color:#5eead4}
+  .chip.vl{background:rgba(139,92,246,.13);border-color:rgba(139,92,246,.4);color:#c4b5fd}
+  .chip.wn{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.4);color:#fcd34d}
+  .chip.dn{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.4);color:#fca5a5}
+
+  .lesCard{
+    padding:14px 16px;background:var(--card-2);border:1px solid var(--border);border-radius:14px;margin-bottom:10px
+  }
+  .lesHdr{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .lesHdr b{font-family:'Syne',sans-serif;font-size:14.5px;letter-spacing:.2px}
+
+  /* Report (kutulu zebra) */
+  .rpt{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;margin-top:8px}
+  .rpt h3{font-family:'Syne',sans-serif;font-size:18px;margin-bottom:14px;letter-spacing:.3px}
+  .RptSection{
+    border:1px solid var(--border-2);border-radius:14px;margin-bottom:14px;overflow:hidden;
+    background:var(--bg-2);
+  }
+  .RptSection .sh{
+    background:linear-gradient(135deg, rgba(6,182,212,.2), rgba(20,184,166,.12), rgba(139,92,246,.15));
+    padding:10px 14px;font-family:'Syne',sans-serif;font-weight:700;font-size:13.5px;
+    letter-spacing:1.2px;text-transform:uppercase;
+    border-bottom:1px solid var(--border-2);color:var(--text)
+  }
+  .RptSection .sb{padding:4px 0}
+  .RptRow{display:grid;grid-template-columns:210px 1fr;gap:12px;padding:8px 14px;font-size:13.5px;line-height:1.55}
+  .RptRow:nth-child(odd){background:rgba(255,255,255,.02)}
+  .RptRow .k{color:var(--text-dim);font-weight:500}
+  .RptRow .v{color:var(--text)}
+  .pat{color:#fda4af;font-weight:600}
+  .inline-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .empty{padding:14px;color:var(--text-faint);font-size:13px;text-align:center}
+
+  .prob-bar{display:flex;align-items:center;gap:10px;padding:8px 14px}
+  .prob-bar:nth-child(odd){background:rgba(255,255,255,.02)}
+  .prob-bar .pn{flex:1;font-size:13.5px}
+  .prob-bar .pv{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--accent-3);
+    min-width:54px;text-align:right
+  }
+  .pb-track{height:6px;flex:1.3;background:var(--bg-2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+  .pb-fill{height:100%;background:var(--grad);border-radius:3px;transition:width .6s ease}
+
+  .callout{
+    padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.55;
+    background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.28);color:var(--text);margin:6px 0
+  }
+  .callout.wn{background:rgba(245,158,11,.09);border-color:rgba(245,158,11,.3)}
+  .callout.dn{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.3)}
+
+  .exportRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+  .overlayWrap{position:fixed;inset:0;background:rgba(8,8,16,.82);z-index:50;display:grid;place-items:center;padding:20px}
+  .overlayBox{width:min(860px,100%);background:var(--card);border:1px solid var(--border-2);border-radius:16px;padding:18px}
+  .overlayBox textarea{
+    width:100%;height:60vh;background:var(--bg-2);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:14px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55;outline:none;resize:vertical;
+  }
+  .overlayHdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .overlayHdr h4{font-family:'Syne',sans-serif;font-size:16px}
+
+  .footer{margin-top:22px;text-align:center;color:var(--text-faint);font-size:11.5px;letter-spacing:.6px}
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#2e2e44;border-radius:6px}
+  ::-webkit-scrollbar-thumb:hover{background:#3c3c58}
+
+/* Loading indicator */
+.__boot{position:fixed;inset:0;display:grid;place-items:center;background:#0f0e17;color:#06b6d4;font-family:'IBM Plex Sans',system-ui,sans-serif;z-index:999}
+.__boot .box{text-align:center}
+.__boot .spinner{width:42px;height:42px;border:3px solid #2a2a3d;border-top-color:#06b6d4;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.__boot p{color:#a8a6c8;font-size:13.5px;letter-spacing:.5px}
+.__boot h3{font-family:'Syne',sans-serif;color:#22d3ee;margin-bottom:6px}
+.__err{color:#fda4af !important}
+.__err .spinner{border-top-color:#ef4444}
+</style>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="__boot" class="__boot"><div class="box"><div class="spinner"></div><h3 id="__bh" data-i18n-tr="MR Ürografi yükleniyor…" data-i18n-en="MR Urography loading…">MR Ürografi yükleniyor…</h3><p id="__bp" data-i18n-tr="React kütüphanesi getiriliyor" data-i18n-en="Fetching React library">React kütüphanesi getiriliyor</p></div></div>
+
+<script>
+(function(){
+  var _loc = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+  var _BL = {
+    tr: {
+      loading: 'MR Ürografi yükleniyor…',
+      preparing: 'Arayüz hazırlanıyor',
+      cdn_error: 'CDN erişim hatası',
+      app_error: 'Uygulama başlatma hatası',
+      lib_fail: function(n){ return n + ' kütüphanesi yüklenemedi. Hastane ağı cdn.jsdelivr.net ve unpkg.com adreslerini bloke ediyor olabilir.'; }
+    },
+    en: {
+      loading: 'MR Urography loading…',
+      preparing: 'Preparing interface',
+      cdn_error: 'CDN access error',
+      app_error: 'Application startup error',
+      lib_fail: function(n){ return n + ' library could not be loaded. The hospital network may be blocking cdn.jsdelivr.net and unpkg.com.'; }
+    }
+  }[_loc];
+
+  var BH = document.getElementById('__bh');
+  var BP = document.getElementById('__bp');
+  var BOOT = document.getElementById('__boot');
+  /* apply locale to static boot text */
+  if(BH) BH.textContent = BH.getAttribute('data-i18n-' + _loc) || BH.textContent;
+  if(BP) BP.textContent = BP.getAttribute('data-i18n-' + _loc) || BP.textContent;
+
+  function setMsg(h,p,err){
+    if(BH) BH.textContent = h;
+    if(BP) BP.textContent = p;
+    if(err && BOOT) BOOT.classList.add('__err');
+  }
+  function hideBoot(){ if(BOOT) BOOT.style.display='none'; }
+  function showError(title, detail){
+    setMsg(title, detail, true);
+  }
+
+  function loadScript(primary, fallback, name, cb){
+    setMsg(_BL.loading, name + ' (jsdelivr)');
+    var s = document.createElement('script');
+    s.src = primary;
+    s.onload = cb;
+    s.onerror = function(){
+      setMsg(_BL.loading, name + ' (unpkg fallback)');
+      var s2 = document.createElement('script');
+      s2.src = fallback;
+      s2.onload = cb;
+      s2.onerror = function(){
+        showError(_BL.cdn_error, _BL.lib_fail(name));
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  }
+
+  function boot(){
+    loadScript(
+      'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
+      'https://unpkg.com/[email protected]/umd/react.production.min.js',
+      'React',
+      function(){
+        loadScript(
+          'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
+          'https://unpkg.com/[email protected]/umd/react-dom.production.min.js',
+          'ReactDOM',
+          function(){
+            try{
+              setMsg(_BL.loading, _BL.preparing);
+              // Execute the precompiled app
+              window.__runApp();
+              setTimeout(hideBoot, 80);
+            }catch(e){
+              showError(_BL.app_error, (e && e.message) || String(e));
+              console.error('App init error:', e);
+            }
+          }
+        );
+      }
+    );
+  }
+
+  window.__runApp = function(){
+
+/* ── i18n ── */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+const T = ({
+  tr: {
+    /* boot */
+    boot_loading: "MR Ürografi yükleniyor…",
+    boot_preparing: "Arayüz hazırlanıyor",
+    boot_cdn_error: "CDN erişim hatası",
+    boot_lib_fail: (name) => `${name} kütüphanesi yüklenemedi. Hastane ağı cdn.jsdelivr.net ve unpkg.com adreslerini bloke ediyor olabilir.`,
+    /* header */
+    brand_title_1: "MR ",
+    brand_title_2: "Ürografi",
+    brand_title_3: " · Karar Destek",
+    brand_sub: "Toplayıcı sistem · üreter · mesane — multilezyon analiz motoru",
+    badge_step: (s, t) => `Adım ${s} / ${t}`,
+    footer: "MR Ürografi Karar Destek · Standalone · Multilezyon motor · Kutulu-zebra rapor formatı",
+    /* nav */
+    nav_prev: "← Geri",
+    nav_next: "İleri →",
+    /* step meta */
+    step_of: (n, t) => `Adım ${n} / ${t}`,
+    step_dot_title: (n) => `Adım ${n}`,
+    /* steps */
+    s0_title: "Hasta ve İnceleme Bilgileri",
+    s0_sub: "Raporun başında görünecek temel bilgileri girin.",
+    s0_name_lbl: "Ad / Soyad veya Protokol No",
+    s0_date_lbl: "İnceleme tarihi",
+    s0_age_lbl: "Yaş",
+    s0_age_ph: "örn. 52",
+    s0_sex_lbl: "Cinsiyet",
+    s0_female: "Kadın",
+    s0_male: "Erkek",
+    s0_other: "Diğer",
+    s1_title: "Klinik Endikasyon",
+    s1_sub: "Bir veya birden fazla endikasyon seçiniz.",
+    s2_title: "Uygulanan Teknik",
+    s2_sub: "Elde edilen sekansları seçiniz.",
+    s2_contrast_lbl: "İV kontrast uygulandı mı?",
+    s2_contrast_yes: "Evet — kontrastlı (dinamik + eksretuvar)",
+    s2_contrast_no: "Hayır — yalnızca statik T2 ürografi",
+    s3_title: "Sağ Böbrek",
+    s3_sub: "Parankim, kortikomeduller ayrım, hidronefroz derecesi ve konjenital anomaliler.",
+    s4_title: "Sol Böbrek",
+    s4_sub: "Parankim, kortikomeduller ayrım, hidronefroz derecesi ve konjenital anomaliler.",
+    s_parenchyma_lbl: "Parankim",
+    s_corticomedullar_lbl: "Kortikomeduller ayrım",
+    s_hydro_lbl: "Hidronefroz derecesi (SFU)",
+    s_conj_lbl: "Konjenital anomali",
+    s_extra_note_lbl: "Ek not (opsiyonel)",
+    s_extra_note_ph: "örn. kist, tümör, skar, vb.",
+    s5_title: "Toplayıcı Sistem / Üreter / Mesane Lezyonu",
+    s5_sub: "Toplayıcı sistem, üreterler veya mesanede tanımlanacak lezyon/obstrüksiyon var mı?",
+    s5_yes: "Evet — lezyon/obstrüksiyon değerlendirmesi yapılacak",
+    s5_no: "Hayır — toplayıcı sistem ve üreterler normal",
+    s5_prev_lbl: "Önceden tanımlanmış lezyonlar",
+    s5_edit: "Düzenle",
+    s5_delete: "Sil",
+    s6_summary_title: "Lezyon Özeti",
+    s6_summary_sub: "Tanımlanan tüm lezyonlar. Yeni bir lezyon ekleyebilir veya rapora geçebilirsiniz.",
+    s6_empty: "Henüz lezyon eklenmedi.",
+    s6_edit: "Düzenle",
+    s6_delete: "Sil",
+    s6_add: "+ Yeni lezyon ekle",
+    s6_les_substep: (ci, lt, sn, sl) => `Lezyon ${ci} / ${lt} — Alt adım ${sn} / ${sl}`,
+    s6_les_sub: "Bu lezyon için bulguları işaretleyin.",
+    s6_side_lbl: "Taraf",
+    s6_side_right: "Sağ",
+    s6_side_left: "Sol",
+    s6_side_mid: "Orta hat / mesane",
+    s6_loc_lbl: "Anatomik lokalizasyon",
+    s6_type_lbl: "Lezyon tipi (birden fazla seçilebilir)",
+    s6_size_lbl: "Boyut / uzunluk (opsiyonel)",
+    s6_size_ph: "örn. 14 mm, 3 cm darlık, 24×18 mm kitle",
+    s6_t2_lbl: "T2A sinyal",
+    s6_t1_lbl: "T1A sinyal",
+    s6_dwi_lbl: "DWI",
+    s6_adc_lbl: "ADC",
+    s6_kontrast_lbl: "Kontrastlanma paterni",
+    s6_dilatasyon_lbl: "Proksimal dilatasyon",
+    s6_mural_lbl: "Duvar / mural özellik",
+    s6_komsu_lbl: "Komşu yapı bulguları",
+    s6_klinik_lbl: "Klinik özellikler",
+    s6_les_summary: (n) => `Lezyon ${n} özeti:`,
+    s6_finalize: "Tamamla ve özete dön",
+    s6_add_another: "+ Yeni lezyon ekle",
+    s6_prev_sub: "← Önceki alt adım",
+    s6_next_sub: "Sonraki alt adım →",
+    s7_title: "Mesane Değerlendirmesi",
+    s7_sub: "Doluluk, duvar, trabekülasyon, divertikül ve kitle varlığı.",
+    s7_fullness_lbl: "Doluluk",
+    s7_full_ok: "Yeterli",
+    s7_full_low: "Az dolu",
+    s7_full_over: "Aşırı dolu",
+    s7_wall_lbl: "Duvar kalınlığı",
+    s7_wall_normal: "Normal",
+    s7_wall_thick: "Kalınlaşmış",
+    s7_trabek_lbl: "Trabekülasyon",
+    s7_present: "Mevcut",
+    s7_absent: "Yok",
+    s7_divert_lbl: "Divertikül",
+    s7_mass_lbl: "Kitle / lezyon",
+    s7_mass_none: "İzlenmedi",
+    s7_mass_present: "Mevcut",
+    s7_mass_size_lbl: "Kitle boyutu",
+    s7_mass_size_ph: "örn. 22×18 mm, lateral duvar",
+    s7_mass_t2_lbl: "T2A sinyal",
+    s7_mass_dwi_lbl: "DWI",
+    s7_mass_adc_lbl: "ADC",
+    s7_mass_kontrast_lbl: "Kontrastlanma",
+    s7_mass_callout: "Mesane kitlesi saptandı — dedike VI-RADS protokolünde mesane MR ile kas invazyonu açısından yeniden değerlendirme önerilir.",
+    s7_extra_note_lbl: "Ek not (opsiyonel)",
+    s8_title: "Fonksiyonel / Eksretuvar Değerlendirme",
+    s8_sub: "Kontrastlı çalışmada eksresyon paterni.",
+    s8_sym_lbl: "Eksresyon simetrisi",
+    s8_sym_sym: "Simetrik",
+    s8_sym_asym: "Asimetrik (obstrüksiyon şüphesi)",
+    s8_delay_lbl: "Gecikme",
+    s8_delay_none: "Yok",
+    s8_delay_mild: "Hafif",
+    s8_delay_sig: "Belirgin",
+    s8_deficit_lbl: "Fonksiyon defisiti bulguları",
+    s8_deficit_opts: ["Sağda azalmış nefrogram", "Solda azalmış nefrogram", "Sağda parankim incelmesi", "Solda parankim incelmesi", "Bilateral yetersiz eksresyon"],
+    s8_extra_note_lbl: "Ek not (opsiyonel)",
+    s9_title: "Ek Bulgular",
+    s9_sub: "Pelvis, retroperiton ve komşu organlarda ek bulgular.",
+    s9_extra_note_lbl: "Ek not (opsiyonel)",
+    s10_title: "Rapor",
+    s10_sub: "Otomatik oluşturulmuş rapor — inceleyin, kopyalayın veya indirin.",
+    s10_copy: "📋 Panoya kopyala",
+    s10_download: "⬇︎ .txt indir",
+    s10_show: "📝 Metin olarak göster",
+    alert_copied: "Rapor panoya kopyalandı.",
+    overlay_title: "Raporu seçin ve kopyalayın",
+    overlay_close: "Kapat",
+    /* loop sub-steps */
+    loop_subs: ["Lokalizasyon", "Lezyon tipi", "T2 / T1", "DWI / ADC", "Kontrast", "Dilatasyon / Mural", "Komşu yapı / Klinik", "Özet"],
+    /* report sections */
+    rpt_patient_tech: "HASTA VE TEKNİK",
+    rpt_kidneys: "BÖBREKLER — BİLATERAL DEĞERLENDİRME",
+    rpt_bladder: "MESANE",
+    rpt_functional: "FONKSİYONEL / EKSRETUVAR DEĞERLENDİRME",
+    rpt_extra: "EK BULGULAR",
+    rpt_diff: "AYIRICI TANI — OLASI SIRALAMA",
+    rpt_conclusion: "SONUÇ",
+    /* rpt row keys */
+    rpt_patient: "Hasta",
+    rpt_age_sex: "Yaş / Cinsiyet",
+    rpt_date: "İnceleme tarihi",
+    rpt_indication: "Endikasyon",
+    rpt_technique: "Teknik",
+    rpt_iv_contrast: "İV kontrast",
+    rpt_iv_applied: "Uygulandı",
+    rpt_iv_not_applied: "Uygulanmadı",
+    rpt_right_kidney: "Sağ böbrek",
+    rpt_left_kidney: "Sol böbrek",
+    rpt_kidney_normal: "doğal",
+    rpt_les_head: (n, side, loc) => `${n}. Lezyon — ${side}${loc}`,
+    rpt_les_type: "Lezyon tipi",
+    rpt_les_size: "Boyut",
+    rpt_les_t2: "T2A sinyal",
+    rpt_les_t1: "T1A sinyal",
+    rpt_les_dwi: "DWI",
+    rpt_les_adc: "ADC",
+    rpt_les_kontrast: "Kontrastlanma",
+    rpt_les_dilatasyon: "Proksimal dilatasyon",
+    rpt_les_mural: "Duvar / mural",
+    rpt_les_komsu: "Komşu yapı",
+    rpt_les_klinik: "Klinik",
+    rpt_les_loc_unknown: "lokalizasyon belirsiz",
+    rpt_bladder_fullness: "Doluluk",
+    rpt_bladder_wall: "Duvar kalınlığı",
+    rpt_bladder_wall_thick: "Kalınlaşmış",
+    rpt_bladder_wall_normal: "Normal",
+    rpt_bladder_trabek: "Trabekülasyon",
+    rpt_bladder_trabek_present: "Mevcut",
+    rpt_bladder_divert: "Divertikül",
+    rpt_bladder_divert_present: "Mevcut",
+    rpt_bladder_mass: "Kitle / lezyon",
+    rpt_bladder_mass_present: "MEVCUT — ileri değerlendirme önerilir",
+    rpt_bladder_mass_none: "İzlenmedi",
+    rpt_bladder_mass_size: "Kitle boyutu",
+    rpt_bladder_mass_t2: "Kitle — T2A",
+    rpt_bladder_mass_dwi: "Kitle — DWI",
+    rpt_bladder_mass_adc: "Kitle — ADC",
+    rpt_bladder_mass_kontrast: "Kitle — Kontrastlanma",
+    rpt_note: "Not",
+    rpt_func_sym: "Eksresyon simetrisi",
+    rpt_func_delay: "Gecikme",
+    rpt_func_deficit: "Fonksiyon defisiti",
+    rpt_extra_retro: "Retroperiton / pelvis",
+    rpt_extra_none: "Ek anlamlı bulgu saptanmadı",
+    /* genSonucText */
+    sonuc_hidro: (sides) => `Anlamlı hidronefroz izlenmiştir (${sides.join(", ")}).`,
+    sonuc_hidro_side_r: (g) => `sağda Grade ${g}`,
+    sonuc_hidro_side_l: (g) => `solda Grade ${g}`,
+    sonuc_lesions: (n) => `Üriner sistemde ${n} adet lezyon/patoloji tanımlandı.`,
+    sonuc_bladder_mass: "Mesane içinde kitle lezyonu izlenmiştir — dedike mesane MR / VI-RADS protokolü önerilir.",
+    sonuc_top_dx: (ad, pct) => `En olası ön tanı: ${ad} (%${pct} uyum).`,
+    sonuc_no_clear_dx: "Bulgular tek bir tanıya güçlü işaret etmemektedir; klinik korelasyon ve gerektiğinde ek görüntüleme (BT, VCUG, sistoskopi) önerilir.",
+    sonuc_no_finding: "Üriner sistem MR ürografi incelemesinde belirgin patolojik bulguya rastlanmadı.",
+    /* plain report headers */
+    plain_title: "           MR ÜROGRAFİ RAPORU",
+    plain_patient_tech: "[ HASTA VE TEKNİK ]",
+    plain_name: "Hasta              ",
+    plain_age_sex: "Yaş / Cinsiyet     ",
+    plain_date: "İnceleme tarihi    ",
+    plain_indication: "Endikasyon         ",
+    plain_technique: "Teknik             ",
+    plain_iv: "İV kontrast        ",
+    plain_iv_yes: "Uygulandı",
+    plain_iv_no: "Uygulanmadı",
+    plain_kidneys: "[ BÖBREKLER — BİLATERAL DEĞERLENDİRME ]",
+    plain_kidney_r: "Sağ",
+    plain_kidney_l: "Sol",
+    plain_kidney_normal: "doğal",
+    plain_kidney_parenchyma: (v) => `parankim ${v.toLowerCase()}`,
+    plain_kidney_corticomedullar: (v) => `kortikomeduller ayrım ${v.toLowerCase()}`,
+    plain_les_head: (n, side, loc) => `[ ${n}. LEZYON — ${side}${loc} ]`,
+    plain_les_loc_unknown: "LOKALİZASYON BELİRSİZ",
+    plain_les_type: "Lezyon tipi        ",
+    plain_les_size: "Boyut              ",
+    plain_les_t2: "T2A sinyal         ",
+    plain_les_t1: "T1A sinyal         ",
+    plain_les_dwi: "DWI                ",
+    plain_les_adc: "ADC                ",
+    plain_les_kontrast: "Kontrastlanma      ",
+    plain_les_dilatasyon: "Proks. dilatasyon  ",
+    plain_les_mural: "Duvar / mural      ",
+    plain_les_komsu: "Komşu yapı         ",
+    plain_les_klinik: "Klinik             ",
+    plain_bladder: "[ MESANE ]",
+    plain_bladder_fullness: "Doluluk            ",
+    plain_bladder_wall: "Duvar kalınlığı    ",
+    plain_bladder_wall_thick: "Kalınlaşmış",
+    plain_bladder_wall_normal: "Normal",
+    plain_bladder_trabek: "Trabekülasyon      ",
+    plain_bladder_trabek_present: "Mevcut",
+    plain_bladder_divert: "Divertikül         ",
+    plain_bladder_divert_present: "Mevcut",
+    plain_bladder_mass: "Kitle / lezyon     ",
+    plain_bladder_mass_present: "MEVCUT — ileri değerlendirme önerilir",
+    plain_bladder_mass_none: "İzlenmedi",
+    plain_bladder_mass_size: "Kitle boyutu       ",
+    plain_bladder_mass_t2: "Kitle — T2A        ",
+    plain_bladder_mass_dwi: "Kitle — DWI        ",
+    plain_bladder_mass_adc: "Kitle — ADC        ",
+    plain_bladder_mass_kontrast: "Kitle — Kontrast   ",
+    plain_note: "Not                ",
+    plain_functional: "[ FONKSİYONEL / EKSRETUVAR DEĞERLENDİRME ]",
+    plain_func_sym: "Eksresyon simetrisi",
+    plain_func_delay: "Gecikme            ",
+    plain_func_deficit: "Fonksiyon defisiti ",
+    plain_extra: "[ EK BULGULAR ]",
+    plain_extra_retro: "Retroperiton/pelvis",
+    plain_extra_none: "Ek anlamlı bulgu saptanmadı",
+    plain_diff: "[ AYIRICI TANI — OLASILIK SIRALAMASI ]",
+    plain_conclusion: "[ SONUÇ ]",
+    /* parankim / kortikomedullar display */
+    tval_parankim: { "Normal": "Normal", "Artmış": "Artmış", "Atrofik": "Atrofik", "İncelmiş": "İncelmiş", "Heterojen": "Heterojen" },
+    tval_kortikomed: { "Korunmuş": "Korunmuş", "Silinmiş": "Silinmiş", "Kısmen silinmiş": "Kısmen silinmiş" },
+    tval_simetri: { "Simetrik": "Simetrik", "Asimetrik": "Asimetrik" },
+    tval_gecikme: { "Yok": "Yok", "Hafif": "Hafif", "Belirgin": "Belirgin" },
+    tval_doluluk: { "Yeterli": "Yeterli", "Az dolu": "Az dolu", "Aşırı dolu": "Aşırı dolu" },
+    tval_cinsiyet: { "Kadın": "Kadın", "Erkek": "Erkek", "Diğer": "Diğer" },
+  },
+  en: {
+    /* boot */
+    boot_loading: "MR Urography loading…",
+    boot_preparing: "Preparing interface",
+    boot_cdn_error: "CDN access error",
+    boot_lib_fail: (name) => `${name} library could not be loaded. The hospital network may be blocking cdn.jsdelivr.net and unpkg.com.`,
+    /* header */
+    brand_title_1: "MR ",
+    brand_title_2: "Urography",
+    brand_title_3: " · Decision Support",
+    brand_sub: "Collecting system · ureter · bladder — multi-lesion analysis engine",
+    badge_step: (s, t) => `Step ${s} / ${t}`,
+    footer: "MR Urography Decision Support · Standalone · Multi-lesion engine · Boxed-zebra report format",
+    /* nav */
+    nav_prev: "← Back",
+    nav_next: "Next →",
+    /* step meta */
+    step_of: (n, t) => `Step ${n} / ${t}`,
+    step_dot_title: (n) => `Step ${n}`,
+    /* steps */
+    s0_title: "Patient & Examination Information",
+    s0_sub: "Enter basic information to appear at the top of the report.",
+    s0_name_lbl: "Name / Surname or Protocol No",
+    s0_date_lbl: "Examination date",
+    s0_age_lbl: "Age",
+    s0_age_ph: "e.g. 52",
+    s0_sex_lbl: "Sex",
+    s0_female: "Female",
+    s0_male: "Male",
+    s0_other: "Other",
+    s1_title: "Clinical Indication",
+    s1_sub: "Select one or more indications.",
+    s2_title: "Applied Technique",
+    s2_sub: "Select the acquired sequences.",
+    s2_contrast_lbl: "Was IV contrast administered?",
+    s2_contrast_yes: "Yes — contrast-enhanced (dynamic + excretory)",
+    s2_contrast_no: "No — static T2 urography only",
+    s3_title: "Right Kidney",
+    s3_sub: "Parenchyma, corticomedullary differentiation, hydronephrosis grade and congenital anomalies.",
+    s4_title: "Left Kidney",
+    s4_sub: "Parenchyma, corticomedullary differentiation, hydronephrosis grade and congenital anomalies.",
+    s_parenchyma_lbl: "Parenchyma",
+    s_corticomedullar_lbl: "Corticomedullary differentiation",
+    s_hydro_lbl: "Hydronephrosis grade (SFU)",
+    s_conj_lbl: "Congenital anomaly",
+    s_extra_note_lbl: "Additional note (optional)",
+    s_extra_note_ph: "e.g. cyst, tumor, scar, etc.",
+    s5_title: "Collecting System / Ureter / Bladder Lesion",
+    s5_sub: "Is there a lesion/obstruction to characterize in the collecting system, ureters, or bladder?",
+    s5_yes: "Yes — lesion/obstruction workup will be performed",
+    s5_no: "No — collecting system and ureters are normal",
+    s5_prev_lbl: "Previously defined lesions",
+    s5_edit: "Edit",
+    s5_delete: "Delete",
+    s6_summary_title: "Lesion Summary",
+    s6_summary_sub: "All defined lesions. You can add a new lesion or proceed to the report.",
+    s6_empty: "No lesions added yet.",
+    s6_edit: "Edit",
+    s6_delete: "Delete",
+    s6_add: "+ Add new lesion",
+    s6_les_substep: (ci, lt, sn, sl) => `Lesion ${ci} / ${lt} — Sub-step ${sn} / ${sl}`,
+    s6_les_sub: "Mark the findings for this lesion.",
+    s6_side_lbl: "Side",
+    s6_side_right: "Right",
+    s6_side_left: "Left",
+    s6_side_mid: "Midline / bladder",
+    s6_loc_lbl: "Anatomical localization",
+    s6_type_lbl: "Lesion type (multiple selection allowed)",
+    s6_size_lbl: "Size / length (optional)",
+    s6_size_ph: "e.g. 14 mm, 3 cm stricture, 24×18 mm mass",
+    s6_t2_lbl: "T2W signal",
+    s6_t1_lbl: "T1W signal",
+    s6_dwi_lbl: "DWI",
+    s6_adc_lbl: "ADC",
+    s6_kontrast_lbl: "Enhancement pattern",
+    s6_dilatasyon_lbl: "Proximal dilatation",
+    s6_mural_lbl: "Wall / mural characteristics",
+    s6_komsu_lbl: "Adjacent structure findings",
+    s6_klinik_lbl: "Clinical characteristics",
+    s6_les_summary: (n) => `Lesion ${n} summary:`,
+    s6_finalize: "Finalize and return to summary",
+    s6_add_another: "+ Add another lesion",
+    s6_prev_sub: "← Previous sub-step",
+    s6_next_sub: "Next sub-step →",
+    s7_title: "Bladder Evaluation",
+    s7_sub: "Filling, wall, trabeculae, diverticula and mass.",
+    s7_fullness_lbl: "Filling",
+    s7_full_ok: "Adequate",
+    s7_full_low: "Underfilled",
+    s7_full_over: "Overdistended",
+    s7_wall_lbl: "Wall thickness",
+    s7_wall_normal: "Normal",
+    s7_wall_thick: "Thickened",
+    s7_trabek_lbl: "Trabeculae",
+    s7_present: "Present",
+    s7_absent: "Absent",
+    s7_divert_lbl: "Diverticulum",
+    s7_mass_lbl: "Mass / lesion",
+    s7_mass_none: "Not identified",
+    s7_mass_present: "Present",
+    s7_mass_size_lbl: "Mass size",
+    s7_mass_size_ph: "e.g. 22×18 mm, lateral wall",
+    s7_mass_t2_lbl: "T2W signal",
+    s7_mass_dwi_lbl: "DWI",
+    s7_mass_adc_lbl: "ADC",
+    s7_mass_kontrast_lbl: "Enhancement",
+    s7_mass_callout: "Bladder mass identified — re-evaluation with dedicated VI-RADS bladder MRI for muscle invasion assessment is recommended.",
+    s7_extra_note_lbl: "Additional note (optional)",
+    s8_title: "Functional / Excretory Evaluation",
+    s8_sub: "Excretion pattern on contrast-enhanced study.",
+    s8_sym_lbl: "Excretion symmetry",
+    s8_sym_sym: "Symmetric",
+    s8_sym_asym: "Asymmetric (obstruction suspected)",
+    s8_delay_lbl: "Delay",
+    s8_delay_none: "None",
+    s8_delay_mild: "Mild",
+    s8_delay_sig: "Significant",
+    s8_deficit_lbl: "Functional deficit findings",
+    s8_deficit_opts: ["Decreased right nephrogram", "Decreased left nephrogram", "Right parenchymal thinning", "Left parenchymal thinning", "Bilateral inadequate excretion"],
+    s8_extra_note_lbl: "Additional note (optional)",
+    s9_title: "Additional Findings",
+    s9_sub: "Additional findings in the pelvis, retroperitoneum, and adjacent organs.",
+    s9_extra_note_lbl: "Additional note (optional)",
+    s10_title: "Report",
+    s10_sub: "Auto-generated report — review, copy, or download.",
+    s10_copy: "📋 Copy to clipboard",
+    s10_download: "⬇︎ Download .txt",
+    s10_show: "📝 View as text",
+    alert_copied: "Report copied to clipboard.",
+    overlay_title: "Select and copy the report",
+    overlay_close: "Close",
+    /* loop sub-steps */
+    loop_subs: ["Localization", "Lesion type", "T2 / T1", "DWI / ADC", "Contrast", "Dilatation / Mural", "Adjacent / Clinical", "Summary"],
+    /* report sections */
+    rpt_patient_tech: "PATIENT AND TECHNIQUE",
+    rpt_kidneys: "KIDNEYS — BILATERAL EVALUATION",
+    rpt_bladder: "BLADDER",
+    rpt_functional: "FUNCTIONAL / EXCRETORY EVALUATION",
+    rpt_extra: "ADDITIONAL FINDINGS",
+    rpt_diff: "DIFFERENTIAL DIAGNOSIS — PROBABILITY RANKING",
+    rpt_conclusion: "CONCLUSION",
+    /* rpt row keys */
+    rpt_patient: "Patient",
+    rpt_age_sex: "Age / Sex",
+    rpt_date: "Examination date",
+    rpt_indication: "Indication",
+    rpt_technique: "Technique",
+    rpt_iv_contrast: "IV contrast",
+    rpt_iv_applied: "Administered",
+    rpt_iv_not_applied: "Not administered",
+    rpt_right_kidney: "Right kidney",
+    rpt_left_kidney: "Left kidney",
+    rpt_kidney_normal: "unremarkable",
+    rpt_les_head: (n, side, loc) => `${n}. Lesion — ${side}${loc}`,
+    rpt_les_type: "Lesion type",
+    rpt_les_size: "Size",
+    rpt_les_t2: "T2W signal",
+    rpt_les_t1: "T1W signal",
+    rpt_les_dwi: "DWI",
+    rpt_les_adc: "ADC",
+    rpt_les_kontrast: "Enhancement",
+    rpt_les_dilatasyon: "Proximal dilatation",
+    rpt_les_mural: "Wall / mural",
+    rpt_les_komsu: "Adjacent structures",
+    rpt_les_klinik: "Clinical",
+    rpt_les_loc_unknown: "localization unclear",
+    rpt_bladder_fullness: "Filling",
+    rpt_bladder_wall: "Wall thickness",
+    rpt_bladder_wall_thick: "Thickened",
+    rpt_bladder_wall_normal: "Normal",
+    rpt_bladder_trabek: "Trabeculae",
+    rpt_bladder_trabek_present: "Present",
+    rpt_bladder_divert: "Diverticulum",
+    rpt_bladder_divert_present: "Present",
+    rpt_bladder_mass: "Mass / lesion",
+    rpt_bladder_mass_present: "PRESENT — further evaluation recommended",
+    rpt_bladder_mass_none: "Not identified",
+    rpt_bladder_mass_size: "Mass size",
+    rpt_bladder_mass_t2: "Mass — T2W",
+    rpt_bladder_mass_dwi: "Mass — DWI",
+    rpt_bladder_mass_adc: "Mass — ADC",
+    rpt_bladder_mass_kontrast: "Mass — Enhancement",
+    rpt_note: "Note",
+    rpt_func_sym: "Excretion symmetry",
+    rpt_func_delay: "Delay",
+    rpt_func_deficit: "Functional deficit",
+    rpt_extra_retro: "Retroperitoneum / pelvis",
+    rpt_extra_none: "No significant additional finding",
+    /* genSonucText */
+    sonuc_hidro: (sides) => `Significant hydronephrosis is present (${sides.join(", ")}).`,
+    sonuc_hidro_side_r: (g) => `right Grade ${g}`,
+    sonuc_hidro_side_l: (g) => `left Grade ${g}`,
+    sonuc_lesions: (n) => `${n} lesion(s)/pathology identified in the urinary system.`,
+    sonuc_bladder_mass: "A mass lesion is present in the bladder — dedicated bladder MRI / VI-RADS protocol is recommended.",
+    sonuc_top_dx: (ad, pct) => `Most likely diagnosis: ${ad} (${pct}% match).`,
+    sonuc_no_clear_dx: "Findings do not strongly favor a single diagnosis; clinical correlation and additional imaging (CT, VCUG, cystoscopy) are recommended as needed.",
+    sonuc_no_finding: "No significant pathological finding on MR Urography examination.",
+    /* plain report headers */
+    plain_title: "           MR UROGRAPHY REPORT",
+    plain_patient_tech: "[ PATIENT AND TECHNIQUE ]",
+    plain_name: "Patient            ",
+    plain_age_sex: "Age / Sex          ",
+    plain_date: "Examination date   ",
+    plain_indication: "Indication         ",
+    plain_technique: "Technique          ",
+    plain_iv: "IV contrast        ",
+    plain_iv_yes: "Administered",
+    plain_iv_no: "Not administered",
+    plain_kidneys: "[ KIDNEYS — BILATERAL EVALUATION ]",
+    plain_kidney_r: "Right",
+    plain_kidney_l: "Left",
+    plain_kidney_normal: "unremarkable",
+    plain_kidney_parenchyma: (v) => `parenchyma ${v}`,
+    plain_kidney_corticomedullar: (v) => `corticomedullary differentiation ${v}`,
+    plain_les_head: (n, side, loc) => `[ ${n}. LESION — ${side}${loc} ]`,
+    plain_les_loc_unknown: "LOCALIZATION UNCLEAR",
+    plain_les_type: "Lesion type        ",
+    plain_les_size: "Size               ",
+    plain_les_t2: "T2W signal         ",
+    plain_les_t1: "T1W signal         ",
+    plain_les_dwi: "DWI                ",
+    plain_les_adc: "ADC                ",
+    plain_les_kontrast: "Enhancement        ",
+    plain_les_dilatasyon: "Prox. dilatation   ",
+    plain_les_mural: "Wall / mural       ",
+    plain_les_komsu: "Adjacent structure ",
+    plain_les_klinik: "Clinical           ",
+    plain_bladder: "[ BLADDER ]",
+    plain_bladder_fullness: "Filling            ",
+    plain_bladder_wall: "Wall thickness     ",
+    plain_bladder_wall_thick: "Thickened",
+    plain_bladder_wall_normal: "Normal",
+    plain_bladder_trabek: "Trabeculae         ",
+    plain_bladder_trabek_present: "Present",
+    plain_bladder_divert: "Diverticulum       ",
+    plain_bladder_divert_present: "Present",
+    plain_bladder_mass: "Mass / lesion      ",
+    plain_bladder_mass_present: "PRESENT — further evaluation recommended",
+    plain_bladder_mass_none: "Not identified",
+    plain_bladder_mass_size: "Mass size          ",
+    plain_bladder_mass_t2: "Mass — T2W         ",
+    plain_bladder_mass_dwi: "Mass — DWI         ",
+    plain_bladder_mass_adc: "Mass — ADC         ",
+    plain_bladder_mass_kontrast: "Mass — Enhancement ",
+    plain_note: "Note               ",
+    plain_functional: "[ FUNCTIONAL / EXCRETORY EVALUATION ]",
+    plain_func_sym: "Excretion symmetry ",
+    plain_func_delay: "Delay              ",
+    plain_func_deficit: "Functional deficit ",
+    plain_extra: "[ ADDITIONAL FINDINGS ]",
+    plain_extra_retro: "Retroperitoneum/pelv",
+    plain_extra_none: "No significant additional finding",
+    plain_diff: "[ DIFFERENTIAL DIAGNOSIS — PROBABILITY RANKING ]",
+    plain_conclusion: "[ CONCLUSION ]",
+    /* parankim / kortikomedullar display */
+    tval_parankim: { "Normal": "Normal", "Artmış": "Enlarged", "Atrofik": "Atrophic", "İncelmiş": "Thinned", "Heterojen": "Heterogeneous" },
+    tval_kortikomed: { "Korunmuş": "Preserved", "Silinmiş": "Lost", "Kısmen silinmiş": "Partially lost" },
+    tval_simetri: { "Simetrik": "Symmetric", "Asimetrik": "Asymmetric" },
+    tval_gecikme: { "Yok": "None", "Hafif": "Mild", "Belirgin": "Significant" },
+    tval_doluluk: { "Yeterli": "Adequate", "Az dolu": "Underfilled", "Aşırı dolu": "Overdistended" },
+    tval_cinsiyet: { "Kadın": "Female", "Erkek": "Male", "Diğer": "Other" },
+  }
+})[RV_LOCALE];
+
+/* ── helper: translate state value to display label ── */
+function tVal(dict, v) { return (dict && dict[v]) || v; }
+
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useRef
+} = React;
+
+/* ======================================================================
+   PATHOLOGY DATABASE — MR Ürografi
+   Weighted keyword-tag matching. Higher weight = more discriminative.
+   ====================================================================== */
+const LESION_DB = [{
+  ad: "Üreteropelvik Bileşke Obstrüksiyonu (UPJ Darlığı)",
+  ad_en: "Ureteropelvic Junction Obstruction (UPJ Stricture)",
+  kisa: "UPJ obstrüksiyonu",
+  kisa_en: "UPJ obstruction",
+  tags: {
+    lokasyon: ["upj"],
+    /* ×3 */
+    lezyon_tipi: ["darlik", "kalibre-degisimi"],
+    /* ×3 */
+    t2: ["hiper-genis"],
+    /* ×2 */
+    t1: ["izo", "hipo"],
+    dwi: ["yok", "hipo"],
+    /* ×4 */
+    adc: ["normal", "yuksek"],
+    /* ×4 */
+    kontrast: ["gec-eksresyon", "gec"],
+    /* ×2 */
+    dilatasyon: ["pelvikalisiel", "massiv"],
+    mural: ["normal", "incelmis"],
+    klinik: ["kronik", "asimptomatik-yan-agri"]
+  },
+  yorum: "Pelvikaliksiyel sistemde masif dilatasyonla birlikte ani kalibre değişikliği ve normal distal üreter kalibresi karakteristiktir. Hidronefroz genellikle orantısız ve belirgindir.",
+  yorum_en: "Abrupt caliber change with massive pelvicalyceal dilatation and normal distal ureteral caliber is characteristic. Hydronephrosis is typically disproportionate and marked."
+}, {
+  ad: "Üreterovezikal Bileşke Obstrüksiyonu (UVJ Darlığı)",
+  ad_en: "Ureterovesical Junction Obstruction (UVJ Stricture)",
+  kisa: "UVJ obstrüksiyonu",
+  kisa_en: "UVJ obstruction",
+  tags: {
+    lokasyon: ["uvj", "distal-ureter"],
+    lezyon_tipi: ["darlik", "kalibre-degisimi"],
+    t2: ["hiper-genis"],
+    dwi: ["yok"],
+    adc: ["normal"],
+    kontrast: ["gec-eksresyon"],
+    dilatasyon: ["megaureter", "pelvikalisiel"],
+    mural: ["normal"],
+    klinik: ["yan-agri", "tekrarlayan-ITU"]
+  },
+  yorum: "Tüm üreter boyunca dilatasyon mevcutken, UVJ düzeyinde ani daralma ve proksimal megaüreter tipiktir.",
+  yorum_en: "Dilatation along the entire ureter with abrupt narrowing at the UVJ level and proximal megaloureter is typical."
+}, {
+  ad: "Üreteral Taş",
+  ad_en: "Ureteral Stone",
+  kisa: "Üreter taşı",
+  kisa_en: "Ureteral calculus",
+  tags: {
+    lokasyon: ["proksimal-ureter", "orta-ureter", "distal-ureter", "upj", "uvj"],
+    lezyon_tipi: ["dolma-defekti", "intraluminal-defekt"],
+    t2: ["hipo", "signal-void"],
+    t1: ["hipo"],
+    dwi: ["hipo", "yok"],
+    adc: ["normal"],
+    kontrast: ["yok", "kontrastlanmayan"],
+    dilatasyon: ["pelvikalisiel", "megaureter"],
+    mural: ["normal", "odem"],
+    klinik: ["akut-yan-agri", "kolik"]
+  },
+  yorum: "Tüm sekanslarda sinyal kaybı (signal-void) gösteren intraluminal dolma defekti, proksimal dilatasyon ile birlikte üreter taşını düşündürür. BT ile korelasyon önerilir.",
+  yorum_en: "Intraluminal filling defect showing signal void on all sequences combined with proximal dilatation suggests ureteral stone. CT correlation is recommended."
+}, {
+  ad: "Ürotelyal Karsinom — Üreter",
+  ad_en: "Urothelial Carcinoma — Ureter",
+  kisa: "Üreteral ÜK",
+  kisa_en: "Ureteral UC",
+  tags: {
+    lokasyon: ["proksimal-ureter", "orta-ureter", "distal-ureter"],
+    lezyon_tipi: ["dolma-defekti", "mural-kalinlasma", "striktur", "polipoid"],
+    t2: ["intermediate", "hiper-hafif"],
+    t1: ["intermediate"],
+    dwi: ["hiper-belirgin", "restriksiyon"],
+    adc: ["dusuk"],
+    kontrast: ["orta-yogun", "mural-enhancement", "erken"],
+    dilatasyon: ["pelvikalisiel", "megaureter"],
+    mural: ["kalinlasma", "noduler", "polipoid"],
+    klinik: ["hematuri", "yas-ileri"]
+  },
+  yorum: "Düzensiz mural kalınlaşma veya polipoid dolma defekti, DWI restriksiyonu ve orta derecede kontrastlanma ürotelyal karsinomu düşündürür. Proksimal obstrüksiyon sıktır.",
+  yorum_en: "Irregular mural thickening or polypoid filling defect with DWI restriction and moderate enhancement suggests urothelial carcinoma. Proximal obstruction is common."
+}, {
+  ad: "Ürotelyal Karsinom — Renal Pelvis",
+  ad_en: "Urothelial Carcinoma — Renal Pelvis",
+  kisa: "Renal pelvis ÜK",
+  kisa_en: "Renal pelvis UC",
+  tags: {
+    lokasyon: ["renal-pelvis", "kaliks"],
+    lezyon_tipi: ["dolma-defekti", "kitlevi", "polipoid"],
+    t2: ["intermediate"],
+    t1: ["intermediate"],
+    dwi: ["hiper-belirgin", "restriksiyon"],
+    adc: ["dusuk"],
+    kontrast: ["orta-yogun", "erken"],
+    dilatasyon: ["pelvikalisiel", "fokal"],
+    mural: ["kalinlasma", "noduler"],
+    klinik: ["hematuri", "yas-ileri"]
+  },
+  yorum: "Renal pelviste DWI-restrikte dolma defekti; pelvikaliksiyel sistemin fokal amputasyonu veya deformasyonu ile birlikte ise ÜK için yüksek şüphe.",
+  yorum_en: "DWI-restricted filling defect in the renal pelvis with focal amputation or deformity of the pelvicalyceal system raises high suspicion for urothelial carcinoma."
+}, {
+  ad: "Ürotelyal Karsinom — Mesane",
+  ad_en: "Urothelial Carcinoma — Bladder",
+  kisa: "Mesane ÜK",
+  kisa_en: "Bladder UC",
+  tags: {
+    lokasyon: ["mesane"],
+    lezyon_tipi: ["mural-kalinlasma", "polipoid", "kitlevi"],
+    t2: ["intermediate"],
+    t1: ["intermediate"],
+    dwi: ["hiper-belirgin", "restriksiyon"],
+    adc: ["dusuk"],
+    kontrast: ["erken-yogun", "erken"],
+    mural: ["kalinlasma", "polipoid", "noduler"],
+    klinik: ["hematuri", "yas-ileri"]
+  },
+  yorum: "Mesanede DWI restrikte polipoid/mural kitle lezyonu; VI-RADS değerlendirmesi ve kas invazyonu açısından dedike mesane MR önerilir.",
+  yorum_en: "DWI-restricted polypoid/mural mass lesion in the bladder; dedicated bladder MRI with VI-RADS assessment for muscle invasion is recommended."
+}, {
+  ad: "Üreterosel",
+  ad_en: "Ureterocele",
+  kisa: "Üreterosel",
+  kisa_en: "Ureterocele",
+  tags: {
+    lokasyon: ["uvj", "distal-ureter", "mesane"],
+    lezyon_tipi: ["kistik-dilatasyon", "balon", "kobra-basi"],
+    t2: ["hiper-belirgin", "hiper-genis"],
+    t1: ["hipo"],
+    dwi: ["yok"],
+    adc: ["yuksek"],
+    kontrast: ["gec-eksresyon", "gec"],
+    dilatasyon: ["minimal", "megaureter"],
+    mural: ["ince", "normal"],
+    klinik: ["rekurren-ITU", "asimptomatik", "cocuk"]
+  },
+  yorum: "Mesane içinde distal üreterin kistik balonlaşması (kobra başı görünümü) üreterosel için tipiktir. Duplike sistemle (üst pol üreteri) sık birliktedir — Weigert–Meyer kuralı.",
+  yorum_en: "Cystic ballooning of the distal ureter within the bladder (cobra-head appearance) is typical for ureterocele. Often associated with a duplex system (upper-pole ureter) — Weigert–Meyer rule."
+}, {
+  ad: "Retrokaval Üreter",
+  ad_en: "Retrocaval Ureter",
+  kisa: "Retrokaval üreter",
+  kisa_en: "Retrocaval ureter",
+  tags: {
+    lokasyon: ["proksimal-ureter", "orta-ureter"],
+    lezyon_tipi: ["anomali", "kalibre-degisimi", "saz-sekilli"],
+    t2: ["hiper"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    adc: ["normal"],
+    kontrast: ["normal", "gec-eksresyon"],
+    dilatasyon: ["pelvikalisiel", "proksimal-ureter-dilatasyonu"],
+    mural: ["normal"],
+    klinik: ["yan-agri", "insidental"]
+  },
+  yorum: "Proksimal üreterin IVC arkasından medial seyri ve karakteristik ters-J / balık-kancası konfigürasyonu retrokaval üreter için patognomoniktir.",
+  yorum_en: "Medial course of the proximal ureter behind the IVC with the characteristic reverse-J / fishhook configuration is pathognomonic for retrocaval ureter."
+}, {
+  ad: "Duplike Toplayıcı Sistem",
+  ad_en: "Duplex Collecting System",
+  kisa: "Duplikasyon",
+  kisa_en: "Duplication",
+  tags: {
+    lokasyon: ["renal-pelvis", "proksimal-ureter", "orta-ureter", "distal-ureter"],
+    lezyon_tipi: ["anatomik-varyant", "cift-pelvis", "cift-ureter"],
+    t2: ["hiper"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    kontrast: ["normal"],
+    dilatasyon: ["yok", "ust-pol-dilatasyon"],
+    mural: ["normal"],
+    klinik: ["insidental", "rekurren-ITU"]
+  },
+  yorum: "Tam veya parsiyel duplikasyon MR ürografide net görselleştirilir. Tam duplikasyonlarda Weigert–Meyer kuralına göre üst pol üreteri ektopik ve obstrükte, alt pol üreteri reflülü olma eğilimindedir.",
+  yorum_en: "Complete or partial duplication is clearly depicted on MR Urography. In complete duplication, per the Weigert–Meyer rule, the upper-pole ureter tends to be ectopic and obstructed while the lower-pole ureter tends to reflux."
+}, {
+  ad: "Ektopik Üreter",
+  ad_en: "Ectopic Ureter",
+  kisa: "Ektopik üreter insersiyonu",
+  kisa_en: "Ectopic ureteral insertion",
+  tags: {
+    lokasyon: ["distal-ureter", "uvj"],
+    lezyon_tipi: ["anormal-insersiyon", "anomali"],
+    t2: ["hiper-genis"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    kontrast: ["gec"],
+    dilatasyon: ["ust-pol-dilatasyon", "megaureter"],
+    mural: ["normal"],
+    klinik: ["inkontinans", "rekurren-ITU", "cocuk", "kadin"]
+  },
+  yorum: "Trigon dışı (mesane boynu, üretra, vajen, vaz deferens) inserte olan üreter; sıklıkla duplike sistemin üst pol üreteridir ve obstrüktif dilate görünür.",
+  yorum_en: "Ureter inserting outside the trigone (bladder neck, urethra, vagina, vas deferens); most commonly the upper-pole ureter of a duplex system and appears obstructively dilated."
+}, {
+  ad: "Primer Megaüreter",
+  ad_en: "Primary Megaureter",
+  kisa: "Primer megaüreter",
+  kisa_en: "Primary megaureter",
+  tags: {
+    lokasyon: ["distal-ureter", "tum-ureter"],
+    lezyon_tipi: ["kalibre-degisimi", "adinamik-segment"],
+    t2: ["hiper-genis"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    adc: ["normal"],
+    kontrast: ["normal", "gec"],
+    dilatasyon: ["megaureter", "massiv"],
+    mural: ["normal"],
+    klinik: ["cocuk", "insidental", "ITU"]
+  },
+  yorum: "Üreterin fuziform dilatasyonu ile birlikte distal kısa bir juxtavezikal adinamik (dar görünümlü ama açık) segment; obstrüktif, non-obstrüktif veya reflülü alt tipleri vardır.",
+  yorum_en: "Fusiform dilatation of the ureter with a short distal juxtavesical adynamic (narrow-appearing but patent) segment; subtypes include obstructive, non-obstructive, and refluxing."
+}, {
+  ad: "Ekstrinsik Bası (Pelvik Kitle / Malignite)",
+  ad_en: "Extrinsic Compression (Pelvic Mass / Malignancy)",
+  kisa: "Ekstrinsik bası",
+  kisa_en: "Extrinsic compression",
+  tags: {
+    lokasyon: ["orta-ureter", "distal-ureter", "uvj"],
+    lezyon_tipi: ["eksternal-kompresyon", "bası", "kalibre-degisimi"],
+    t2: ["degisken"],
+    t1: ["izo", "intermediate"],
+    dwi: ["degisken", "hiper-belirgin"],
+    adc: ["dusuk", "degisken"],
+    kontrast: ["degisken", "heterojen"],
+    dilatasyon: ["pelvikalisiel", "megaureter"],
+    mural: ["normal", "dis-bası"],
+    komsu: ["kitle-var", "lenfadenopati"],
+    klinik: ["malignite-oykusu", "hidronefroz"]
+  },
+  yorum: "Üreter duvarı primer olarak normal; dışarıdan basıya uğrayan segmentte kalibre daralması ve proksimal dilatasyon izlenir. Servikal, prostat, rektal, over maligniteleri ve retroperitoneal lenfadenopatiler sık nedenlerdir.",
+  yorum_en: "The ureteral wall is primarily normal; caliber narrowing and proximal dilatation are seen at the compressed segment. Cervical, prostate, rectal, ovarian malignancies and retroperitoneal lymphadenopathy are common causes."
+}, {
+  ad: "Papiller Nekroz",
+  ad_en: "Papillary Necrosis",
+  kisa: "Papiller nekroz",
+  kisa_en: "Papillary necrosis",
+  tags: {
+    lokasyon: ["kaliks", "papil", "renal-parankim"],
+    lezyon_tipi: ["papiller-kavite", "sarkan-fragman", "dolma-defekti"],
+    t2: ["hiper-parankim-icinde"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    kontrast: ["parankim-defekti", "non-enhancing"],
+    dilatasyon: ["fokal-kalisiel", "yok"],
+    mural: ["duzensiz-kaliks"],
+    klinik: ["DM", "analjezik", "orak-hucre", "enfeksiyon"]
+  },
+  yorum: "Kalisiyel papillerde nekrotik kaviteler, intrakaliksiyel dolma defektleri ve \"yengeç pençesi\" görünümü. Diyabet, orak hücre ve analjezik nefropati ile ilişkilidir.",
+  yorum_en: "Necrotic cavities in the calyceal papillae, intracalyceal filling defects, and \"lobster claw\" appearance. Associated with diabetes, sickle cell disease, and analgesic nephropathy."
+}, {
+  ad: "Ksantogranülomatöz Pyelonefrit (KGPN)",
+  ad_en: "Xanthogranulomatous Pyelonephritis (XGP)",
+  kisa: "Ksantogranülomatöz pyelonefrit",
+  kisa_en: "Xanthogranulomatous pyelonephritis",
+  tags: {
+    lokasyon: ["renal-pelvis", "renal-parankim", "kaliks"],
+    lezyon_tipi: ["kitlevi", "kortikal-incelme", "genis-kaliks"],
+    t2: ["heterojen", "hiper"],
+    t1: ["hipo-heterojen"],
+    dwi: ["hiper-hafif", "degisken"],
+    adc: ["dusuk", "degisken"],
+    kontrast: ["rim", "heterojen", "periferal"],
+    dilatasyon: ["pelvikalisiel", "massiv"],
+    mural: ["kalinlasma", "inflamatuar"],
+    komsu: ["staghorn-tasi", "perinefrik-uzanim"],
+    klinik: ["kronik-enfeksiyon", "kilo-kaybi", "ates"]
+  },
+  yorum: "Genişlemiş kaliksler (\"ayı pençesi\"), kortikal incelme, staghorn taş ve rim tarzı kontrastlanma klasiktir. Renal hücreli karsinomla ayırıcı tanıda zorluk oluşturabilir.",
+  yorum_en: "Expanded calyces (\"bear paw\" sign), cortical thinning, staghorn calculus, and rim enhancement are classic. May pose diagnostic difficulty in differentiating from renal cell carcinoma."
+}, {
+  ad: "Üreteral Endometriozis",
+  ad_en: "Ureteral Endometriosis",
+  kisa: "Üreteral endometriozis",
+  kisa_en: "Ureteral endometriosis",
+  tags: {
+    lokasyon: ["distal-ureter", "orta-ureter"],
+    lezyon_tipi: ["mural-kalinlasma", "darlik", "eksternal-kompresyon", "kitlevi"],
+    t2: ["hipo-heterojen", "hiper-odak"],
+    t1: ["hiper", "hemorajik"],
+    dwi: ["degisken"],
+    adc: ["degisken"],
+    kontrast: ["hafif", "geç"],
+    dilatasyon: ["pelvikalisiel", "proksimal-ureter-dilatasyonu"],
+    mural: ["kalinlasma", "fibrotik"],
+    komsu: ["endometriozis-implant", "adneksiyal-kistik"],
+    klinik: ["kadin-premenopoz", "siklik-agri", "dismenore"]
+  },
+  yorum: "T1 hiperintens hemorajik odaklar ile T2 hipointens fibröz komponent karışımı; sıklıkla distal üreterde ve pelvik endometriozis ile birlikte. İntrinsik (%20) veya ekstrinsik (%80) olabilir.",
+  yorum_en: "Mixture of T1-hyperintense hemorrhagic foci and T2-hypointense fibrotic components; typically at the distal ureter and associated with pelvic endometriosis. Can be intrinsic (20%) or extrinsic (80%)."
+}, {
+  ad: "Retroperitoneal Fibrozis",
+  ad_en: "Retroperitoneal Fibrosis",
+  kisa: "RPF / Ormond Hastalığı",
+  kisa_en: "RPF / Ormond Disease",
+  tags: {
+    lokasyon: ["orta-ureter"],
+    lezyon_tipi: ["eksternal-kompresyon", "medial-deviasyon", "mural-kalinlasma"],
+    t2: ["hipo-kronik", "hiper-akut"],
+    t1: ["hipo"],
+    dwi: ["hiper-aktif", "degisken"],
+    adc: ["dusuk-aktif", "normal-inaktif"],
+    kontrast: ["yogun-aktif", "minimal-inaktif"],
+    dilatasyon: ["pelvikalisiel", "bilateral-hidronefroz"],
+    mural: ["normal", "dis-bası"],
+    komsu: ["periaortik-manto", "perikaval-doku"],
+    klinik: ["yan-agri", "kilo-kaybi", "idiopatik-sekonder"]
+  },
+  yorum: "Aorta ve IVC çevresinde manto tarzı yumuşak doku, bilateral orta üreter basısı ve medial deviasyon. Akut/aktif fazda yoğun kontrastlanma ve yüksek T2 sinyali; kronik fazda hipointens fibröz.",
+  yorum_en: "Mantle-like soft tissue around the aorta and IVC with bilateral mid-ureteral compression and medial deviation. Intense enhancement and high T2 signal in the acute/active phase; hypointense fibrosis in the chronic phase."
+}, {
+  ad: "Pyonefroz",
+  ad_en: "Pyonephrosis",
+  kisa: "Pyonefroz",
+  kisa_en: "Pyonephrosis",
+  tags: {
+    lokasyon: ["renal-pelvis", "kaliks"],
+    lezyon_tipi: ["dolu-pelvis", "debris", "mural-kalinlasma"],
+    t2: ["heterojen", "hiper-heterojen", "sivi-sivi-seviyesi"],
+    t1: ["hiper-hafif", "debris"],
+    dwi: ["hiper-belirgin", "restriksiyon"],
+    adc: ["dusuk"],
+    kontrast: ["urotelyal-kalinlasma", "rim"],
+    dilatasyon: ["pelvikalisiel", "massiv"],
+    mural: ["kalinlasma", "inflamatuar"],
+    klinik: ["ates", "sepsis", "yan-agri"]
+  },
+  yorum: "Obstrükte sistem içerisinde DWI-restrikte pürülan içerik, ürotelyal kalınlaşma ve rim kontrastlanması; acil drenaj (perkütan nefrostomi) endikasyonudur.",
+  yorum_en: "DWI-restricted purulent content within an obstructed system, urothelial thickening, and rim enhancement; urgent drainage (percutaneous nephrostomy) is indicated."
+}, {
+  ad: "Renal Hücreli Karsinom (Obstrüksiyon Yapan)",
+  ad_en: "Renal Cell Carcinoma (Causing Obstruction)",
+  kisa: "RHK",
+  kisa_en: "RCC",
+  tags: {
+    lokasyon: ["renal-parankim", "renal-pelvis"],
+    lezyon_tipi: ["kitlevi", "solid", "pelvis-invazyonu"],
+    t2: ["heterojen"],
+    t1: ["heterojen"],
+    dwi: ["hiper-belirgin", "restriksiyon"],
+    adc: ["dusuk"],
+    kontrast: ["heterojen-yogun", "erken", "washout"],
+    dilatasyon: ["fokal", "pelvikalisiel"],
+    mural: ["invazyon", "deformasyon"],
+    komsu: ["ven-trombusu", "lenfadenopati"],
+    klinik: ["hematuri", "kitle", "kilo-kaybi"]
+  },
+  yorum: "Parankimden kaynaklanan heterojen, solid, T2 hipo-orta, DWI restrikte ve erken yoğun kontrastlanan kitle (washout görünümü). Pelvis invazyonu veya kompresyonu ile hidronefroz yapabilir.",
+  yorum_en: "Heterogeneous solid parenchymal mass with intermediate-to-low T2 signal, DWI restriction, and early avid enhancement with washout. Can cause hydronephrosis through pelvic invasion or compression."
+}, {
+  ad: "Posterior Üretral Valv",
+  ad_en: "Posterior Urethral Valve",
+  kisa: "Posterior üretral valv",
+  kisa_en: "Posterior urethral valve",
+  tags: {
+    lokasyon: ["mesane", "proksimal-uretra"],
+    lezyon_tipi: ["anomali", "obstruktif-valv", "dilatasyon"],
+    t2: ["hiper-genis"],
+    t1: ["izo"],
+    dwi: ["yok"],
+    kontrast: ["gec-eksresyon"],
+    dilatasyon: ["bilateral-hidroureteronefroz", "massiv"],
+    mural: ["mesane-trabekulasyonu", "kalinlasma"],
+    komsu: ["dilate-pros-uretra"],
+    klinik: ["cocuk-erkek", "yenidogan", "zayif-işeme"]
+  },
+  yorum: "Erkek çocukta bilateral hidroüreteronefroz, dilate posterior üretra ve trabeküle/kalın mesane duvarı klasiktir. VCUG ile korelasyon standart tanı aracıdır.",
+  yorum_en: "Bilateral hydroureteronephrosis, dilated posterior urethra, and trabeculated/thick bladder wall in a male child is classic. VCUG correlation is the standard diagnostic tool."
+}];
+
+/* ======================================================================
+   SCORING ENGINE — multi-tag weighted matching
+   ====================================================================== */
+const WEIGHTS = {
+  lokasyon: 3,
+  lezyon_tipi: 3,
+  t2: 2,
+  t1: 1.5,
+  dwi: 4,
+  adc: 4,
+  kontrast: 2,
+  dilatasyon: 1.5,
+  mural: 1.5,
+  komsu: 1.5,
+  klinik: 1
+};
+const NEAR_MATCH = {
+  /* partial-credit groups — share a group, get 0.4× weight */
+  t2: [["hiper", "hiper-belirgin", "hiper-genis", "hiper-heterojen", "hiper-hafif", "hiper-parankim-icinde", "hiper-odak"], ["hipo", "hipo-kronik", "hipo-heterojen", "hipo-orta", "signal-void"], ["intermediate", "izo", "degisken", "heterojen"]],
+  t1: [["hiper", "hiper-hafif", "hemorajik"], ["hipo", "hipo-heterojen"], ["intermediate", "izo", "heterojen", "debris"]],
+  dwi: [["hiper-belirgin", "restriksiyon", "hiper-aktif"], ["hipo", "yok"]],
+  adc: [["dusuk", "dusuk-aktif"], ["yuksek", "normal", "normal-inaktif"]],
+  kontrast: [["yogun", "orta-yogun", "erken-yogun", "erken", "heterojen-yogun", "mural-enhancement"], ["gec", "gec-eksresyon", "geç", "washout"], ["yok", "kontrastlanmayan", "minimal-inaktif", "non-enhancing"], ["rim", "periferal", "urotelyal-kalinlasma"]],
+  dilatasyon: [["pelvikalisiel", "massiv", "megaureter", "bilateral-hidronefroz", "bilateral-hidroureteronefroz", "proksimal-ureter-dilatasyonu", "fokal", "ust-pol-dilatasyon", "fokal-kalisiel"], ["yok", "minimal"]],
+  mural: [["kalinlasma", "noduler", "polipoid", "inflamatuar", "fibrotik", "invazyon", "dis-bası", "mesane-trabekulasyonu", "duzensiz-kaliks"], ["normal", "ince", "incelmis"]],
+  lezyon_tipi: [["darlik", "striktur", "kalibre-degisimi", "saz-sekilli", "adinamik-segment"], ["dolma-defekti", "intraluminal-defekt", "polipoid", "noduler"], ["mural-kalinlasma", "kitlevi", "solid"], ["eksternal-kompresyon", "bası", "dis-bası", "medial-deviasyon"], ["kistik-dilatasyon", "balon", "kobra-basi"], ["anomali", "cift-pelvis", "cift-ureter", "anormal-insersiyon", "obstruktif-valv", "anatomik-varyant"], ["papiller-kavite", "sarkan-fragman"]]
+};
+function isNearMatch(field, a, b) {
+  const groups = NEAR_MATCH[field];
+  if (!groups) return false;
+  return groups.some(g => g.includes(a) && g.includes(b));
+}
+function scoreLesion(findings) {
+  /* findings = {lokasyon:[...], lezyon_tipi:[...], t2:[...], ...} */
+  const results = LESION_DB.map(path => {
+    let score = 0;
+    let maxScore = 0;
+    Object.keys(WEIGHTS).forEach(field => {
+      const w = WEIGHTS[field];
+      const patTags = path.tags[field] || [];
+      const userTags = findings[field] || [];
+      if (patTags.length === 0) return;
+      maxScore += w * Math.max(userTags.length, 1);
+      userTags.forEach(u => {
+        if (patTags.includes(u)) score += w;else if (isNearMatch(field, u, patTags[0])) score += w * 0.4;else if (patTags.some(p => isNearMatch(field, u, p))) score += w * 0.4;
+      });
+    });
+    const pct = maxScore > 0 ? Math.min(100, Math.round(score / maxScore * 100)) : 0;
+    return {
+      ...path,
+      score,
+      pct
+    };
+  });
+  return results.sort((a, b) => b.pct - a.pct);
+}
+
+/* ======================================================================
+   CONSTANTS — wizard options
+   ====================================================================== */
+const ENDIKASYONLAR = RV_LOCALE === 'en'
+  ? ["Hydronephrosis etiology", "Hematuria", "Recurrent urinary tract infection", "Suspected congenital urinary anomaly", "Ureteral stone / obstruction", "Suspected urothelial malignancy", "Post-operative evaluation", "Renal function impairment (IV contrast cannot be given)", "Obstruction evaluation in pregnancy", "Pediatric evaluation"]
+  : ["Hidronefroz etiyolojisi", "Hematüri", "Tekrarlayan idrar yolu enfeksiyonu", "Konjenital üriner anomali şüphesi", "Üreteral taş / obstrüksiyon", "Ürotelyal malignite şüphesi", "Post-operatif değerlendirme", "Böbrek fonksiyon bozukluğu (IVP kontrastı verilemiyor)", "Gebelikte obstrüksiyon değerlendirmesi", "Pediatrik değerlendirme"];
+const TEKNIK_OPTS = RV_LOCALE === 'en'
+  ? ["Static T2W hydrography (fluid signal)", "Excretory (contrast-enhanced dynamic + late phase)", "DWI / ADC", "T1W pre-contrast", "T1W post-contrast dynamic", "3D MIP reconstruction", "Coronal T2W non-fat-saturated", "Axial T2W"]
+  : ["Statik T2A hidrografi (fluid signal)", "Eksretuvar (kontrastlı dinamik + geç faz)", "DWI / ADC", "T1A pre-kontrast", "T1A post-kontrast dinamik", "3D MIP rekonstrüksiyon", "Koronal T2A yağ baskısız", "Aksiyel T2A"];
+const HIDRONEFROZ_DER = RV_LOCALE === 'en' ? [{
+  v: "0",
+  l: "Grade 0 — no dilatation"
+}, {
+  v: "1",
+  l: "Grade 1 — mild pelvic widening"
+}, {
+  v: "2",
+  l: "Grade 2 — pelvis + a few calyces"
+}, {
+  v: "3",
+  l: "Grade 3 — entire pelvicalyceal system, parenchyma preserved"
+}, {
+  v: "4",
+  l: "Grade 4 — massive dilatation + parenchymal thinning"
+}] : [{
+  v: "0",
+  l: "Grade 0 — dilatasyon yok"
+}, {
+  v: "1",
+  l: "Grade 1 — pelviste hafif genişleme"
+}, {
+  v: "2",
+  l: "Grade 2 — pelvis + birkaç kaliks"
+}, {
+  v: "3",
+  l: "Grade 3 — tüm pelvikaliksiyel sistem, parankim korunmuş"
+}, {
+  v: "4",
+  l: "Grade 4 — massiv dilatasyon + parankimal incelme"
+}];
+const PARANKIM_BOYUT = RV_LOCALE === 'en'
+  ? ["Normal", "Enlarged", "Atrophic", "Thinned", "Heterogeneous"]
+  : ["Normal", "Artmış", "Atrofik", "İncelmiş", "Heterojen"];
+/* State values for parenchyma stay Turkish — we map display via tVal */
+const PARANKIM_BOYUT_V = ["Normal", "Artmış", "Atrofik", "İncelmiş", "Heterojen"];
+const KORTIKOMED = RV_LOCALE === 'en'
+  ? ["Preserved", "Lost", "Partially lost"]
+  : ["Korunmuş", "Silinmiş", "Kısmen silinmiş"];
+/* State values for kortikomedullar stay Turkish */
+const KORTIKOMED_V = ["Korunmuş", "Silinmiş", "Kısmen silinmiş"];
+/* State values for fonksiyon defisiti stay Turkish */
+const FONK_DEFICIT_V = ["Sağda azalmış nefrogram", "Solda azalmış nefrogram", "Sağda parankim incelmesi", "Solda parankim incelmesi", "Bilateral yetersiz eksresyon"];
+const LOKASYONLAR = RV_LOCALE === 'en' ? [{
+  v: "upj",
+  l: "Ureteropelvic junction (UPJ)"
+}, {
+  v: "renal-pelvis",
+  l: "Renal pelvis"
+}, {
+  v: "kaliks",
+  l: "Calyx / papilla"
+}, {
+  v: "proksimal-ureter",
+  l: "Proximal ureter"
+}, {
+  v: "orta-ureter",
+  l: "Mid ureter"
+}, {
+  v: "distal-ureter",
+  l: "Distal ureter"
+}, {
+  v: "uvj",
+  l: "Ureterovesical junction (UVJ)"
+}, {
+  v: "mesane",
+  l: "Bladder"
+}, {
+  v: "proksimal-uretra",
+  l: "Proximal urethra"
+}, {
+  v: "tum-ureter",
+  l: "Entire ureter"
+}, {
+  v: "renal-parankim",
+  l: "Renal parenchyma (causing obstruction)"
+}] : [{
+  v: "upj",
+  l: "Üreteropelvik bileşke (UPJ)"
+}, {
+  v: "renal-pelvis",
+  l: "Renal pelvis"
+}, {
+  v: "kaliks",
+  l: "Kaliks / papilla"
+}, {
+  v: "proksimal-ureter",
+  l: "Proksimal üreter"
+}, {
+  v: "orta-ureter",
+  l: "Orta üreter"
+}, {
+  v: "distal-ureter",
+  l: "Distal üreter"
+}, {
+  v: "uvj",
+  l: "Üreterovezikal bileşke (UVJ)"
+}, {
+  v: "mesane",
+  l: "Mesane"
+}, {
+  v: "proksimal-uretra",
+  l: "Proksimal üretra"
+}, {
+  v: "tum-ureter",
+  l: "Tüm üreter boyunca"
+}, {
+  v: "renal-parankim",
+  l: "Renal parankim (obstrüksiyon yapan)"
+}];
+const LEZYON_TIPLERI = RV_LOCALE === 'en' ? [{
+  v: "dolma-defekti",
+  l: "Intraluminal filling defect"
+}, {
+  v: "darlik",
+  l: "Focal stricture / narrowing"
+}, {
+  v: "kalibre-degisimi",
+  l: "Abrupt caliber change"
+}, {
+  v: "mural-kalinlasma",
+  l: "Mural thickening"
+}, {
+  v: "polipoid",
+  l: "Polypoid lesion"
+}, {
+  v: "kitlevi",
+  l: "Mass lesion"
+}, {
+  v: "eksternal-kompresyon",
+  l: "Extrinsic compression"
+}, {
+  v: "kistik-dilatasyon",
+  l: "Cystic dilatation (ureterocele)"
+}, {
+  v: "kobra-basi",
+  l: "Cobra-head appearance"
+}, {
+  v: "saz-sekilli",
+  l: "Reed-shaped (retrocaval)"
+}, {
+  v: "anomali",
+  l: "Anatomical anomaly"
+}, {
+  v: "cift-ureter",
+  l: "Duplex ureter"
+}, {
+  v: "anormal-insersiyon",
+  l: "Abnormal insertion (ectopic)"
+}, {
+  v: "adinamik-segment",
+  l: "Adynamic segment"
+}, {
+  v: "papiller-kavite",
+  l: "Papillary cavity / necrosis"
+}, {
+  v: "medial-deviasyon",
+  l: "Medial deviation"
+}, {
+  v: "obstruktif-valv",
+  l: "Obstructive valve"
+}] : [{
+  v: "dolma-defekti",
+  l: "İntraluminal dolma defekti"
+}, {
+  v: "darlik",
+  l: "Fokal darlık / striktür"
+}, {
+  v: "kalibre-degisimi",
+  l: "Ani kalibre değişikliği"
+}, {
+  v: "mural-kalinlasma",
+  l: "Mural kalınlaşma"
+}, {
+  v: "polipoid",
+  l: "Polipoid lezyon"
+}, {
+  v: "kitlevi",
+  l: "Kitlevi lezyon"
+}, {
+  v: "eksternal-kompresyon",
+  l: "Ekstrinsik bası"
+}, {
+  v: "kistik-dilatasyon",
+  l: "Kistik dilatasyon (üreterosel)"
+}, {
+  v: "kobra-basi",
+  l: "Kobra başı görünümü"
+}, {
+  v: "saz-sekilli",
+  l: "Saz şekilli (retrokaval)"
+}, {
+  v: "anomali",
+  l: "Anatomik anomali"
+}, {
+  v: "cift-ureter",
+  l: "Duplike üreter"
+}, {
+  v: "anormal-insersiyon",
+  l: "Anormal insersiyon (ektopik)"
+}, {
+  v: "adinamik-segment",
+  l: "Adinamik segment"
+}, {
+  v: "papiller-kavite",
+  l: "Papiller kavite / nekroz"
+}, {
+  v: "medial-deviasyon",
+  l: "Medial deviasyon"
+}, {
+  v: "obstruktif-valv",
+  l: "Obstrüktif valv"
+}];
+const T2_OPTS = RV_LOCALE === 'en' ? [{
+  v: "hiper-belirgin",
+  l: "Markedly hyperintense"
+}, {
+  v: "hiper",
+  l: "Hyperintense"
+}, {
+  v: "hiper-genis",
+  l: "Expanded fluid signal"
+}, {
+  v: "hiper-heterojen",
+  l: "Hyperintense heterogeneous"
+}, {
+  v: "intermediate",
+  l: "Intermediate"
+}, {
+  v: "heterojen",
+  l: "Heterogeneous"
+}, {
+  v: "hipo",
+  l: "Hypointense"
+}, {
+  v: "hipo-heterojen",
+  l: "Hypointense heterogeneous"
+}, {
+  v: "signal-void",
+  l: "Signal void"
+}, {
+  v: "sivi-sivi-seviyesi",
+  l: "Fluid-fluid level / debris"
+}] : [{
+  v: "hiper-belirgin",
+  l: "Belirgin hiperintens"
+}, {
+  v: "hiper",
+  l: "Hiperintens"
+}, {
+  v: "hiper-genis",
+  l: "Genişlemiş sıvı sinyali"
+}, {
+  v: "hiper-heterojen",
+  l: "Hiperintens heterojen"
+}, {
+  v: "intermediate",
+  l: "İntermediate"
+}, {
+  v: "heterojen",
+  l: "Heterojen"
+}, {
+  v: "hipo",
+  l: "Hipointens"
+}, {
+  v: "hipo-heterojen",
+  l: "Hipointens heterojen"
+}, {
+  v: "signal-void",
+  l: "Sinyal kaybı (signal-void)"
+}, {
+  v: "sivi-sivi-seviyesi",
+  l: "Sıvı-sıvı seviyesi / debris"
+}];
+const T1_OPTS = RV_LOCALE === 'en' ? [{
+  v: "hiper",
+  l: "Hyperintense (hemorrhage / proteinaceous)"
+}, {
+  v: "intermediate",
+  l: "Intermediate / isointense"
+}, {
+  v: "hipo",
+  l: "Hypointense"
+}, {
+  v: "heterojen",
+  l: "Heterogeneous"
+}, {
+  v: "debris",
+  l: "Debris / layering"
+}] : [{
+  v: "hiper",
+  l: "Hiperintens (hemoraji / proteinöz)"
+}, {
+  v: "intermediate",
+  l: "İntermediate / izointens"
+}, {
+  v: "hipo",
+  l: "Hipointens"
+}, {
+  v: "heterojen",
+  l: "Heterojen"
+}, {
+  v: "debris",
+  l: "Debris / seviyelenme"
+}];
+const DWI_OPTS = RV_LOCALE === 'en' ? [{
+  v: "hiper-belirgin",
+  l: "Marked restriction (hyperintense)"
+}, {
+  v: "restriksiyon",
+  l: "Restricted diffusion positive"
+}, {
+  v: "hiper-hafif",
+  l: "Mildly hyperintense"
+}, {
+  v: "degisken",
+  l: "Variable"
+}, {
+  v: "hipo",
+  l: "Hypointense"
+}, {
+  v: "yok",
+  l: "No restriction"
+}] : [{
+  v: "hiper-belirgin",
+  l: "Belirgin restriksiyon (hiperintens)"
+}, {
+  v: "restriksiyon",
+  l: "Restriksiyon pozitif"
+}, {
+  v: "hiper-hafif",
+  l: "Hafif hiperintens"
+}, {
+  v: "degisken",
+  l: "Değişken"
+}, {
+  v: "hipo",
+  l: "Hipointens"
+}, {
+  v: "yok",
+  l: "Restriksiyon yok"
+}];
+const ADC_OPTS = RV_LOCALE === 'en' ? [{
+  v: "dusuk",
+  l: "Low ADC (restricted diffusion)"
+}, {
+  v: "degisken",
+  l: "Variable"
+}, {
+  v: "normal",
+  l: "Normal"
+}, {
+  v: "yuksek",
+  l: "High (fluid / benign)"
+}] : [{
+  v: "dusuk",
+  l: "Düşük ADC (restriksiyon)"
+}, {
+  v: "degisken",
+  l: "Değişken"
+}, {
+  v: "normal",
+  l: "Normal"
+}, {
+  v: "yuksek",
+  l: "Yüksek (sıvı / benign)"
+}];
+const KONTRAST_OPTS = RV_LOCALE === 'en' ? [{
+  v: "erken-yogun",
+  l: "Early-phase avid enhancement"
+}, {
+  v: "orta-yogun",
+  l: "Moderate enhancement"
+}, {
+  v: "heterojen-yogun",
+  l: "Heterogeneous avid"
+}, {
+  v: "mural-enhancement",
+  l: "Mural enhancement"
+}, {
+  v: "rim",
+  l: "Rim / ring enhancement"
+}, {
+  v: "washout",
+  l: "Washout pattern"
+}, {
+  v: "gec-eksresyon",
+  l: "Delayed excretion"
+}, {
+  v: "gec",
+  l: "Late-phase enhancement"
+}, {
+  v: "urotelyal-kalinlasma",
+  l: "Urothelial enhancement"
+}, {
+  v: "yok",
+  l: "No enhancement"
+}, {
+  v: "degisken",
+  l: "Variable"
+}] : [{
+  v: "erken-yogun",
+  l: "Erken faz yoğun kontrastlanma"
+}, {
+  v: "orta-yogun",
+  l: "Orta derecede kontrastlanma"
+}, {
+  v: "heterojen-yogun",
+  l: "Heterojen yoğun"
+}, {
+  v: "mural-enhancement",
+  l: "Mural kontrastlanma"
+}, {
+  v: "rim",
+  l: "Rim / halka kontrastlanma"
+}, {
+  v: "washout",
+  l: "Washout paterni"
+}, {
+  v: "gec-eksresyon",
+  l: "Gecikmiş eksresyon"
+}, {
+  v: "gec",
+  l: "Geç faz kontrastlanma"
+}, {
+  v: "urotelyal-kalinlasma",
+  l: "Ürotelyal kontrastlanma"
+}, {
+  v: "yok",
+  l: "Kontrastlanmıyor"
+}, {
+  v: "degisken",
+  l: "Değişken"
+}];
+const DILATASYON_OPTS = RV_LOCALE === 'en' ? [{
+  v: "yok",
+  l: "No dilatation"
+}, {
+  v: "minimal",
+  l: "Minimal"
+}, {
+  v: "pelvikalisiel",
+  l: "Pelvicalyceal dilatation"
+}, {
+  v: "megaureter",
+  l: "Megaureter"
+}, {
+  v: "massiv",
+  l: "Massive hydronephrosis"
+}, {
+  v: "bilateral-hidronefroz",
+  l: "Bilateral hydronephrosis"
+}, {
+  v: "bilateral-hidroureteronefroz",
+  l: "Bilateral hydroureteronephrosis"
+}, {
+  v: "ust-pol-dilatasyon",
+  l: "Upper-pole dilatation"
+}, {
+  v: "fokal",
+  l: "Focal / calyceal level"
+}] : [{
+  v: "yok",
+  l: "Dilatasyon yok"
+}, {
+  v: "minimal",
+  l: "Minimal"
+}, {
+  v: "pelvikalisiel",
+  l: "Pelvikaliksiyel dilatasyon"
+}, {
+  v: "megaureter",
+  l: "Megaüreter"
+}, {
+  v: "massiv",
+  l: "Massiv hidronefroz"
+}, {
+  v: "bilateral-hidronefroz",
+  l: "Bilateral hidronefroz"
+}, {
+  v: "bilateral-hidroureteronefroz",
+  l: "Bilateral hidroüreteronefroz"
+}, {
+  v: "ust-pol-dilatasyon",
+  l: "Üst pol dilatasyonu"
+}, {
+  v: "fokal",
+  l: "Fokal / kaliks düzeyinde"
+}];
+const MURAL_OPTS = RV_LOCALE === 'en' ? [{
+  v: "normal",
+  l: "Normal wall"
+}, {
+  v: "ince",
+  l: "Thin wall"
+}, {
+  v: "kalinlasma",
+  l: "Wall thickening"
+}, {
+  v: "noduler",
+  l: "Nodular"
+}, {
+  v: "polipoid",
+  l: "Polypoid"
+}, {
+  v: "inflamatuar",
+  l: "Inflammatory"
+}, {
+  v: "duzensiz-kaliks",
+  l: "Irregular calyceal margin"
+}, {
+  v: "invazyon",
+  l: "Wall invasion"
+}] : [{
+  v: "normal",
+  l: "Normal duvar"
+}, {
+  v: "ince",
+  l: "İnce duvar"
+}, {
+  v: "kalinlasma",
+  l: "Duvar kalınlaşması"
+}, {
+  v: "noduler",
+  l: "Noduler"
+}, {
+  v: "polipoid",
+  l: "Polipoid"
+}, {
+  v: "inflamatuar",
+  l: "İnflamatuar"
+}, {
+  v: "duzensiz-kaliks",
+  l: "Düzensiz kaliks sınırı"
+}, {
+  v: "invazyon",
+  l: "Duvar invazyonu"
+}];
+const KOMSU_OPTS = RV_LOCALE === 'en' ? [{
+  v: "kitle-var",
+  l: "Adjacent pelvic/retroperitoneal mass"
+}, {
+  v: "lenfadenopati",
+  l: "Lymphadenopathy"
+}, {
+  v: "periaortik-manto",
+  l: "Periaortic/paracaval mantle tissue (RPF?)"
+}, {
+  v: "ven-trombusu",
+  l: "Vein (renal/IVC) thrombosis"
+}, {
+  v: "staghorn-tasi",
+  l: "Staghorn calculus present"
+}, {
+  v: "endometriozis-implant",
+  l: "Endometriotic implants"
+}, {
+  v: "adneksiyal-kistik",
+  l: "Adnexal cystic lesion"
+}, {
+  v: "perinefrik-uzanim",
+  l: "Perinephric extension"
+}, {
+  v: "dilate-pros-uretra",
+  l: "Dilated posterior urethra"
+}, {
+  v: "yok",
+  l: "No adjacent pathology"
+}] : [{
+  v: "kitle-var",
+  l: "Komşu pelvik/retroperitoneal kitle"
+}, {
+  v: "lenfadenopati",
+  l: "Lenfadenopati"
+}, {
+  v: "periaortik-manto",
+  l: "Periaortik/perikaval manto doku (RPF?)"
+}, {
+  v: "ven-trombusu",
+  l: "Ven (renal/IVC) trombüsü"
+}, {
+  v: "staghorn-tasi",
+  l: "Staghorn taş mevcut"
+}, {
+  v: "endometriozis-implant",
+  l: "Endometriotik implantlar"
+}, {
+  v: "adneksiyal-kistik",
+  l: "Adneksiyel kistik lezyon"
+}, {
+  v: "perinefrik-uzanim",
+  l: "Perinefrik uzanım"
+}, {
+  v: "dilate-pros-uretra",
+  l: "Dilate posterior üretra"
+}, {
+  v: "yok",
+  l: "Komşu patoloji yok"
+}];
+const KLINIK_OPTS = RV_LOCALE === 'en' ? [{
+  v: "hematuri",
+  l: "Hematuria"
+}, {
+  v: "akut-yan-agri",
+  l: "Acute flank pain / colic"
+}, {
+  v: "yan-agri",
+  l: "Chronic flank pain"
+}, {
+  v: "ates",
+  l: "Fever"
+}, {
+  v: "sepsis",
+  l: "Sepsis"
+}, {
+  v: "kilo-kaybi",
+  l: "Weight loss"
+}, {
+  v: "tekrarlayan-ITU",
+  l: "Recurrent UTI"
+}, {
+  v: "DM",
+  l: "Diabetes mellitus"
+}, {
+  v: "analjezik",
+  l: "Prolonged analgesic use"
+}, {
+  v: "orak-hucre",
+  l: "Sickle cell disease"
+}, {
+  v: "siklik-agri",
+  l: "Cyclic pelvic pain (female)"
+}, {
+  v: "kadin-premenopoz",
+  l: "Premenopausal woman"
+}, {
+  v: "inkontinans",
+  l: "Continuous wetness / incontinence"
+}, {
+  v: "cocuk",
+  l: "Pediatric patient"
+}, {
+  v: "cocuk-erkek",
+  l: "Pediatric male"
+}, {
+  v: "yas-ileri",
+  l: "Advanced age"
+}, {
+  v: "malignite-oykusu",
+  l: "History of pelvic malignancy"
+}, {
+  v: "insidental",
+  l: "Incidental"
+}] : [{
+  v: "hematuri",
+  l: "Hematüri"
+}, {
+  v: "akut-yan-agri",
+  l: "Akut yan ağrısı / kolik"
+}, {
+  v: "yan-agri",
+  l: "Kronik yan ağrısı"
+}, {
+  v: "ates",
+  l: "Ateş"
+}, {
+  v: "sepsis",
+  l: "Sepsis tablosu"
+}, {
+  v: "kilo-kaybi",
+  l: "Kilo kaybı"
+}, {
+  v: "tekrarlayan-ITU",
+  l: "Tekrarlayan ITU"
+}, {
+  v: "DM",
+  l: "Diabetes mellitus"
+}, {
+  v: "analjezik",
+  l: "Uzun süreli analjezik kullanımı"
+}, {
+  v: "orak-hucre",
+  l: "Orak hücre hastalığı"
+}, {
+  v: "siklik-agri",
+  l: "Siklik pelvik ağrı (kadın)"
+}, {
+  v: "kadin-premenopoz",
+  l: "Premenopozal kadın"
+}, {
+  v: "inkontinans",
+  l: "Sürekli ıslaklık / inkontinans"
+}, {
+  v: "cocuk",
+  l: "Pediatrik hasta"
+}, {
+  v: "cocuk-erkek",
+  l: "Pediatrik erkek çocuk"
+}, {
+  v: "yas-ileri",
+  l: "İleri yaş"
+}, {
+  v: "malignite-oykusu",
+  l: "Pelvik malignite öyküsü"
+}, {
+  v: "insidental",
+  l: "İnsidental"
+}];
+
+/* ======================================================================
+   UTILITIES
+   ====================================================================== */
+const uid = () => Math.random().toString(36).slice(2, 9);
+const joinList = arr => Array.isArray(arr) && arr.length ? arr.join(", ") : "—";
+const lblFromV = (opts, v) => {
+  const o = opts.find(x => x.v === v);
+  return o ? o.l : v;
+};
+const lblsFromVs = (opts, vs) => (vs || []).map(v => lblFromV(opts, v));
+
+/* ======================================================================
+   REUSABLE UI ELEMENTS
+   ====================================================================== */
+function Opt(_ref) {
+  let {
+    active,
+    onClick,
+    children,
+    hint
+  } = _ref;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "opt " + (active ? "sel" : ""),
+    onClick: onClick
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ck"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "3.5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("polyline", {
+    points: "20 6 9 17 4 12"
+  }))), /*#__PURE__*/React.createElement("span", {
+    className: "lbl"
+  }, children), hint && /*#__PURE__*/React.createElement("span", {
+    className: "hint"
+  }, hint));
+}
+function MultiSelect(_ref2) {
+  let {
+    options,
+    values,
+    onChange,
+    cols = 2,
+    getV = o => o.v,
+    getL = o => o.l
+  } = _ref2;
+  const toggle = v => {
+    const s = new Set(values || []);
+    if (s.has(v)) s.delete(v);else s.add(v);
+    onChange([...s]);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "grid c" + cols
+  }, options.map((o, i) => {
+    const v = typeof o === "string" ? o : getV(o);
+    const l = typeof o === "string" ? o : getL(o);
+    const active = (values || []).includes(v);
+    return /*#__PURE__*/React.createElement(Opt, {
+      key: i,
+      active: active,
+      onClick: () => toggle(v)
+    }, l);
+  }));
+}
+function SingleSelect(_ref3) {
+  let {
+    options,
+    value,
+    onChange,
+    cols = 2,
+    getV = o => o.v,
+    getL = o => o.l
+  } = _ref3;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "grid c" + cols
+  }, options.map((o, i) => {
+    const v = typeof o === "string" ? o : getV(o);
+    const l = typeof o === "string" ? o : getL(o);
+    const active = value === v;
+    return /*#__PURE__*/React.createElement(Opt, {
+      key: i,
+      active: active,
+      onClick: () => onChange(active ? null : v)
+    }, l);
+  }));
+}
+function StepDots(_ref4) {
+  let {
+    total,
+    current,
+    completed,
+    onJump
+  } = _ref4;
+  const items = [];
+  for (let i = 0; i < total; i++) {
+    const cls = i === current ? "active" : completed.has(i) ? "done" : "";
+    items.push( /*#__PURE__*/React.createElement(React.Fragment, {
+      key: i
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "dot " + cls,
+      onClick: () => onJump(i),
+      title: T.step_dot_title(i + 1)
+    }, i + 1), i < total - 1 && /*#__PURE__*/React.createElement("div", {
+      className: "conn " + (completed.has(i) ? "done" : "")
+    })));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "stepbar"
+  }, items);
+}
+
+/* ======================================================================
+   MAIN APP
+   ====================================================================== */
+function App() {
+  /* ---------- Wizard state ---------- */
+  const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState(new Set());
+
+  /* ---------- Patient / clinical ---------- */
+  const [hasta, setHasta] = useState({
+    ad: "",
+    yas: "",
+    cinsiyet: "",
+    tarih: new Date().toISOString().slice(0, 10)
+  });
+  const [endik, setEndik] = useState([]);
+  const [teknik, setTeknik] = useState([]);
+  const [kontrastVerildi, setKontrastVerildi] = useState(null);
+
+  /* ---------- Kidneys (bilateral) ---------- */
+  const [sag, setSag] = useState({
+    paraKim: null,
+    korMed: null,
+    hidro: null,
+    konjAnomali: [],
+    not: ""
+  });
+  const [sol, setSol] = useState({
+    paraKim: null,
+    korMed: null,
+    hidro: null,
+    konjAnomali: [],
+    not: ""
+  });
+
+  /* ---------- Ureter lesion loop ---------- */
+  const [hasLesion, setHasLesion] = useState(null); // "var" | "yok"
+  const [lesions, setLesions] = useState([]);
+  const [currentIdx, setCurrentIdx] = useState(-1);
+  const [subStep, setSubStep] = useState(0); // 0..7
+
+  /* ---------- Bladder ---------- */
+  const [mesane, setMesane] = useState({
+    doluluk: null,
+    duvarKal: null,
+    kitle: null,
+    divertikul: null,
+    trabek: null,
+    kitleDetay: {
+      t2: [],
+      dwi: [],
+      adc: [],
+      kontrast: [],
+      boyut: ""
+    },
+    not: ""
+  });
+
+  /* ---------- Excretion / function ---------- */
+  const [fonk, setFonk] = useState({
+    simetri: null,
+    gecikme: null,
+    fonkDefisit: [],
+    not: ""
+  });
+
+  /* ---------- Additional findings ---------- */
+  const [ek, setEk] = useState({
+    bulgular: [],
+    not: ""
+  });
+  const KONJ_ANOMALI = RV_LOCALE === 'en'
+    ? ["Duplex collecting system", "Horseshoe kidney", "Ectopic kidney", "Rotation anomaly", "Agenesis / aplasia", "Multicystic dysplastic kidney", "None"]
+    : ["Duplike toplayıcı sistem", "At nalı böbrek", "Ektopik böbrek", "Rotasyon anomalisi", "Agenezi / aplazi", "Multikistik displastik böbrek", "Yok"];
+  const EK_BULGULAR = RV_LOCALE === 'en'
+    ? ["Perinephric fluid / stranding", "Pelvic ascites", "Retroperitoneal lymphadenopathy", "Retroperitoneal fibrosis mantle tissue", "Adnexal cystic lesion", "Prostate enlargement / mass", "Rectal wall thickening", "Vertebral metastasis signal", "No additional finding"]
+    : ["Perinefrik sıvı / strandling", "Pelvik asit", "Retroperitoneal lenfadenopati", "Retroperitoneal fibrozis manto dokusu", "Adneksiyel kistik lezyon", "Prostat büyümesi / kitle", "Rektum duvar kalınlaşması", "Vertebra metastaz sinyali", "Ek bulgu yok"];
+
+  /* ---------- Loop management ---------- */
+  const startLoop = () => {
+    const newL = blankLesion();
+    setLesions([...lesions, newL]);
+    setCurrentIdx(lesions.length);
+    setSubStep(0);
+  };
+  const addAnother = () => {
+    const newL = blankLesion();
+    setLesions(l => {
+      const next = [...l, newL];
+      setCurrentIdx(next.length - 1);
+      return next;
+    });
+    setSubStep(0);
+  };
+  const finalize = () => {
+    setCurrentIdx(-1); // 3-part fix (1): reset index
+    setSubStep(0);
+  };
+  const editLesion = idx => {
+    setCurrentIdx(idx);
+    setSubStep(0);
+  };
+  const deleteLesion = idx => {
+    setLesions(l => l.filter((_, i) => i !== idx));
+  };
+  function blankLesion() {
+    return {
+      id: uid(),
+      taraf: null,
+      lokasyon: null,
+      lezyon_tipi: [],
+      boyut: "",
+      t2: [],
+      t1: [],
+      dwi: [],
+      adc: [],
+      kontrast: [],
+      dilatasyon: [],
+      mural: [],
+      komsu: [],
+      klinik: []
+    };
+  }
+  const updLes = patch => {
+    setLesions(l => l.map((x, i) => i === currentIdx ? {
+      ...x,
+      ...patch
+    } : x));
+  };
+  const curLes = currentIdx >= 0 ? lesions[currentIdx] : null;
+
+  /* ---------- Step structure ---------- */
+  /* 0 hasta | 1 endikasyon | 2 teknik | 3 sağ böbrek | 4 sol böbrek |
+     5 lezyon var/yok (gate) | 6 LOOP | 7 mesane | 8 fonksiyon | 9 ek bulgu | 10 rapor */
+  const TOTAL = 11;
+  const goNext = () => {
+    /* 3-part fix (2): skip loop step when idx===-1 */
+    if (step === 5 && hasLesion === "var" && currentIdx === -1 && lesions.length === 0) {
+      startLoop();
+      setStep(6);
+      setCompleted(c => new Set([...c, step]));
+      return;
+    }
+    if (step === 5 && hasLesion === "yok") {
+      setCompleted(c => new Set([...c, step, 6])); // skip loop
+      setStep(7);
+      return;
+    }
+    if (step === 6 && currentIdx === -1) {
+      setCompleted(c => new Set([...c, step]));
+      setStep(7);
+      return;
+    }
+    setCompleted(c => new Set([...c, step]));
+    setStep(s => Math.min(TOTAL - 1, s + 1));
+  };
+  const goPrev = () => {
+    /* 3-part fix (3): going back from post-loop returns to gate */
+    if (step === 7 && hasLesion === "yok") {
+      setStep(5);
+      return;
+    }
+    if (step === 6 && currentIdx === -1) {
+      setStep(5);
+      return;
+    }
+    setStep(s => Math.max(0, s - 1));
+  };
+  const jumpTo = idx => {
+    if (completed.has(idx) || idx <= step) setStep(idx);
+  };
+
+  /* ============= LOOP SUB-STEPS ============= */
+  const LOOP_SUBS = T.loop_subs;
+  const nextSub = () => setSubStep(s => Math.min(LOOP_SUBS.length - 1, s + 1));
+  const prevSub = () => setSubStep(s => Math.max(0, s - 1));
+
+  /* ============================================================
+     REPORT GENERATION — JSX (kutulu zebra) + PLAIN (clipboard)
+     ============================================================ */
+  const aggregateFindings = () => {
+    /* Aggregate findings across lesions + bladder + kidneys for differential */
+    const agg = {};
+    const push = (k, v) => {
+      if (!v) return;
+      if (!agg[k]) agg[k] = [];
+      if (Array.isArray(v)) v.forEach(x => {
+        if (x && !agg[k].includes(x)) agg[k].push(x);
+      });else if (!agg[k].includes(v)) agg[k].push(v);
+    };
+    lesions.forEach(L => {
+      push("lokasyon", L.lokasyon);
+      push("lezyon_tipi", L.lezyon_tipi);
+      push("t2", L.t2);
+      push("t1", L.t1);
+      push("dwi", L.dwi);
+      push("adc", L.adc);
+      push("kontrast", L.kontrast);
+      push("dilatasyon", L.dilatasyon);
+      push("mural", L.mural);
+      push("komsu", L.komsu);
+      push("klinik", L.klinik);
+    });
+    /* Kidneys — hidronefroz as dilatasyon */
+    [sag, sol].forEach(k => {
+      if (k.hidro && ["2", "3", "4"].includes(k.hidro)) {
+        push("dilatasyon", k.hidro === "4" ? "massiv" : "pelvikalisiel");
+      }
+    });
+    /* Mesane */
+    if (mesane.kitle === "var") {
+      push("lokasyon", "mesane");
+      push("lezyon_tipi", "mural-kalinlasma");
+      push("t2", mesane.kitleDetay.t2);
+      push("dwi", mesane.kitleDetay.dwi);
+      push("adc", mesane.kitleDetay.adc);
+      push("kontrast", mesane.kitleDetay.kontrast);
+    }
+    /* Clinical */
+    if (hasta.yas) {
+      const yas = parseInt(hasta.yas);
+      if (yas >= 60) push("klinik", "yas-ileri");
+      if (yas < 18) push("klinik", "cocuk");
+    }
+    endik.forEach(e => {
+      if (/hematüri/i.test(e)) push("klinik", "hematuri");
+      if (/tekrarlayan/i.test(e)) push("klinik", "tekrarlayan-ITU");
+    });
+    return agg;
+  };
+  const differential = useMemo(() => {
+    if (lesions.length === 0 && mesane.kitle !== "var" && sag.hidro !== "3" && sag.hidro !== "4" && sol.hidro !== "3" && sol.hidro !== "4") {
+      return [];
+    }
+    const findings = aggregateFindings();
+    return scoreLesion(findings).filter(x => x.pct > 5).slice(0, 6);
+  }, [lesions, mesane, sag, sol, hasta, endik]);
+
+  /* -------- JSX report elements -------- */
+  const RptSection = _ref5 => {
+    let {
+      title,
+      children
+    } = _ref5;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "RptSection"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "sh"
+    }, title), /*#__PURE__*/React.createElement("div", {
+      className: "sb"
+    }, children));
+  };
+  const RptRow = _ref6 => {
+    let {
+      k,
+      v,
+      pat = false
+    } = _ref6;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "RptRow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "k"
+    }, k), /*#__PURE__*/React.createElement("div", {
+      className: "v " + (pat ? "pat" : "")
+    }, v));
+  };
+  const kidneyRow = (side, obj) => {
+    const isPat = obj.hidro && obj.hidro !== "0" && obj.hidro !== "1";
+    const parts = [];
+    if (obj.paraKim) parts.push(T.plain_kidney_parenchyma(tVal(T.tval_parankim, obj.paraKim)));
+    if (obj.korMed) parts.push(T.plain_kidney_corticomedullar(tVal(T.tval_kortikomed, obj.korMed)));
+    if (obj.hidro) {
+      const h = HIDRONEFROZ_DER.find(x => x.v === obj.hidro);
+      parts.push(h ? h.l.toLowerCase() : obj.hidro);
+    }
+    if (obj.konjAnomali && obj.konjAnomali.length && !obj.konjAnomali.includes("Yok") && !obj.konjAnomali.includes("None")) {
+      parts.push(obj.konjAnomali.join(", "));
+    }
+    if (obj.not) parts.push(obj.not);
+    return /*#__PURE__*/React.createElement(RptRow, {
+      k: side === "Sağ" ? T.rpt_right_kidney : T.rpt_left_kidney,
+      v: parts.length ? parts.join("; ") : T.rpt_kidney_normal,
+      pat: isPat
+    });
+  };
+  const lesionJSX = (L, i) => {
+    const rows = [];
+    const loc = LOKASYONLAR.find(x => x.v === L.lokasyon);
+    const sideDisplay = L.taraf ? (RV_LOCALE === 'en' ? (L.taraf === "Sağ" ? "Right " : L.taraf === "Sol" ? "Left " : L.taraf + " ") : L.taraf + " ") : "";
+    const head = T.rpt_les_head(i + 1, sideDisplay, loc ? loc.l : T.rpt_les_loc_unknown);
+    if (L.lezyon_tipi.length) rows.push([T.rpt_les_type, lblsFromVs(LEZYON_TIPLERI, L.lezyon_tipi).join(", ")]);
+    if (L.boyut) rows.push([T.rpt_les_size, L.boyut]);
+    if (L.t2.length) rows.push([T.rpt_les_t2, lblsFromVs(T2_OPTS, L.t2).join(", ")]);
+    if (L.t1.length) rows.push([T.rpt_les_t1, lblsFromVs(T1_OPTS, L.t1).join(", ")]);
+    if (L.dwi.length) rows.push([T.rpt_les_dwi, lblsFromVs(DWI_OPTS, L.dwi).join(", ")]);
+    if (L.adc.length) rows.push([T.rpt_les_adc, lblsFromVs(ADC_OPTS, L.adc).join(", ")]);
+    if (L.kontrast.length) rows.push([T.rpt_les_kontrast, lblsFromVs(KONTRAST_OPTS, L.kontrast).join(", ")]);
+    if (L.dilatasyon.length) rows.push([T.rpt_les_dilatasyon, lblsFromVs(DILATASYON_OPTS, L.dilatasyon).join(", ")]);
+    if (L.mural.length) rows.push([T.rpt_les_mural, lblsFromVs(MURAL_OPTS, L.mural).join(", ")]);
+    if (L.komsu.length) rows.push([T.rpt_les_komsu, lblsFromVs(KOMSU_OPTS, L.komsu).join(", ")]);
+    if (L.klinik.length) rows.push([T.rpt_les_klinik, lblsFromVs(KLINIK_OPTS, L.klinik).join(", ")]);
+    return /*#__PURE__*/React.createElement(RptSection, {
+      key: L.id,
+      title: head
+    }, rows.map((r, j) => /*#__PURE__*/React.createElement(RptRow, {
+      key: j,
+      k: r[0],
+      v: r[1],
+      pat: true
+    })));
+  };
+  const genReportJSX = () => {
+    const h = hasta;
+    const bMesane = mesane.kitle === "var" || mesane.duvarKal === "kalin" || mesane.trabek === "var" || mesane.divertikul === "var";
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_patient_tech
+    }, /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_patient,
+      v: h.ad || "—"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_age_sex,
+      v: (h.yas || "—") + " / " + (h.cinsiyet ? tVal(T.tval_cinsiyet, h.cinsiyet) : "—")
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_date,
+      v: h.tarih
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_indication,
+      v: endik.length ? endik.join(", ") : "—"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_technique,
+      v: teknik.length ? teknik.join(", ") : "—"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_iv_contrast,
+      v: kontrastVerildi === "var" ? T.rpt_iv_applied : kontrastVerildi === "yok" ? T.rpt_iv_not_applied : "—"
+    })), /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_kidneys
+    }, kidneyRow("Sağ", sag), kidneyRow("Sol", sol)), lesions.length > 0 && lesions.map((L, i) => lesionJSX(L, i)), /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_bladder
+    }, /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_fullness,
+      v: mesane.doluluk ? tVal(T.tval_doluluk, mesane.doluluk) : "—"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_wall,
+      v: mesane.duvarKal === "kalin" ? T.rpt_bladder_wall_thick : mesane.duvarKal === "normal" ? T.rpt_bladder_wall_normal : "—",
+      pat: mesane.duvarKal === "kalin"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_trabek,
+      v: mesane.trabek === "var" ? T.rpt_bladder_trabek_present : mesane.trabek === "yok" ? "—" : "—",
+      pat: mesane.trabek === "var"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_divert,
+      v: mesane.divertikul === "var" ? T.rpt_bladder_divert_present : mesane.divertikul === "yok" ? "—" : "—",
+      pat: mesane.divertikul === "var"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass,
+      v: mesane.kitle === "var" ? T.rpt_bladder_mass_present : mesane.kitle === "yok" ? T.rpt_bladder_mass_none : "—",
+      pat: mesane.kitle === "var"
+    }), mesane.kitle === "var" && mesane.kitleDetay.boyut && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass_size,
+      v: mesane.kitleDetay.boyut,
+      pat: true
+    }), mesane.kitle === "var" && mesane.kitleDetay.t2.length > 0 && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass_t2,
+      v: lblsFromVs(T2_OPTS, mesane.kitleDetay.t2).join(", "),
+      pat: true
+    }), mesane.kitle === "var" && mesane.kitleDetay.dwi.length > 0 && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass_dwi,
+      v: lblsFromVs(DWI_OPTS, mesane.kitleDetay.dwi).join(", "),
+      pat: true
+    }), mesane.kitle === "var" && mesane.kitleDetay.adc.length > 0 && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass_adc,
+      v: lblsFromVs(ADC_OPTS, mesane.kitleDetay.adc).join(", "),
+      pat: true
+    }), mesane.kitle === "var" && mesane.kitleDetay.kontrast.length > 0 && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_bladder_mass_kontrast,
+      v: lblsFromVs(KONTRAST_OPTS, mesane.kitleDetay.kontrast).join(", "),
+      pat: true
+    }), mesane.not && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_note,
+      v: mesane.not
+    })), /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_functional
+    }, /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_func_sym,
+      v: fonk.simetri ? tVal(T.tval_simetri, fonk.simetri) : "—",
+      pat: fonk.simetri === "Asimetrik"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_func_delay,
+      v: fonk.gecikme ? tVal(T.tval_gecikme, fonk.gecikme) : "—",
+      pat: fonk.gecikme && fonk.gecikme !== "Yok"
+    }), /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_func_deficit,
+      v: joinList(fonk.fonkDefisit.map(x => { const idx = FONK_DEFICIT_V.indexOf(x); return idx >= 0 ? T.s8_deficit_opts[idx] : x; }))
+    }), fonk.not && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_note,
+      v: fonk.not
+    })), /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_extra
+    }, /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_extra_retro,
+      v: ek.bulgular.length ? ek.bulgular.join(", ") : T.rpt_extra_none
+    }), ek.not && /*#__PURE__*/React.createElement(RptRow, {
+      k: T.rpt_note,
+      v: ek.not
+    })), differential.length > 0 && /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_diff
+    }, differential.map((p, i) => /*#__PURE__*/React.createElement("div", {
+      key: i
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "prob-bar"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "pn"
+    }, i + 1, ". ", /*#__PURE__*/React.createElement("b", null, RV_LOCALE === 'en' ? (p.ad_en || p.ad) : p.ad)), /*#__PURE__*/React.createElement("div", {
+      className: "pb-track"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "pb-fill",
+      style: {
+        width: p.pct + "%"
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "pv"
+    }, p.pct, "%")), i === 0 && (p.yorum || p.yorum_en) && /*#__PURE__*/React.createElement("div", {
+      className: "callout",
+      style: {
+        margin: "4px 14px 8px"
+      }
+    }, RV_LOCALE === 'en' ? (p.yorum_en || p.yorum) : p.yorum)))), /*#__PURE__*/React.createElement(RptSection, {
+      title: T.rpt_conclusion
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px 14px",
+        fontSize: "13.5px",
+        lineHeight: 1.6
+      }
+    }, genSonucText())));
+  };
+  const genSonucText = () => {
+    const lines = [];
+    const topDx = differential[0];
+    const anyHidro = ["2", "3", "4"].includes(sag.hidro) || ["2", "3", "4"].includes(sol.hidro);
+    if (anyHidro) {
+      const sides = [];
+      if (["2", "3", "4"].includes(sag.hidro)) sides.push(T.sonuc_hidro_side_r(sag.hidro));
+      if (["2", "3", "4"].includes(sol.hidro)) sides.push(T.sonuc_hidro_side_l(sol.hidro));
+      lines.push(T.sonuc_hidro(sides));
+    }
+    if (lesions.length > 0) {
+      lines.push(T.sonuc_lesions(lesions.length));
+    }
+    if (mesane.kitle === "var") lines.push(T.sonuc_bladder_mass);
+    if (topDx && topDx.pct >= 55) {
+      const dxName = RV_LOCALE === 'en' ? (topDx.ad_en || topDx.ad) : topDx.ad;
+      lines.push(T.sonuc_top_dx(dxName, topDx.pct));
+    } else if (topDx) {
+      lines.push(T.sonuc_no_clear_dx);
+    }
+    if (lines.length === 0) lines.push(T.sonuc_no_finding);
+    return lines.join(" ");
+  };
+
+  /* -------- Plain-text report for clipboard/download -------- */
+  const genPlainReport = () => {
+    const line = "=".repeat(70);
+    const thin = "-".repeat(70);
+    let r = "";
+    r += line + "\n";
+    r += T.plain_title + "\n";
+    r += line + "\n\n";
+    r += T.plain_patient_tech + "\n" + thin + "\n";
+    r += `${T.plain_name}: ${hasta.ad || "—"}\n`;
+    r += `${T.plain_age_sex}: ${hasta.yas || "—"} / ${hasta.cinsiyet ? tVal(T.tval_cinsiyet, hasta.cinsiyet) : "—"}\n`;
+    r += `${T.plain_date}: ${hasta.tarih}\n`;
+    r += `${T.plain_indication}: ${endik.length ? endik.join(", ") : "—"}\n`;
+    r += `${T.plain_technique}: ${teknik.length ? teknik.join(", ") : "—"}\n`;
+    r += `${T.plain_iv}: ${kontrastVerildi === "var" ? T.plain_iv_yes : kontrastVerildi === "yok" ? T.plain_iv_no : "—"}\n\n`;
+    r += T.plain_kidneys + "\n" + thin + "\n";
+    const kStr = (sideKey, obj) => {
+      const parts = [];
+      if (obj.paraKim) parts.push(T.plain_kidney_parenchyma(tVal(T.tval_parankim, obj.paraKim)));
+      if (obj.korMed) parts.push(T.plain_kidney_corticomedullar(tVal(T.tval_kortikomed, obj.korMed)));
+      if (obj.hidro) {
+        const h = HIDRONEFROZ_DER.find(x => x.v === obj.hidro);
+        parts.push(h ? h.l.toLowerCase() : obj.hidro);
+      }
+      if (obj.konjAnomali && obj.konjAnomali.length && !obj.konjAnomali.includes("Yok") && !obj.konjAnomali.includes("None")) {
+        parts.push(obj.konjAnomali.join(", "));
+      }
+      if (obj.not) parts.push(obj.not);
+      return `${sideKey}       : ${parts.length ? parts.join("; ") : T.plain_kidney_normal}\n`;
+    };
+    r += kStr(T.plain_kidney_r, sag);
+    r += kStr(T.plain_kidney_l, sol);
+    r += "\n";
+    if (lesions.length > 0) {
+      lesions.forEach((L, i) => {
+        const loc = LOKASYONLAR.find(x => x.v === L.lokasyon);
+        const sideDisplay = L.taraf ? (RV_LOCALE === 'en' ? (L.taraf === "Sağ" ? "RIGHT " : L.taraf === "Sol" ? "LEFT " : L.taraf.toUpperCase() + " ") : L.taraf + " ") : "";
+        r += T.plain_les_head(i + 1, sideDisplay, loc ? loc.l.toUpperCase() : T.plain_les_loc_unknown) + "\n" + thin + "\n";
+        if (L.lezyon_tipi.length) r += `${T.plain_les_type}: ${lblsFromVs(LEZYON_TIPLERI, L.lezyon_tipi).join(", ")}\n`;
+        if (L.boyut) r += `${T.plain_les_size}: ${L.boyut}\n`;
+        if (L.t2.length) r += `${T.plain_les_t2}: ${lblsFromVs(T2_OPTS, L.t2).join(", ")}\n`;
+        if (L.t1.length) r += `${T.plain_les_t1}: ${lblsFromVs(T1_OPTS, L.t1).join(", ")}\n`;
+        if (L.dwi.length) r += `${T.plain_les_dwi}: ${lblsFromVs(DWI_OPTS, L.dwi).join(", ")}\n`;
+        if (L.adc.length) r += `${T.plain_les_adc}: ${lblsFromVs(ADC_OPTS, L.adc).join(", ")}\n`;
+        if (L.kontrast.length) r += `${T.plain_les_kontrast}: ${lblsFromVs(KONTRAST_OPTS, L.kontrast).join(", ")}\n`;
+        if (L.dilatasyon.length) r += `${T.plain_les_dilatasyon}: ${lblsFromVs(DILATASYON_OPTS, L.dilatasyon).join(", ")}\n`;
+        if (L.mural.length) r += `${T.plain_les_mural}: ${lblsFromVs(MURAL_OPTS, L.mural).join(", ")}\n`;
+        if (L.komsu.length) r += `${T.plain_les_komsu}: ${lblsFromVs(KOMSU_OPTS, L.komsu).join(", ")}\n`;
+        if (L.klinik.length) r += `${T.plain_les_klinik}: ${lblsFromVs(KLINIK_OPTS, L.klinik).join(", ")}\n`;
+        r += "\n";
+      });
+    }
+    r += T.plain_bladder + "\n" + thin + "\n";
+    r += `${T.plain_bladder_fullness}: ${mesane.doluluk ? tVal(T.tval_doluluk, mesane.doluluk) : "—"}\n`;
+    r += `${T.plain_bladder_wall}: ${mesane.duvarKal === "kalin" ? T.plain_bladder_wall_thick : mesane.duvarKal === "normal" ? T.plain_bladder_wall_normal : "—"}\n`;
+    r += `${T.plain_bladder_trabek}: ${mesane.trabek === "var" ? T.plain_bladder_trabek_present : "—"}\n`;
+    r += `${T.plain_bladder_divert}: ${mesane.divertikul === "var" ? T.plain_bladder_divert_present : "—"}\n`;
+    r += `${T.plain_bladder_mass}: ${mesane.kitle === "var" ? T.plain_bladder_mass_present : mesane.kitle === "yok" ? T.plain_bladder_mass_none : "—"}\n`;
+    if (mesane.kitle === "var") {
+      if (mesane.kitleDetay.boyut) r += `${T.plain_bladder_mass_size}: ${mesane.kitleDetay.boyut}\n`;
+      if (mesane.kitleDetay.t2.length) r += `${T.plain_bladder_mass_t2}: ${lblsFromVs(T2_OPTS, mesane.kitleDetay.t2).join(", ")}\n`;
+      if (mesane.kitleDetay.dwi.length) r += `${T.plain_bladder_mass_dwi}: ${lblsFromVs(DWI_OPTS, mesane.kitleDetay.dwi).join(", ")}\n`;
+      if (mesane.kitleDetay.adc.length) r += `${T.plain_bladder_mass_adc}: ${lblsFromVs(ADC_OPTS, mesane.kitleDetay.adc).join(", ")}\n`;
+      if (mesane.kitleDetay.kontrast.length) r += `${T.plain_bladder_mass_kontrast}: ${lblsFromVs(KONTRAST_OPTS, mesane.kitleDetay.kontrast).join(", ")}\n`;
+    }
+    if (mesane.not) r += `${T.plain_note}: ${mesane.not}\n`;
+    r += "\n";
+    r += T.plain_functional + "\n" + thin + "\n";
+    r += `${T.plain_func_sym}: ${fonk.simetri ? tVal(T.tval_simetri, fonk.simetri) : "—"}\n`;
+    r += `${T.plain_func_delay}: ${fonk.gecikme ? tVal(T.tval_gecikme, fonk.gecikme) : "—"}\n`;
+    r += `${T.plain_func_deficit}: ${joinList(fonk.fonkDefisit.map(x => { const idx = FONK_DEFICIT_V.indexOf(x); return idx >= 0 ? T.s8_deficit_opts[idx] : x; }))}\n`;
+    if (fonk.not) r += `${T.plain_note}: ${fonk.not}\n`;
+    r += "\n";
+    r += T.plain_extra + "\n" + thin + "\n";
+    r += `${T.plain_extra_retro}: ${ek.bulgular.length ? ek.bulgular.join(", ") : T.plain_extra_none}\n`;
+    if (ek.not) r += `${T.plain_note}: ${ek.not}\n`;
+    r += "\n";
+    if (differential.length > 0) {
+      r += T.plain_diff + "\n" + thin + "\n";
+      differential.forEach((p, i) => {
+        const dxName = RV_LOCALE === 'en' ? (p.ad_en || p.ad) : p.ad;
+        r += `${String(i + 1).padStart(2, " ")}. ${dxName.padEnd(48, " ")} %${p.pct}\n`;
+      });
+      const topYorum = RV_LOCALE === 'en' ? (differential[0].yorum_en || differential[0].yorum) : differential[0].yorum;
+      if (topYorum) {
+        r += "\n→ " + topYorum + "\n";
+      }
+      r += "\n";
+    }
+    r += T.plain_conclusion + "\n" + thin + "\n";
+    r += genSonucText() + "\n\n";
+    r += line + "\n";
+    return r;
+  };
+
+  /* -------- Export actions -------- */
+  const [overlay, setOverlay] = useState(null);
+  const showCopyOverlay = () => setOverlay(genPlainReport());
+  const closeOverlay = () => setOverlay(null);
+  const doCopy = async () => {
+    const txt = genPlainReport();
+    try {
+      await navigator.clipboard.writeText(txt);
+      alert(T.alert_copied);
+    } catch {
+      setOverlay(txt);
+    }
+  };
+  const doDownload = () => {
+    const txt = genPlainReport();
+    try {
+      const blob = new Blob([txt], {
+        type: "text/plain;charset=utf-8"
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MR_Urografi_${(hasta.ad || "rapor").replace(/\s+/g, "_")}_${hasta.tarih}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setOverlay(txt);
+    }
+  };
+
+  /* ============================================================
+     RENDER — STEP-BY-STEP
+     ============================================================ */
+  const StepTitle = _ref7 => {
+    let {
+      n,
+      t,
+      s
+    } = _ref7;
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "sub",
+      style: {
+        letterSpacing: ".8px",
+        textTransform: "uppercase",
+        fontSize: 11,
+        color: "var(--accent-3)",
+        marginBottom: 6
+      }
+    }, T.step_of(n + 1, TOTAL)), /*#__PURE__*/React.createElement("h2", null, t), s && /*#__PURE__*/React.createElement("p", {
+      className: "sub"
+    }, s));
+  };
+  const renderStep = () => {
+    switch (step) {
+      /* ==== 0 HASTA ==== */
+      case 0:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 0,
+          t: T.s0_title,
+          s: T.s0_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2",
+          style: {
+            gap: 14
+          }
+        }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s0_name_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: hasta.ad,
+          onChange: e => setHasta({
+            ...hasta,
+            ad: e.target.value
+          })
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s0_date_lbl), /*#__PURE__*/React.createElement("input", {
+          type: "date",
+          className: "inp",
+          value: hasta.tarih,
+          onChange: e => setHasta({
+            ...hasta,
+            tarih: e.target.value
+          })
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s0_age_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: hasta.yas,
+          onChange: e => setHasta({
+            ...hasta,
+            yas: e.target.value
+          }),
+          placeholder: T.s0_age_ph
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s0_sex_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c3"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: hasta.cinsiyet === "Kadın",
+          onClick: () => setHasta({
+            ...hasta,
+            cinsiyet: "Kadın"
+          })
+        }, T.s0_female), /*#__PURE__*/React.createElement(Opt, {
+          active: hasta.cinsiyet === "Erkek",
+          onClick: () => setHasta({
+            ...hasta,
+            cinsiyet: "Erkek"
+          })
+        }, T.s0_male), /*#__PURE__*/React.createElement(Opt, {
+          active: hasta.cinsiyet === "Diğer",
+          onClick: () => setHasta({
+            ...hasta,
+            cinsiyet: "Diğer"
+          })
+        }, T.s0_other)))));
+
+      /* ==== 1 ENDİKASYON ==== */
+      case 1:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 1,
+          t: T.s1_title,
+          s: T.s1_sub
+        }), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: ENDIKASYONLAR,
+          values: endik,
+          onChange: setEndik,
+          cols: 2
+        }));
+
+      /* ==== 2 TEKNİK ==== */
+      case 2:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 2,
+          t: T.s2_title,
+          s: T.s2_sub
+        }), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: TEKNIK_OPTS,
+          values: teknik,
+          onChange: setTeknik,
+          cols: 2
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginTop: 16
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s2_contrast_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: kontrastVerildi === "var",
+          onClick: () => setKontrastVerildi("var")
+        }, T.s2_contrast_yes), /*#__PURE__*/React.createElement(Opt, {
+          active: kontrastVerildi === "yok",
+          onClick: () => setKontrastVerildi("yok")
+        }, T.s2_contrast_no))));
+
+      /* ==== 3 SAĞ BÖBREK ==== */
+      case 3:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 3,
+          t: T.s3_title,
+          s: T.s3_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_parenchyma_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: PARANKIM_BOYUT_V.map((v, idx) => ({
+            v: v,
+            l: PARANKIM_BOYUT[idx]
+          })),
+          value: sag.paraKim,
+          onChange: v => setSag({
+            ...sag,
+            paraKim: v
+          }),
+          cols: 3
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_corticomedullar_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: KORTIKOMED_V.map((v, idx) => ({
+            v: v,
+            l: KORTIKOMED[idx]
+          })),
+          value: sag.korMed,
+          onChange: v => setSag({
+            ...sag,
+            korMed: v
+          }),
+          cols: 3
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_hydro_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: HIDRONEFROZ_DER,
+          value: sag.hidro,
+          onChange: v => setSag({
+            ...sag,
+            hidro: v
+          }),
+          cols: 1
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_conj_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: KONJ_ANOMALI,
+          values: sag.konjAnomali,
+          onChange: v => setSag({
+            ...sag,
+            konjAnomali: v
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_extra_note_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: sag.not,
+          onChange: e => setSag({
+            ...sag,
+            not: e.target.value
+          }),
+          placeholder: T.s_extra_note_ph
+        })));
+
+      /* ==== 4 SOL BÖBREK ==== */
+      case 4:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 4,
+          t: T.s4_title,
+          s: T.s4_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_parenchyma_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: PARANKIM_BOYUT_V.map((v, idx) => ({
+            v: v,
+            l: PARANKIM_BOYUT[idx]
+          })),
+          value: sol.paraKim,
+          onChange: v => setSol({
+            ...sol,
+            paraKim: v
+          }),
+          cols: 3
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_corticomedullar_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: KORTIKOMED_V.map((v, idx) => ({
+            v: v,
+            l: KORTIKOMED[idx]
+          })),
+          value: sol.korMed,
+          onChange: v => setSol({
+            ...sol,
+            korMed: v
+          }),
+          cols: 3
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_hydro_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+          options: HIDRONEFROZ_DER,
+          value: sol.hidro,
+          onChange: v => setSol({
+            ...sol,
+            hidro: v
+          }),
+          cols: 1
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_conj_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: KONJ_ANOMALI,
+          values: sol.konjAnomali,
+          onChange: v => setSol({
+            ...sol,
+            konjAnomali: v
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s_extra_note_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: sol.not,
+          onChange: e => setSol({
+            ...sol,
+            not: e.target.value
+          }),
+          placeholder: T.s_extra_note_ph
+        })));
+
+      /* ==== 5 GATE — LEZYON VAR MI? ==== */
+      case 5:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 5,
+          t: T.s5_title,
+          s: T.s5_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: hasLesion === "var",
+          onClick: () => setHasLesion("var")
+        }, T.s5_yes), /*#__PURE__*/React.createElement(Opt, {
+          active: hasLesion === "yok",
+          onClick: () => setHasLesion("yok")
+        }, T.s5_no)), lesions.length > 0 && /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginTop: 18
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s5_prev_lbl), lesions.map((L, i) => /*#__PURE__*/React.createElement("div", {
+          key: L.id,
+          className: "lesCard"
+        }, /*#__PURE__*/React.createElement("div", {
+          className: "lesHdr"
+        }, /*#__PURE__*/React.createElement("b", null, i + 1, ". ", L.taraf || "", " ", LOKASYONLAR.find(x => x.v === L.lokasyon)?.l || "—"), /*#__PURE__*/React.createElement("div", {
+          style: {
+            display: "flex",
+            gap: 6
+          }
+        }, /*#__PURE__*/React.createElement("button", {
+          className: "btn sm",
+          onClick: () => editLesion(i)
+        }, T.s5_edit), /*#__PURE__*/React.createElement("button", {
+          className: "btn sm danger",
+          onClick: () => deleteLesion(i)
+        }, T.s5_delete))), /*#__PURE__*/React.createElement("div", {
+          className: "inline-chips"
+        }, L.lezyon_tipi.slice(0, 3).map((v, j) => /*#__PURE__*/React.createElement("span", {
+          key: j,
+          className: "chip cy"
+        }, lblFromV(LEZYON_TIPLERI, v))), L.dwi.length > 0 && /*#__PURE__*/React.createElement("span", {
+          className: "chip tl"
+        }, "DWI: ", lblFromV(DWI_OPTS, L.dwi[0])), L.kontrast.length > 0 && /*#__PURE__*/React.createElement("span", {
+          className: "chip vl"
+        }, lblFromV(KONTRAST_OPTS, L.kontrast[0])))))));
+
+      /* ==== 6 LOOP ==== */
+      case 6:
+        {
+          if (currentIdx === -1) {
+            /* Summary inside loop step (before finalize) */
+            return /*#__PURE__*/React.createElement("div", {
+              className: "card"
+            }, /*#__PURE__*/React.createElement(StepTitle, {
+              n: 6,
+              t: T.s6_summary_title,
+              s: T.s6_summary_sub
+            }), lesions.length === 0 && /*#__PURE__*/React.createElement("div", {
+              className: "empty"
+            }, T.s6_empty), lesions.map((L, i) => /*#__PURE__*/React.createElement("div", {
+              key: L.id,
+              className: "lesCard"
+            }, /*#__PURE__*/React.createElement("div", {
+              className: "lesHdr"
+            }, /*#__PURE__*/React.createElement("b", null, i + 1, ". ", L.taraf || "", " ", LOKASYONLAR.find(x => x.v === L.lokasyon)?.l || "—"), /*#__PURE__*/React.createElement("div", {
+              style: {
+                display: "flex",
+                gap: 6
+              }
+            }, /*#__PURE__*/React.createElement("button", {
+              className: "btn sm",
+              onClick: () => editLesion(i)
+            }, T.s6_edit), /*#__PURE__*/React.createElement("button", {
+              className: "btn sm danger",
+              onClick: () => deleteLesion(i)
+            }, T.s6_delete))), /*#__PURE__*/React.createElement("div", {
+              className: "inline-chips"
+            }, L.lezyon_tipi.slice(0, 3).map((v, j) => /*#__PURE__*/React.createElement("span", {
+              key: j,
+              className: "chip cy"
+            }, lblFromV(LEZYON_TIPLERI, v))), L.dwi.length > 0 && /*#__PURE__*/React.createElement("span", {
+              className: "chip tl"
+            }, "DWI: ", lblFromV(DWI_OPTS, L.dwi[0])), L.kontrast.length > 0 && /*#__PURE__*/React.createElement("span", {
+              className: "chip vl"
+            }, lblFromV(KONTRAST_OPTS, L.kontrast[0]))))), /*#__PURE__*/React.createElement("div", {
+              style: {
+                marginTop: 14
+              }
+            }, /*#__PURE__*/React.createElement("button", {
+              className: "btn prim",
+              onClick: addAnother
+            }, T.s6_add)));
+          }
+          /* Active lesion — sub-steps */
+          const L = curLes;
+          const subN = subStep;
+          return /*#__PURE__*/React.createElement("div", {
+            className: "card"
+          }, /*#__PURE__*/React.createElement("div", {
+            className: "sub",
+            style: {
+              letterSpacing: ".8px",
+              textTransform: "uppercase",
+              fontSize: 11,
+              color: "var(--accent-3)",
+              marginBottom: 6
+            }
+          }, T.s6_les_substep(currentIdx + 1, lesions.length, subN + 1, LOOP_SUBS.length)), /*#__PURE__*/React.createElement("h2", null, LOOP_SUBS[subN]), /*#__PURE__*/React.createElement("p", {
+            className: "sub"
+          }, T.s6_les_sub), subN === 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginBottom: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_side_lbl), /*#__PURE__*/React.createElement("div", {
+            className: "grid c3"
+          }, /*#__PURE__*/React.createElement(Opt, {
+            active: L.taraf === "Sağ",
+            onClick: () => updLes({
+              taraf: "Sağ"
+            })
+          }, T.s6_side_right), /*#__PURE__*/React.createElement(Opt, {
+            active: L.taraf === "Sol",
+            onClick: () => updLes({
+              taraf: "Sol"
+            })
+          }, T.s6_side_left), /*#__PURE__*/React.createElement(Opt, {
+            active: L.taraf === "Orta hat / mesane",
+            onClick: () => updLes({
+              taraf: "Orta hat / mesane"
+            })
+          }, T.s6_side_mid))), /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_loc_lbl), /*#__PURE__*/React.createElement(SingleSelect, {
+            options: LOKASYONLAR,
+            value: L.lokasyon,
+            onChange: v => updLes({
+              lokasyon: v
+            }),
+            cols: 2
+          })), subN === 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_type_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: LEZYON_TIPLERI,
+            values: L.lezyon_tipi,
+            onChange: v => updLes({
+              lezyon_tipi: v
+            }),
+            cols: 2
+          }), /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginTop: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_size_lbl), /*#__PURE__*/React.createElement("input", {
+            className: "inp",
+            value: L.boyut,
+            onChange: e => updLes({
+              boyut: e.target.value
+            }),
+            placeholder: T.s6_size_ph
+          }))), subN === 2 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_t2_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: T2_OPTS,
+            values: L.t2,
+            onChange: v => updLes({
+              t2: v
+            }),
+            cols: 2
+          }), /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginTop: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_t1_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: T1_OPTS,
+            values: L.t1,
+            onChange: v => updLes({
+              t1: v
+            }),
+            cols: 2
+          }))), subN === 3 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_dwi_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: DWI_OPTS,
+            values: L.dwi,
+            onChange: v => updLes({
+              dwi: v
+            }),
+            cols: 2
+          }), /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginTop: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_adc_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: ADC_OPTS,
+            values: L.adc,
+            onChange: v => updLes({
+              adc: v
+            }),
+            cols: 2
+          }))), subN === 4 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_kontrast_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: KONTRAST_OPTS,
+            values: L.kontrast,
+            onChange: v => updLes({
+              kontrast: v
+            }),
+            cols: 2
+          })), subN === 5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_dilatasyon_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: DILATASYON_OPTS,
+            values: L.dilatasyon,
+            onChange: v => updLes({
+              dilatasyon: v
+            }),
+            cols: 2
+          }), /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginTop: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_mural_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: MURAL_OPTS,
+            values: L.mural,
+            onChange: v => updLes({
+              mural: v
+            }),
+            cols: 2
+          }))), subN === 6 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_komsu_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: KOMSU_OPTS,
+            values: L.komsu,
+            onChange: v => updLes({
+              komsu: v
+            }),
+            cols: 2
+          }), /*#__PURE__*/React.createElement("div", {
+            style: {
+              marginTop: 14
+            }
+          }, /*#__PURE__*/React.createElement("label", {
+            className: "fl"
+          }, T.s6_klinik_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+            options: KLINIK_OPTS,
+            values: L.klinik,
+            onChange: v => updLes({
+              klinik: v
+            }),
+            cols: 2
+          }))), subN === 7 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+            className: "callout"
+          }, /*#__PURE__*/React.createElement("b", null, T.s6_les_summary(currentIdx + 1)), /*#__PURE__*/React.createElement("br", null), L.taraf || "—", " ", LOKASYONLAR.find(x => x.v === L.lokasyon)?.l || "—", L.lezyon_tipi.length > 0 && " · " + lblsFromVs(LEZYON_TIPLERI, L.lezyon_tipi).join(", ")), /*#__PURE__*/React.createElement("div", {
+            style: {
+              display: "flex",
+              gap: 10,
+              marginTop: 14,
+              flexWrap: "wrap"
+            }
+          }, /*#__PURE__*/React.createElement("button", {
+            className: "btn prim",
+            onClick: finalize
+          }, T.s6_finalize), /*#__PURE__*/React.createElement("button", {
+            className: "btn",
+            onClick: addAnother
+          }, T.s6_add_another))), /*#__PURE__*/React.createElement("div", {
+            className: "nav",
+            style: {
+              marginTop: 22
+            }
+          }, /*#__PURE__*/React.createElement("button", {
+            className: "btn",
+            onClick: prevSub,
+            disabled: subN === 0
+          }, T.s6_prev_sub), subN < LOOP_SUBS.length - 1 && /*#__PURE__*/React.createElement("button", {
+            className: "btn prim",
+            onClick: nextSub
+          }, T.s6_next_sub)));
+        }
+
+      /* ==== 7 MESANE ==== */
+      case 7:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 7,
+          t: T.s7_title,
+          s: T.s7_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_fullness_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c3"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.doluluk === "Yeterli",
+          onClick: () => setMesane({
+            ...mesane,
+            doluluk: "Yeterli"
+          })
+        }, T.s7_full_ok), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.doluluk === "Az dolu",
+          onClick: () => setMesane({
+            ...mesane,
+            doluluk: "Az dolu"
+          })
+        }, T.s7_full_low), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.doluluk === "Aşırı dolu",
+          onClick: () => setMesane({
+            ...mesane,
+            doluluk: "Aşırı dolu"
+          })
+        }, T.s7_full_over))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_wall_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.duvarKal === "normal",
+          onClick: () => setMesane({
+            ...mesane,
+            duvarKal: "normal"
+          })
+        }, T.s7_wall_normal), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.duvarKal === "kalin",
+          onClick: () => setMesane({
+            ...mesane,
+            duvarKal: "kalin"
+          })
+        }, T.s7_wall_thick))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_trabek_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.trabek === "yok",
+          onClick: () => setMesane({
+            ...mesane,
+            trabek: "yok"
+          })
+        }, T.s7_absent), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.trabek === "var",
+          onClick: () => setMesane({
+            ...mesane,
+            trabek: "var"
+          })
+        }, T.s7_present))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_divert_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.divertikul === "yok",
+          onClick: () => setMesane({
+            ...mesane,
+            divertikul: "yok"
+          })
+        }, T.s7_absent), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.divertikul === "var",
+          onClick: () => setMesane({
+            ...mesane,
+            divertikul: "var"
+          })
+        }, T.s7_present))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.kitle === "yok",
+          onClick: () => setMesane({
+            ...mesane,
+            kitle: "yok"
+          })
+        }, T.s7_mass_none), /*#__PURE__*/React.createElement(Opt, {
+          active: mesane.kitle === "var",
+          onClick: () => setMesane({
+            ...mesane,
+            kitle: "var"
+          })
+        }, T.s7_mass_present))), mesane.kitle === "var" && /*#__PURE__*/React.createElement("div", {
+          style: {
+            padding: "14px",
+            background: "rgba(239,68,68,.06)",
+            border: "1px solid rgba(239,68,68,.25)",
+            borderRadius: 12,
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 10
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_size_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: mesane.kitleDetay.boyut,
+          onChange: e => setMesane({
+            ...mesane,
+            kitleDetay: {
+              ...mesane.kitleDetay,
+              boyut: e.target.value
+            }
+          }),
+          placeholder: T.s7_mass_size_ph
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 10
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_t2_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: T2_OPTS,
+          values: mesane.kitleDetay.t2,
+          onChange: v => setMesane({
+            ...mesane,
+            kitleDetay: {
+              ...mesane.kitleDetay,
+              t2: v
+            }
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 10
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_dwi_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: DWI_OPTS,
+          values: mesane.kitleDetay.dwi,
+          onChange: v => setMesane({
+            ...mesane,
+            kitleDetay: {
+              ...mesane.kitleDetay,
+              dwi: v
+            }
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 10
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_adc_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: ADC_OPTS,
+          values: mesane.kitleDetay.adc,
+          onChange: v => setMesane({
+            ...mesane,
+            kitleDetay: {
+              ...mesane.kitleDetay,
+              adc: v
+            }
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_mass_kontrast_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: KONTRAST_OPTS,
+          values: mesane.kitleDetay.kontrast,
+          onChange: v => setMesane({
+            ...mesane,
+            kitleDetay: {
+              ...mesane.kitleDetay,
+              kontrast: v
+            }
+          }),
+          cols: 2
+        })), /*#__PURE__*/React.createElement("div", {
+          className: "callout wn",
+          style: {
+            marginTop: 10
+          }
+        }, T.s7_mass_callout)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s7_extra_note_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: mesane.not,
+          onChange: e => setMesane({
+            ...mesane,
+            not: e.target.value
+          })
+        })));
+
+      /* ==== 8 FONKSİYONEL ==== */
+      case 8:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 8,
+          t: T.s8_title,
+          s: T.s8_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s8_sym_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c2"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: fonk.simetri === "Simetrik",
+          onClick: () => setFonk({
+            ...fonk,
+            simetri: "Simetrik"
+          })
+        }, T.s8_sym_sym), /*#__PURE__*/React.createElement(Opt, {
+          active: fonk.simetri === "Asimetrik",
+          onClick: () => setFonk({
+            ...fonk,
+            simetri: "Asimetrik"
+          })
+        }, T.s8_sym_asym))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s8_delay_lbl), /*#__PURE__*/React.createElement("div", {
+          className: "grid c3"
+        }, /*#__PURE__*/React.createElement(Opt, {
+          active: fonk.gecikme === "Yok",
+          onClick: () => setFonk({
+            ...fonk,
+            gecikme: "Yok"
+          })
+        }, T.s8_delay_none), /*#__PURE__*/React.createElement(Opt, {
+          active: fonk.gecikme === "Hafif",
+          onClick: () => setFonk({
+            ...fonk,
+            gecikme: "Hafif"
+          })
+        }, T.s8_delay_mild), /*#__PURE__*/React.createElement(Opt, {
+          active: fonk.gecikme === "Belirgin",
+          onClick: () => setFonk({
+            ...fonk,
+            gecikme: "Belirgin"
+          })
+        }, T.s8_delay_sig))), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s8_deficit_lbl), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: FONK_DEFICIT_V.map((v, idx) => ({v, l: T.s8_deficit_opts[idx]})),
+          values: fonk.fonkDefisit,
+          onChange: v => setFonk({
+            ...fonk,
+            fonkDefisit: v
+          }),
+          cols: 1
+        })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s8_extra_note_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: fonk.not,
+          onChange: e => setFonk({
+            ...fonk,
+            not: e.target.value
+          })
+        })));
+
+      /* ==== 9 EK BULGU ==== */
+      case 9:
+        return /*#__PURE__*/React.createElement("div", {
+          className: "card"
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 9,
+          t: T.s9_title,
+          s: T.s9_sub
+        }), /*#__PURE__*/React.createElement(MultiSelect, {
+          options: EK_BULGULAR,
+          values: ek.bulgular,
+          onChange: v => setEk({
+            ...ek,
+            bulgular: v
+          }),
+          cols: 1
+        }), /*#__PURE__*/React.createElement("div", {
+          style: {
+            marginTop: 14
+          }
+        }, /*#__PURE__*/React.createElement("label", {
+          className: "fl"
+        }, T.s9_extra_note_lbl), /*#__PURE__*/React.createElement("input", {
+          className: "inp",
+          value: ek.not,
+          onChange: e => setEk({
+            ...ek,
+            not: e.target.value
+          })
+        })));
+
+      /* ==== 10 RAPOR ==== */
+      case 10:
+        return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+          className: "card",
+          style: {
+            marginBottom: 14
+          }
+        }, /*#__PURE__*/React.createElement(StepTitle, {
+          n: 10,
+          t: T.s10_title,
+          s: T.s10_sub
+        }), /*#__PURE__*/React.createElement("div", {
+          className: "exportRow"
+        }, /*#__PURE__*/React.createElement("button", {
+          className: "btn prim",
+          onClick: doCopy
+        }, T.s10_copy), /*#__PURE__*/React.createElement("button", {
+          className: "btn",
+          onClick: doDownload
+        }, T.s10_download), /*#__PURE__*/React.createElement("button", {
+          className: "btn ghost",
+          onClick: showCopyOverlay
+        }, T.s10_show))), /*#__PURE__*/React.createElement("div", {
+          className: "rpt"
+        }, genReportJSX()));
+      default:
+        return null;
+    }
+  };
+
+  /* ============================================================
+     NAV BAR
+     ============================================================ */
+  const canGoNext = () => {
+    if (step === 5 && !hasLesion) return false;
+    if (step === 6 && currentIdx !== -1) return false; /* must finalize in-loop first */
+    return true;
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hdr"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brand"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "logo"
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "26",
+    height: "26",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#08121a",
+    strokeWidth: "2.4",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2c-3 4-5 7-5 10a5 5 0 0 0 10 0c0-3-2-6-5-10Z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M8 17v3"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 17v3"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 22v-2"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, T.brand_title_1, /*#__PURE__*/React.createElement("span", null, T.brand_title_2), T.brand_title_3), /*#__PURE__*/React.createElement("p", null, T.brand_sub))), /*#__PURE__*/React.createElement("div", {
+    className: "hdr-right"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "badge " + (step === 10 ? "active" : "")
+  }, T.badge_step(step + 1, TOTAL)))), /*#__PURE__*/React.createElement(StepDots, {
+    total: TOTAL,
+    current: step,
+    completed: completed,
+    onJump: jumpTo
+  }), renderStep(), /*#__PURE__*/React.createElement("div", {
+    className: "nav"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: goPrev,
+    disabled: step === 0
+  }, T.nav_prev), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, step < TOTAL - 1 && /*#__PURE__*/React.createElement("button", {
+    className: "btn prim",
+    onClick: goNext,
+    disabled: !canGoNext()
+  }, T.nav_next))), /*#__PURE__*/React.createElement("div", {
+    className: "footer"
+  }, T.footer), overlay && /*#__PURE__*/React.createElement("div", {
+    className: "overlayWrap",
+    onClick: closeOverlay
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "overlayBox",
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "overlayHdr"
+  }, /*#__PURE__*/React.createElement("h4", null, T.overlay_title), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm",
+    onClick: closeOverlay
+  }, T.overlay_close)), /*#__PURE__*/React.createElement("textarea", {
+    value: overlay,
+    readOnly: true,
+    onFocus: e => e.target.select(),
+    onClick: e => e.target.select()
+  }))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render( /*#__PURE__*/React.createElement(App, null));
+
+  };
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

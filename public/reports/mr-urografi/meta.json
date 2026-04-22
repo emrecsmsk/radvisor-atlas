@@ -1,0 +1,12 @@
+{
+  "title": {
+    "tr": "MR Ürografi",
+    "en": "MR Urography"
+  },
+  "description": {
+    "tr": "",
+    "en": ""
+  },
+  "requiresPatient": true,
+  "sourceFilename": "mr_urografi (2).html"
+}

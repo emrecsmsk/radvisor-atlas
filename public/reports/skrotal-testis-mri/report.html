@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skrotal / Testis MRI — Raporlama & Ayırıcı Tanı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0e17;
+    --bg-card: #1a1827;
+    --bg-elev: #222033;
+    --border: #2d2b42;
+    --border-light: #3a3853;
+    --text: #e8e6f2;
+    --text-dim: #a09dbb;
+    --text-mute: #706e89;
+    --accent: #2dd4bf;         /* teal-400 */
+    --accent-2: #60a5fa;       /* blue-400 */
+    --accent-dim: rgba(45, 212, 191, 0.12);
+    --accent-line: rgba(45, 212, 191, 0.35);
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --ok: #4ade80;
+    --patoloji: #f472b6;
+  }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(1200px 600px at 20% -10%, rgba(45,212,191,0.08), transparent 50%),
+                radial-gradient(900px 500px at 110% 10%, rgba(96,165,250,0.06), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  #root { max-width: 1180px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* Header */
+  .hdr {
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px; margin-bottom: 22px;
+  }
+  .hdr h1 {
+    font-weight: 600; font-size: 22px; letter-spacing: -0.01em;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; color: transparent;
+  }
+  .hdr .sub { color: var(--text-mute); font-size: 12px; margin-top: 4px; letter-spacing: 0.02em; text-transform: uppercase;}
+  .hdr .ver { color: var(--text-dim); font-family:'IBM Plex Mono', monospace; font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px;}
+
+  /* Step dots */
+  .steps { display:flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap;}
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border); transition: all 0.25s ease;
+  }
+  .dot.done { background: var(--accent); opacity: 0.55; }
+  .dot.active { background: var(--accent); transform: scale(1.35); box-shadow: 0 0 0 4px var(--accent-dim);}
+  .dot.loop { background: var(--accent-2); opacity: 0.7; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 28px;
+    animation: fadeIn 0.28s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity:1; transform: none;} }
+
+  .step-label { color: var(--text-mute); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px;}
+  .step-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; letter-spacing:-0.01em;}
+  .step-desc { color: var(--text-dim); font-size: 13px; margin-bottom: 22px;}
+
+  /* Inputs */
+  .grid { display: grid; gap: 10px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .opt {
+    display: flex; align-items:center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    font-size: 14px;
+  }
+  .opt:hover { border-color: var(--border-light); background: #27253a; }
+  .opt.sel { border-color: var(--accent-line); background: var(--accent-dim); color: var(--text); }
+  .opt .chk {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 1.5px solid var(--border-light); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition: all 0.15s ease;
+  }
+  .opt.sel .chk { background: var(--accent); border-color: var(--accent); }
+  .opt.sel .chk::after { content: "✓"; color: #0a0912; font-size: 12px; font-weight: 700;}
+  .opt .sub { color: var(--text-mute); font-size: 12px; margin-left:auto; }
+
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom: 12px;}
+  .field label { color: var(--text-dim); font-size: 12px; letter-spacing: 0.04em;}
+  .field input, .field select, .field textarea {
+    background: var(--bg-elev); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { min-height: 80px; resize: vertical; font-family: 'IBM Plex Mono', monospace; font-size: 13px;}
+
+  .row3 { display:grid; grid-template-columns: repeat(3,1fr); gap: 10px;}
+  .row4 { display:grid; grid-template-columns: repeat(4,1fr); gap: 10px;}
+
+  /* Nav buttons */
+  .nav { display:flex; justify-content:space-between; margin-top: 22px; gap: 10px;}
+  .btn {
+    padding: 11px 22px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--border-light); background: #2b283f;}
+  .btn:disabled { opacity: 0.4; cursor: not-allowed;}
+  .btn.primary {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    color: #09121a; font-weight: 600; border: none;
+  }
+  .btn.primary:hover { filter: brightness(1.1);}
+  .btn.danger { color: var(--danger); border-color: rgba(248,113,113,0.3);}
+  .btn.danger:hover { background: rgba(248,113,113,0.08);}
+  .btn.small { padding: 7px 12px; font-size: 12px;}
+
+  /* Lesion cards */
+  .lesion-summary {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .lesion-summary .lh {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;
+  }
+  .lesion-summary .ltitle { font-weight: 600; color: var(--accent);}
+  .lesion-summary .lmeta { color: var(--text-dim); font-size: 12px;}
+  .lesion-summary .ldiff { margin-top: 8px; display:flex; gap: 6px; flex-wrap: wrap;}
+  .diff-chip {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-line);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Report kutulu zebra */
+  .rpt-section {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: var(--bg-card);
+  }
+  .rpt-header {
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(100deg, rgba(45,212,191,0.18), rgba(96,165,250,0.12));
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .rpt-body { padding: 4px 0;}
+  .rpt-row {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    padding: 8px 16px;
+    gap: 14px;
+    font-size: 13px;
+  }
+  .rpt-row:nth-child(odd) { background: rgba(255,255,255,0.015);}
+  .rpt-row .rk { color: var(--text-dim); font-size: 12px;}
+  .rpt-row .rv { color: var(--text); }
+  .rpt-row .rv.pat { color: var(--patoloji); font-weight: 500;}
+  .rpt-narrative { padding: 14px 16px; font-size: 13px; color: var(--text); line-height: 1.7; white-space: pre-line;}
+
+  /* Differential bar */
+  .diff-row { display:flex; align-items:center; gap: 10px; margin-bottom: 6px; padding: 6px 16px; font-size: 13px;}
+  .diff-row:nth-child(odd) { background: rgba(255,255,255,0.015);}
+  .diff-row .dname { width: 260px; flex-shrink: 0;}
+  .diff-row .dbar-wrap { flex: 1; background: var(--bg); border-radius: 999px; height: 8px; overflow: hidden; border: 1px solid var(--border);}
+  .diff-row .dbar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px;}
+  .diff-row .dpct { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); min-width: 52px; text-align: right;}
+
+  .info-banner {
+    background: rgba(96,165,250,0.06);
+    border: 1px solid rgba(96,165,250,0.22);
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 12px; color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .warn-banner {
+    background: rgba(251,191,36,0.06);
+    border: 1px solid rgba(251,191,36,0.22);
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 12px; color: #fcd34d;
+    margin-bottom: 16px;
+  }
+
+  .toolbar {
+    display:flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .overlay-ta {
+    width: 100%; min-height: 220px;
+    background: var(--bg-elev); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    line-height: 1.55; resize: vertical; margin-top: 10px;
+  }
+  .toast {
+    position: fixed; bottom: 22px; right: 22px;
+    background: var(--bg-elev); border: 1px solid var(--accent-line);
+    color: var(--accent); padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: fadeIn 0.25s ease;
+  }
+
+  .tag-mini {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    margin-right: 4px;
+  }
+  .tag-mini.pat { color: var(--patoloji); border-color: rgba(244,114,182,0.3);}
+
+  .step-title small { color: var(--text-mute); font-size: 12px; font-weight: 400; margin-left: 8px;}
+</style>
+<!-- radvisor-atlas bridge -->
+<script src="/bridge.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useRef, useEffect } = React;
+
+/* =====================================================================
+   LOCALE
+   ===================================================================== */
+const RV_LOCALE = (window.__RADVISOR__ && window.__RADVISOR__.locale) || 'tr';
+
+/* =====================================================================
+   UI STRING TABLE (T)
+   ===================================================================== */
+const T_RAW = {
+  /* Header */
+  headerTitle:        { tr: 'SKROTAL / TESTİS MRI',                    en: 'SCROTAL / TESTIS MRI' },
+  headerSub:          { tr: 'Raporlama · ayırıcı tanı motoru · multilezyon', en: 'Reporting · differential diagnosis engine · multi-lesion' },
+
+  /* Nav */
+  navBack:            { tr: '← Geri',                                   en: '← Back' },
+  navForward:         { tr: 'İleri →',                                   en: 'Forward →' },
+  navSaveLesion:      { tr: 'Lezyonu kaydet',                            en: 'Save lesion' },
+  navDone:            { tr: 'Tamam',                                     en: 'Done' },
+
+  /* Step 0 — Intro */
+  s0label:            { tr: 'Adım 1',                                    en: 'Step 1' },
+  s0title:            { tr: 'Çalışma bilgileri',                         en: 'Study information' },
+  s0desc:             { tr: 'Hasta ve teknik bilgilerini girin. Alanlar opsiyoneldir, rapora yansır.', en: 'Enter patient and technical details. Fields are optional and appear in the report.' },
+  s0dateLabel:        { tr: 'İnceleme tarihi',                           en: 'Examination date' },
+  s0ageLabel:         { tr: 'Hasta yaşı',                                en: 'Patient age' },
+  s0agePlaceholder:   { tr: 'örn. 34',                                   en: 'e.g. 34' },
+  s0fieldLabel:       { tr: 'MR alan gücü',                              en: 'MRI field strength' },
+  s0clinLabel:        { tr: 'Klinik bilgi / endikasyon',                 en: 'Clinical information / indication' },
+  s0clinPlaceholder:  { tr: 'Örn: Sağ skrotumda palpabl kitle, ağrı, BHCG yüksekliği…', en: 'e.g. Palpable right scrotal mass, pain, elevated β-hCG…' },
+  s0seqLabel:         { tr: 'Uygulanan sekanslar',                       en: 'Applied sequences' },
+
+  /* Step 1 — Scrotal wall */
+  s1label:            { tr: 'Adım 2',                                    en: 'Step 2' },
+  s1title:            { tr: 'Skrotal cilt ve duvar',                     en: 'Scrotal skin and wall' },
+  s1desc:             { tr: 'Skrotal cilt kalınlığı, inflamasyon ve kitle bulgularını işaretleyin.', en: 'Mark scrotal skin thickness, inflammation, and mass findings.' },
+  s1normal:           { tr: 'Skrotal cilt/duvar normal',                 en: 'Scrotal skin/wall normal' },
+  s1thickening:       { tr: 'Duvar kalınlaşması',                        en: 'Wall thickening' },
+  s1inflam:           { tr: 'İnflamatuar değişiklik / T2 hiperintensite', en: 'Inflammatory change / T2 hyperintensity' },
+  s1abscess:          { tr: 'Apse / koleksiyon',                         en: 'Abscess / collection' },
+  s1mass:             { tr: 'Skrotal cilt kitlesi',                      en: 'Scrotal skin mass' },
+  noteLabel:          { tr: 'Not',                                       en: 'Note' },
+
+  /* Steps 2–3 — Testis */
+  s23label:           { tr: 'Adım',                                      en: 'Step' },
+  s23titleSag:        { tr: 'Sağ testis değerlendirmesi',                en: 'Right testis evaluation' },
+  s23titleSol:        { tr: 'Sol testis değerlendirmesi',                en: 'Left testis evaluation' },
+  s23desc:            { tr: 'Testisin varlığı, lokalizasyonu, boyutları ve parenkim özelliklerini işaretleyin.', en: 'Mark testis presence, location, dimensions, and parenchymal characteristics.' },
+  s23evalOpt:         { tr: 'Bu tarafı değerlendirmek istiyorum',        en: 'Evaluate this side' },
+  s23presentOpt:      { tr: 'Testis skrotum içinde mevcut',              en: 'Testis present in scrotum' },
+  s23warnNotEval:     { tr: 'Bu taraf değerlendirilmeyecek. Rapor bölümünde "değerlendirilmedi" olarak belirtilecek.', en: 'This side will not be evaluated. It will be marked "not evaluated" in the report.' },
+  s23infoBanner:      { tr: 'Testis skrotum içinde izlenmiyor. Lokalizasyonu belirtin:', en: 'Testis not seen in scrotum. Specify location:' },
+  s23locInguinal:     { tr: 'İnguinal kanalda',                          en: 'In inguinal canal' },
+  s23locAbdominal:    { tr: 'Abdominal',                                 en: 'Abdominal' },
+  s23locAtrophic:     { tr: 'Atrofik / izlenmedi',                       en: 'Atrophic / not visualized' },
+  s23locPostOp:       { tr: 'Postoperatif (orşiektomi)',                  en: 'Postoperative (orchidectomy)' },
+  s23sizeLabel:       { tr: 'Boyut (mm)',                                en: 'Size (mm)' },
+  s23parLabel:        { tr: 'Parenkim',                                  en: 'Parenchyma' },
+  s23parHomojen:      { tr: 'Homojen',                                   en: 'Homogeneous' },
+  s23parHeterojen:    { tr: 'Heterojen (diffüz)',                        en: 'Heterogeneous (diffuse)' },
+  s23parFokal:        { tr: 'Fokal lezyon (+)',                          en: 'Focal lesion (+)' },
+  s23parAtrofi:       { tr: 'Atrofik',                                   en: 'Atrophic' },
+  s23t2Label:         { tr: 'T2 sinyal (genel)',                         en: 'T2 signal (overall)' },
+  s23t2Normal:        { tr: 'Normal (yüksek)',                           en: 'Normal (high)' },
+  s23t2DiffHipo:      { tr: 'Diffüz hipointens',                         en: 'Diffuse hypointense' },
+  s23t2DiffHiper:     { tr: 'Diffüz hiperintens (orşit?)',               en: 'Diffuse hyperintense (orchitis?)' },
+  s23t2Heterojen:     { tr: 'Heterojen',                                 en: 'Heterogeneous' },
+  s23addNote:         { tr: 'Ek not',                                    en: 'Additional note' },
+
+  /* Step 4 — Epididymis */
+  s4label:            { tr: 'Adım 5',                                    en: 'Step 5' },
+  s4title:            { tr: 'Epididim değerlendirmesi',                  en: 'Epididymis evaluation' },
+  s4desc:             { tr: 'Her iki taraf için epididim bulgularını işaretleyin.', en: 'Mark epididymis findings for both sides.' },
+  s4sagLbl:           { tr: 'Sağ epididim',                              en: 'Right epididymis' },
+  s4solLbl:           { tr: 'Sol epididim',                              en: 'Left epididymis' },
+  s4normal:           { tr: 'Normal',                                    en: 'Normal' },
+  s4buyume:           { tr: 'Büyüme / kalınlaşma',                       en: 'Enlargement / thickening' },
+  s4sinyalArt:        { tr: 'T2 sinyal artışı',                          en: 'T2 signal increase' },
+  s4kontrastArt:      { tr: 'Artmış kontrastlanma',                      en: 'Increased enhancement' },
+
+  /* Step 5 — Spermatic cord */
+  s5label:            { tr: 'Adım 6',                                    en: 'Step 6' },
+  s5title:            { tr: 'Spermatik kord ve varikosel',               en: 'Spermatic cord and varicocele' },
+  s5desc:             { tr: 'Pampiniform pleksus genişliği, akım voidleri ve kord kitlelerini işaretleyin.', en: 'Mark pampiniform plexus dilatation, flow voids, and cord masses.' },
+  s5sagLbl:           { tr: 'Sağ spermatik kord',                        en: 'Right spermatic cord' },
+  s5solLbl:           { tr: 'Sol spermatik kord',                        en: 'Left spermatic cord' },
+  s5normal:           { tr: 'Normal',                                    en: 'Normal' },
+  s5varikosel:        { tr: 'Varikosel (+)',                              en: 'Varicocele (+)' },
+  s5korde:            { tr: 'Kord kitlesi (→ lezyon döngüsünde belirtin)', en: 'Cord mass (→ specify in lesion loop)' },
+  s5pamLabel:         { tr: 'Maksimum pampiniform damar çapı (mm)',      en: 'Maximum pampiniform vessel diameter (mm)' },
+  s5pamPlaceholder:   { tr: 'örn. 4',                                    en: 'e.g. 4' },
+
+  /* Step 6 — Fluid collections */
+  s6label:            { tr: 'Adım 7',                                    en: 'Step 7' },
+  s6title:            { tr: 'Skrotal sıvı koleksiyonları',               en: 'Scrotal fluid collections' },
+  s6desc:             { tr: 'Hidrosel, hematosel, piyosel bulgularını işaretleyin. Ekstratestiküler kistik lezyonlar (spermatosel vs.) için lezyon döngüsünü kullanın.', en: 'Mark hydrocele, hematocele, pyocele findings. Use the lesion loop for extratesticular cystic lesions (spermatocele, etc.).' },
+  s6sagTitle:         { tr: 'Sağ taraf',                                 en: 'Right side' },
+  s6solTitle:         { tr: 'Sol taraf',                                 en: 'Left side' },
+  s6sagHidrosel:      { tr: 'Sağ hidrosel',                              en: 'Right hydrocele' },
+  s6sagHematosel:     { tr: 'Sağ hematosel',                             en: 'Right hematocele' },
+  s6sagPiyosel:       { tr: 'Sağ piyosel',                              en: 'Right pyocele' },
+  s6solHidrosel:      { tr: 'Sol hidrosel',                              en: 'Left hydrocele' },
+  s6solHematosel:     { tr: 'Sol hematosel',                             en: 'Left hematocele' },
+  s6solPiyosel:       { tr: 'Sol piyosel',                              en: 'Left pyocele' },
+
+  /* Step 7 — Tunica */
+  s7label:            { tr: 'Adım 8',                                    en: 'Step 8' },
+  s7title:            { tr: 'Tunika albuginea ve testis konturu',        en: 'Tunica albuginea and testis contour' },
+  s7desc:             { tr: 'Travma bulgusu / tunika devamlılığı değerlendirmesi.', en: 'Trauma findings / tunica continuity assessment.' },
+  s7intact:           { tr: 'Tunika intakt / kontur düzgün',             en: 'Tunica intact / contour normal' },
+  s7sagRupture:       { tr: 'Sağ tunika rüptürü',                        en: 'Right tunica rupture' },
+  s7solRupture:       { tr: 'Sol tunika rüptürü',                        en: 'Left tunica rupture' },
+  s7konturLabel:      { tr: 'Kontur',                                    en: 'Contour' },
+  s7konturDuz:        { tr: 'Düzgün',                                    en: 'Smooth' },
+  s7konturLob:        { tr: 'Lobüle',                                    en: 'Lobulated' },
+  s7konturBoz:        { tr: 'Bozulmuş',                                  en: 'Disrupted' },
+
+  /* Step 8 — Lesion query */
+  s8label:            { tr: 'Adım 9',                                    en: 'Step 9' },
+  s8title:            { tr: 'Fokal lezyon',                              en: 'Focal lesion' },
+  s8desc:             { tr: 'Değerlendirilecek fokal lezyon var mı? Yoksa doğrudan özet ekranına geçilir.', en: 'Is there a focal lesion to evaluate? If not, you proceed directly to the summary screen.' },
+  s8yes:              { tr: 'Fokal lezyon VAR — döngüye gir',            en: 'Focal lesion PRESENT — enter loop' },
+  s8no:               { tr: 'Fokal lezyon YOK',                          en: 'No focal lesion' },
+
+  /* Step 9 — Lesion loop summary */
+  s9label:            { tr: 'Adım 10',                                   en: 'Step 10' },
+  s9title:            { tr: 'Kayıtlı lezyonlar',                         en: 'Recorded lesions' },
+  s9desc:             { tr: 'Mevcut lezyonları düzenleyebilir, silebilir veya yeni lezyon ekleyebilirsiniz.', en: 'You can edit, delete, or add lesions.' },
+  s9empty:            { tr: 'Henüz lezyon eklenmedi. "Yeni lezyon ekle" ile başlayın.', en: 'No lesions added yet. Start with "Add new lesion".' },
+  s9edit:             { tr: 'Düzenle',                                   en: 'Edit' },
+  s9delete:           { tr: 'Sil',                                       en: 'Delete' },
+  s9addBtn:           { tr: '+ Yeni lezyon ekle',                        en: '+ Add new lesion' },
+  s9lesionN:          { tr: 'Lezyon #',                                  en: 'Lesion #' },
+
+  /* Loop sub-steps */
+  ls0label:           { tr: 'Lezyon döngüsü — lokalizasyon',            en: 'Lesion loop — localization' },
+  ls0title:           { tr: 'Taraf & kompartman',                        en: 'Side & compartment' },
+  ls0desc:            { tr: 'Lezyonun taraf ve anatomik yerleşimini seçin.', en: 'Select the side and anatomical location of the lesion.' },
+  ls0sideLabel:       { tr: 'Taraf',                                     en: 'Side' },
+  ls0sag:             { tr: 'Sağ',                                       en: 'Right' },
+  ls0sol:             { tr: 'Sol',                                       en: 'Left' },
+  ls0bilateral:       { tr: 'Bilateral',                                 en: 'Bilateral' },
+  ls0compLabel:       { tr: 'Kompartman (çoklu seçim)',                  en: 'Compartment (multiple selection)' },
+  ls0detailLabel:     { tr: 'Anatomik detay (opsiyonel, metin)',         en: 'Anatomical detail (optional, free text)' },
+  ls0detailPlaceholder: { tr: 'örn. sağ testis süperior pol, mediastinum testise komşu', en: 'e.g. right testis superior pole, adjacent to mediastinum testis' },
+
+  ls1label:           { tr: 'Lezyon döngüsü — boyut',                   en: 'Lesion loop — size' },
+  ls1title:           { tr: 'Boyut ölçümleri (mm)',                      en: 'Size measurements (mm)' },
+  ls1desc:            { tr: 'Üç planda maksimum çapları girin.',         en: 'Enter maximum diameters in three planes.' },
+  ls1sizeLabel:       { tr: 'Boyut kategorisi (opsiyonel, skora katkı)', en: 'Size category (optional, contributes to score)' },
+  ls1small:           { tr: '<1 cm',                                     en: '<1 cm' },
+  ls1mid:             { tr: '1-3 cm',                                    en: '1-3 cm' },
+  ls1large:           { tr: '>3 cm',                                     en: '>3 cm' },
+  ls1multi:           { tr: 'Multifokal',                                en: 'Multifocal' },
+
+  ls2label:           { tr: 'Lezyon döngüsü — yapısal özellik',         en: 'Lesion loop — structural feature' },
+  ls2title:           { tr: 'Yapı & iç özellik',                        en: 'Structure & internal characteristics' },
+  ls2desc:            { tr: 'Yapısal paterni tanımlayan tüm özellikleri seçin.', en: 'Select all features characterizing the structural pattern.' },
+
+  ls3label:           { tr: 'Lezyon döngüsü — T1',                      en: 'Lesion loop — T1' },
+  ls3title:           { tr: 'T1 sinyal özelliği',                        en: 'T1 signal characteristics' },
+
+  ls4label:           { tr: 'Lezyon döngüsü — T2',                      en: 'Lesion loop — T2' },
+  ls4title:           { tr: 'T2 sinyal özelliği',                        en: 'T2 signal characteristics' },
+
+  ls5label:           { tr: 'Lezyon döngüsü — DWI/ADC',                 en: 'Lesion loop — DWI/ADC' },
+  ls5title:           { tr: 'Diffüzyon özellikleri',                     en: 'Diffusion characteristics' },
+  ls5desc:            { tr: 'Testis parankiminde DWI b-değerleri 800-1000, ADC kantitatif ölçüm önerilir.', en: 'DWI b-values 800-1000 recommended for testicular parenchyma; quantitative ADC measurement advised.' },
+  ls5dwiLabel:        { tr: 'DWI',                                       en: 'DWI' },
+  ls5adcLabel:        { tr: 'ADC',                                       en: 'ADC' },
+
+  ls6label:           { tr: 'Lezyon döngüsü — Kontrast',                en: 'Lesion loop — Contrast' },
+  ls6title:           { tr: 'Kontrastlanma paterni',                     en: 'Enhancement pattern' },
+  ls6desc:            { tr: 'Dinamik kontrastlı inceleme varsa patern + washout\'u işaretleyin.', en: 'If dynamic contrast-enhanced study is available, mark the pattern and washout.' },
+
+  ls7label:           { tr: 'Lezyon döngüsü — Kimyasal kayma',          en: 'Lesion loop — Chemical shift' },
+  ls7title:           { tr: 'Kimyasal kayma / yağ içeriği',             en: 'Chemical shift / fat content' },
+  ls7desc:            { tr: 'IP/OP ve yağ baskılı sekanslar değerlendirildiyse işaretleyin.', en: 'Mark if in-phase/out-of-phase and fat-suppressed sequences were assessed.' },
+  ls7demoLabel:       { tr: 'Hasta demografiği (skora katkı)',           en: 'Patient demographics (contributes to score)' },
+  ls7child:           { tr: 'Çocuk',                                     en: 'Child' },
+  ls7adol:            { tr: 'Adolesan',                                  en: 'Adolescent' },
+  ls7young:           { tr: 'Genç erişkin',                              en: 'Young adult' },
+  ls7elderly:         { tr: 'Yaşlı',                                     en: 'Elderly' },
+  ls7over60:          { tr: '>60 yaş',                                   en: '>60 years' },
+
+  ls8label:           { tr: 'Lezyon döngüsü — özel bulgular',           en: 'Lesion loop — special findings' },
+  ls8title:           { tr: 'Ek bulgular & klinik ipucu',               en: 'Additional findings & clinical clues' },
+  ls8desc:            { tr: 'Tanıyı yönlendiren ek bulguları işaretleyin.', en: 'Mark additional findings that guide the diagnosis.' },
+  ls8noteLabel:       { tr: 'Lezyon için serbest not',                   en: 'Free note for this lesion' },
+  ls8notePlaceholder: { tr: 'Örn. \'tümör markerları yüksek, kontralateral testis normal\'…', en: 'e.g. \'elevated tumour markers, contralateral testis normal\'…' },
+
+  ls9label:           { tr: 'Lezyon döngüsü — ayırıcı tanı',           en: 'Lesion loop — differential diagnosis' },
+  ls9title:           { tr: 'Lezyon #{n} — ayırıcı tanı',              en: 'Lesion #{n} — differential diagnosis' },
+  ls9desc:            { tr: 'Girilen özelliklere göre yüzde-ağırlıklı ayırıcı tanı listesi. "İleri" ile lezyon kaydedilir.', en: 'Percentage-weighted differential list based on entered features. Press "Forward" to save the lesion.' },
+  ls9noData:          { tr: 'Henüz yeterli özellik girilmedi; ayırıcı tanı üretilemedi.', en: 'Insufficient features entered; differential diagnosis could not be generated.' },
+
+  /* Step 10 — Report */
+  s10label:           { tr: 'Adım',                                      en: 'Step' },
+  s10title:           { tr: 'Rapor özeti ve ayırıcı tanı',              en: 'Report summary and differential diagnosis' },
+  s10desc:            { tr: 'Kutulu zebra formatında rapor görünümü. Aşağıda "Metin göster" ile düz metin halini açabilir, kopyalayabilir veya .txt olarak indirebilirsiniz.', en: 'Structured zebra-format report view. Use "Show text" below to open the plain-text version for copying or .txt download.' },
+  s10copy:            { tr: '📋 Raporu kopyala',                         en: '📋 Copy report' },
+  s10download:        { tr: '⬇ TXT indir',                              en: '⬇ Download TXT' },
+  s10showText:        { tr: '📝 Metin olarak göster',                   en: '📝 Show as text' },
+  s10hideText:        { tr: 'Metni gizle',                               en: 'Hide text' },
+
+  /* Toasts */
+  toastCopied:        { tr: 'Rapor kopyalandı',                          en: 'Report copied' },
+  toastCopiedOver:    { tr: 'Rapor kopyalandı (overlay)',                en: 'Report copied (overlay)' },
+  toastCopyFail:      { tr: 'Kopyalama başarısız — overlay metninden manuel seçin', en: 'Copy failed — manually select from overlay text' },
+  toastOverlay:       { tr: 'Overlay açıldı — manuel seçin',             en: 'Overlay opened — select manually' },
+  toastDownloaded:    { tr: 'TXT indirildi',                             en: 'TXT downloaded' },
+
+  /* Report section titles */
+  rptClinical:        { tr: 'Klinik bilgi',                              en: 'Clinical information' },
+  rptScrWall:         { tr: 'Skrotal cilt ve duvar',                     en: 'Scrotal skin and wall' },
+  rptTestis:          { tr: 'Testisler',                                 en: 'Testes' },
+  rptEpididymis:      { tr: 'Epididim',                                  en: 'Epididymis' },
+  rptCord:            { tr: 'Spermatik kord',                            en: 'Spermatic cord' },
+  rptTunica:          { tr: 'Tunika albuginea ve kontur',                en: 'Tunica albuginea and contour' },
+  rptFluid:           { tr: 'Skrotal sıvı koleksiyonu',                  en: 'Scrotal fluid collection' },
+  rptFocal:           { tr: 'Fokal lezyon',                              en: 'Focal lesion' },
+  rptConclusion:      { tr: 'Sonuç ve öneri',                            en: 'Conclusion and recommendation' },
+  rptOverallDiff:     { tr: 'Genel ayırıcı tanı özeti',                 en: 'Overall differential diagnosis summary' },
+  rptDiffLabel:       { tr: 'Ayırıcı tanı',                             en: 'Differential diagnosis' },
+
+  /* Report row labels */
+  rowDate:            { tr: 'İnceleme tarihi',                           en: 'Examination date' },
+  rowAge:             { tr: 'Hasta yaşı',                                en: 'Patient age' },
+  rowField:           { tr: 'MR alan gücü',                              en: 'MRI field strength' },
+  rowSequences:       { tr: 'Sekanslar',                                 en: 'Sequences' },
+  rowIndication:      { tr: 'Endikasyon',                                en: 'Indication' },
+  rowFinding:         { tr: 'Bulgu',                                     en: 'Finding' },
+  rowSagTestis:       { tr: 'Sağ testis',                                en: 'Right testis' },
+  rowSolTestis:       { tr: 'Sol testis',                                en: 'Left testis' },
+  rowSagEpi:          { tr: 'Sağ epididim',                              en: 'Right epididymis' },
+  rowSolEpi:          { tr: 'Sol epididim',                              en: 'Left epididymis' },
+  rowSagKord:         { tr: 'Sağ spermatik kord',                        en: 'Right spermatic cord' },
+  rowSolKord:         { tr: 'Sol spermatik kord',                        en: 'Left spermatic cord' },
+  rowSide:            { tr: 'Taraf',                                     en: 'Side' },
+  rowCompartment:     { tr: 'Kompartman',                                en: 'Compartment' },
+  rowAnatDetail:      { tr: 'Anatomik detay',                            en: 'Anatomical detail' },
+  rowSize:            { tr: 'Boyut',                                     en: 'Size' },
+  rowStructure:       { tr: 'Yapı',                                      en: 'Structure' },
+  rowT1:              { tr: 'T1 sinyal',                                 en: 'T1 signal' },
+  rowT2:              { tr: 'T2 sinyal',                                 en: 'T2 signal' },
+  rowDWI:             { tr: 'DWI',                                       en: 'DWI' },
+  rowADC:             { tr: 'ADC',                                       en: 'ADC' },
+  rowContrast:        { tr: 'Kontrastlanma',                             en: 'Enhancement' },
+  rowChemshift:       { tr: 'Kimyasal kayma',                            en: 'Chemical shift' },
+  rowExtra:           { tr: 'Ek bulgular',                               en: 'Additional findings' },
+  rowNote:            { tr: 'Not',                                       en: 'Note' },
+
+  /* Inline value strings — JSX report builder */
+  valNotEvaluated:    { tr: 'Değerlendirilmedi',                         en: 'Not evaluated' },
+  valNormalSignal:    { tr: 'Normal boyut ve sinyalde',                  en: 'Normal size and signal' },
+  valNormal:          { tr: 'Normal',                                    en: 'Normal' },
+  valPathologic:      { tr: 'patolojik',                                 en: 'pathologic' },
+  valNoFluid:         { tr: 'Skrotal sıvı koleksiyonu saptanmadı',       en: 'No scrotal fluid collection detected' },
+  valNoFocal:         { tr: 'Fokal lezyon saptanmadı',                   en: 'No focal lesion detected' },
+  valSizeNotEntered:  { tr: 'boyut girilmedi',                           en: 'size not entered' },
+  valSizeUnit:        { tr: 'mm',                                        en: 'mm' },
+  valInScrotum:       { tr: 'Skrotum içinde yok, ',                      en: 'Not in scrotum, ' },
+  valLocInguinal:     { tr: 'inguinal kanalda',                          en: 'in inguinal canal' },
+  valLocAbdominal:    { tr: 'abdomende',                                 en: 'in abdomen' },
+  valLocAtrophic:     { tr: 'izlenmedi (atrofik/yok)',                   en: 'not visualized (atrophic/absent)' },
+  valLocPostOp:       { tr: 'postoperatif (orşiektomi)',                  en: 'postoperative (orchidectomy)' },
+  valParenHomojen:    { tr: 'homojen parenkim',                          en: 'homogeneous parenchyma' },
+  valParenHeterojen:  { tr: 'heterojen (diffüz) parenkim',               en: 'heterogeneous (diffuse) parenchyma' },
+  valParenFokal:      { tr: 'fokal lezyon (+) parenkim',                 en: 'focal lesion (+) parenchyma' },
+  valParenAtrofi:     { tr: 'atrofik parenkim',                          en: 'atrophic parenchyma' },
+  valT2Normal:        { tr: 'normal T2 sinyalinde',                      en: 'normal T2 signal' },
+  valT2DiffHipo:      { tr: 'diffüz T2 hipointens',                      en: 'diffuse T2 hypointense' },
+  valT2DiffHiper:     { tr: 'diffüz T2 hiperintens (orşit?)',            en: 'diffuse T2 hyperintense (orchitis?)' },
+  valT2Heterojen:     { tr: 'heterojen T2 sinyalinde',                   en: 'heterogeneous T2 signal' },
+  valEpiBuyume:       { tr: 'diffüz büyüme',                             en: 'diffuse enlargement' },
+  valEpiSinyalArt:    { tr: 'T2 sinyal artışı',                          en: 'T2 signal increase' },
+  valEpiKontrastArt:  { tr: 'artmış kontrastlanma',                      en: 'increased enhancement' },
+  valKordVarikosel:   { tr: 'varikosel',                                 en: 'varicocele' },
+  valKordMaksChar:    { tr: 'maks çap ',                                 en: 'max diameter ' },
+  valKordKitle:       { tr: 'kord kitlesi (lezyon bölümüne bakın)',       en: 'cord mass (see lesion section)' },
+  valKordKitlePlain:  { tr: 'kord kitlesi (lezyon bölümünde tariflenmiştir)', en: 'cord mass (described in lesion section)' },
+  valSagHidrosel:     { tr: 'sağda hidrosel',                            en: 'right hydrocele' },
+  valSolHidrosel:     { tr: 'solda hidrosel',                            en: 'left hydrocele' },
+  valSagHematosel:    { tr: 'sağda hematosel',                           en: 'right hematocele' },
+  valSolHematosel:    { tr: 'solda hematosel',                           en: 'left hematocele' },
+  valSagPiyosel:      { tr: 'sağda piyosel',                            en: 'right pyocele' },
+  valSolPiyosel:      { tr: 'solda piyosel',                            en: 'left pyocele' },
+  valTunikaIntakt:    { tr: 'Tunika albuginea intakt, testis konturu ',   en: 'Tunica albuginea intact, testis contour ' },
+  valTunikaIntaktPlain: { tr: 'Tunika albuginea intakt, kontur ',        en: 'Tunica albuginea intact, contour ' },
+  valSagRuptur:       { tr: 'sağ tunika rüptürü',                        en: 'right tunica rupture' },
+  valSolRuptur:       { tr: 'sol tunika rüptürü',                        en: 'left tunica rupture' },
+  valKontur:          { tr: ', kontur ',                                  en: ', contour ' },
+  valCiltNormal:      { tr: 'Normal',                                    en: 'Normal' },
+  valCiltKalinlasma:  { tr: 'duvar kalınlaşması',                        en: 'wall thickening' },
+  valCiltInflam:      { tr: 'inflamatuar değişiklik',                    en: 'inflammatory change' },
+  valCiltApse:        { tr: 'apse/koleksiyon',                           en: 'abscess/collection' },
+  valCiltKitle:       { tr: 'skrotal cilt kitlesi',                      en: 'scrotal skin mass' },
+  valSideRight:       { tr: 'Sağ',                                       en: 'Right' },
+  valSideLeft:        { tr: 'Sol',                                       en: 'Left' },
+  valSideBilateral:   { tr: 'Bilateral',                                 en: 'Bilateral' },
+
+  /* genConclusion sentences */
+  concNormal:         { tr: 'Skrotal MRI bulguları normal sınırlardadır.', en: 'Scrotal MRI findings are within normal limits.' },
+  concTopDiff:        { tr: 'Tanımlanan {n} lezyon için öncelikli ayırıcı tanı: ', en: 'Leading differential diagnosis for the {n} identified lesion(s): ' },
+  concLezyonPlain:    { tr: ' lezyon tanımlandı; ayrıntılar yukarıdadır.', en: ' lesion(s) identified; details above.' },
+  concMalign:         { tr: 'Malign lezyon olasılığı göz önünde bulundurulduğundan ürolojik konsültasyon ve serum tümör belirteçleri (AFP, β-hCG, LDH) ile korelasyon önerilir.', en: 'Given the possibility of a malignant lesion, urological consultation and correlation with serum tumour markers (AFP, β-hCG, LDH) are recommended.' },
+  concTunikaRupture:  { tr: 'Tunika albuginea rüptürü bulguları mevcut olup acil ürolojik değerlendirme önerilir.', en: 'Findings consistent with tunica albuginea rupture are present; urgent urological evaluation is recommended.' },
+  concPiyosel:        { tr: 'Piyosel ile uyumlu bulgular mevcut; klinik enfeksiyon tablosu ile korelasyon ve drenaj/antibiyoterapi değerlendirmesi önerilir.', en: 'Findings consistent with pyocele are present; clinical correlation and consideration of drainage/antibiotherapy are recommended.' },
+  concVarikosel:      { tr: ' varikosel mevcuttur; klinik korelasyon önerilir.', en: ' varicocele is present; clinical correlation recommended.' },
+  concNotEval:        { tr: ' taraf değerlendirmeye dahil edilmemiştir.', en: ' side(s) not included in evaluation.' },
+  concDefault:        { tr: 'Yukarıdaki bulgular klinik tablo ile birlikte değerlendirilmelidir.', en: 'The above findings should be correlated with the clinical presentation.' },
+  concSagSide:        { tr: 'sağda',                                     en: 'right' },
+  concSolSide:        { tr: 'solda',                                     en: 'left' },
+  concSagSideEval:    { tr: 'sağ',                                       en: 'right' },
+  concSolSideEval:    { tr: 'sol',                                       en: 'left' },
+  concVe:             { tr: ' ve ',                                      en: ' and ' },
+
+  /* Warn banners */
+  warnNotEvalSide:    { tr: 'Bu taraf değerlendirmeye dahil edilmemiştir.', en: 'This side was not included in evaluation.' },
+  warnBothSides:      { tr: 'Her iki taraf',                             en: 'Both sides' },
+  warnRightSide:      { tr: 'Sağ taraf',                                 en: 'Right side' },
+  warnLeftSide:       { tr: 'Sol taraf',                                 en: 'Left side' },
+  warnNotEvalSuffix:  { tr: ' değerlendirilmedi; ilgili bulgular rapora yansımaz.', en: ' not evaluated; relevant findings will not appear in the report.' },
+
+  /* Plain-text report headers */
+  ptHeader:           { tr: 'SKROTAL / TESTİS MRI — RAPOR',             en: 'SCROTAL / TESTIS MRI — REPORT' },
+  ptDateLabel:        { tr: 'İnceleme tarihi',                           en: 'Examination date' },
+  ptAgeLabel:         { tr: 'Hasta yaşı     ',                           en: 'Patient age     ' },
+  ptFieldLabel:       { tr: 'MRI alan gücü  ',                           en: 'MRI field strength' },
+  ptSeqLabel:         { tr: 'Sekanslar      ',                           en: 'Sequences        ' },
+  ptIndicLabel:       { tr: 'Endikasyon     ',                           en: 'Indication       ' },
+  ptScrWall:          { tr: 'SKROTAL CİLT VE DUVAR',                     en: 'SCROTAL SKIN AND WALL' },
+  ptTestisH:          { tr: 'TESTİSLER',                                 en: 'TESTES' },
+  ptEpididymisH:      { tr: 'EPİDİDİM',                                  en: 'EPIDIDYMIS' },
+  ptCordH:            { tr: 'SPERMATİK KORD',                            en: 'SPERMATIC CORD' },
+  ptTunicaH:          { tr: 'TUNİKA ALBUGİNEA VE KONTUR',               en: 'TUNICA ALBUGINEA AND CONTOUR' },
+  ptFluidH:           { tr: 'SKROTAL SIVI KOLEKSİYONU',                 en: 'SCROTAL FLUID COLLECTION' },
+  ptFocalH:           { tr: 'FOKAL LEZYON',                              en: 'FOCAL LESION' },
+  ptLesionH:          { tr: 'LEZYON #',                                  en: 'LESION #' },
+  ptOverallDiffH:     { tr: 'GENEL AYIRICI TANI ÖZETİ',                 en: 'OVERALL DIFFERENTIAL DIAGNOSIS SUMMARY' },
+  ptWarnPrefix:       { tr: '⚠  NOT: ',                                  en: '⚠  NOTE: ' },
+  ptWarnSuffix:       { tr: ' taraf değerlendirmeye dahil edilmemiştir.', en: ' side(s) not included in evaluation.' },
+  ptConclusionH:      { tr: 'SONUÇ VE ÖNERİ',                           en: 'CONCLUSION AND RECOMMENDATION' },
+  ptSagLbl:           { tr: 'Sağ',                                       en: 'Right' },
+  ptSolLbl:           { tr: 'Sol',                                       en: 'Left' },
+  ptNotEval:          { tr: 'değerlendirilmedi',                         en: 'not evaluated' },
+  ptNormal:           { tr: 'normal',                                    en: 'normal' },
+  ptDiffTitle:        { tr: 'Ayırıcı tanı:',                             en: 'Differential diagnosis:' },
+  ptNoFluid:          { tr: 'Skrotal sıvı koleksiyonu saptanmadı.',      en: 'No scrotal fluid collection detected.' },
+  ptNoFocal:          { tr: 'Fokal lezyon saptanmadı.',                  en: 'No focal lesion detected.' },
+  ptSizeNotEntered:   { tr: 'boyut girilmedi',                           en: 'size not entered' },
+  ptSideRight:        { tr: 'Sağ',                                       en: 'Right' },
+  ptSideSol:          { tr: 'Sol',                                       en: 'Left' },
+  ptSideBilateral:    { tr: 'Bilateral',                                 en: 'Bilateral' },
+  ptDash:             { tr: '—',                                         en: '—' },
+  ptRowSide:          { tr: 'Taraf          ',                           en: 'Side           ' },
+  ptRowComp:          { tr: 'Kompartman     ',                           en: 'Compartment    ' },
+  ptRowAnat:          { tr: 'Anatomik detay ',                           en: 'Anatomical detail' },
+  ptRowSize:          { tr: 'Boyut          ',                           en: 'Size           ' },
+  ptRowStruct:        { tr: 'Yapı           ',                           en: 'Structure      ' },
+  ptRowT1:            { tr: 'T1 sinyal      ',                           en: 'T1 signal      ' },
+  ptRowT2:            { tr: 'T2 sinyal      ',                           en: 'T2 signal      ' },
+  ptRowDWI:           { tr: 'DWI            ',                           en: 'DWI            ' },
+  ptRowADC:           { tr: 'ADC            ',                           en: 'ADC            ' },
+  ptRowContrast:      { tr: 'Enhancement    ',                           en: 'Enhancement    ' },
+  ptRowChemshift:     { tr: 'Kimyasal kayma ',                           en: 'Chemical shift ' },
+  ptRowExtra:         { tr: 'Ek bulgular    ',                           en: 'Additional findings' },
+  ptRowNote:          { tr: 'Not            ',                           en: 'Note           ' },
+  ptLocInguinal:      { tr: 'inguinal kanalda',                          en: 'in inguinal canal' },
+  ptLocAbdominal:     { tr: 'abdomende',                                 en: 'in abdomen' },
+  ptLocAtrophic:      { tr: 'izlenmedi (atrofik/yok)',                   en: 'not visualized (atrophic/absent)' },
+  ptLocPostOp:        { tr: 'postoperatif',                              en: 'postoperative' },
+  ptParHomojen:       { tr: 'homojen',                                   en: 'homogeneous' },
+  ptParHeterojen:     { tr: 'heterojen (diffüz)',                        en: 'heterogeneous (diffuse)' },
+  ptParFokal:         { tr: 'fokal lezyon (+)',                          en: 'focal lesion (+)' },
+  ptParAtrofi:        { tr: 'atrofik',                                   en: 'atrophic' },
+  ptT2Normal:         { tr: 'normal T2 sinyalinde',                      en: 'normal T2 signal' },
+  ptT2DiffHipo:       { tr: 'diffüz T2 hipointens',                      en: 'diffuse T2 hypointense' },
+  ptT2DiffHiper:      { tr: 'diffüz T2 hiperintens (orşit?)',            en: 'diffuse T2 hyperintense (orchitis?)' },
+  ptT2Heterojen:      { tr: 'heterojen T2 sinyalinde',                   en: 'heterogeneous T2 signal' },
+  ptEpiBuyume:        { tr: 'diffüz büyüme',                             en: 'diffuse enlargement' },
+  ptEpiSinyalArt:     { tr: 'T2 sinyal artışı',                          en: 'T2 signal increase' },
+  ptEpiKontrastArt:   { tr: 'artmış kontrastlanma',                      en: 'increased enhancement' },
+  ptKordVarikosel:    { tr: 'varikosel',                                 en: 'varicocele' },
+  ptKordMaks:         { tr: 'maks çap ',                                 en: 'max diameter ' },
+  ptKordKitle:        { tr: 'kord kitlesi (lezyon bölümünde tariflenmiştir)', en: 'cord mass (described in lesion section)' },
+  ptCiltNormal:       { tr: 'Normal sınırlarda.',                        en: 'Within normal limits.' },
+  ptCiltKalinlasma:   { tr: 'duvar kalınlaşması',                        en: 'wall thickening' },
+  ptCiltInflam:       { tr: 'inflamatuar değişiklik',                    en: 'inflammatory change' },
+  ptCiltApse:         { tr: 'apse/koleksiyon',                           en: 'abscess/collection' },
+  ptCiltKitle:        { tr: 'skrotal cilt kitlesi',                      en: 'scrotal skin mass' },
+  ptTunikaIntakt:     { tr: 'Tunika albuginea intakt, kontur ',          en: 'Tunica albuginea intact, contour ' },
+  ptSagRuptur:        { tr: 'sağ tunika rüptürü',                        en: 'right tunica rupture' },
+  ptSolRuptur:        { tr: 'sol tunika rüptürü',                        en: 'left tunica rupture' },
+  ptSagHidrosel:      { tr: 'sağda hidrosel',                            en: 'right hydrocele' },
+  ptSolHidrosel:      { tr: 'solda hidrosel',                            en: 'left hydrocele' },
+  ptSagHematosel:     { tr: 'sağda hematosel',                           en: 'right hematocele' },
+  ptSolHematosel:     { tr: 'solda hematosel',                           en: 'left hematocele' },
+  ptSagPiyosel:       { tr: 'sağda piyosel',                            en: 'right pyocele' },
+  ptSolPiyosel:       { tr: 'solda piyosel',                            en: 'left pyocele' },
+};
+const T = Object.fromEntries(
+  Object.entries(T_RAW).map(([k, v]) => [k, v[RV_LOCALE] || v.tr || ''])
+);
+
+/* =====================================================================
+   PATOLOJİ VERİTABANI — SKROTAL / TESTİS
+   Ağırlıklar: dwi:4, adc:4, contrast:3, t2:2, t1:2, structure:2,
+               location:2, chemshift:3, special:3, demographics:1
+   ===================================================================== */
+const PATHOLOGY_DB = [
+  /* ---------- İNTRATESTİKÜLER MALİGN ---------- */
+  {
+    id: 'seminom',
+    name: { tr: 'Seminom', en: 'Seminoma' },
+    category: { tr: 'Testiküler — malign (germ hücreli)', en: 'Testicular — malignant (germ cell)' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['solid_homojen','solid'],
+      t1:['izointens'],
+      t2:['hipointens','hipointens_homojen'],
+      dwi:['kisitlanma'],
+      adc:['dusuk'],
+      contrast:['homojen_orta','homojen'],
+      chemshift:['yok'],
+      special:['fibrovaskuler_septa','tunika_korunur'],
+      demographics:['15_45'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: '15-45 yaş, homojen T2 hipointens, düşük ADC, fibrovasküler septalar', en: 'Age 15-45, homogeneous T2 hypointense, low ADC, fibrovascular septa' }
+  },
+  {
+    id: 'nsgct_mixed',
+    name: { tr: 'Nonseminomatöz germ hücreli tümör (mikst)', en: 'Non-seminomatous germ cell tumour (mixed)' },
+    category: { tr: 'Testiküler — malign (germ hücreli)', en: 'Testicular — malignant (germ cell)' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['heterojen','kistik_solid','mikst'],
+      t1:['hiperintens_odak','heterojen'],
+      t2:['heterojen','heterojen_hiper'],
+      dwi:['kisitlanma','heterojen'],
+      adc:['dusuk','heterojen'],
+      contrast:['heterojen'],
+      chemshift:['yok','var_fokal'],
+      special:['kanama','kalsifikasyon','nekroz'],
+      demographics:['15_35'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: 'Heterojen, kanama/nekroz/kistik, yağ odağı (teratom komponenti), 15-35 yaş', en: 'Heterogeneous, haemorrhage/necrosis/cystic, fat focus (teratoma component), age 15-35' }
+  },
+  {
+    id: 'teratom',
+    name: { tr: 'Teratom (saf)', en: 'Teratoma (pure)' },
+    category: { tr: 'Testiküler — germ hücreli', en: 'Testicular — germ cell' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['heterojen','kistik_solid','mikst'],
+      t1:['hiperintens_odak','heterojen'],
+      t2:['heterojen'],
+      dwi:['heterojen','kisitlanma_kismi'],
+      adc:['heterojen'],
+      contrast:['heterojen','minimal'],
+      chemshift:['var_fokal','var'],
+      special:['kalsifikasyon','yag','kistik'],
+      demographics:['15_35','cocuk'],
+      size:['orta']
+    },
+    hint: { tr: 'Belirgin heterojen, yağ+kemik/kıkırdak odakları, çoklu doku komponenti', en: 'Markedly heterogeneous, fat+bone/cartilage foci, multiple tissue components' }
+  },
+  {
+    id: 'testis_lenfoma',
+    name: { tr: 'Testis lenfoması', en: 'Testicular lymphoma' },
+    category: { tr: 'Testiküler — malign', en: 'Testicular — malignant' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['solid_homojen','infiltratif'],
+      t1:['izointens'],
+      t2:['hipointens','izointens'],
+      dwi:['belirgin_kisitlanma','kisitlanma'],
+      adc:['cok_dusuk','dusuk'],
+      contrast:['homojen'],
+      chemshift:['yok'],
+      special:['bilateral','infiltratif','tunika_korunur','kord_tutulumu'],
+      demographics:['60_ustu','yasli'],
+      size:['buyuk','multifokal']
+    },
+    hint: { tr: '>60 yaş, sıklıkla bilateral, belirgin diffüzyon kısıtlaması, infiltratif', en: '>60 years, often bilateral, marked restricted diffusion, infiltrative' }
+  },
+  {
+    id: 'testis_metastaz',
+    name: { tr: 'Testise metastaz', en: 'Metastasis to testis' },
+    category: { tr: 'Testiküler — malign', en: 'Testicular — malignant' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['multifokal','heterojen'],
+      t1:['izointens','heterojen'],
+      t2:['hipointens','heterojen'],
+      dwi:['kisitlanma'],
+      adc:['dusuk'],
+      contrast:['heterojen','homojen'],
+      chemshift:['yok'],
+      special:['bilateral','primer_malignite','multifokal'],
+      demographics:['yasli'],
+      size:['multifokal','kucuk']
+    },
+    hint: { tr: 'Yaşlı, primer malignite öyküsü, sıklıkla multipl/bilateral', en: 'Elderly, history of primary malignancy, often multiple/bilateral' }
+  },
+  /* ---------- İNTRATESTİKÜLER SEX-CORD ---------- */
+  {
+    id: 'leydig',
+    name: { tr: 'Leydig hücreli tümör', en: 'Leydig cell tumour' },
+    category: { tr: 'Testiküler — sex-cord stromal', en: 'Testicular — sex-cord stromal' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['solid_homojen','solid'],
+      t1:['izointens','hipointens'],
+      t2:['hipointens','belirgin_hipo'],
+      dwi:['kisitlanma_kismi'],
+      adc:['izointens','dusuk'],
+      contrast:['erken_yogun_washout','erken_yogun'],
+      chemshift:['yok'],
+      special:['hormonal','kucuk_sinirli'],
+      demographics:['her_yas','30_60'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Küçük, iyi sınırlı, erken yoğun kontrast + washout, hormonal semptom', en: 'Small, well-defined, early intense enhancement + washout, hormonal symptoms' }
+  },
+  {
+    id: 'sertoli',
+    name: { tr: 'Sertoli hücreli tümör', en: 'Sertoli cell tumour' },
+    category: { tr: 'Testiküler — sex-cord stromal', en: 'Testicular — sex-cord stromal' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['solid_homojen','solid'],
+      t1:['izointens'],
+      t2:['hipointens','izointens'],
+      dwi:['izointens','kisitlanma_kismi'],
+      adc:['izointens'],
+      contrast:['hafif','orta'],
+      chemshift:['yok'],
+      special:['kalsifikasyon','kucuk_sinirli'],
+      demographics:['her_yas'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Küçük, T2 hipo-izointens, kalsifikasyon olabilir, hafif kontrast', en: 'Small, T2 hypo-isointense, calcification possible, mild enhancement' }
+  },
+  /* ---------- İNTRATESTİKÜLER BENİGN ---------- */
+  {
+    id: 'epidermoid',
+    name: { tr: 'Epidermoid kist (intratestiküler)', en: 'Epidermoid cyst (intratesticular)' },
+    category: { tr: 'Testiküler — benign', en: 'Testicular — benign' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['kistik','iyi_sinirli','onion'],
+      t1:['heterojen','hipointens'],
+      t2:['tabakali','konsantrik_halka','mikst'],
+      dwi:['degisken','yok'],
+      adc:['yuksek','izointens'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['onion_skin','periferik_kalsifikasyon','kapsuler'],
+      demographics:['20_40'],
+      size:['kucuk','orta']
+    },
+    hint: { tr: 'Soğan zarı (onion skin) T2 görünümü, KONTRASTLANMA YOK (patognomonik)', en: 'Onion-skin T2 appearance, NO ENHANCEMENT (pathognomonic)' }
+  },
+  {
+    id: 'tart',
+    name: { tr: 'Testicular adrenal rest tumor (TART)', en: 'Testicular adrenal rest tumour (TART)' },
+    category: { tr: 'Testiküler — benign', en: 'Testicular — benign' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['multifokal','solid'],
+      t1:['izointens','hipointens'],
+      t2:['hipointens','belirgin_hipo'],
+      dwi:['izointens','kisitlanma_kismi'],
+      adc:['izointens'],
+      contrast:['orta','homojen'],
+      chemshift:['var_fokal'],
+      special:['bilateral','mediastinum_yerlesim','cah','multifokal'],
+      demographics:['cocuk','genc_erkek'],
+      size:['kucuk','multifokal']
+    },
+    hint: { tr: 'KAH öyküsü, bilateral multipl, mediastinum testise yakın, T2 belirgin hipo', en: 'CAH history, bilateral multiple, near mediastinum testis, markedly T2 hypointense' }
+  },
+  {
+    id: 'testis_kist',
+    name: { tr: 'Basit testis kisti', en: 'Simple testicular cyst' },
+    category: { tr: 'Testiküler — benign', en: 'Testicular — benign' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['kistik','iyi_sinirli','ince_duvar'],
+      t1:['hipointens'],
+      t2:['hiperintens'],
+      dwi:['yok'],
+      adc:['yuksek'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['ince_duvar'],
+      demographics:['her_yas'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Basit kist: T2 hiperintens, kontrastlanma yok, ince duvar', en: 'Simple cyst: T2 hyperintense, no enhancement, thin wall' }
+  },
+  {
+    id: 'tubuler_ektazi',
+    name: { tr: 'Rete testis tubuler ektazisi', en: 'Tubular ectasia of rete testis' },
+    category: { tr: 'Testiküler — benign', en: 'Testicular — benign' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['kistik','tubuler','multifokal'],
+      t1:['hipointens'],
+      t2:['hiperintens'],
+      dwi:['yok'],
+      adc:['yuksek'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['mediastinum_yerlesim','tubuler','bilateral','spermatosel_eslik'],
+      demographics:['yasli','55_ustu'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Mediastinum testiste multipl tubuler T2 hiperintens yapılar; tipik yaşlı erkek', en: 'Multiple tubular T2 hyperintense structures at mediastinum testis; typical elderly male' }
+  },
+  {
+    id: 'segmental_infarkt',
+    name: { tr: 'Segmental testis infarktı', en: 'Segmental testicular infarct' },
+    category: { tr: 'Testiküler — vasküler', en: 'Testicular — vascular' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['wedge','konik','solid'],
+      t1:['izointens','hiperintens_odak'],
+      t2:['heterojen','hipointens'],
+      dwi:['kisitlanma','kisitlanma_kismi'],
+      adc:['dusuk'],
+      contrast:['yok','periferik_halka'],
+      chemshift:['yok'],
+      special:['wedge','akut_agri'],
+      demographics:['her_yas'],
+      size:['kucuk','orta']
+    },
+    hint: { tr: 'Wedge/konik şekilli kontrastlanmayan alan ± periferik halka', en: 'Wedge/conical non-enhancing area ± peripheral rim' }
+  },
+  {
+    id: 'torsiyon',
+    name: { tr: 'Testis torsiyonu', en: 'Testicular torsion' },
+    category: { tr: 'Testiküler — vasküler', en: 'Testicular — vascular' },
+    tags: {
+      compartment:['intratestikuler','spermatik_kord'],
+      structure:['diffuz','heterojen'],
+      t1:['izointens','hiperintens_odak'],
+      t2:['heterojen','hipointens'],
+      dwi:['kisitlanma'],
+      adc:['dusuk'],
+      contrast:['yok','azalmis'],
+      chemshift:['yok'],
+      special:['whirlpool_kord','akut_skrotum','kord_bukulme'],
+      demographics:['adolesan','genc_erkek'],
+      size:['diffuz']
+    },
+    hint: { tr: 'Akut skrotum, kontrastlanma yok/azalmış, whirlpool kord bulgusu', en: 'Acute scrotum, absent/reduced enhancement, whirlpool cord sign' }
+  },
+  {
+    id: 'orkit',
+    name: { tr: 'Orşit (enfeksiyöz)', en: 'Orchitis (infectious)' },
+    category: { tr: 'Testiküler — inflamatuar', en: 'Testicular — inflammatory' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['diffuz','heterojen'],
+      t1:['izointens'],
+      t2:['hiperintens_diffuz','heterojen_hiper'],
+      dwi:['kisitlanma_kismi'],
+      adc:['izointens','dusuk'],
+      contrast:['artmis_diffuz','heterojen'],
+      chemshift:['yok'],
+      special:['epididimit_eslik','reaktif_hidrosel','cilt_kalinlasma'],
+      demographics:['her_yas'],
+      size:['diffuz','buyumus']
+    },
+    hint: { tr: 'Diffüz T2 hiperintens, artmış kontrast, epididimit eşlik, reaktif hidrosel', en: 'Diffuse T2 hyperintense, increased enhancement, associated epididymitis, reactive hydrocele' }
+  },
+  {
+    id: 'burned_out',
+    name: { tr: 'Burned-out germ hücreli tümör', en: 'Burned-out germ cell tumour' },
+    category: { tr: 'Testiküler — malign (regresse)', en: 'Testicular — malignant (regressed)' },
+    tags: {
+      compartment:['intratestikuler'],
+      structure:['atrofi','fokal_skar','solid'],
+      t1:['hipointens'],
+      t2:['hipointens','belirgin_hipo'],
+      dwi:['yok','kisitlanma_kismi'],
+      adc:['izointens'],
+      contrast:['minimal','yok'],
+      chemshift:['yok'],
+      special:['kalsifikasyon','retroperitoneal_lap','atrofi'],
+      demographics:['20_40'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Küçük T2 belirgin hipo skar + kalsifikasyon, retroperitoneal LAP kaynağı', en: 'Small markedly T2 hypointense scar + calcification, source of retroperitoneal lymphadenopathy' }
+  },
+  /* ---------- EKSTRATESTİKÜLER / EPİDİDİMER ---------- */
+  {
+    id: 'epididim_kisti',
+    name: { tr: 'Epididim kisti', en: 'Epididymal cyst' },
+    category: { tr: 'Ekstratestiküler — benign', en: 'Extratesticular — benign' },
+    tags: {
+      compartment:['ekstratestikuler','epididim_bas','epididim'],
+      structure:['kistik','iyi_sinirli','ince_duvar'],
+      t1:['hipointens'],
+      t2:['hiperintens'],
+      dwi:['yok'],
+      adc:['yuksek'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['ince_duvar'],
+      demographics:['her_yas'],
+      size:['kucuk','orta']
+    },
+    hint: { tr: 'Epididim başında ince duvarlı T2 hiperintens kist, kontrast yok', en: 'Thin-walled T2 hyperintense cyst at epididymal head, no enhancement' }
+  },
+  {
+    id: 'spermatosel',
+    name: { tr: 'Spermatosel', en: 'Spermatocele' },
+    category: { tr: 'Ekstratestiküler — benign', en: 'Extratesticular — benign' },
+    tags: {
+      compartment:['ekstratestikuler','epididim_bas','epididim'],
+      structure:['kistik','iyi_sinirli','proteinoz'],
+      t1:['hafif_hiper','izointens','hipointens'],
+      t2:['hiperintens','heterojen_hiper'],
+      dwi:['yok','kisitlanma_kismi'],
+      adc:['yuksek','izointens'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['proteinoz_icerik','debris'],
+      demographics:['her_yas'],
+      size:['kucuk','orta']
+    },
+    hint: { tr: 'Epididim başında proteinöz içerikli kist; T1 hafif yüksek olabilir', en: 'Proteinaceous cyst at epididymal head; T1 may be mildly elevated' }
+  },
+  {
+    id: 'adenomatoid',
+    name: { tr: 'Adenomatoid tümör', en: 'Adenomatoid tumour' },
+    category: { tr: 'Ekstratestiküler — benign', en: 'Extratesticular — benign' },
+    tags: {
+      compartment:['ekstratestikuler','epididim_kuyruk','epididim'],
+      structure:['solid','iyi_sinirli'],
+      t1:['izointens','hafif_hipo'],
+      t2:['izointens','hafif_hiper'],
+      dwi:['izointens','kisitlanma_kismi'],
+      adc:['izointens'],
+      contrast:['homojen','orta'],
+      chemshift:['yok'],
+      special:['iyi_sinirli','kucuk'],
+      demographics:['20_50'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Epididim kuyruğunda en sık benign solid tümör, homojen kontrast tutar', en: 'Most common benign solid tumour at epididymal tail, homogeneous enhancement' }
+  },
+  {
+    id: 'epididimit',
+    name: { tr: 'Epididimit', en: 'Epididymitis' },
+    category: { tr: 'Ekstratestiküler — inflamatuar', en: 'Extratesticular — inflammatory' },
+    tags: {
+      compartment:['ekstratestikuler','epididim'],
+      structure:['diffuz_buyume','heterojen'],
+      t1:['izointens'],
+      t2:['hiperintens_diffuz','heterojen_hiper'],
+      dwi:['kisitlanma_kismi'],
+      adc:['izointens'],
+      contrast:['artmis_diffuz'],
+      chemshift:['yok'],
+      special:['reaktif_hidrosel','cilt_kalinlasma','orkit_eslik'],
+      demographics:['genc_orta'],
+      size:['buyumus','diffuz']
+    },
+    hint: { tr: 'Epididim diffüz büyüme, T2 hiper, artmış kontrast, reaktif hidrosel', en: 'Diffuse epididymal enlargement, T2 hyperintense, increased enhancement, reactive hydrocele' }
+  },
+  {
+    id: 'fibroz_pseudotumor',
+    name: { tr: 'Fibröz psödotümör (paratestiküler)', en: 'Fibrous pseudotumour (paratesticular)' },
+    category: { tr: 'Ekstratestiküler — benign', en: 'Extratesticular — benign' },
+    tags: {
+      compartment:['ekstratestikuler','paratestikuler','tunika'],
+      structure:['solid','iyi_sinirli','nodüler'],
+      t1:['hipointens','izointens'],
+      t2:['belirgin_hipo','hipointens'],
+      dwi:['yok','izointens'],
+      adc:['izointens'],
+      contrast:['minimal','gec_hafif'],
+      chemshift:['yok'],
+      special:['tunika_yerlesim','fibrozis'],
+      demographics:['her_yas'],
+      size:['kucuk','orta']
+    },
+    hint: { tr: 'Belirgin T2 hipointens (fibröz içerik), minimal kontrastlanma, paratestiküler', en: 'Markedly T2 hypointense (fibrous content), minimal enhancement, paratesticular' }
+  },
+  {
+    id: 'spermatik_lipom',
+    name: { tr: 'Spermatik kord lipomu', en: 'Spermatic cord lipoma' },
+    category: { tr: 'Spermatik kord — benign', en: 'Spermatic cord — benign' },
+    tags: {
+      compartment:['spermatik_kord','ekstratestikuler'],
+      structure:['yag','iyi_sinirli'],
+      t1:['hiperintens'],
+      t2:['hiperintens'],
+      dwi:['yok'],
+      adc:['izointens'],
+      contrast:['yok'],
+      chemshift:['var','yagbaskila_dusus'],
+      special:['yag_dokusu','yag_baski_sinyal_kaybi'],
+      demographics:['her_yas'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: 'T1/T2 hiperintens, yağ baskılamada sinyal kaybı, kimyasal kayma pozitif', en: 'T1/T2 hyperintense, signal loss on fat saturation, positive chemical shift' }
+  },
+  {
+    id: 'varikosel',
+    name: { tr: 'Varikosel', en: 'Varicocele' },
+    category: { tr: 'Spermatik kord — vasküler', en: 'Spermatic cord — vascular' },
+    tags: {
+      compartment:['spermatik_kord','ekstratestikuler'],
+      structure:['tubuler','vaskuler','multifokal'],
+      t1:['hipointens','akim_void'],
+      t2:['hipointens','akim_void','tubuler_hiper'],
+      dwi:['yok'],
+      adc:['izointens'],
+      contrast:['gec_dolma','heterojen'],
+      chemshift:['yok'],
+      special:['pampiniform_genisleme','sol_taraf','valsalva'],
+      demographics:['15_40'],
+      size:['multifokal']
+    },
+    hint: { tr: 'Pampiniform pleksusta >3mm tubuler akım-void yapılar, sol tarafta tipik', en: 'Tubular flow-void structures >3 mm in pampiniform plexus, typically left-sided' }
+  },
+  /* ---------- SIVI KOLEKSİYONLARI ---------- */
+  {
+    id: 'hidrosel',
+    name: { tr: 'Hidrosel', en: 'Hydrocele' },
+    category: { tr: 'Skrotal sıvı koleksiyonu', en: 'Scrotal fluid collection' },
+    tags: {
+      compartment:['ekstratestikuler','tunika_vaginalis'],
+      structure:['sivi','kistik'],
+      t1:['hipointens'],
+      t2:['hiperintens'],
+      dwi:['yok'],
+      adc:['yuksek'],
+      contrast:['yok'],
+      chemshift:['yok'],
+      special:['tunika_vaginalis','basit_sivi'],
+      demographics:['her_yas'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: 'Tunika vaginalis içinde basit sıvı, kontrastlanma yok', en: 'Simple fluid within tunica vaginalis, no enhancement' }
+  },
+  {
+    id: 'hematosel',
+    name: { tr: 'Hematosel', en: 'Hematocele' },
+    category: { tr: 'Skrotal sıvı koleksiyonu', en: 'Scrotal fluid collection' },
+    tags: {
+      compartment:['ekstratestikuler','tunika_vaginalis'],
+      structure:['sivi_kompleks','heterojen'],
+      t1:['hiperintens','heterojen'],
+      t2:['heterojen','hipointens_odak'],
+      dwi:['kisitlanma_kismi'],
+      adc:['degisken'],
+      contrast:['duvar_gec'],
+      chemshift:['yok'],
+      special:['travma','hemosiderin','kan_urun','t2star_hipo'],
+      demographics:['her_yas'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: 'Travma öyküsü, T1 hiperintens kan ürünleri, T2* belirgin hipointensite', en: 'Trauma history, T1 hyperintense blood products, marked T2* hypointensity' }
+  },
+  {
+    id: 'piyosel',
+    name: { tr: 'Piyosel', en: 'Pyocele' },
+    category: { tr: 'Skrotal sıvı koleksiyonu', en: 'Scrotal fluid collection' },
+    tags: {
+      compartment:['ekstratestikuler','tunika_vaginalis'],
+      structure:['sivi_kompleks','debris'],
+      t1:['hafif_hiper','heterojen'],
+      t2:['heterojen_hiper','hiperintens'],
+      dwi:['belirgin_kisitlanma','kisitlanma'],
+      adc:['cok_dusuk','dusuk'],
+      contrast:['duvar_kalin','duvar_gec'],
+      chemshift:['yok'],
+      special:['duvar_kalinlik','enfeksiyon_eslik','cilt_kalinlasma'],
+      demographics:['her_yas'],
+      size:['orta']
+    },
+    hint: { tr: 'Pürülan içerik: belirgin DWI kısıtlaması + kalın duvarda kontrastlanma', en: 'Purulent content: marked restricted diffusion + thick-wall enhancement' }
+  },
+  /* ---------- DİĞER ---------- */
+  {
+    id: 'kriptorsidizm',
+    name: { tr: 'Kriptorşidizm (inmemiş testis)', en: 'Cryptorchidism (undescended testis)' },
+    category: { tr: 'Gelişimsel', en: 'Developmental' },
+    tags: {
+      compartment:['inguinal','abdominal','ekstraskrotal'],
+      structure:['atrofi','solid','kucuk'],
+      t1:['izointens'],
+      t2:['izointens','hafif_hiper'],
+      dwi:['yok'],
+      adc:['izointens'],
+      contrast:['orta'],
+      chemshift:['yok'],
+      special:['ektopik_yerlesim','atrofi','bilateral_kontrl_hipertrofi'],
+      demographics:['cocuk','genc_erkek'],
+      size:['kucuk']
+    },
+    hint: { tr: 'Skrotum dışı lokalizasyon (inguinal kanal/abdomen), atrofik', en: 'Extrascrotal location (inguinal canal/abdomen), atrophic' }
+  },
+  {
+    id: 'inguinal_herni',
+    name: { tr: 'İnguinal herni skrotal uzanım', en: 'Inguinal hernia with scrotal extension' },
+    category: { tr: 'Diğer', en: 'Other' },
+    tags: {
+      compartment:['spermatik_kord','ekstratestikuler','inguinal'],
+      structure:['heterojen','mikst'],
+      t1:['heterojen'],
+      t2:['heterojen'],
+      dwi:['yok'],
+      adc:['izointens'],
+      contrast:['orta'],
+      chemshift:['var_fokal'],
+      special:['barsak_icerik','yag_icerik','inguinal_devam','peristaltizm'],
+      demographics:['her_yas'],
+      size:['orta','buyuk']
+    },
+    hint: { tr: 'İnguinal kanaldan skrotuma uzanan bağırsak/yağ içerikli kese', en: 'Bowel/fat-containing sac extending from inguinal canal into scrotum' }
+  }
+];
+
+/* =====================================================================
+   SKORLAMA MOTORU
+   ===================================================================== */
+const WEIGHTS = {
+  compartment: 5,
+  structure: 2,
+  t1: 2,
+  t2: 2,
+  dwi: 4,
+  adc: 4,
+  contrast: 3,
+  chemshift: 3,
+  special: 3,
+  demographics: 1,
+  size: 1
+};
+
+function scorePathology(pathology, lesion) {
+  let total = 0;
+  let maxPossible = 0;
+  const keys = Object.keys(WEIGHTS);
+
+  keys.forEach(k => {
+    const pathTags = pathology.tags[k] || [];
+    const lesionTags = lesion[k] || [];
+    if (pathTags.length === 0) return;
+    maxPossible += WEIGHTS[k];
+
+    if (lesionTags.length === 0) return;
+
+    // Tam eşleşme
+    const directMatch = lesionTags.some(t => pathTags.includes(t));
+    if (directMatch) {
+      total += WEIGHTS[k];
+      return;
+    }
+
+    // Kısmi eşleşme (alt string)
+    let partialHit = false;
+    for (const lt of lesionTags) {
+      for (const pt of pathTags) {
+        if (lt && pt && (lt.includes(pt) || pt.includes(lt))) {
+          partialHit = true; break;
+        }
+      }
+      if (partialHit) break;
+    }
+    if (partialHit) total += WEIGHTS[k] * 0.4;
+  });
+
+  if (maxPossible === 0) return 0;
+  const raw = (total / maxPossible) * 100;
+  return Math.min(100, Math.max(0, raw));
+}
+
+function getDifferentials(lesion, topN = 7) {
+  if (!lesion) return [];
+  const scores = PATHOLOGY_DB.map(p => ({
+    ...p,
+    score: scorePathology(p, lesion)
+  })).filter(p => p.score > 10);
+
+  scores.sort((a,b) => b.score - a.score);
+  const sliced = scores.slice(0, topN);
+  const sum = sliced.reduce((s,p)=>s+p.score, 0);
+  if (sum === 0) return [];
+  return sliced.map(p => ({
+    ...p,
+    percentage: Math.round((p.score / sum) * 100)
+  }));
+}
+
+/* =====================================================================
+   RAPOR YARDIMCI BİLEŞENLERİ
+   ===================================================================== */
+const RptSection = ({title, children}) => (
+  <div className="rpt-section">
+    <div className="rpt-header">{title}</div>
+    <div className="rpt-body">{children}</div>
+  </div>
+);
+const RptRow = ({label, value, pathologic}) => (
+  <div className="rpt-row">
+    <div className="rk">{label}</div>
+    <div className={"rv " + (pathologic ? "pat" : "")}>{value || '—'}</div>
+  </div>
+);
+const RptNarrative = ({text}) => (
+  <div className="rpt-narrative">{text}</div>
+);
+
+/* =====================================================================
+   ETİKET SÖZLÜĞÜ — bilingual display labels
+   ===================================================================== */
+const LBL = {
+  // compartment
+  intratestikuler:{ tr:'İntratestiküler', en:'Intratesticular' },
+  ekstratestikuler:{ tr:'Ekstratestiküler', en:'Extratesticular' },
+  paratestikuler:{ tr:'Paratestiküler', en:'Paratesticular' },
+  epididim:{ tr:'Epididim', en:'Epididymis' },
+  epididim_bas:{ tr:'Epididim başı', en:'Epididymal head' },
+  epididim_govde:{ tr:'Epididim gövdesi', en:'Epididymal body' },
+  epididim_kuyruk:{ tr:'Epididim kuyruğu', en:'Epididymal tail' },
+  spermatik_kord:{ tr:'Spermatik kord', en:'Spermatic cord' },
+  tunika:{ tr:'Tunika yerleşimli', en:'Tunica-based' },
+  tunika_vaginalis:{ tr:'Tunika vaginalis içi', en:'Within tunica vaginalis' },
+  inguinal:{ tr:'İnguinal kanal', en:'Inguinal canal' },
+  abdominal:{ tr:'Abdominal', en:'Abdominal' },
+  ektraskrotal:{ tr:'Skrotum dışı', en:'Extrascrotal' },
+  // structure
+  solid:{ tr:'Solid', en:'Solid' },
+  solid_homojen:{ tr:'Homojen solid', en:'Homogeneous solid' },
+  kistik:{ tr:'Kistik', en:'Cystic' },
+  kistik_solid:{ tr:'Kistik-solid', en:'Cystic-solid' },
+  mikst:{ tr:'Mikst içerik', en:'Mixed content' },
+  heterojen:{ tr:'Heterojen', en:'Heterogeneous' },
+  infiltratif:{ tr:'İnfiltratif', en:'Infiltrative' },
+  multifokal:{ tr:'Multifokal', en:'Multifocal' },
+  diffuz:{ tr:'Diffüz', en:'Diffuse' },
+  wedge:{ tr:'Wedge şekilli', en:'Wedge-shaped' },
+  tubuler:{ tr:'Tubuler', en:'Tubular' },
+  vaskuler:{ tr:'Vasküler', en:'Vascular' },
+  atrofi:{ tr:'Atrofik', en:'Atrophic' },
+  sivi:{ tr:'Basit sıvı', en:'Simple fluid' },
+  sivi_kompleks:{ tr:'Kompleks sıvı', en:'Complex fluid' },
+  debris:{ tr:'Debris içerir', en:'Contains debris' },
+  iyi_sinirli:{ tr:'Düzgün sınırlı', en:'Well-defined' },
+  ince_duvar:{ tr:'İnce duvarlı', en:'Thin-walled' },
+  nodüler:{ tr:'Nodüler', en:'Nodular' },
+  onion:{ tr:'Soğan zarı paterni', en:'Onion-skin pattern' },
+  yag:{ tr:'Yağ içerir', en:'Contains fat' },
+  wedge_konik:{ tr:'Wedge/konik', en:'Wedge/conical' },
+  // signal
+  hipointens:{ tr:'Hipointens', en:'Hypointense' },
+  hipointens_homojen:{ tr:'Homojen hipointens', en:'Homogeneous hypointense' },
+  belirgin_hipo:{ tr:'Belirgin hipointens', en:'Markedly hypointense' },
+  izointens:{ tr:'İzointens', en:'Isointense' },
+  hiperintens:{ tr:'Hiperintens', en:'Hyperintense' },
+  hiperintens_diffuz:{ tr:'Diffüz hiperintens', en:'Diffuse hyperintense' },
+  heterojen_hiper:{ tr:'Heterojen hiperintens', en:'Heterogeneous hyperintense' },
+  hafif_hiper:{ tr:'Hafif hiperintens', en:'Mildly hyperintense' },
+  hafif_hipo:{ tr:'Hafif hipointens', en:'Mildly hypointense' },
+  hiperintens_odak:{ tr:'Hiperintens odaklar', en:'Hyperintense foci' },
+  tabakali:{ tr:'Tabakalı', en:'Layered' },
+  konsantrik_halka:{ tr:'Konsantrik halka', en:'Concentric rings' },
+  akim_void:{ tr:'Akım boşluğu', en:'Flow void' },
+  tubuler_hiper:{ tr:'Tubuler hiperintens', en:'Tubular hyperintense' },
+  // dwi/adc
+  kisitlanma:{ tr:'Diffüzyon kısıtlaması (+)', en:'Restricted diffusion (+)' },
+  belirgin_kisitlanma:{ tr:'Belirgin diffüzyon kısıtlaması', en:'Marked restricted diffusion' },
+  kisitlanma_kismi:{ tr:'Hafif diffüzyon kısıtlaması', en:'Mild restricted diffusion' },
+  yok:{ tr:'Kısıtlama yok', en:'No restriction' },
+  degisken:{ tr:'Değişken', en:'Variable' },
+  dusuk:{ tr:'ADC düşük', en:'Low ADC' },
+  cok_dusuk:{ tr:'ADC çok düşük', en:'Very low ADC' },
+  yuksek:{ tr:'ADC yüksek', en:'High ADC' },
+  // contrast
+  homojen:{ tr:'Homojen kontrastlanma', en:'Homogeneous enhancement' },
+  homojen_orta:{ tr:'Homojen orta kontrastlanma', en:'Homogeneous moderate enhancement' },
+  heterojen_kontrast:{ tr:'Heterojen kontrastlanma', en:'Heterogeneous enhancement' },
+  artmis_diffuz:{ tr:'Diffüz artmış kontrastlanma', en:'Diffusely increased enhancement' },
+  erken_yogun:{ tr:'Erken yoğun kontrastlanma', en:'Early intense enhancement' },
+  erken_yogun_washout:{ tr:'Erken yoğun kontrastlanma + washout', en:'Early intense enhancement + washout' },
+  hafif:{ tr:'Hafif kontrastlanma', en:'Mild enhancement' },
+  orta:{ tr:'Orta kontrastlanma', en:'Moderate enhancement' },
+  minimal:{ tr:'Minimal kontrastlanma', en:'Minimal enhancement' },
+  periferik_halka:{ tr:'Periferik halka tipinde', en:'Peripheral rim type' },
+  azalmis:{ tr:'Azalmış', en:'Reduced' },
+  duvar_gec:{ tr:'Duvarda geç kontrastlanma', en:'Late wall enhancement' },
+  duvar_kalin:{ tr:'Kalın duvarda kontrastlanma', en:'Thick-wall enhancement' },
+  gec_dolma:{ tr:'Geç doluş', en:'Late filling' },
+  gec_hafif:{ tr:'Geç hafif kontrastlanma', en:'Late mild enhancement' },
+  // chemshift
+  var:{ tr:'Sinyal düşüşü (yağ)', en:'Signal drop (fat)' },
+  var_fokal:{ tr:'Fokal sinyal düşüşü', en:'Focal signal drop' },
+  yagbaskila_dusus:{ tr:'Yağ baskılamada sinyal kaybı', en:'Signal loss on fat saturation' },
+  // special
+  fibrovaskuler_septa:{ tr:'Fibrovasküler septalar', en:'Fibrovascular septa' },
+  tunika_korunur:{ tr:'Tunika korunmuş', en:'Tunica preserved' },
+  kanama:{ tr:'Kanama', en:'Haemorrhage' },
+  kalsifikasyon:{ tr:'Kalsifikasyon', en:'Calcification' },
+  nekroz:{ tr:'Nekroz', en:'Necrosis' },
+  bilateral:{ tr:'Bilateral tutulum', en:'Bilateral involvement' },
+  infiltratif_s:{ tr:'İnfiltratif yayılım', en:'Infiltrative spread' },
+  kord_tutulumu:{ tr:'Spermatik kord tutulumu', en:'Spermatic cord involvement' },
+  primer_malignite:{ tr:'Primer malignite öyküsü ile uyumlu', en:'Consistent with primary malignancy history' },
+  hormonal:{ tr:'Hormonal sendrom', en:'Hormonal syndrome' },
+  kucuk_sinirli:{ tr:'Küçük, iyi sınırlı', en:'Small, well-defined' },
+  mediastinum_yerlesim:{ tr:'Mediastinum testise yakın', en:'Near mediastinum testis' },
+  cah:{ tr:'KAH ile ilişkili', en:'CAH-associated' },
+  onion_skin:{ tr:'Onion-skin (soğan zarı) paterni', en:'Onion-skin pattern' },
+  periferik_kalsifikasyon:{ tr:'Periferik kalsifikasyon', en:'Peripheral calcification' },
+  kapsuler:{ tr:'Kapsüler', en:'Capsular' },
+  spermatosel_eslik:{ tr:'Spermatosele eşlik', en:'Associated spermatocele' },
+  whirlpool_kord:{ tr:'Whirlpool kord', en:'Whirlpool cord sign' },
+  akut_skrotum:{ tr:'Akut skrotum', en:'Acute scrotum' },
+  kord_bukulme:{ tr:'Kord bükülmesi', en:'Cord twisting' },
+  epididimit_eslik:{ tr:'Epididimit eşlik', en:'Associated epididymitis' },
+  reaktif_hidrosel:{ tr:'Reaktif hidrosel', en:'Reactive hydrocele' },
+  cilt_kalinlasma:{ tr:'Cilt/duvar kalınlaşması', en:'Skin/wall thickening' },
+  proteinoz_icerik:{ tr:'Proteinöz içerik', en:'Proteinaceous content' },
+  tunika_yerlesim:{ tr:'Tunika yerleşimli', en:'Tunica-based' },
+  fibrozis:{ tr:'Fibrozis', en:'Fibrosis' },
+  yag_dokusu:{ tr:'Yağ dokusu', en:'Fatty tissue' },
+  yag_baski_sinyal_kaybi:{ tr:'Yağ baskı sinyal kaybı', en:'Fat saturation signal loss' },
+  pampiniform_genisleme:{ tr:'Pampiniform pleksus genişlemesi', en:'Pampiniform plexus dilatation' },
+  sol_taraf:{ tr:'Sol taraf yerleşimli', en:'Left-sided' },
+  valsalva:{ tr:'Valsalva ile artış', en:'Increases with Valsalva' },
+  basit_sivi:{ tr:'Basit sıvı karakterinde', en:'Simple fluid character' },
+  hemosiderin:{ tr:'Hemosiderin birikimi', en:'Haemosiderin deposition' },
+  kan_urun:{ tr:'Kan ürünleri', en:'Blood products' },
+  t2star_hipo:{ tr:'T2* belirgin hipointensite', en:'Marked T2* hypointensity' },
+  duvar_kalinlik:{ tr:'Duvar kalınlaşması', en:'Wall thickening' },
+  enfeksiyon_eslik:{ tr:'Eşlik eden enfeksiyon', en:'Associated infection' },
+  ektopik_yerlesim:{ tr:'Ektopik yerleşim', en:'Ectopic location' },
+  bilateral_kontrl_hipertrofi:{ tr:'Karşı taraf kompansatuar hipertrofi', en:'Contralateral compensatory hypertrophy' },
+  barsak_icerik:{ tr:'Bağırsak içeriği', en:'Bowel content' },
+  yag_icerik:{ tr:'Yağ içeriği', en:'Fat content' },
+  inguinal_devam:{ tr:'İnguinal kanalla devam', en:'Continuation from inguinal canal' },
+  peristaltizm:{ tr:'Peristaltik hareket', en:'Peristaltic movement' },
+  travma:{ tr:'Travma öyküsü', en:'Trauma history' },
+  akut_agri:{ tr:'Akut ağrı', en:'Acute pain' },
+  atrofi_s:{ tr:'Atrofi', en:'Atrophy' },
+  retroperitoneal_lap:{ tr:'Retroperitoneal LAP', en:'Retroperitoneal lymphadenopathy' }
+};
+const L = (k) => {
+  const entry = LBL[k];
+  if (!entry) return k;
+  return entry[RV_LOCALE] || entry.tr || k;
+};
+/* Resolve locale-aware string from a {tr,en} object or plain string */
+const loc = (obj) => {
+  if (!obj) return '';
+  if (typeof obj === 'string') return obj;
+  return obj[RV_LOCALE] || obj.tr || '';
+};
+
+/* =====================================================================
+   WIZARD ADIMLARI
+   ===================================================================== */
+const STEPS = [
+  'intro',
+  'skrotal_duvar',
+  'sag_testis',
+  'sol_testis',
+  'epididim',
+  'spermatik_kord',
+  'sivi_koleksiyon',
+  'tunika_rupture',
+  'lezyon_sorgu',
+  'lezyon_loop',
+  'ozet'
+];
+
+const LOOP_STEPS = [
+  'l_lokalizasyon',
+  'l_boyut',
+  'l_yapi',
+  'l_t1',
+  'l_t2',
+  'l_dwi',
+  'l_kontrast',
+  'l_chemshift',
+  'l_ozel',
+  'l_ozet'
+];
+
+/* =====================================================================
+   UYGULAMA
+   ===================================================================== */
+function App() {
+  const [step, setStep] = useState(0);
+  const [loopStep, setLoopStep] = useState(-1);     // -1 => döngü aktif değil
+  const [currentIdx, setCurrentIdx] = useState(-1); // -1 => aktif lezyon yok
+
+  const [data, setData] = useState({
+    // Teknik
+    tarih:'', hastaYas:'', klinik:'',
+    teknik:{ ag:'3T', sekans:['T1','T2','DWI/ADC','Kontrastli_T1','Yag_baski_T2'] },
+
+    // Skrotal duvar
+    cilt:{ normal:true, kalinlasma:false, enflamatuar:false, apse:false, kitle:false, not:''},
+
+    // Testis (sağ/sol)
+    sagTestis:{ degerlendirildi:true, mevcut:true, lokalizasyon:'skrotal', boyutAP:'', boyutCC:'', boyutTR:'',
+                parenkim:'homojen', t2Sinyal:'normal', not:''},
+    solTestis:{ degerlendirildi:true, mevcut:true, lokalizasyon:'skrotal', boyutAP:'', boyutCC:'', boyutTR:'',
+                parenkim:'homojen', t2Sinyal:'normal', not:''},
+
+    // Epididim
+    sagEpididim:{ normal:true, buyume:false, sinyalArt:false, kontrastArt:false, not:''},
+    solEpididim:{ normal:true, buyume:false, sinyalArt:false, kontrastArt:false, not:''},
+
+    // Kord / varikosel
+    sagKord:{ normal:true, varikosel:false, varikoselGrad:'', kitle:false, not:''},
+    solKord:{ normal:true, varikosel:false, varikoselGrad:'', kitle:false, not:''},
+
+    // Sıvı koleksiyonu
+    sivi:{
+      sagHidrosel:false, solHidrosel:false,
+      sagHematosel:false, solHematosel:false,
+      sagPiyosel:false, solPiyosel:false,
+      not:''
+    },
+
+    // Tunika / rüptür
+    tunika:{ saglam:true, sagRuptur:false, solRuptur:false, kontur:'düzgün', not:''},
+
+    // Lezyonlar
+    lezyonVarMi:null,
+    lezyonlar:[]
+  });
+
+  const patch = (path, val) => {
+    setData(prev => {
+      const next = {...prev};
+      const keys = path.split('.');
+      let cur = next;
+      for (let i=0;i<keys.length-1;i++) {
+        cur[keys[i]] = {...cur[keys[i]]};
+        cur = cur[keys[i]];
+      }
+      cur[keys[keys.length-1]] = val;
+      return next;
+    });
+  };
+
+  const updateLesion = (idx, fieldPath, val) => {
+    setData(prev => {
+      const lez = [...prev.lezyonlar];
+      const cur = {...lez[idx]};
+      const keys = fieldPath.split('.');
+      let ref = cur;
+      for (let i=0;i<keys.length-1;i++) {
+        ref[keys[i]] = {...ref[keys[i]]};
+        ref = ref[keys[i]];
+      }
+      ref[keys[keys.length-1]] = val;
+      lez[idx] = cur;
+      return {...prev, lezyonlar: lez};
+    });
+  };
+
+  const newLesion = () => ({
+    taraf:'', compartment:[], compartmentDetail:'',
+    boyutAP:'', boyutCC:'', boyutTR:'',
+    structure:[],
+    t1:[], t2:[],
+    dwi:[], adc:[],
+    contrast:[],
+    chemshift:[],
+    special:[],
+    demographics:[],
+    size:[],
+    notlar:''
+  });
+
+  const addLesion = () => {
+    const idx = data.lezyonlar.length;
+    setData(prev => ({...prev, lezyonlar:[...prev.lezyonlar, newLesion()]}));
+    setCurrentIdx(idx);
+    setLoopStep(0);
+  };
+
+  const editLesion = (i) => {
+    setCurrentIdx(i);
+    setLoopStep(0);
+  };
+
+  const deleteLesion = (i) => {
+    setData(prev => ({...prev, lezyonlar: prev.lezyonlar.filter((_,k)=>k!==i)}));
+  };
+
+  const finalizeLoop = () => {
+    setCurrentIdx(-1);
+    setLoopStep(-1);
+  };
+
+  /* ---- Navigation ---- */
+  const goNext = () => {
+    // Lezyon döngüsü içindeyken
+    if (step === 9 && loopStep >= 0 && currentIdx >= 0) {
+      if (loopStep < LOOP_STEPS.length - 1) {
+        setLoopStep(loopStep + 1);
+      } else {
+        // Son sub-step: mevcut lezyon tamamlandı, özet ekrana dön
+        finalizeLoop();
+      }
+      return;
+    }
+    // Lezyon soruldu ama yok denmişse direkt özet
+    if (step === 8 && data.lezyonVarMi === false) {
+      setStep(10);
+      return;
+    }
+    if (step === 9 && currentIdx === -1) {
+      // döngü özeti ekranındayız, ileri = ÖZET
+      setStep(10);
+      return;
+    }
+    if (step < STEPS.length - 1) setStep(step + 1);
+  };
+
+  const goPrev = () => {
+    // Döngüde geri
+    if (step === 9 && loopStep > 0 && currentIdx >= 0) {
+      setLoopStep(loopStep - 1);
+      return;
+    }
+    if (step === 9 && loopStep === 0 && currentIdx >= 0) {
+      finalizeLoop();
+      return;
+    }
+    // özetten geri: eğer lezyon yoksa step 8'e dön
+    if (step === 10 && data.lezyonVarMi === false) {
+      setStep(8); return;
+    }
+    if (step > 0) setStep(step - 1);
+  };
+
+  /* ---- Dots ---- */
+  const renderDots = () => {
+    const dots = [];
+    STEPS.forEach((s, i) => {
+      let cls = 'dot';
+      if (i < step) cls += ' done';
+      if (i === step) cls += ' active';
+      dots.push(<div key={'s'+i} className={cls}/>);
+    });
+    if (step === 9 && currentIdx >= 0) {
+      LOOP_STEPS.forEach((_, j) => {
+        let cls = 'dot loop';
+        if (j === loopStep) cls = 'dot active';
+        dots.push(<div key={'l'+j} className={cls}/>);
+      });
+    }
+    return <div className="steps">{dots}</div>;
+  };
+
+  /* =====================================================================
+     ADIM RENDER'LARI
+     ===================================================================== */
+  const toggleMulti = (arr, val) => {
+    if (arr.includes(val)) return arr.filter(x => x !== val);
+    return [...arr, val];
+  };
+
+  const Opt = ({on, onClick, children, sub}) => (
+    <div className={"opt " + (on ? "sel" : "")} onClick={onClick}>
+      <div className="chk"/>
+      <span>{children}</span>
+      {sub && <span className="sub">{sub}</span>}
+    </div>
+  );
+
+  const renderStep = () => {
+    /* -------- 0. INTRO -------- */
+    if (step === 0) {
+      return (
+        <div>
+          <div className="step-label">{T.s0label} / {STEPS.length}</div>
+          <div className="step-title">{T.s0title}</div>
+          <div className="step-desc">{T.s0desc}</div>
+
+          <div className="grid grid-3">
+            <div className="field">
+              <label>{T.s0dateLabel}</label>
+              <input type="date" value={data.tarih} onChange={e=>patch('tarih', e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>{T.s0ageLabel}</label>
+              <input type="number" placeholder={T.s0agePlaceholder} value={data.hastaYas} onChange={e=>patch('hastaYas', e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>{T.s0fieldLabel}</label>
+              <select value={data.teknik.ag} onChange={e=>patch('teknik.ag', e.target.value)}>
+                <option value="1.5T">1.5 T</option>
+                <option value="3T">3 T</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="field">
+            <label>{T.s0clinLabel}</label>
+            <textarea placeholder={T.s0clinPlaceholder}
+                      value={data.klinik} onChange={e=>patch('klinik', e.target.value)}/>
+          </div>
+
+          <div className="step-label" style={{marginTop:12}}>{T.s0seqLabel}</div>
+          <div className="grid grid-3">
+            {['T1','T2','Yag_baski_T2','DWI/ADC','Kontrastli_T1','IP_OP','T2_star'].map(s => (
+              <Opt key={s} on={data.teknik.sekans.includes(s)}
+                   onClick={()=>patch('teknik.sekans', toggleMulti(data.teknik.sekans, s))}>
+                {s.replace(/_/g,' ')}
+              </Opt>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* -------- 1. SKROTAL DUVAR -------- */
+    if (step === 1) {
+      const c = data.cilt;
+      return (
+        <div>
+          <div className="step-label">{T.s1label} / {STEPS.length}</div>
+          <div className="step-title">{T.s1title}</div>
+          <div className="step-desc">{T.s1desc}</div>
+          <div className="grid grid-2">
+            <Opt on={c.normal} onClick={()=>{
+              patch('cilt.normal', !c.normal);
+              if (!c.normal) { patch('cilt.kalinlasma', false); patch('cilt.enflamatuar', false); patch('cilt.apse', false); patch('cilt.kitle', false);}
+            }}>{T.s1normal}</Opt>
+            <Opt on={c.kalinlasma} onClick={()=>{ patch('cilt.kalinlasma', !c.kalinlasma); if(!c.kalinlasma) patch('cilt.normal', false);}}>{T.s1thickening}</Opt>
+            <Opt on={c.enflamatuar} onClick={()=>{ patch('cilt.enflamatuar', !c.enflamatuar); if(!c.enflamatuar) patch('cilt.normal', false);}}>{T.s1inflam}</Opt>
+            <Opt on={c.apse} onClick={()=>{ patch('cilt.apse', !c.apse); if(!c.apse) patch('cilt.normal', false);}}>{T.s1abscess}</Opt>
+            <Opt on={c.kitle} onClick={()=>{ patch('cilt.kitle', !c.kitle); if(!c.kitle) patch('cilt.normal', false);}}>{T.s1mass}</Opt>
+          </div>
+          <div className="field" style={{marginTop:12}}>
+            <label>{T.noteLabel}</label>
+            <textarea value={c.not} onChange={e=>patch('cilt.not', e.target.value)}/>
+          </div>
+        </div>
+      );
+    }
+
+    /* -------- 2-3. TESTİSLER -------- */
+    if (step === 2 || step === 3) {
+      const side = step === 2 ? 'sag' : 'sol';
+      const key = side === 'sag' ? 'sagTestis' : 'solTestis';
+      const t = data[key];
+      return (
+        <div>
+          <div className="step-label">{T.s23label} {step+1} / {STEPS.length}</div>
+          <div className="step-title">{side === 'sag' ? T.s23titleSag : T.s23titleSol}</div>
+          <div className="step-desc">{T.s23desc}</div>
+
+          <div className="grid grid-2" style={{marginBottom:14}}>
+            <Opt on={t.degerlendirildi} onClick={()=>patch(key+'.degerlendirildi', !t.degerlendirildi)}>
+              {T.s23evalOpt}
+            </Opt>
+            {t.degerlendirildi && (
+              <Opt on={t.mevcut} onClick={()=>patch(key+'.mevcut', !t.mevcut)}>
+                {T.s23presentOpt}
+              </Opt>
+            )}
+          </div>
+
+          {!t.degerlendirildi && (
+            <div className="warn-banner">{T.s23warnNotEval}</div>
+          )}
+
+          {t.degerlendirildi && !t.mevcut && (
+            <>
+              <div className="info-banner">{T.s23infoBanner}</div>
+              <div className="grid grid-3">
+                {['inguinal','abdominal','yok_atrofik','operasyon_sonrasi'].map(l => (
+                  <Opt key={l} on={t.lokalizasyon===l} onClick={()=>patch(key+'.lokalizasyon', l)}>
+                    {l==='inguinal'?T.s23locInguinal:l==='abdominal'?T.s23locAbdominal:l==='yok_atrofik'?T.s23locAtrophic:T.s23locPostOp}
+                  </Opt>
+                ))}
+              </div>
+            </>
+          )}
+
+          {t.degerlendirildi && t.mevcut && (
+            <>
+              <div className="step-label" style={{marginTop:12}}>{T.s23sizeLabel}</div>
+              <div className="row3">
+                <div className="field"><label>AP</label><input type="number" value={t.boyutAP} onChange={e=>patch(key+'.boyutAP', e.target.value)}/></div>
+                <div className="field"><label>CC</label><input type="number" value={t.boyutCC} onChange={e=>patch(key+'.boyutCC', e.target.value)}/></div>
+                <div className="field"><label>TR</label><input type="number" value={t.boyutTR} onChange={e=>patch(key+'.boyutTR', e.target.value)}/></div>
+              </div>
+
+              <div className="step-label" style={{marginTop:4}}>{T.s23parLabel}</div>
+              <div className="grid grid-3">
+                {[['homojen',T.s23parHomojen],['heterojen_diffuz',T.s23parHeterojen],['fokal_lezyon',T.s23parFokal],['atrofi',T.s23parAtrofi]].map(([v,lbl])=>(
+                  <Opt key={v} on={t.parenkim===v} onClick={()=>patch(key+'.parenkim', v)}>{lbl}</Opt>
+                ))}
+              </div>
+
+              <div className="step-label" style={{marginTop:12}}>{T.s23t2Label}</div>
+              <div className="grid grid-3">
+                {[['normal',T.s23t2Normal],['diffuz_hipo',T.s23t2DiffHipo],['diffuz_hiper',T.s23t2DiffHiper],['heterojen',T.s23t2Heterojen]].map(([v,lbl])=>(
+                  <Opt key={v} on={t.t2Sinyal===v} onClick={()=>patch(key+'.t2Sinyal', v)}>{lbl}</Opt>
+                ))}
+              </div>
+
+              <div className="field" style={{marginTop:12}}>
+                <label>{T.s23addNote}</label>
+                <textarea value={t.not} onChange={e=>patch(key+'.not', e.target.value)}/>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+
+    /* -------- 4. EPİDİDİM -------- */
+    if (step === 4) {
+      return (
+        <div>
+          <div className="step-label">{T.s4label} / {STEPS.length}</div>
+          <div className="step-title">{T.s4title}</div>
+          <div className="step-desc">{T.s4desc}</div>
+
+          {['sag','sol'].map(side => {
+            const k = side==='sag'?'sagEpididim':'solEpididim';
+            const e = data[k];
+            const lbl = side==='sag'?T.s4sagLbl:T.s4solLbl;
+            return (
+              <div key={side} style={{marginBottom:20, paddingBottom:12, borderBottom:'1px solid var(--border)'}}>
+                <div className="step-label" style={{color:'var(--accent)'}}>{lbl}</div>
+                <div className="grid grid-2" style={{marginTop:8}}>
+                  <Opt on={e.normal} onClick={()=>{
+                    patch(k+'.normal', !e.normal);
+                    if (!e.normal) { patch(k+'.buyume', false); patch(k+'.sinyalArt', false); patch(k+'.kontrastArt', false);}
+                  }}>{T.s4normal}</Opt>
+                  <Opt on={e.buyume} onClick={()=>{patch(k+'.buyume', !e.buyume); if(!e.buyume) patch(k+'.normal', false);}}>{T.s4buyume}</Opt>
+                  <Opt on={e.sinyalArt} onClick={()=>{patch(k+'.sinyalArt', !e.sinyalArt); if(!e.sinyalArt) patch(k+'.normal', false);}}>{T.s4sinyalArt}</Opt>
+                  <Opt on={e.kontrastArt} onClick={()=>{patch(k+'.kontrastArt', !e.kontrastArt); if(!e.kontrastArt) patch(k+'.normal', false);}}>{T.s4kontrastArt}</Opt>
+                </div>
+                <div className="field" style={{marginTop:10}}>
+                  <label>{T.noteLabel}</label>
+                  <textarea value={e.not} onChange={ev=>patch(k+'.not', ev.target.value)}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    /* -------- 5. SPERMATİK KORD -------- */
+    if (step === 5) {
+      return (
+        <div>
+          <div className="step-label">{T.s5label} / {STEPS.length}</div>
+          <div className="step-title">{T.s5title}</div>
+          <div className="step-desc">{T.s5desc}</div>
+
+          {['sag','sol'].map(side => {
+            const k = side==='sag'?'sagKord':'solKord';
+            const e = data[k];
+            const lbl = side==='sag'?T.s5sagLbl:T.s5solLbl;
+            return (
+              <div key={side} style={{marginBottom:20, paddingBottom:12, borderBottom:'1px solid var(--border)'}}>
+                <div className="step-label" style={{color:'var(--accent)'}}>{lbl}</div>
+                <div className="grid grid-3" style={{marginTop:8}}>
+                  <Opt on={e.normal} onClick={()=>{
+                    patch(k+'.normal', !e.normal);
+                    if (!e.normal) { patch(k+'.varikosel', false); patch(k+'.kitle', false);}
+                  }}>{T.s5normal}</Opt>
+                  <Opt on={e.varikosel} onClick={()=>{patch(k+'.varikosel', !e.varikosel); if(!e.varikosel) patch(k+'.normal', false);}}>{T.s5varikosel}</Opt>
+                  <Opt on={e.kitle} onClick={()=>{patch(k+'.kitle', !e.kitle); if(!e.kitle) patch(k+'.normal', false);}}>{T.s5korde}</Opt>
+                </div>
+                {e.varikosel && (
+                  <div className="field" style={{marginTop:10}}>
+                    <label>{T.s5pamLabel}</label>
+                    <input type="number" placeholder={T.s5pamPlaceholder} value={e.varikoselGrad} onChange={ev=>patch(k+'.varikoselGrad', ev.target.value)}/>
+                  </div>
+                )}
+                <div className="field" style={{marginTop:10}}>
+                  <label>{T.noteLabel}</label>
+                  <textarea value={e.not} onChange={ev=>patch(k+'.not', ev.target.value)}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    /* -------- 6. SIVI KOLEKSİYONLARI -------- */
+    if (step === 6) {
+      const s = data.sivi;
+      return (
+        <div>
+          <div className="step-label">{T.s6label} / {STEPS.length}</div>
+          <div className="step-title">{T.s6title}</div>
+          <div className="step-desc">{T.s6desc}</div>
+
+          <div className="grid grid-2">
+            <div>
+              <div className="step-label" style={{color:'var(--accent)'}}>{T.s6sagTitle}</div>
+              <div style={{display:'grid', gap:8, marginTop:6}}>
+                <Opt on={s.sagHidrosel} onClick={()=>patch('sivi.sagHidrosel', !s.sagHidrosel)}>{T.s6sagHidrosel}</Opt>
+                <Opt on={s.sagHematosel} onClick={()=>patch('sivi.sagHematosel', !s.sagHematosel)}>{T.s6sagHematosel}</Opt>
+                <Opt on={s.sagPiyosel} onClick={()=>patch('sivi.sagPiyosel', !s.sagPiyosel)}>{T.s6sagPiyosel}</Opt>
+              </div>
+            </div>
+            <div>
+              <div className="step-label" style={{color:'var(--accent)'}}>{T.s6solTitle}</div>
+              <div style={{display:'grid', gap:8, marginTop:6}}>
+                <Opt on={s.solHidrosel} onClick={()=>patch('sivi.solHidrosel', !s.solHidrosel)}>{T.s6solHidrosel}</Opt>
+                <Opt on={s.solHematosel} onClick={()=>patch('sivi.solHematosel', !s.solHematosel)}>{T.s6solHematosel}</Opt>
+                <Opt on={s.solPiyosel} onClick={()=>patch('sivi.solPiyosel', !s.solPiyosel)}>{T.s6solPiyosel}</Opt>
+              </div>
+            </div>
+          </div>
+
+          <div className="field" style={{marginTop:12}}>
+            <label>{T.noteLabel}</label>
+            <textarea value={s.not} onChange={e=>patch('sivi.not', e.target.value)}/>
+          </div>
+        </div>
+      );
+    }
+
+    /* -------- 7. TUNİKA / RÜPTÜR -------- */
+    if (step === 7) {
+      const t = data.tunika;
+      return (
+        <div>
+          <div className="step-label">{T.s7label} / {STEPS.length}</div>
+          <div className="step-title">{T.s7title}</div>
+          <div className="step-desc">{T.s7desc}</div>
+          <div className="grid grid-2">
+            <Opt on={t.saglam} onClick={()=>{
+              patch('tunika.saglam', !t.saglam);
+              if(!t.saglam){ patch('tunika.sagRuptur', false); patch('tunika.solRuptur', false);}
+            }}>{T.s7intact}</Opt>
+            <Opt on={t.sagRuptur} onClick={()=>{patch('tunika.sagRuptur', !t.sagRuptur); if(!t.sagRuptur) patch('tunika.saglam', false);}}>{T.s7sagRupture}</Opt>
+            <Opt on={t.solRuptur} onClick={()=>{patch('tunika.solRuptur', !t.solRuptur); if(!t.solRuptur) patch('tunika.saglam', false);}}>{T.s7solRupture}</Opt>
+          </div>
+
+          <div className="step-label" style={{marginTop:12}}>{T.s7konturLabel}</div>
+          <div className="grid grid-3">
+            {[['düzgün',T.s7konturDuz],['lobüle',T.s7konturLob],['bozulmuş',T.s7konturBoz]].map(([v,lbl])=>(
+              <Opt key={v} on={t.kontur===v} onClick={()=>patch('tunika.kontur', v)}>{lbl}</Opt>
+            ))}
+          </div>
+          <div className="field" style={{marginTop:12}}>
+            <label>{T.noteLabel}</label>
+            <textarea value={t.not} onChange={e=>patch('tunika.not', e.target.value)}/>
+          </div>
+        </div>
+      );
+    }
+
+    /* -------- 8. LEZYON SORGUSU -------- */
+    if (step === 8) {
+      return (
+        <div>
+          <div className="step-label">{T.s8label} / {STEPS.length}</div>
+          <div className="step-title">{T.s8title}</div>
+          <div className="step-desc">{T.s8desc}</div>
+          <div className="grid grid-2">
+            <Opt on={data.lezyonVarMi===true} onClick={()=>patch('lezyonVarMi', true)}>
+              {T.s8yes}
+            </Opt>
+            <Opt on={data.lezyonVarMi===false} onClick={()=>patch('lezyonVarMi', false)}>
+              {T.s8no}
+            </Opt>
+          </div>
+        </div>
+      );
+    }
+
+    /* -------- 9. LEZYON DÖNGÜSÜ -------- */
+    if (step === 9) {
+      // Döngü özeti ekranı
+      if (currentIdx === -1) {
+        return (
+          <div>
+            <div className="step-label">{T.s9label} / {STEPS.length}</div>
+            <div className="step-title">{T.s9title} <small>({data.lezyonlar.length})</small></div>
+            <div className="step-desc">{T.s9desc}</div>
+
+            {data.lezyonlar.length === 0 && (
+              <div className="info-banner">{T.s9empty}</div>
+            )}
+
+            {data.lezyonlar.map((l, i) => {
+              const diffs = getDifferentials(l, 3);
+              return (
+                <div key={i} className="lesion-summary">
+                  <div className="lh">
+                    <div className="ltitle">{T.s9lesionN}{i+1}</div>
+                    <div style={{display:'flex', gap:6}}>
+                      <button className="btn small" onClick={()=>editLesion(i)}>{T.s9edit}</button>
+                      <button className="btn small danger" onClick={()=>deleteLesion(i)}>{T.s9delete}</button>
+                    </div>
+                  </div>
+                  <div className="lmeta">
+                    {l.taraf && (l.taraf==='sag'?T.ls0sag:l.taraf==='sol'?T.ls0sol:T.ls0bilateral)}{l.taraf?' · ':''}
+                    {l.compartment.map(c=>L(c)).join(', ')}
+                    {(l.boyutAP||l.boyutCC||l.boyutTR) ? ` · ${l.boyutAP||'?'}×${l.boyutCC||'?'}×${l.boyutTR||'?'} mm` : ''}
+                  </div>
+                  {diffs.length > 0 && (
+                    <div className="ldiff">
+                      {diffs.map(d => <span key={d.id} className="diff-chip">{loc(d.name)} %{d.percentage}</span>)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <div style={{marginTop:14, display:'flex', gap:8}}>
+              <button className="btn primary" onClick={addLesion}>{T.s9addBtn}</button>
+            </div>
+          </div>
+        );
+      }
+
+      // Aktif lezyon sub-step'leri
+      const L0 = data.lezyonlar[currentIdx];
+      if (!L0) { finalizeLoop(); return null; }
+
+      const tLoop = (field, val) => updateLesion(currentIdx, field, val);
+      const toggleLoop = (field, val) => updateLesion(currentIdx, field, toggleMulti(L0[field]||[], val));
+
+      const subTitle = <small>Lezyon #{currentIdx+1} · {loopStep+1}/{LOOP_STEPS.length}</small>;
+
+      if (loopStep === 0) {
+        return (
+          <div>
+            <div className="step-label">{T.ls0label}</div>
+            <div className="step-title">{T.ls0title} {subTitle}</div>
+            <div className="step-desc">{T.ls0desc}</div>
+
+            <div className="step-label">{T.ls0sideLabel}</div>
+            <div className="grid grid-3">
+              {[[T.ls0sag,'sag'],[T.ls0sol,'sol'],[T.ls0bilateral,'bilateral']].map(([lbl,v])=>(
+                <Opt key={v} on={L0.taraf===v} onClick={()=>tLoop('taraf', v)}>{lbl}</Opt>
+              ))}
+            </div>
+
+            <div className="step-label" style={{marginTop:12}}>{T.ls0compLabel}</div>
+            <div className="grid grid-2">
+              {[
+                'intratestikuler','ekstratestikuler','paratestikuler',
+                'epididim_bas','epididim_govde','epididim_kuyruk',
+                'spermatik_kord','tunika','tunika_vaginalis','inguinal','abdominal'
+              ].map(v => (
+                <Opt key={v} on={L0.compartment.includes(v)} onClick={()=>toggleLoop('compartment', v)}>
+                  {L(v)}
+                </Opt>
+              ))}
+            </div>
+
+            <div className="field" style={{marginTop:12}}>
+              <label>{T.ls0detailLabel}</label>
+              <input type="text" placeholder={T.ls0detailPlaceholder}
+                     value={L0.compartmentDetail} onChange={e=>tLoop('compartmentDetail', e.target.value)}/>
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 1) {
+        return (
+          <div>
+            <div className="step-label">{T.ls1label}</div>
+            <div className="step-title">{T.ls1title} {subTitle}</div>
+            <div className="step-desc">{T.ls1desc}</div>
+            <div className="row3">
+              <div className="field"><label>AP (mm)</label><input type="number" value={L0.boyutAP} onChange={e=>tLoop('boyutAP', e.target.value)}/></div>
+              <div className="field"><label>CC (mm)</label><input type="number" value={L0.boyutCC} onChange={e=>tLoop('boyutCC', e.target.value)}/></div>
+              <div className="field"><label>TR (mm)</label><input type="number" value={L0.boyutTR} onChange={e=>tLoop('boyutTR', e.target.value)}/></div>
+            </div>
+
+            <div className="step-label" style={{marginTop:12}}>{T.ls1sizeLabel}</div>
+            <div className="grid grid-4">
+              {[['kucuk',T.ls1small],['orta',T.ls1mid],['buyuk',T.ls1large],['multifokal',T.ls1multi]].map(([v,lbl])=>(
+                <Opt key={v} on={L0.size.includes(v)} onClick={()=>toggleLoop('size', v)}>{lbl}</Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 2) {
+        return (
+          <div>
+            <div className="step-label">{T.ls2label}</div>
+            <div className="step-title">{T.ls2title} {subTitle}</div>
+            <div className="step-desc">{T.ls2desc}</div>
+
+            <div className="grid grid-2">
+              {[
+                'solid','solid_homojen','kistik','kistik_solid','mikst','heterojen',
+                'iyi_sinirli','infiltratif','multifokal','diffuz','wedge','tubuler',
+                'ince_duvar','onion','yag','sivi','sivi_kompleks','debris','atrofi'
+              ].map(v => (
+                <Opt key={v} on={L0.structure.includes(v)} onClick={()=>toggleLoop('structure', v)}>
+                  {L(v)}
+                </Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 3) {
+        return (
+          <div>
+            <div className="step-label">{T.ls3label}</div>
+            <div className="step-title">{T.ls3title} {subTitle}</div>
+            <div className="grid grid-3">
+              {['izointens','hipointens','hiperintens','hafif_hiper','hafif_hipo','heterojen','hiperintens_odak','akim_void'].map(v => (
+                <Opt key={v} on={L0.t1.includes(v)} onClick={()=>toggleLoop('t1', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 4) {
+        return (
+          <div>
+            <div className="step-label">{T.ls4label}</div>
+            <div className="step-title">{T.ls4title} {subTitle}</div>
+            <div className="grid grid-3">
+              {[
+                'hipointens','hipointens_homojen','belirgin_hipo','izointens',
+                'hiperintens','heterojen','heterojen_hiper','hafif_hiper',
+                'tabakali','konsantrik_halka','tubuler_hiper','akim_void'
+              ].map(v => (
+                <Opt key={v} on={L0.t2.includes(v)} onClick={()=>toggleLoop('t2', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 5) {
+        return (
+          <div>
+            <div className="step-label">{T.ls5label}</div>
+            <div className="step-title">{T.ls5title} {subTitle}</div>
+            <div className="step-desc">{T.ls5desc}</div>
+
+            <div className="step-label">{T.ls5dwiLabel}</div>
+            <div className="grid grid-3">
+              {['yok','kisitlanma_kismi','kisitlanma','belirgin_kisitlanma','degisken','heterojen','izointens'].map(v => (
+                <Opt key={v} on={L0.dwi.includes(v)} onClick={()=>toggleLoop('dwi', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+
+            <div className="step-label" style={{marginTop:12}}>{T.ls5adcLabel}</div>
+            <div className="grid grid-3">
+              {['dusuk','cok_dusuk','izointens','yuksek','heterojen','degisken'].map(v => (
+                <Opt key={v} on={L0.adc.includes(v)} onClick={()=>toggleLoop('adc', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 6) {
+        return (
+          <div>
+            <div className="step-label">{T.ls6label}</div>
+            <div className="step-title">{T.ls6title} {subTitle}</div>
+            <div className="step-desc">{T.ls6desc}</div>
+            <div className="grid grid-2">
+              {[
+                'yok','minimal','hafif','orta','homojen','homojen_orta',
+                'heterojen','erken_yogun','erken_yogun_washout',
+                'periferik_halka','duvar_gec','duvar_kalin','azalmis','artmis_diffuz','gec_dolma','gec_hafif'
+              ].map(v => (
+                <Opt key={v} on={L0.contrast.includes(v)} onClick={()=>toggleLoop('contrast', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 7) {
+        return (
+          <div>
+            <div className="step-label">{T.ls7label}</div>
+            <div className="step-title">{T.ls7title} {subTitle}</div>
+            <div className="step-desc">{T.ls7desc}</div>
+            <div className="grid grid-2">
+              {['yok','var','var_fokal','yagbaskila_dusus'].map(v => (
+                <Opt key={v} on={L0.chemshift.includes(v)} onClick={()=>toggleLoop('chemshift', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+
+            <div className="step-label" style={{marginTop:12}}>{T.ls7demoLabel}</div>
+            <div className="grid grid-3">
+              {['cocuk','adolesan','genc_erkek','15_35','15_45','20_40','30_60','yasli','60_ustu'].map(v => (
+                <Opt key={v} on={L0.demographics.includes(v)} onClick={()=>toggleLoop('demographics', v)}>
+                  {v==='cocuk'?T.ls7child:v==='adolesan'?T.ls7adol:v==='genc_erkek'?T.ls7young:v==='yasli'?T.ls7elderly:v==='60_ustu'?T.ls7over60:v.replace('_','-')+(RV_LOCALE==='en'?' years':' yaş')}
+                </Opt>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 8) {
+        return (
+          <div>
+            <div className="step-label">{T.ls8label}</div>
+            <div className="step-title">{T.ls8title} {subTitle}</div>
+            <div className="step-desc">{T.ls8desc}</div>
+            <div className="grid grid-2">
+              {[
+                'bilateral','kanama','kalsifikasyon','nekroz','fibrovaskuler_septa','tunika_korunur',
+                'onion_skin','periferik_kalsifikasyon','mediastinum_yerlesim','cah',
+                'hormonal','primer_malignite','retroperitoneal_lap',
+                'whirlpool_kord','akut_skrotum','kord_tutulumu','kord_bukulme',
+                'epididimit_eslik','reaktif_hidrosel','cilt_kalinlasma',
+                'proteinoz_icerik','pampiniform_genisleme','sol_taraf','valsalva',
+                'hemosiderin','kan_urun','t2star_hipo','travma',
+                'duvar_kalinlik','enfeksiyon_eslik','ektopik_yerlesim',
+                'barsak_icerik','yag_icerik','inguinal_devam','peristaltizm',
+                'yag_dokusu','yag_baski_sinyal_kaybi','tunika_yerlesim','spermatosel_eslik'
+              ].map(v => (
+                <Opt key={v} on={L0.special.includes(v)} onClick={()=>toggleLoop('special', v)}>{L(v)}</Opt>
+              ))}
+            </div>
+
+            <div className="field" style={{marginTop:12}}>
+              <label>{T.ls8noteLabel}</label>
+              <textarea placeholder={T.ls8notePlaceholder}
+                        value={L0.notlar} onChange={e=>tLoop('notlar', e.target.value)}/>
+            </div>
+          </div>
+        );
+      }
+
+      if (loopStep === 9) {
+        const diffs = getDifferentials(L0, 7);
+        return (
+          <div>
+            <div className="step-label">{T.ls9label}</div>
+            <div className="step-title">{T.ls9title.replace('{n}', currentIdx+1)}</div>
+            <div className="step-desc">{T.ls9desc}</div>
+
+            {diffs.length === 0 && (
+              <div className="warn-banner">{T.ls9noData}</div>
+            )}
+
+            {diffs.map(d => (
+              <div key={d.id} className="diff-row">
+                <div className="dname"><strong>{loc(d.name)}</strong><br/><span style={{color:'var(--text-mute)', fontSize:11}}>{loc(d.hint)}</span></div>
+                <div className="dbar-wrap"><div className="dbar" style={{width: d.percentage + '%'}}/></div>
+                <div className="dpct">%{d.percentage}</div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+    }
+
+    /* -------- 10. ÖZET & RAPOR -------- */
+    if (step === 10) {
+      return <ReportView data={data}/>;
+    }
+
+    return null;
+  };
+
+  /* ---- Nav etiketi ---- */
+  const nextLabel = () => {
+    if (step === 9 && loopStep === LOOP_STEPS.length - 1 && currentIdx >= 0) return T.navSaveLesion;
+    if (step === 10) return T.navDone;
+    return T.navForward;
+  };
+  const canNext = () => {
+    if (step === 8 && data.lezyonVarMi === null) return false;
+    if (step === 9 && currentIdx >= 0 && loopStep === 0) {
+      if (!data.lezyonlar[currentIdx]?.taraf) return false;
+      if ((data.lezyonlar[currentIdx]?.compartment||[]).length === 0) return false;
+    }
+    return true;
+  };
+
+  return (
+    <>
+      <div className="hdr">
+        <div>
+          <h1>{T.headerTitle}</h1>
+          <div className="sub">{T.headerSub}</div>
+        </div>
+        <div className="ver">v1.0</div>
+      </div>
+
+      {renderDots()}
+
+      <div className="card">
+        {renderStep()}
+      </div>
+
+      <div className="nav">
+        <button className="btn" onClick={goPrev} disabled={step===0 && loopStep<0}>{T.navBack}</button>
+        {step !== 10 && (
+          <button className="btn primary" onClick={goNext} disabled={!canNext()}>{nextLabel()}</button>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* =====================================================================
+   RAPOR GÖRÜNÜMÜ & ÜRETİCİLER
+   ===================================================================== */
+function ReportView({data}) {
+  const [toast, setToast] = useState('');
+  const [showText, setShowText] = useState(false);
+  const taRef = useRef(null);
+
+  const overallDiffs = useMemo(() => {
+    if (data.lezyonlar.length === 0) return [];
+    // Tüm lezyonların ortalama/toplam ağırlıklı skorları
+    const agg = {};
+    data.lezyonlar.forEach(l => {
+      const diffs = getDifferentials(l, 10);
+      diffs.forEach(d => {
+        if (!agg[d.id]) agg[d.id] = {...d, score:0};
+        agg[d.id].score += d.score;
+      });
+    });
+    const arr = Object.values(agg).sort((a,b)=>b.score-a.score).slice(0,7);
+    const sum = arr.reduce((s,p)=>s+p.score, 0);
+    if (sum === 0) return [];
+    return arr.map(p => ({...p, percentage: Math.round((p.score/sum)*100)}));
+  }, [data.lezyonlar]);
+
+  const plainReport = useMemo(() => genPlainReport(data, overallDiffs), [data, overallDiffs]);
+
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(plainReport);
+      setToast(T.toastCopied);
+    } catch (e) {
+      // overlay fallback
+      if (taRef.current) {
+        taRef.current.select();
+        try { document.execCommand('copy'); setToast(T.toastCopiedOver); }
+        catch { setToast(T.toastCopyFail); }
+      } else {
+        setShowText(true);
+        setToast(T.toastOverlay);
+      }
+    }
+    setTimeout(()=>setToast(''), 2200);
+  };
+
+  const doDownload = () => {
+    const blob = new Blob([plainReport], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `skrotal_testis_mri_${data.tarih||'rapor'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(T.toastDownloaded);
+    setTimeout(()=>setToast(''), 2200);
+  };
+
+  return (
+    <div>
+      <div className="step-label">{T.s10label} {STEPS.length} / {STEPS.length}</div>
+      <div className="step-title">{T.s10title}</div>
+      <div className="step-desc">{T.s10desc}</div>
+
+      <div className="toolbar">
+        <button className="btn primary" onClick={doCopy}>{T.s10copy}</button>
+        <button className="btn" onClick={doDownload}>{T.s10download}</button>
+        <button className="btn" onClick={()=>setShowText(v=>!v)}>{showText ? T.s10hideText : T.s10showText}</button>
+      </div>
+
+      {genReportJSX(data, overallDiffs)}
+
+      {showText && (
+        <textarea ref={taRef} className="overlay-ta" value={plainReport} readOnly
+                  onClick={e=>e.target.select()}/>
+      )}
+
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+/* =====================================================================
+   RAPOR JSX ÜRETİCİ (inline görsel)
+   ===================================================================== */
+function genReportJSX(d, overallDiffs) {
+  const yokMu = (side) => {
+    const t = d[side==='sag'?'sagTestis':'solTestis'];
+    return !t.degerlendirildi;
+  };
+
+  // Testis özeti
+  const testisRow = (side) => {
+    const k = side==='sag'?'sagTestis':'solTestis';
+    const t = d[k];
+    const lbl = side==='sag'?T.rowSagTestis:T.rowSolTestis;
+    if (!t.degerlendirildi) {
+      return <RptRow key={k} label={lbl} value={T.valNotEvaluated} pathologic={false}/>;
+    }
+    if (!t.mevcut) {
+      const locStr = t.lokalizasyon==='inguinal'?T.valLocInguinal:
+                  t.lokalizasyon==='abdominal'?T.valLocAbdominal:
+                  t.lokalizasyon==='yok_atrofik'?T.valLocAtrophic:
+                  T.valLocPostOp;
+      return <RptRow key={k} label={lbl} value={T.valInScrotum + locStr} pathologic={true}/>;
+    }
+    const boyut = (t.boyutAP||t.boyutCC||t.boyutTR) ? `${t.boyutAP||'?'}×${t.boyutCC||'?'}×${t.boyutTR||'?'} mm` : T.valSizeNotEntered;
+    const parenkimLbl = {homojen:T.valParenHomojen, heterojen_diffuz:T.valParenHeterojen, fokal_lezyon:T.valParenFokal, atrofi:T.valParenAtrofi}[t.parenkim];
+    const t2Lbl = {normal:T.valT2Normal, diffuz_hipo:T.valT2DiffHipo, diffuz_hiper:T.valT2DiffHiper, heterojen:T.valT2Heterojen}[t.t2Sinyal];
+    const patol = t.parenkim !== 'homojen' || t.t2Sinyal !== 'normal';
+    return (
+      <RptRow key={k} label={lbl}
+              value={`${boyut}, ${parenkimLbl}, ${t2Lbl}${t.not?`. ${t.not}`:''}`}
+              pathologic={patol}/>
+    );
+  };
+
+  // Epididim
+  const epiRow = (side) => {
+    const k = side==='sag'?'sagEpididim':'solEpididim';
+    const e = d[k];
+    const lbl = side==='sag'?T.rowSagEpi:T.rowSolEpi;
+    if (e.normal) return <RptRow key={k} label={lbl} value={T.valNormalSignal}/>;
+    const bul = [];
+    if (e.buyume) bul.push(T.valEpiBuyume);
+    if (e.sinyalArt) bul.push(T.valEpiSinyalArt);
+    if (e.kontrastArt) bul.push(T.valEpiKontrastArt);
+    return <RptRow key={k} label={lbl} value={`${bul.join(', ') || T.valPathologic}${e.not?`. ${e.not}`:''}`} pathologic={true}/>;
+  };
+
+  // Kord
+  const kordRow = (side) => {
+    const k = side==='sag'?'sagKord':'solKord';
+    const e = d[k];
+    const lbl = side==='sag'?T.rowSagKord:T.rowSolKord;
+    if (e.normal) return <RptRow key={k} label={lbl} value={T.valNormal}/>;
+    const bul = [];
+    if (e.varikosel) bul.push(T.valKordVarikosel + (e.varikoselGrad?` (${T.valKordMaksChar}${e.varikoselGrad} mm)`:``));
+    if (e.kitle) bul.push(T.valKordKitle);
+    return <RptRow key={k} label={lbl} value={`${bul.join(', ') || T.valPathologic}${e.not?`. ${e.not}`:''}`} pathologic={true}/>;
+  };
+
+  // Sıvı koleksiyonları
+  const siviText = () => {
+    const s = d.sivi;
+    const parts = [];
+    if (s.sagHidrosel) parts.push(T.valSagHidrosel);
+    if (s.solHidrosel) parts.push(T.valSolHidrosel);
+    if (s.sagHematosel) parts.push(T.valSagHematosel);
+    if (s.solHematosel) parts.push(T.valSolHematosel);
+    if (s.sagPiyosel) parts.push(T.valSagPiyosel);
+    if (s.solPiyosel) parts.push(T.valSolPiyosel);
+    if (parts.length === 0) return {t:T.valNoFluid, p:false};
+    return {t: parts.join(', ') + (s.not?`. ${s.not}`:''), p:true};
+  };
+  const sv = siviText();
+
+  // Tunika
+  const KONTUR = { 'düzgün': T.s7konturDuz, 'lobüle': T.s7konturLob, 'bozulmuş': T.s7konturBoz };
+  const tunikaText = () => {
+    const t = d.tunika;
+    if (t.saglam) return {t:T.valTunikaIntakt + (KONTUR[t.kontur] || t.kontur), p:false};
+    const parts = [];
+    if (t.sagRuptur) parts.push(T.valSagRuptur);
+    if (t.solRuptur) parts.push(T.valSolRuptur);
+    return {t: parts.join(', ') + T.valKontur + (KONTUR[t.kontur] || t.kontur) + (t.not?`. ${t.not}`:''), p:true};
+  };
+  const tn = tunikaText();
+
+  // Skrotal cilt
+  const ciltText = () => {
+    const c = d.cilt;
+    if (c.normal) return {t:T.valCiltNormal, p:false};
+    const parts = [];
+    if (c.kalinlasma) parts.push(T.valCiltKalinlasma);
+    if (c.enflamatuar) parts.push(T.valCiltInflam);
+    if (c.apse) parts.push(T.valCiltApse);
+    if (c.kitle) parts.push(T.valCiltKitle);
+    return {t: parts.join(', ') + (c.not?`. ${c.not}`:''), p:true};
+  };
+  const ct = ciltText();
+
+  return (
+    <>
+      {/* Clinical */}
+      {(d.tarih || d.hastaYas || d.klinik) && (
+        <RptSection title={T.rptClinical}>
+          {d.tarih && <RptRow label={T.rowDate} value={d.tarih}/>}
+          {d.hastaYas && <RptRow label={T.rowAge} value={d.hastaYas}/>}
+          <RptRow label={T.rowField} value={d.teknik.ag}/>
+          <RptRow label={T.rowSequences} value={d.teknik.sekans.map(s=>s.replace(/_/g,' ')).join(', ')}/>
+          {d.klinik && <RptRow label={T.rowIndication} value={d.klinik}/>}
+        </RptSection>
+      )}
+
+      {/* Scrotal wall */}
+      <RptSection title={T.rptScrWall}>
+        <RptRow label={T.rowFinding} value={ct.t} pathologic={ct.p}/>
+      </RptSection>
+
+      {/* Testes */}
+      <RptSection title={T.rptTestis}>
+        {testisRow('sag')}
+        {testisRow('sol')}
+      </RptSection>
+
+      {/* Epididymis */}
+      <RptSection title={T.rptEpididymis}>
+        {epiRow('sag')}
+        {epiRow('sol')}
+      </RptSection>
+
+      {/* Spermatic cord */}
+      <RptSection title={T.rptCord}>
+        {kordRow('sag')}
+        {kordRow('sol')}
+      </RptSection>
+
+      {/* Tunica */}
+      <RptSection title={T.rptTunica}>
+        <RptRow label={T.rowFinding} value={tn.t} pathologic={tn.p}/>
+      </RptSection>
+
+      {/* Fluid */}
+      <RptSection title={T.rptFluid}>
+        <RptRow label={T.rowFinding} value={sv.t} pathologic={sv.p}/>
+      </RptSection>
+
+      {/* Lesions */}
+      {(yokMu('sag') || yokMu('sol')) && (
+        <div className="warn-banner">
+          {yokMu('sag') && yokMu('sol') ? T.warnBothSides : yokMu('sag') ? T.warnRightSide : T.warnLeftSide}{T.warnNotEvalSuffix}
+        </div>
+      )}
+
+      {d.lezyonVarMi === false && (
+        <RptSection title={T.rptFocal}>
+          <RptRow label={T.rowFinding} value={T.valNoFocal}/>
+        </RptSection>
+      )}
+
+      {d.lezyonlar.map((l, i) => {
+        const diffs = getDifferentials(l, 5);
+        const compText = l.compartment.map(c=>L(c)).join(', ');
+        const taraf = l.taraf==='sag'?T.valSideRight:l.taraf==='sol'?T.valSideLeft:l.taraf==='bilateral'?T.valSideBilateral:'';
+        const boyut = (l.boyutAP||l.boyutCC||l.boyutTR) ? `${l.boyutAP||'?'}×${l.boyutCC||'?'}×${l.boyutTR||'?'} mm` : T.valSizeNotEntered;
+        const joinLbl = (arr) => (arr||[]).map(x=>L(x)).join(', ') || '—';
+        return (
+          <RptSection key={i} title={`${T.s9lesionN}${i+1}`}>
+            <RptRow label={T.rowSide} value={taraf || '—'}/>
+            <RptRow label={T.rowCompartment} value={compText || '—'} pathologic={true}/>
+            {l.compartmentDetail && <RptRow label={T.rowAnatDetail} value={l.compartmentDetail}/>}
+            <RptRow label={T.rowSize} value={boyut}/>
+            <RptRow label={T.rowStructure} value={joinLbl(l.structure)} pathologic={true}/>
+            <RptRow label={T.rowT1} value={joinLbl(l.t1)}/>
+            <RptRow label={T.rowT2} value={joinLbl(l.t2)}/>
+            <RptRow label={T.rowDWI} value={joinLbl(l.dwi)}/>
+            <RptRow label={T.rowADC} value={joinLbl(l.adc)}/>
+            <RptRow label={T.rowContrast} value={joinLbl(l.contrast)}/>
+            <RptRow label={T.rowChemshift} value={joinLbl(l.chemshift)}/>
+            {(l.special||[]).length > 0 && <RptRow label={T.rowExtra} value={joinLbl(l.special)} pathologic={true}/>}
+            {l.notlar && <RptRow label={T.rowNote} value={l.notlar}/>}
+            {diffs.length > 0 && (
+              <div style={{padding:'10px 16px', borderTop:'1px solid var(--border)'}}>
+                <div style={{color:'var(--text-mute)', fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8}}>{T.rptDiffLabel}</div>
+                {diffs.map(x => (
+                  <div key={x.id} className="diff-row" style={{padding:'4px 0'}}>
+                    <div className="dname"><strong>{loc(x.name)}</strong></div>
+                    <div className="dbar-wrap"><div className="dbar" style={{width: x.percentage+'%'}}/></div>
+                    <div className="dpct">%{x.percentage}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </RptSection>
+        );
+      })}
+
+      {/* Overall differential */}
+      {overallDiffs.length > 0 && (
+        <RptSection title={T.rptOverallDiff}>
+          <div style={{padding:'10px 16px'}}>
+            {overallDiffs.map(x => (
+              <div key={x.id} className="diff-row" style={{padding:'6px 0'}}>
+                <div className="dname"><strong>{loc(x.name)}</strong><br/><span style={{color:'var(--text-mute)', fontSize:11}}>{loc(x.category)}</span></div>
+                <div className="dbar-wrap"><div className="dbar" style={{width:x.percentage+'%'}}/></div>
+                <div className="dpct">%{x.percentage}</div>
+              </div>
+            ))}
+          </div>
+        </RptSection>
+      )}
+
+      {/* Conclusion */}
+      <RptSection title={T.rptConclusion}>
+        <RptNarrative text={genConclusion(d, overallDiffs)}/>
+      </RptSection>
+    </>
+  );
+}
+
+/* =====================================================================
+   SONUÇ METNİ ÜRETİCİ
+   ===================================================================== */
+function genConclusion(d, diffs) {
+  const lines = [];
+  if (d.lezyonVarMi === false && d.sagTestis.parenkim === 'homojen' && d.solTestis.parenkim === 'homojen' &&
+      d.sagEpididim.normal && d.solEpididim.normal && !d.sivi.sagHidrosel && !d.sivi.solHidrosel &&
+      !d.sivi.sagHematosel && !d.sivi.solHematosel && !d.sivi.sagPiyosel && !d.sivi.solPiyosel) {
+    lines.push(T.concNormal);
+  } else if (d.lezyonVarMi === true && d.lezyonlar.length > 0) {
+    if (diffs[0]) {
+      lines.push(T.concTopDiff.replace('{n}', d.lezyonlar.length) + `${loc(diffs[0].name)} (%${diffs[0].percentage})`);
+      if (diffs[1]) lines[lines.length-1] += `, ${loc(diffs[1].name)} (%${diffs[1].percentage})`;
+      if (diffs[2]) lines[lines.length-1] += `, ${loc(diffs[2].name)} (%${diffs[2].percentage})`;
+      lines[lines.length-1] += '.';
+    } else {
+      lines.push(`${d.lezyonlar.length}${T.concLezyonPlain}`);
+    }
+    // Malign clue
+    const hasMalignHint = diffs.slice(0,3).some(x => {
+      const cat = loc(x.category) + ' ' + loc(x.name);
+      return /malign|seminom|lenfom|metastaz|GHT|lymphoma|metastasis/i.test(cat);
+    });
+    if (hasMalignHint) {
+      lines.push(T.concMalign);
+    }
+  }
+  if (d.tunika.sagRuptur || d.tunika.solRuptur) {
+    lines.push(T.concTunikaRupture);
+  }
+  if (d.sivi.sagPiyosel || d.sivi.solPiyosel) {
+    lines.push(T.concPiyosel);
+  }
+  if ((d.sagKord.varikosel || d.solKord.varikosel) && !lines.join(' ').includes(T.valKordVarikosel)) {
+    const sides = [];
+    if (d.sagKord.varikosel) sides.push(T.concSagSide);
+    if (d.solKord.varikosel) sides.push(T.concSolSide);
+    lines.push(`${sides.join(T.concVe)}${T.concVarikosel}`);
+  }
+  if (!d.sagTestis.degerlendirildi || !d.solTestis.degerlendirildi) {
+    const t = [];
+    if (!d.sagTestis.degerlendirildi) t.push(T.concSagSideEval);
+    if (!d.solTestis.degerlendirildi) t.push(T.concSolSideEval);
+    lines.push(`${t.join(T.concVe)}${T.concNotEval}`);
+  }
+  if (lines.length === 0) lines.push(T.concDefault);
+  return lines.join('\n');
+}
+
+/* =====================================================================
+   DÜZ METİN RAPOR ÜRETİCİ (kopyala / indir)
+   ===================================================================== */
+function genPlainReport(d, diffs) {
+  const line = '═'.repeat(68);
+  const sub  = '─'.repeat(68);
+  let r = '';
+
+  r += `${line}\n  ${T.ptHeader}\n${line}\n\n`;
+
+  if (d.tarih) r += `${T.ptDateLabel} : ${d.tarih}\n`;
+  if (d.hastaYas) r += `${T.ptAgeLabel} : ${d.hastaYas}\n`;
+  r += `${T.ptFieldLabel} : ${d.teknik.ag}\n`;
+  r += `${T.ptSeqLabel} : ${d.teknik.sekans.map(s=>s.replace(/_/g,' ')).join(', ')}\n`;
+  if (d.klinik) r += `${T.ptIndicLabel} : ${d.klinik}\n`;
+  r += '\n';
+
+  r += `┌─ ${T.ptScrWall} ${'─'.repeat(Math.max(0,44-T.ptScrWall.length))}\n`;
+  const c = d.cilt;
+  if (c.normal) r += `│ ${T.ptCiltNormal}\n`;
+  else {
+    const pts = [];
+    if (c.kalinlasma) pts.push(T.ptCiltKalinlasma);
+    if (c.enflamatuar) pts.push(T.ptCiltInflam);
+    if (c.apse) pts.push(T.ptCiltApse);
+    if (c.kitle) pts.push(T.ptCiltKitle);
+    r += `│ ${pts.join(', ')}${c.not?`. ${c.not}`:''}\n`;
+  }
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  r += `┌─ ${T.ptTestisH} ${'─'.repeat(Math.max(0,55-T.ptTestisH.length))}\n`;
+  ['sag','sol'].forEach(side => {
+    const t = d[side==='sag'?'sagTestis':'solTestis'];
+    const lbl = side==='sag'?T.ptSagLbl:T.ptSolLbl;
+    if (!t.degerlendirildi) {
+      r += `│ ${lbl} testis: ${T.ptNotEval}.\n`;
+    } else if (!t.mevcut) {
+      const locPt = t.lokalizasyon==='inguinal'?T.ptLocInguinal:
+                  t.lokalizasyon==='abdominal'?T.ptLocAbdominal:
+                  t.lokalizasyon==='yok_atrofik'?T.ptLocAtrophic:
+                  T.ptLocPostOp;
+      r += `│ ${lbl} testis: ${T.valInScrotum}${locPt}.\n`;
+    } else {
+      const boyut = (t.boyutAP||t.boyutCC||t.boyutTR) ? `${t.boyutAP||'?'}×${t.boyutCC||'?'}×${t.boyutTR||'?'} mm` : T.ptSizeNotEntered;
+      const parenkim = {homojen:T.ptParHomojen, heterojen_diffuz:T.ptParHeterojen, fokal_lezyon:T.ptParFokal, atrofi:T.ptParAtrofi}[t.parenkim];
+      const t2 = {normal:T.ptT2Normal, diffuz_hipo:T.ptT2DiffHipo, diffuz_hiper:T.ptT2DiffHiper, heterojen:T.ptT2Heterojen}[t.t2Sinyal];
+      r += `│ ${lbl} testis: ${boyut}, ${parenkim}, ${t2}${t.not?`. ${t.not}`:''}.\n`;
+    }
+  });
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  r += `┌─ ${T.ptEpididymisH} ${'─'.repeat(Math.max(0,56-T.ptEpididymisH.length))}\n`;
+  ['sag','sol'].forEach(side => {
+    const e = d[side==='sag'?'sagEpididim':'solEpididim'];
+    const lbl = side==='sag'?T.ptSagLbl:T.ptSolLbl;
+    if (e.normal) r += `│ ${lbl} epididymis: ${T.ptNormal}.\n`;
+    else {
+      const pts = [];
+      if (e.buyume) pts.push(T.ptEpiBuyume);
+      if (e.sinyalArt) pts.push(T.ptEpiSinyalArt);
+      if (e.kontrastArt) pts.push(T.ptEpiKontrastArt);
+      r += `│ ${lbl} epididymis: ${pts.join(', ')}${e.not?`. ${e.not}`:''}.\n`;
+    }
+  });
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  r += `┌─ ${T.ptCordH} ${'─'.repeat(Math.max(0,50-T.ptCordH.length))}\n`;
+  ['sag','sol'].forEach(side => {
+    const e = d[side==='sag'?'sagKord':'solKord'];
+    const lbl = side==='sag'?T.ptSagLbl:T.ptSolLbl;
+    if (e.normal) r += `│ ${lbl} spermatic cord: ${T.ptNormal}.\n`;
+    else {
+      const pts = [];
+      if (e.varikosel) pts.push(T.ptKordVarikosel + (e.varikoselGrad?` (${T.ptKordMaks}${e.varikoselGrad} mm)`:``));
+      if (e.kitle) pts.push(T.ptKordKitle);
+      r += `│ ${lbl} spermatic cord: ${pts.join(', ')}${e.not?`. ${e.not}`:''}.\n`;
+    }
+  });
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  r += `┌─ ${T.ptTunicaH} ${'─'.repeat(Math.max(0,38-T.ptTunicaH.length))}\n`;
+  const tn = d.tunika;
+  const KONTUR_PT = { 'düzgün': T.s7konturDuz, 'lobüle': T.s7konturLob, 'bozulmuş': T.s7konturBoz };
+  if (tn.saglam) r += `│ ${T.ptTunikaIntakt}${KONTUR_PT[tn.kontur] || tn.kontur}.\n`;
+  else {
+    const pts = [];
+    if (tn.sagRuptur) pts.push(T.ptSagRuptur);
+    if (tn.solRuptur) pts.push(T.ptSolRuptur);
+    r += `│ ${pts.join(', ')}, ${T.s7konturLabel.toLowerCase()} ${KONTUR_PT[tn.kontur] || tn.kontur}${tn.not?`. ${tn.not}`:''}.\n`;
+  }
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  r += `┌─ ${T.ptFluidH} ${'─'.repeat(Math.max(0,40-T.ptFluidH.length))}\n`;
+  const s = d.sivi;
+  const svPts = [];
+  if (s.sagHidrosel) svPts.push(T.ptSagHidrosel);
+  if (s.solHidrosel) svPts.push(T.ptSolHidrosel);
+  if (s.sagHematosel) svPts.push(T.ptSagHematosel);
+  if (s.solHematosel) svPts.push(T.ptSolHematosel);
+  if (s.sagPiyosel) svPts.push(T.ptSagPiyosel);
+  if (s.solPiyosel) svPts.push(T.ptSolPiyosel);
+  r += `│ ${svPts.length ? svPts.join(', ') + (s.not?`. ${s.not}`:'') + '.' : T.ptNoFluid}\n`;
+  r += '└' + '─'.repeat(67) + '\n\n';
+
+  // Lezyonlar
+  if (d.lezyonVarMi === false) {
+    r += `┌─ ${T.ptFocalH} ${'─'.repeat(Math.max(0,52-T.ptFocalH.length))}\n`;
+    r += `│ ${T.ptNoFocal}\n`;
+    r += '└' + '─'.repeat(67) + '\n\n';
+  } else if (d.lezyonlar.length > 0) {
+    d.lezyonlar.forEach((l, i) => {
+      r += `┌─ ${T.ptLesionH}${i+1} ${'─'.repeat(Math.max(0,55 - String(i+1).length - T.ptLesionH.length))}\n`;
+      const taraf = l.taraf==='sag'?T.ptSideRight:l.taraf==='sol'?T.ptSideSol:l.taraf==='bilateral'?T.ptSideBilateral:T.ptDash;
+      r += `│ ${T.ptRowSide} : ${taraf}\n`;
+      r += `│ ${T.ptRowComp} : ${l.compartment.map(c=>L(c)).join(', ') || T.ptDash}\n`;
+      if (l.compartmentDetail) r += `│ ${T.ptRowAnat} : ${l.compartmentDetail}\n`;
+      const boyut = (l.boyutAP||l.boyutCC||l.boyutTR) ? `${l.boyutAP||'?'}×${l.boyutCC||'?'}×${l.boyutTR||'?'} mm` : T.ptSizeNotEntered;
+      r += `│ ${T.ptRowSize} : ${boyut}\n`;
+      const joinLbl = (arr) => (arr||[]).map(x=>L(x)).join(', ') || T.ptDash;
+      r += `│ ${T.ptRowStruct} : ${joinLbl(l.structure)}\n`;
+      r += `│ ${T.ptRowT1} : ${joinLbl(l.t1)}\n`;
+      r += `│ ${T.ptRowT2} : ${joinLbl(l.t2)}\n`;
+      r += `│ ${T.ptRowDWI} : ${joinLbl(l.dwi)}\n`;
+      r += `│ ${T.ptRowADC} : ${joinLbl(l.adc)}\n`;
+      r += `│ ${T.ptRowContrast} : ${joinLbl(l.contrast)}\n`;
+      r += `│ ${T.ptRowChemshift} : ${joinLbl(l.chemshift)}\n`;
+      if ((l.special||[]).length) r += `│ ${T.ptRowExtra} : ${joinLbl(l.special)}\n`;
+      if (l.notlar) r += `│ ${T.ptRowNote} : ${l.notlar}\n`;
+
+      const lDiffs = getDifferentials(l, 5);
+      if (lDiffs.length > 0) {
+        r += `│ ${sub.slice(0,65)}\n`;
+        r += `│ ${T.ptDiffTitle}\n`;
+        lDiffs.forEach(x => {
+          const bar = '█'.repeat(Math.round(x.percentage/5));
+          r += `│   %${String(x.percentage).padStart(2,' ')}  ${bar.padEnd(20,' ')}  ${loc(x.name)}\n`;
+        });
+      }
+      r += '└' + '─'.repeat(67) + '\n\n';
+    });
+  }
+
+  // Overall differential
+  if (diffs && diffs.length > 0) {
+    r += `┌─ ${T.ptOverallDiffH} ${'─'.repeat(Math.max(0,40-T.ptOverallDiffH.length))}\n`;
+    diffs.forEach(x => {
+      const bar = '█'.repeat(Math.round(x.percentage/4));
+      r += `│   %${String(x.percentage).padStart(2,' ')}  ${bar.padEnd(25,' ')}  ${loc(x.name)}\n`;
+      r += `│        └ ${loc(x.category)}\n`;
+    });
+    r += '└' + '─'.repeat(67) + '\n\n';
+  }
+
+  // Not-evaluated side warning
+  if (!d.sagTestis.degerlendirildi || !d.solTestis.degerlendirildi) {
+    const ts = [];
+    if (!d.sagTestis.degerlendirildi) ts.push(T.ptSagLbl.toLowerCase());
+    if (!d.solTestis.degerlendirildi) ts.push(T.ptSolLbl.toLowerCase());
+    r += `${T.ptWarnPrefix}${ts.join(' & ')}${T.ptWarnSuffix}\n\n`;
+  }
+
+  r += `┌─ ${T.ptConclusionH} ${'─'.repeat(Math.max(0,50-T.ptConclusionH.length))}\n`;
+  genConclusion(d, diffs).split('\n').forEach(lineTxt => {
+    r += `│ ${lineTxt}\n`;
+  });
+  r += '└' + '─'.repeat(67) + '\n';
+
+  return r;
+}
+
+/* =====================================================================
+   MOUNT
+   ===================================================================== */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
